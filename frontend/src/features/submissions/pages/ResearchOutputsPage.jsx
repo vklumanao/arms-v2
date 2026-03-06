@@ -1,10 +1,10 @@
-﻿import PageHeader from "@/shared/components/layout/PageHeader";
+import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { fetchMyResearchOutputs } from "@/features/submissions/services/mySubmissionsService";
-import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils/submissionFormUtils";
+import { fetchMyResearchOutputs } from "@/features/submissions/services";
+import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
 
@@ -546,5 +546,6 @@ export default function ResearchOutputsPage() {
     </section>
   );
 }
+
 
 

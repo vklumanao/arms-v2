@@ -1,4 +1,4 @@
-﻿export const SUBMISSION_STEPS = [
+export const SUBMISSION_STEPS = [
   { id: 0, label: "Project" },
   { id: 1, label: "Classification" },
   { id: 2, label: "Funding & Timeline" },
@@ -163,3 +163,77 @@ export function getHighestUnlockedSubmissionStep(
   return 0;
 }
 
+
+export function splitCsvNames(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return [];
+  if (value.includes(";")) {
+    return value
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [value];
+}
+
+export function toCsvNames(items) {
+  return [
+    ...new Set((items || []).map((item) => item.trim()).filter(Boolean)),
+  ].join("; ");
+}
+
+export function sanitizeFileName(fileName) {
+  return String(fileName || "moa-file")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9._-]/g, "");
+}
+
+export function createLocalOutputRow() {
+  return {
+    id: null,
+    client_id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    output_type: "",
+    target_count: 1,
+    notes: "",
+    file_path: "",
+    file_name: "",
+    mime_type: "",
+    file_size: null,
+    file: null,
+    needs_file_reselect: false,
+    is_saved: false,
+  };
+}
+
+export function mapDbOutputToLocalRow(row) {
+  return {
+    id: row.id,
+    client_id: row.id,
+    output_type: row.output_type || "",
+    target_count: Math.max(1, Number(row.target_count) || 1),
+    notes: row.notes || "",
+    file_path: row.file_path || "",
+    file_name: row.file_name || "",
+    mime_type: row.mime_type || "",
+    file_size: row.file_size ?? null,
+    file: null,
+    needs_file_reselect: false,
+    is_saved: true,
+  };
+}
+
+export function buildExpectedOutputsSummary(rows) {
+  const labelsByValue = EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {
+    acc[item.value] = item.label;
+    return acc;
+  }, {});
+  return (rows || [])
+    .map((row) => {
+      const label = labelsByValue[row.output_type] || row.output_type;
+      const targetCount = Math.max(1, Number(row.target_count) || 1);
+      return label ? `${label} (Target: ${targetCount})` : "";
+    })
+    .filter(Boolean)
+    .join(", ");
+}

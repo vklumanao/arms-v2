@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
@@ -17,8 +17,8 @@ import {
   copyExpectedOutputFileInStorage,
   removeExpectedOutputFilesFromStorage,
   saveSubmission,
-} from "@/features/submissions/services/submissionService";
-import { uploadMovFileToStorage } from "@/features/submissions/services/mySubmissionsService";
+} from "@/features/submissions/services";
+import { uploadMovFileToStorage } from "@/features/submissions/services";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import {
   canAccessSubmissionStep,
@@ -28,90 +28,22 @@ import {
   getSubmissionDraftKey,
   INITIAL_SUBMISSION_FORM,
   mapProjectToSubmissionForm,
+  mapDbOutputToLocalRow,
   parseSavedSubmissionDraft,
+  sanitizeFileName,
+  splitCsvNames,
   SUBMISSION_STEPS,
+  toCsvNames,
+  createLocalOutputRow,
+  buildExpectedOutputsSummary,
   validateSubmissionStep,
-} from "@/features/submissions/utils/submissionFormUtils";
+} from "@/features/submissions/utils";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
 
-function splitCsvNames(raw) {
-  const value = String(raw || "").trim();
-  if (!value) return [];
-  if (value.includes(";")) {
-    return value
-      .split(";")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [value];
-}
-
-function toCsvNames(items) {
-  return [
-    ...new Set((items || []).map((item) => item.trim()).filter(Boolean)),
-  ].join("; ");
-}
-
 const MAX_MOA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
-
-function sanitizeFileName(fileName) {
-  return String(fileName || "moa-file")
-    .trim()
-    .replace(/\s+/g, "_")
-    .replace(/[^A-Za-z0-9._-]/g, "");
-}
-
-function createLocalOutputRow() {
-  return {
-    id: null,
-    client_id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    output_type: "",
-    target_count: 1,
-    notes: "",
-    file_path: "",
-    file_name: "",
-    mime_type: "",
-    file_size: null,
-    file: null,
-    needs_file_reselect: false,
-    is_saved: false,
-  };
-}
-
-function mapDbOutputToLocalRow(row) {
-  return {
-    id: row.id,
-    client_id: row.id,
-    output_type: row.output_type || "",
-    target_count: Math.max(1, Number(row.target_count) || 1),
-    notes: row.notes || "",
-    file_path: row.file_path || "",
-    file_name: row.file_name || "",
-    mime_type: row.mime_type || "",
-    file_size: row.file_size ?? null,
-    file: null,
-    needs_file_reselect: false,
-    is_saved: true,
-  };
-}
-
-function buildExpectedOutputsSummary(rows) {
-  const labelsByValue = EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {
-    acc[item.value] = item.label;
-    return acc;
-  }, {});
-  return rows
-    .map((row) => {
-      const label = labelsByValue[row.output_type] || row.output_type;
-      const targetCount = Math.max(1, Number(row.target_count) || 1);
-      return label ? `${label} (Target: ${targetCount})` : "";
-    })
-    .filter(Boolean)
-    .join(", ");
-}
 
 export default function SubmitAffiliationPage() {
   const EXPECTED_OUTPUTS_PAGE_SIZE = 10;
@@ -922,6 +854,15 @@ export default function SubmitAffiliationPage() {
       <PageHeader
         title={editId ? "Revise Research Project" : "Submit Research Project"}
         description="Use step-by-step form completion. Your draft is auto-saved in this browser."
+        actions={
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => navigate("/submit-affiliation")}
+          >
+            Go back
+          </button>
+        }
       />
 
       <div className="grid gap-2 md:grid-cols-5">
@@ -1488,11 +1429,8 @@ export default function SubmitAffiliationPage() {
                         </tr>
                       ) : (
                         paginatedExpectedOutputRows.map((row) => (
-                          <tr
-                            key={row.client_id}
-                            
-                          >
-                            <td >
+                          <tr key={row.client_id}>
+                            <td>
                               {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
                                 (item) => item.value === row.output_type,
                               )?.label ||
@@ -2084,7 +2022,3 @@ export default function SubmitAffiliationPage() {
     </section>
   );
 }
-
-
-
-

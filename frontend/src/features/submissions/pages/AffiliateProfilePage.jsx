@@ -1,11 +1,11 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { isLikelyUrl } from "@/shared/utils/validation";
 import {
   fetchAffiliateProfile,
   updateAffiliateProfile as updateAffiliateProfileService,
-} from "@/features/submissions/services/affiliateProfileService";
+} from "@/features/submissions/services";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import { useToast } from "@/app/providers/ToastProvider";
@@ -362,5 +362,6 @@ export default function AffiliateProfilePage() {
     </section>
   );
 }
+
 
 

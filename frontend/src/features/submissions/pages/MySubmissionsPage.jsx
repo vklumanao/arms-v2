@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
@@ -6,7 +6,7 @@ import { normalizeStatus } from "@/shared/utils/status";
 import {
   isAllowedMovMimeType,
   registerMovUpload,
-} from "@/features/submissions/services/movService";
+} from "@/features/submissions/services";
 import {
   createMovPreviewSignedUrl,
   fetchMovSummaryForProjects,
@@ -15,77 +15,28 @@ import {
   fetchReviewerProfiles,
   fetchUserProjects,
   uploadMovFileToStorage,
-} from "@/features/submissions/services/mySubmissionsService";
+} from "@/features/submissions/services";
 import {
   buildMovStoragePath,
   buildSubmissionAnalytics,
   buildSubmissionTasks,
   filterSubmissions,
+  formatCurrency,
   isMovRequired,
   MAX_MOV_FILE_BYTES,
-} from "@/features/submissions/utils/mySubmissionsUtils";
+} from "@/features/submissions/utils";
+import {
+  DetailBlock,
+  QualityChip,
+  SectionPanel,
+  TaskMetricCard,
+} from "@/features/submissions/components";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import { useToast } from "@/app/providers/ToastProvider";
 
 const STATUS_OPTIONS = ["proposal", "ongoing", "completed", "rejected"];
-
-function SectionPanel({ title, children, bodyClassName = "panel-body" }) {
-  return (
-    <div className="panel">
-      {title ? (
-        <div className="panel-header">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            {title}
-          </h2>
-        </div>
-      ) : null}
-      <div className={bodyClassName}>{children}</div>
-    </div>
-  );
-}
-
-function TaskMetricCard({ label, value, hint }) {
-  return (
-    <div className="app-card app-card-compact">
-      <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-bold">{value}</p>
-      <p className="text-xs text-slate-500">{hint}</p>
-    </div>
-  );
-}
-
-function QualityChip({ ok, positiveLabel, negativeLabel }) {
-  return (
-    <span
-      className={`status-chip ${ok ? "status-completed" : "status-rejected"}`}
-    >
-      {ok ? positiveLabel : negativeLabel}
-    </span>
-  );
-}
-
-function formatCurrency(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return "-";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
-function DetailBlock({ title, children }) {
-  return (
-    <div className="app-card app-card-compact">
-      <p className="mb-2 text-sm font-semibold">{title}</p>
-      {children}
-    </div>
-  );
-}
 
 export default function MySubmissionsPage() {
   const { user } = useAuth();
@@ -559,10 +510,7 @@ export default function MySubmissionsPage() {
       </div>
 
       {detailProjectId ? (
-        <div
-          className="modal-overlay"
-          onClick={() => setDetailProjectId(null)}
-        >
+        <div className="modal-overlay" onClick={() => setDetailProjectId(null)}>
           <aside
             className="ml-auto h-full w-full max-w-2xl overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-4 sm:p-5"
             onClick={(e) => e.stopPropagation()}
@@ -739,11 +687,11 @@ export default function MySubmissionsPage() {
             className="mx-auto mt-8 w-full max-w-5xl rounded-[var(--radius-md)] border border-[var(--border)] bg-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-              <p className="truncate text-sm font-semibold text-slate-900">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
                 {previewDoc.name}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
                 <a
                   className="btn btn-outline"
                   href={previewDoc.url}
@@ -809,8 +757,3 @@ export default function MySubmissionsPage() {
     </section>
   );
 }
-
-
-
-
-

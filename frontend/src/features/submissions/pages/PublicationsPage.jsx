@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isLikelyUrl } from "@/shared/utils/validation";
 import {
@@ -7,7 +7,7 @@ import {
   fetchUserPublications,
   insertPublication,
   updatePublication,
-} from "@/features/submissions/services/publicationsService";
+} from "@/features/submissions/services";
 import {
   buildProjectMap,
   buildPublicationPayload,
@@ -15,7 +15,7 @@ import {
   filterPublicationItems,
   INITIAL_PUBLICATION_FORM,
   mapPublicationToForm,
-} from "@/features/submissions/utils/publicationsUtils";
+} from "@/features/submissions/utils";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
@@ -406,6 +406,7 @@ export default function PublicationsPage() {
     </section>
   );
 }
+
 
 
 

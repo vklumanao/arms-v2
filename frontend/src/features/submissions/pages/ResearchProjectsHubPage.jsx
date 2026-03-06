@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
@@ -12,8 +12,15 @@ import {
   deleteOwnedProject,
   fetchProjectResources,
   quickEditOwnedProject,
-} from "@/features/submissions/services/mySubmissionsService";
+} from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
+import {
+  formatBytes,
+  formatDate,
+  mapDatasetToProjectRecord,
+  STATUS_OPTIONS,
+  toDateInputValue,
+} from "@/features/submissions/utils";
 import {
   CheckCircle2,
   Clock3,
@@ -23,99 +30,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-const STATUS_OPTIONS = ["proposal", "ongoing", "completed", "rejected"];
 const PROJECTS_PAGE_SIZE = 10;
-
-function formatDate(value) {
-  if (!value) return "-";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleDateString();
-}
-
-function formatBytes(value) {
-  const size = Number(value);
-  if (!Number.isFinite(size) || size <= 0) return "-";
-  const units = ["B", "KB", "MB", "GB"];
-  let index = 0;
-  let amount = size;
-  while (amount >= 1024 && index < units.length - 1) {
-    amount /= 1024;
-    index += 1;
-  }
-  const rounded =
-    amount >= 10 || index === 0 ? amount.toFixed(0) : amount.toFixed(1);
-  return `${rounded} ${units[index]}`;
-}
-
-function toDateInputValue(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  const year = parsed.getFullYear();
-  const month = String(parsed.getMonth() + 1).padStart(2, "0");
-  const day = String(parsed.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getDatasetExtra(dataset, key) {
-  const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
-  const found = extras.find(
-    (item) =>
-      String(item?.key || "")
-        .trim()
-        .toLowerCase() ===
-      String(key || "")
-        .trim()
-        .toLowerCase(),
-  );
-  return found?.value || "";
-}
-
-function mapDatasetToProjectRecord(dataset) {
-  const metadataCreated = String(dataset?.metadata_created || "").trim();
-  const yearFromMetadata = metadataCreated
-    ? new Date(metadataCreated).getFullYear()
-    : null;
-  const mappedStatus = String(
-    getDatasetExtra(dataset, "status") || dataset?.state || "ongoing",
-  )
-    .trim()
-    .toLowerCase();
-  const normalizedStatus = STATUS_OPTIONS.includes(mappedStatus)
-    ? mappedStatus
-    : mappedStatus === "active"
-      ? "ongoing"
-      : "proposal";
-
-  return {
-    id: dataset?.id || dataset?.name,
-    source: "ckan",
-    ckan_dataset_id: dataset?.id || null,
-    title: dataset?.title || dataset?.name || "-",
-    abstract: dataset?.notes || "",
-    lead_researcher: dataset?.author || "-",
-    faculty_team: getDatasetExtra(dataset, "faculty_team"),
-    student_team: getDatasetExtra(dataset, "student_team"),
-    year: Number.isFinite(yearFromMetadata) ? yearFromMetadata : "-",
-    status: normalizedStatus,
-    submitted_by_name:
-      dataset?.maintainer || dataset?.author || "CKAN Dataset Owner",
-    submitted_by_email: dataset?.maintainer_email || "-",
-    submitted_by: dataset?.creator_user_id || null,
-    submitted_at: metadataCreated || dataset?.metadata_modified || null,
-    submitted_by_org_name:
-      dataset?.organization?.title ||
-      dataset?.organization?.display_name ||
-      dataset?.organization?.name ||
-      "-",
-    project_ckan_org_id: dataset?.organization?.name || null,
-    research_center_id: dataset?.organization?.name || null,
-    resources: Array.isArray(dataset?.resources) ? dataset.resources : [],
-  };
-}
 
 export default function ResearchProjectsHubPage() {
   const { user, profile } = useAuth();
@@ -1199,6 +1114,7 @@ export default function ResearchProjectsHubPage() {
     </section>
   );
 }
+
 
 
 
