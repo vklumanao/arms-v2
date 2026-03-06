@@ -1073,6 +1073,10 @@ h6,
   animation: shell-fade-in 170ms ease;
 }
 
+.modal-overlay-sidebar {
+  justify-content: flex-start;
+}
+
 .modal-overlay-centered {
   align-items: center;
   padding: 1rem;

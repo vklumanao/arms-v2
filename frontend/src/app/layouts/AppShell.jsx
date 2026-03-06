@@ -82,9 +82,7 @@ export default function AppShell() {
 
   const NavSection = ({ title, links }) => (
     <section className="space-y-1">
-      <h3 className="nav-section-title">
-        {title}
-      </h3>
+      <h3 className="nav-section-title">{title}</h3>
       {links
         .filter((item) => hasPermission(profile?.role, item.permission))
         .map((item) => {
@@ -449,9 +447,7 @@ export default function AppShell() {
                 className="h-24 w-full object-contain"
               />
             </Link>
-            <p className="sidebar-tagline">
-              Affiliation & Research Management
-            </p>
+            <p className="sidebar-tagline">Affiliation & Research Management</p>
           </div>
 
           <div
@@ -558,7 +554,7 @@ export default function AppShell() {
 
       {shouldShowSidebar && mobileNavOpen && !isDesktop && (
         <div
-          className="modal-overlay"
+          className="modal-overlay modal-overlay-sidebar"
           onClick={() => setMobileNavOpen(false)}
         >
           <aside
@@ -567,12 +563,7 @@ export default function AppShell() {
           >
             <div className="mb-5 mt-3 flex shrink-0 items-center justify-between">
               <div className="flex items-center gap-2">
-                <img
-                  src="/arms-logo-v2.svg"
-                  alt="ARMS Logo"
-                  className="h-10 w-10 rounded-full border border-[var(--border)] bg-white p-1 object-contain shadow-sm"
-                />
-                <p className="font-bold text-[var(--brand)]">ARMS</p>
+                <img src="/arms-logo-v2.svg" alt="ARMS Logo" />
               </div>
               <button
                 className="btn btn-outline"
@@ -616,5 +607,3 @@ export default function AppShell() {
     </div>
   );
 }
-
-
