@@ -1,4 +1,4 @@
-﻿import { AboutSection } from "@/features/core/pages/home/sections";
+import { AboutSection } from "@/features/core";
 import { PublicRecordsPage } from "@/features/public-records";
 
 export default function HomePage() {
@@ -11,5 +11,7 @@ export default function HomePage() {
     </div>
   );
 }
+
+
 
 

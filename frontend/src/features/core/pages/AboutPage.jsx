@@ -1,5 +1,5 @@
-﻿import { useEffect } from "react";
-import HomePage from "@/features/core/pages/HomePage";
+import { useEffect } from "react";
+import HomePage from "./HomePage";
 
 export default function AboutPage() {
   useEffect(() => {
@@ -25,4 +25,5 @@ export default function AboutPage() {
 
   return <HomePage />;
 }
+
 

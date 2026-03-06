@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import {
   aboutPillars,
@@ -13,7 +13,7 @@ import {
   roleCards,
   systemFramingCards,
   workflowSteps,
-} from "@/features/core/pages/home/content";
+} from "./content";
 
 function SectionIntro({ eyebrow, title, subtitle, inverted = false }) {
   const eyebrowClass = inverted ? "text-sky-200" : "text-slate-500";
@@ -478,6 +478,9 @@ export function FinalCtaSection() {
     </section>
   );
 }
+
+
+
 
 
 
