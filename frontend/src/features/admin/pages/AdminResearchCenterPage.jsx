@@ -20,7 +20,8 @@ import {
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
   updateReference,
-} from "@/features/admin/services/adminControlsService";
+} from "@/features/admin/services";
+import { getOrgExtra, validateCenterForm } from "@/features/admin/utils";
 import { fetchCkanOrganizations } from "@/shared/api/ckanApi";
 
 const INITIAL_FILTERS = {
@@ -38,52 +39,6 @@ const EMPTY_EDITING = {
   agendaInput: "",
   researchAgendas: [],
 };
-const CENTER_CODE_PATTERN = /^[A-Za-z0-9_]{2,24}$/;
-
-function validateCenterForm({ name, code, centerChiefId, researchAgendas }) {
-  const errors = {};
-  const trimmedName = String(name || "").trim();
-  const trimmedCode = String(code || "").trim();
-  const agendas = Array.isArray(researchAgendas) ? researchAgendas : [];
-
-  if (!trimmedName) {
-    errors.name = "Research center name is required.";
-  } else if (trimmedName.length < 2) {
-    errors.name = "Research center name must be at least 2 characters.";
-  }
-
-  if (!trimmedCode) {
-    errors.code = "Research center code is required.";
-  } else if (!CENTER_CODE_PATTERN.test(trimmedCode)) {
-    errors.code =
-      "Research center code must be 2-24 chars (letters, numbers, underscore).";
-  }
-
-  if (!String(centerChiefId || "").trim()) {
-    errors.centerChiefId = "Center chief is required.";
-  }
-
-  if (!agendas.length) {
-    errors.researchAgendas = "Add at least one research agendum.";
-  }
-
-  return errors;
-}
-
-function getOrgExtra(org, key) {
-  const extras = Array.isArray(org?.extras) ? org.extras : [];
-  const found = extras.find(
-    (item) =>
-      String(item?.key || "")
-        .trim()
-        .toLowerCase() ===
-      String(key || "")
-        .trim()
-        .toLowerCase(),
-  );
-  return found?.value || "";
-}
-
 export default function AdminResearchCenterPage() {
   const toast = useToast();
   const PAGE_SIZE = 10;
@@ -950,7 +905,7 @@ export default function AdminResearchCenterPage() {
   return (
     <section className="page-stack-lg">
       <PageHeader
-        title="Research Center Registry"
+        title="Research Center"
         description="Manage research center records and inspect linked affiliates and projects in one view."
       />
 
@@ -1075,7 +1030,7 @@ export default function AdminResearchCenterPage() {
       </div>
 
       <div className="panel overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
             Research Center Records ({filteredRows.length})
           </h2>
@@ -1210,8 +1165,8 @@ export default function AdminResearchCenterPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--border)]">
-              <div>
+            <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+              <div className="min-w-0">
                 <table className="data-table">
                   <thead>
                     <tr>

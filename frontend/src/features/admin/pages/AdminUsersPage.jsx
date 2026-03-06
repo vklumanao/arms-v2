@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { isValidEmail } from "@/shared/utils/validation";
 import PageHeader from "@/shared/components/layout/PageHeader";
@@ -10,7 +10,7 @@ import {
   sendAdminPasswordReset,
   updateAdminUserRole,
   updateAdminUserStatus,
-} from "@/features/admin/services/adminUsersService";
+} from "@/features/admin/services";
 import {
   BadgeCheck,
   Briefcase,
@@ -807,3 +807,4 @@ export default function AdminUsersPage() {
     </section>
   );
 }
+

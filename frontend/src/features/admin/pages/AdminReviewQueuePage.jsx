@@ -1,57 +1,27 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import { useToast } from "@/app/providers/ToastProvider";
-import { logAdminActivity } from "@/features/admin/utils/logAdminActivity";
-import { reviewSubmissionDecision } from "@/features/admin/services/reviewService";
+import { logAdminActivity } from "@/features/admin/utils";
+import { reviewSubmissionDecision } from "@/features/admin/services";
 import {
   assignReviewerToProject,
-  fetchProjectDetailBundle,
+  fetchReviewQueueProjectDetailBundle as fetchProjectDetailBundle,
   markProjectCompleted,
   fetchReviewedTodayCount,
   fetchReviewQueueSnapshot,
-} from "@/features/admin/services/reviewQueueService";
+} from "@/features/admin/services";
 import {
   daysSince,
   dueWithinDays,
+  getDiffRows,
+  hasInvalidDates,
+  isMissingAbstract,
   normalizeStatus,
   toMapById,
-} from "@/features/admin/utils/reviewQueueUtils";
-
-function isMissingAbstract(item) {
-  return !String(item?.abstract || "").trim();
-}
-
-function hasInvalidDates(item) {
-  if (!item?.start_date || !item?.end_date) return false;
-  const start = new Date(item.start_date);
-  const end = new Date(item.end_date);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return true;
-  return start > end;
-}
-
-function getDiffRows(oldValues, newValues) {
-  const keys = [
-    "title",
-    "abstract",
-    "year",
-    "status",
-    "start_date",
-    "end_date",
-    "expected_outputs",
-    "funding_source",
-    "funding_amount",
-  ];
-  return keys
-    .filter((key) => (oldValues?.[key] ?? null) !== (newValues?.[key] ?? null))
-    .map((key) => ({
-      key,
-      oldValue: oldValues?.[key] ?? "-",
-      newValue: newValues?.[key] ?? "-",
-    }));
-}
+} from "@/features/admin/utils";
 
 export default function AdminReviewQueuePage() {
   const { user, profile } = useAuth();
@@ -1277,14 +1247,14 @@ export default function AdminReviewQueuePage() {
             className="mx-auto mt-8 w-full max-w-5xl rounded-[var(--radius-md)] border border-[var(--border)] bg-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
               <p
                 id="review-preview-title"
-                className="truncate text-sm font-semibold text-slate-900"
+                className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900"
               >
                 {previewDoc.name}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
                 <a
                   className="btn btn-outline"
                   href={previewDoc.url}
@@ -1343,6 +1313,7 @@ export default function AdminReviewQueuePage() {
     </section>
   );
 }
+
 
 
 

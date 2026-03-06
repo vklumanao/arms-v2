@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import InlineNotice from "@/shared/components/feedback/InlineNotice";
 import EmptyState from "@/shared/components/feedback/EmptyState";
@@ -9,31 +9,17 @@ import {
   formatEntityDisplay,
   formatRequestDisplay,
   getChangedFields,
+  paginateItemsWithMeta,
   toEntityLabel,
   toIsoDateEnd,
-} from "@/features/admin/utils/auditEventFormatters";
+} from "@/features/admin/utils";
 import {
   archiveOldNotifications as archiveOldNotificationsService,
   fetchAuditConsoleData,
   fetchNotificationMetrics,
-} from "@/features/admin/services/adminAuditService";
+} from "@/features/admin/services";
 
 const AUDIT_EVENTS_PAGE_SIZE = 10;
-
-function paginateItems(items, page, pageSize) {
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * pageSize;
-  return {
-    page: safePage,
-    totalPages,
-    totalItems,
-    start,
-    end: Math.min(start + pageSize, totalItems),
-    items: items.slice(start, start + pageSize),
-  };
-}
 
 export default function AdminAuditConsolePage() {
   const [logs, setLogs] = useState([]);
@@ -155,7 +141,12 @@ export default function AdminAuditConsolePage() {
   };
 
   const paginatedAuditEvents = useMemo(
-    () => paginateItems(filteredLogs, auditEventsPage, AUDIT_EVENTS_PAGE_SIZE),
+    () =>
+      paginateItemsWithMeta(
+        filteredLogs,
+        auditEventsPage,
+        AUDIT_EVENTS_PAGE_SIZE,
+      ),
     [filteredLogs, auditEventsPage],
   );
 
@@ -744,6 +735,7 @@ export default function AdminAuditConsolePage() {
     </section>
   );
 }
+
 
 
 

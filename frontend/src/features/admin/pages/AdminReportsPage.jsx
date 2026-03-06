@@ -1,10 +1,10 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
-import { toCsv } from "@/features/admin/utils/csv";
+import { toCsv } from "@/features/admin/utils";
 import {
   createDefaultReportFilters,
   createIdNameMap,
@@ -16,35 +16,20 @@ import {
   buildProjectExportRows,
   getPresetDateRange,
   makeExportStamp,
+  paginateItemsWithMeta,
   parseStoredReportFilters,
-} from "@/features/admin/utils/adminReportUtils";
+} from "@/features/admin/utils";
 import {
-  fetchProjectDetailBundle,
+  fetchReportProjectDetailBundle as fetchProjectDetailBundle,
   fetchProjectMovDocuments,
   fetchReportDataset,
   updateProjectVisibility as updateProjectVisibilityService,
   createMovSignedPreviewUrl,
-} from "@/features/admin/services/reportService";
+} from "@/features/admin/services";
 
 const REPORT_FILTERS_STORAGE_KEY = "arms_admin_report_filters_v1";
 const REPORT_PREVIEW_PAGE_SIZE = 10;
 const DATA_QUALITY_PAGE_SIZE = 10;
-
-function paginateItems(items, page, pageSize) {
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * pageSize;
-
-  return {
-    page: safePage,
-    totalPages,
-    totalItems,
-    start,
-    end: Math.min(start + pageSize, totalItems),
-    items: items.slice(start, start + pageSize),
-  };
-}
 
 export default function AdminReportsPage() {
   const toast = useToast();
@@ -169,7 +154,7 @@ export default function AdminReportsPage() {
   );
   const reportPreviewPagination = useMemo(
     () =>
-      paginateItems(
+      paginateItemsWithMeta(
         filteredProjects,
         reportPreviewPage,
         REPORT_PREVIEW_PAGE_SIZE,
@@ -177,7 +162,8 @@ export default function AdminReportsPage() {
     [filteredProjects, reportPreviewPage],
   );
   const dataQualityPagination = useMemo(
-    () => paginateItems(anomalies, dataQualityPage, DATA_QUALITY_PAGE_SIZE),
+    () =>
+      paginateItemsWithMeta(anomalies, dataQualityPage, DATA_QUALITY_PAGE_SIZE),
     [anomalies, dataQualityPage],
   );
 
@@ -957,6 +943,7 @@ export default function AdminReportsPage() {
     </section>
   );
 }
+
 
 
 

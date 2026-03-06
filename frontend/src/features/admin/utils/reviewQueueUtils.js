@@ -27,3 +27,36 @@ export function toMapById(rows, key = "id") {
   }, {});
 }
 
+export function isMissingAbstract(item) {
+  return !String(item?.abstract || "").trim();
+}
+
+export function hasInvalidDates(item) {
+  if (!item?.start_date || !item?.end_date) return false;
+  const start = new Date(item.start_date);
+  const end = new Date(item.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return true;
+  return start > end;
+}
+
+export function getDiffRows(oldValues, newValues) {
+  const keys = [
+    "title",
+    "abstract",
+    "year",
+    "status",
+    "start_date",
+    "end_date",
+    "expected_outputs",
+    "funding_source",
+    "funding_amount",
+  ];
+  return keys
+    .filter((key) => (oldValues?.[key] ?? null) !== (newValues?.[key] ?? null))
+    .map((key) => ({
+      key,
+      oldValue: oldValues?.[key] ?? "-",
+      newValue: newValues?.[key] ?? "-",
+    }));
+}
+

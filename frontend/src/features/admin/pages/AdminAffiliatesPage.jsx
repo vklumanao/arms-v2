@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isLikelyUrl } from "@/shared/utils/validation";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
@@ -6,7 +6,7 @@ import { useToast } from "@/app/providers/ToastProvider";
 import {
   fetchAffiliateRegistry,
   updateAffiliateProfile,
-} from "@/features/admin/services/adminAffiliatesService";
+} from "@/features/admin/services";
 
 const ROLE_FILTERS = ["all", "faculty", "student"];
 
@@ -556,5 +556,6 @@ export default function AdminAffiliatesPage() {
     </section>
   );
 }
+
 
 
