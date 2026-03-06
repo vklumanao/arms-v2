@@ -168,13 +168,8 @@ export default function RegisterPage() {
   return (
     <section className="mx-auto max-w-md panel">
       <div className="panel-header">
-        <img
-          src="/arms-logo-v2.svg"
-          alt="ARMS Logo"
-          className="mb-3 h-12 w-auto"
-        />
-        <h1 className="text-2xl font-bold">Create Account</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-3xl font-bold text-center">Create Account</h1>
+        <p className="mt-1 text-sm text-slate-600 text-center">
           Register as student or faculty to manage research projects.
         </p>
       </div>

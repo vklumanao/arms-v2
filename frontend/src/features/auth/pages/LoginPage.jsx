@@ -2,30 +2,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
+import { toDisplayFirstName } from "@/features/auth/utils";
 import { isValidEmail } from "@/shared/utils/validation";
-
-function toDisplayFirstName(profile, email = "") {
-  const fullName = String(profile?.full_name || "").trim();
-  if (fullName) {
-    if (fullName.includes(",")) {
-      const [, givenPart = ""] = fullName.split(",", 2);
-      const first = givenPart.trim().split(/\s+/)[0] || "";
-      if (first) return first;
-    }
-    const first = fullName.split(/\s+/)[0] || "";
-    if (first) return first;
-  }
-
-  const emailUser = String(email || "")
-    .trim()
-    .split("@")[0]
-    ?.split(/[._-]+/)[0];
-  if (emailUser) {
-    return emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
-  }
-
-  return "User";
-}
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -120,13 +98,8 @@ export default function LoginPage() {
   return (
     <section className="mx-auto max-w-md panel">
       <div className="panel-header">
-        <img
-          src="/arms-logo-v2.svg"
-          alt="ARMS Logo"
-          className="mb-3 h-12 w-auto"
-        />
-        <h1 className="text-2xl font-bold">Login</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-3xl font-bold text-center">Login</h1>
+        <p className="mt-1 text-sm text-slate-600 text-center">
           Access your workspace and continue your proposal workflow.
         </p>
       </div>
@@ -182,4 +155,3 @@ export default function LoginPage() {
     </section>
   );
 }
-
