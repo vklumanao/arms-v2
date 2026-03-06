@@ -1,7 +1,7 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
-import { getOnboardingTourSteps } from "@/features/onboarding/config/tourSteps";
+import { getOnboardingTourSteps } from "@/features/onboarding/config";
 
 export function useOnboardingTour({ userId, role, profileLoading, pathname }) {
   const [tourRunning, setTourRunning] = useState(false);
@@ -66,4 +66,5 @@ export function useOnboardingTour({ userId, role, profileLoading, pathname }) {
 
   return { tourRunning, startOnboardingTour };
 }
+
 
