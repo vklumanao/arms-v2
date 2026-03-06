@@ -1,15 +1,15 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { fetchReferenceData as fetchReferenceDataApi } from "@/shared/api/referenceDataApi";
 import { normalizeStatus } from "@/shared/utils/status";
 import {
-  fetchDashboardProjects,
-  fetchDashboardProjectStatusHistory,
-  notifyDashboardUpcomingDeadlines,
-} from "@/features/dashboard/services/dashboardService";
-import { fetchAffiliateRegistry } from "@/features/admin/services/adminAffiliatesService";
+  ACTIVITY_PAGE_SIZE,
+  DASHBOARD_COUNT_META,
+  FEATURED_PAGE_SIZE,
+  QUICK_FILTER_OPTIONS,
+  RECORDS_PAGE_SIZE,
+  STATUS_FILTER_OPTIONS,
+} from "@/features/dashboard/constants";
 import {
   applyDashboardQuickFilter,
   buildDashboardActivityRail,
@@ -21,12 +21,16 @@ import {
   createDashboardFilters,
   filterDashboardProjects,
   findDashboardDeadlineAlerts,
+  getActivityToneClass,
+  getQuickFilterButtonClass,
   isDashboardNeedsAction,
-} from "@/features/dashboard/utils/dashboardUtils";
+  paginateItems,
+} from "@/features/dashboard/utils";
+import { useDashboardData } from "@/features/dashboard/hooks";
+import { ChartFrame, DashboardPanel } from "@/features/dashboard/components";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import InlineNotice from "@/shared/components/feedback/InlineNotice";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
-import { CheckCircle2, Clock3, FileText, XCircle } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -34,94 +38,34 @@ import {
   Legend,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-const ENABLE_DEADLINE_NOTIFY_RPC =
-  import.meta.env.VITE_ENABLE_DEADLINE_NOTIFY_RPC === "true";
-const FEATURED_PAGE_SIZE = 4;
-const ACTIVITY_PAGE_SIZE = 6;
-const RECORDS_PAGE_SIZE = 8;
-
-const QUICK_FILTER_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "mine", label: "My Projects" },
-  { value: "completed", label: "Completed" },
-  { value: "needs_action", label: "Needs Action" },
-];
-
-const STATUS_FILTER_OPTIONS = ["proposal", "ongoing", "completed", "rejected"];
-const DASHBOARD_COUNT_META = {
-  proposal: { label: "Proposal", icon: FileText },
-  ongoing: { label: "Ongoing", icon: Clock3 },
-  completed: { label: "Completed", icon: CheckCircle2 },
-  rejected: { label: "Rejected", icon: XCircle },
-};
-
-function DashboardPanel({
-  title,
-  children,
-  className = "",
-  bodyClassName = "panel-body",
-}) {
-  return (
-    <section className={`panel ${className}`.trim()}>
-      <div className="panel-header">
-        <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-          {title}
-        </h2>
-      </div>
-      <div className={bodyClassName}>{children}</div>
-    </section>
-  );
-}
-
-function getQuickFilterButtonClass(active) {
-  return `btn btn-outline ${
-    active ? "!border-[var(--brand)] !bg-[var(--brand-soft)] !text-[var(--brand)]" : ""
-  }`;
-}
-
-function getActivityToneClass(tone) {
-  if (tone === "warning") return "border-amber-300 bg-amber-50";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50";
-  return "border-[var(--border)] bg-white";
-}
-
-function paginateItems(items, page, pageSize) {
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * pageSize;
-  return {
-    page: safePage,
-    totalPages,
-    items: items.slice(start, start + pageSize),
-  };
-}
-
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === "admin";
-  const [projects, setProjects] = useState([]);
-  const [affiliateRows, setAffiliateRows] = useState([]);
-  const [liveCenters, setLiveCenters] = useState([]);
-  const [liveAgendas, setLiveAgendas] = useState([]);
-  const [liveDepartments, setLiveDepartments] = useState([]);
-  const [historyRows, setHistoryRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [affiliateError, setAffiliateError] = useState("");
   const {
+    projects,
+    affiliateRows,
+    historyRows,
+    loading,
+    refreshing,
+    error,
+    affiliateError,
+    referenceError,
     centers,
-    agendas,
     departments,
-    error: referenceError,
-  } = useReferenceData();
+    effectiveCenters,
+    effectiveAgendas,
+    effectiveDepartments,
+    loadData,
+  } = useDashboardData({
+    user,
+    profile,
+    isAdmin,
+  });
   const [filters, setFilters] = useState(createDashboardFilters());
   const [quickFilter, setQuickFilter] = useState("all");
   const [featuredPage, setFeaturedPage] = useState(1);
@@ -131,110 +75,6 @@ export default function DashboardPage() {
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
-
-  const effectiveCenters = isAdmin ? liveCenters : centers;
-  const effectiveAgendas = isAdmin ? liveAgendas : agendas;
-  const effectiveDepartments = isAdmin ? liveDepartments : departments;
-
-  const loadData = useCallback(
-    async ({ silent = false } = {}) => {
-      setError("");
-      setAffiliateError("");
-      if (silent) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      const { data: projectData, error: projectsError } =
-        await fetchDashboardProjects({
-          userId: user?.id,
-          role: profile?.role || "",
-        });
-
-      if (projectsError) {
-        setError(
-          projectsError.message ||
-            "Unable to load dashboard data. Please refresh.",
-        );
-      }
-
-      const rows = projectData || [];
-      setProjects(rows);
-      if (isAdmin) {
-        try {
-          const referencePayload = await fetchReferenceDataApi();
-          setLiveCenters(referencePayload?.centers || []);
-          setLiveAgendas(referencePayload?.agendas || []);
-          setLiveDepartments(referencePayload?.departments || []);
-        } catch {
-          setLiveCenters([]);
-          setLiveAgendas([]);
-          setLiveDepartments([]);
-        }
-        try {
-          const affiliatePayload = await fetchAffiliateRegistry();
-          setAffiliateRows(affiliatePayload?.rows || []);
-        } catch (loadAffiliateError) {
-          setAffiliateRows([]);
-          setAffiliateError(
-            loadAffiliateError.message || "Unable to load affiliate analytics.",
-          );
-        }
-      } else {
-        setAffiliateRows([]);
-        setLiveCenters([]);
-        setLiveAgendas([]);
-        setLiveDepartments([]);
-      }
-
-      if (!projectsError && rows.length) {
-        const { data: historyData } = await fetchDashboardProjectStatusHistory({
-          projectIds: rows.map((project) => project.id),
-        });
-        setHistoryRows(historyData || []);
-      } else {
-        setHistoryRows([]);
-      }
-
-      if (silent) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
-    },
-    [user?.id, profile?.role, isAdmin],
-  );
-
-  useEffect(() => {
-    loadData();
-    if (ENABLE_DEADLINE_NOTIFY_RPC && user?.id && profile?.role !== "admin") {
-      notifyDashboardUpcomingDeadlines({ days: 14 });
-    }
-  }, [loadData, user?.id, profile?.role]);
-
-  useEffect(() => {
-    if (!isAdmin) return undefined;
-
-    const intervalId = setInterval(() => {
-      loadData({ silent: true });
-    }, 15000);
-
-    const onFocus = () => {
-      if (document.visibilityState === "visible") {
-        loadData({ silent: true });
-      }
-    };
-
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
-  }, [isAdmin, loadData]);
 
   const globallyFiltered = useMemo(
     () => filterDashboardProjects(projects, filters),
@@ -678,24 +518,97 @@ export default function DashboardPage() {
         message={error || affiliateError || referenceError?.message}
       />
 
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DashboardPanel title="Monthly Submissions (Line)">
+          <ChartFrame height={300}>
+            <LineChart
+              data={monthlySubmissions}
+              margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="submissions"
+                name="Submissions"
+                stroke="#1557a1"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ChartFrame>
+        </DashboardPanel>
+
+        <DashboardPanel title="Lifecycle Status Breakdown (Stacked Bar)">
+          {lifecycleBreakdown.length === 0 ? (
+            <div className="app-card app-card-compact">
+              <p className="text-sm text-slate-600">
+                No lifecycle data available yet.
+              </p>
+            </div>
+          ) : (
+            <ChartFrame height={300}>
+              <BarChart
+                data={lifecycleBreakdown}
+                margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="proposal"
+                  stackId="status"
+                  fill="#f59e0b"
+                  name="Proposal"
+                />
+                <Bar
+                  dataKey="ongoing"
+                  stackId="status"
+                  fill="#1557a1"
+                  name="Ongoing"
+                />
+                <Bar
+                  dataKey="completed"
+                  stackId="status"
+                  fill="#0e8a54"
+                  name="Completed"
+                />
+                <Bar
+                  dataKey="rejected"
+                  stackId="status"
+                  fill="#c4332b"
+                  name="Rejected"
+                />
+              </BarChart>
+            </ChartFrame>
+          )}
+        </DashboardPanel>
+      </div>
+
       {isAdmin ? (
         <>
           <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
             <DashboardPanel title="Research Centers Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Total centers</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.researchCenters.totalCenters}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Active centers</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.researchCenters.activeCenters}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     Centers with no projects
                   </p>
@@ -703,7 +616,7 @@ export default function DashboardPage() {
                     {adminSummaries.researchCenters.centersWithNoProjects}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Total agenda count</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.researchCenters.totalAgenda}
@@ -714,27 +627,27 @@ export default function DashboardPage() {
 
             <DashboardPanel title="Affiliates Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Total affiliates</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.affiliates.totalAffiliates}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Active vs inactive</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.affiliates.activeAffiliates} /{" "}
                     {adminSummaries.affiliates.inactiveAffiliates}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Faculty vs student</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.affiliates.facultyCount} /{" "}
                     {adminSummaries.affiliates.studentCount}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     Top departments by affiliate count
                   </p>
@@ -749,13 +662,13 @@ export default function DashboardPage() {
 
             <DashboardPanel title="Research Projects Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Total projects</p>
                   <p className="text-xl font-bold text-slate-900">
                     {adminSummaries.projects.totalProjects}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     This year submissions
                   </p>
@@ -763,7 +676,7 @@ export default function DashboardPage() {
                     {adminSummaries.projects.thisYear}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact sm:col-span-2">
+                <div className="app-card app-card-compact sm:col-span-2">
                   <p className="text-xs text-slate-500">By status</p>
                   <p className="text-sm font-semibold text-slate-900">
                     Proposal {adminSummaries.projects.proposal} | Ongoing{" "}
@@ -772,7 +685,7 @@ export default function DashboardPage() {
                     {adminSummaries.projects.rejected}
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact sm:col-span-2">
+                <div className="app-card app-card-compact sm:col-span-2">
                   <p className="text-xs text-slate-500">
                     Projects nearing deadline
                   </p>
@@ -785,7 +698,7 @@ export default function DashboardPage() {
 
             <DashboardPanel title="Cross-Module Health Widget">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     % projects with assigned center
                   </p>
@@ -793,7 +706,7 @@ export default function DashboardPage() {
                     {crossModuleHealth.projectCenterPct}%
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     % projects with assigned agenda
                   </p>
@@ -801,7 +714,7 @@ export default function DashboardPage() {
                     {crossModuleHealth.projectAgendaPct}%
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">
                     % affiliates with center assignment
                   </p>
@@ -809,7 +722,7 @@ export default function DashboardPage() {
                     {crossModuleHealth.affiliateCenterPct}%
                   </p>
                 </div>
-                <div className="app-card-muted app-card-compact">
+                <div className="app-card app-card-compact">
                   <p className="text-xs text-slate-500">Data quality score</p>
                   <p className="text-xl font-bold text-slate-900">
                     {crossModuleHealth.dataQualityScore}%
@@ -828,7 +741,7 @@ export default function DashboardPage() {
                   topCentersByProject.map((item) => (
                     <li
                       key={item.label}
-                      className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
+                      className="app-card app-card-micro flex items-center justify-between"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -852,7 +765,7 @@ export default function DashboardPage() {
                   topAgendaByUsage.map((item) => (
                     <li
                       key={item.label}
-                      className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
+                      className="app-card app-card-micro flex items-center justify-between"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -876,7 +789,7 @@ export default function DashboardPage() {
                   topDepartmentsByProject.map((item) => (
                     <li
                       key={item.label}
-                      className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
+                      className="app-card app-card-micro flex items-center justify-between"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -900,10 +813,7 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentSubmittedProjects.map((project) => (
-                    <li
-                      key={project.id}
-                      className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
-                    >
+                    <li key={project.id} className="app-card app-card-micro">
                       <p className="text-sm font-medium text-slate-900">
                         {project.title}
                       </p>
@@ -924,10 +834,7 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentUpdatedAffiliates.map((affiliate) => (
-                    <li
-                      key={affiliate.id}
-                      className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
-                    >
+                    <li key={affiliate.id} className="app-card app-card-micro">
                       <p className="text-sm font-medium text-slate-900">
                         {affiliate.full_name || affiliate.email || affiliate.id}
                       </p>
@@ -950,10 +857,7 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentCentersActivity.map((center) => (
-                    <li
-                      key={center.id}
-                      className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
-                    >
+                    <li key={center.id} className="app-card app-card-micro">
                       <p className="text-sm font-medium text-slate-900">
                         {center.name}
                       </p>
@@ -970,83 +874,6 @@ export default function DashboardPage() {
           </div>
         </>
       ) : null}
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <DashboardPanel title="Monthly Submissions (Line)">
-          <div style={{ height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={monthlySubmissions}
-                margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="submissions"
-                  name="Submissions"
-                  stroke="#1557a1"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </DashboardPanel>
-
-        <DashboardPanel title="Lifecycle Status Breakdown (Stacked Bar)">
-          {lifecycleBreakdown.length === 0 ? (
-            <div className="app-card-muted app-card-compact">
-              <p className="text-sm text-slate-600">
-                No lifecycle data available yet.
-              </p>
-            </div>
-          ) : (
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={lifecycleBreakdown}
-                  margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    dataKey="proposal"
-                    stackId="status"
-                    fill="#f59e0b"
-                    name="Proposal"
-                  />
-                  <Bar
-                    dataKey="ongoing"
-                    stackId="status"
-                    fill="#1557a1"
-                    name="Ongoing"
-                  />
-                  <Bar
-                    dataKey="completed"
-                    stackId="status"
-                    fill="#0e8a54"
-                    name="Completed"
-                  />
-                  <Bar
-                    dataKey="rejected"
-                    stackId="status"
-                    fill="#c4332b"
-                    name="Rejected"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </DashboardPanel>
-      </div>
 
       {!isAdmin ? (
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
@@ -1069,7 +896,7 @@ export default function DashboardPage() {
                     return (
                       <article
                         key={record.id}
-                        className="app-card-muted app-card-compact"
+                        className="app-card app-card-compact"
                       >
                         <p className="text-sm font-semibold text-slate-900">
                           {record.title}
@@ -1218,7 +1045,7 @@ export default function DashboardPage() {
 
           <DashboardPanel title="Upcoming Deadlines">
             {alerts.length === 0 ? (
-              <div className="app-card-muted app-card-compact">
+              <div className="app-card app-card-compact">
                 <p className="text-sm font-semibold text-slate-800">
                   No upcoming deadlines
                 </p>
@@ -1230,10 +1057,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 <ul className="space-y-2 text-sm">
                   {alerts.slice(0, 5).map((alert) => (
-                    <li
-                      key={alert.id}
-                      className="app-card app-card-compact"
-                    >
+                    <li key={alert.id} className="app-card app-card-compact">
                       <p className="font-semibold text-slate-900">
                         {alert.title}
                       </p>
@@ -1249,10 +1073,7 @@ export default function DashboardPage() {
                   </p>
                   <div className="grid gap-2">
                     {deadlineCalendar.slice(0, 4).map((item) => (
-                      <div
-                        key={item.id}
-                        className="app-card-muted app-card-micro"
-                      >
+                      <div key={item.id} className="app-card app-card-micro">
                         <p className="text-sm font-semibold text-slate-900">
                           {item.title}
                         </p>
@@ -1271,7 +1092,3 @@ export default function DashboardPage() {
     </section>
   );
 }
-
-
-
-

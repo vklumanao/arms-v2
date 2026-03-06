@@ -40,4 +40,3 @@ export async function notifyDashboardUpcomingDeadlines({ days = 14 } = {}) {
     return { data: null, error };
   }
 }
-
