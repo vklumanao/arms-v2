@@ -1,3 +1,3 @@
-﻿export { default as PublicRecordsPage } from "./pages/PublicRecordsPage";
-export * from "./services/publicRecordsService";
-
+export { default as PublicRecordsPage } from "./pages/PublicRecordsPage";
+export * from "./services";
+export * from "./utils";
