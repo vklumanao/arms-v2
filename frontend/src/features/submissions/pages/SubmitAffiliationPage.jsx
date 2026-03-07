@@ -89,6 +89,14 @@ export default function SubmitAffiliationPage() {
   const disabledOutlineButtonClass =
     "disabled:!border-[var(--border-strong)] disabled:!bg-[var(--surface-muted)] disabled:!text-[var(--text-muted)] disabled:cursor-not-allowed";
 
+  const formatFileSize = (bytes) => {
+    const size = Number(bytes);
+    if (!Number.isFinite(size) || size <= 0) return "-";
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const draftKey = useMemo(
     () => getSubmissionDraftKey(user?.id, editId),
     [user?.id, editId],
@@ -985,9 +993,18 @@ export default function SubmitAffiliationPage() {
           </div>
         </div>
 
-        <div className="panel-body grid gap-4">
+        <div className="panel-body grid w-full gap-6">
           {step === 0 ? (
-            <>
+            <div className="space-y-5">
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    Basic Project Information
+                  </p>
+                  <p className="form-section-note">
+                    Start with the core project details to establish context.
+                  </p>
+                </div>
               <label className="block space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Project title
@@ -1018,7 +1035,15 @@ export default function SubmitAffiliationPage() {
                   }
                 />
               </label>
-              <div className="grid gap-2 sm:grid-cols-3">
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    Research Team
+                  </p>
+                </div>
+              <div className="form-fields-grid form-fields-grid-2">
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Lead researcher
@@ -1081,7 +1106,7 @@ export default function SubmitAffiliationPage() {
                     Type to search and select one CKAN user only.
                   </p>
                 </label>
-                <label className="block space-y-1 text-sm sm:col-span-2">
+                <label className="block space-y-1 text-sm lg:col-span-1">
                   <span className="font-semibold text-slate-700">
                     Research team (faculty)
                   </span>
@@ -1167,7 +1192,15 @@ export default function SubmitAffiliationPage() {
                   }
                 />
               </label>
-              <div className="grid gap-2 sm:grid-cols-2">
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    Project Context
+                  </p>
+                </div>
+              <div className="form-fields-grid form-fields-grid-2">
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Project year
@@ -1201,11 +1234,21 @@ export default function SubmitAffiliationPage() {
                   />
                 </label>
               </div>
-            </>
+              </div>
+            </div>
           ) : null}
 
           {step === 1 ? (
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="form-section">
+              <div className="form-section-head">
+                <p className="form-section-title">
+                  Classification Details
+                </p>
+                <p className="form-section-note">
+                  Classify the project for reporting, routing, and review.
+                </p>
+              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Project classification
@@ -1282,7 +1325,7 @@ export default function SubmitAffiliationPage() {
                   disabled
                 />
               </label>
-              <label className="block space-y-1 text-sm sm:col-span-3">
+              <label className="block space-y-1 text-sm sm:col-span-2">
                 <span className="font-semibold text-slate-700">
                   Scholarly type
                 </span>
@@ -1296,14 +1339,24 @@ export default function SubmitAffiliationPage() {
                       scholarly_type: e.target.value,
                     }))
                   }
-                />
-              </label>
+                  />
+                </label>
+              </div>
             </div>
           ) : null}
 
           {step === 2 ? (
-            <>
-              <div className="grid gap-2 sm:grid-cols-3">
+            <div className="space-y-5">
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    Funding Details
+                  </p>
+                  <p className="form-section-note">
+                    Enter funding values and source details as accurately as possible.
+                  </p>
+                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Funding type
@@ -1370,12 +1423,20 @@ export default function SubmitAffiliationPage() {
                       setForm((p) => ({
                         ...p,
                         funding_amount: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
+                    }))
+                  }
+                />
+              </label>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    MOA and Timeline
+                  </p>
+                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Industry/Agency partner
@@ -1392,53 +1453,67 @@ export default function SubmitAffiliationPage() {
                     }
                   />
                 </label>
-                <label className="block space-y-1 text-sm">
+                <div className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Signed MOA reference
                   </span>
-                  <input
-                    className="control-input"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                    onChange={(e) => {
-                      const nextFile = e.target.files?.[0] || null;
-                      if (!nextFile) {
-                        setMoaFile(null);
-                        return;
-                      }
-                      if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
-                        setError("MOA file must be 25MB or smaller.");
-                        e.target.value = "";
-                        return;
-                      }
-                      setError("");
-                      setMoaFile(nextFile);
-                    }}
-                  />
-                  <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-slate-50/70 p-2">
-                    <div className="flex items-start gap-2">
-                      <FileText
-                        size={15}
-                        className="mt-0.5 text-slate-500"
-                        aria-hidden="true"
-                      />
-                      <div className="space-y-1">
-                        <p className="text-xs text-slate-600">
-                          Upload is saved when you submit/save revision.
-                        </p>
-                        <p className="text-xs text-slate-700">
-                          Selected file: {moaFile?.name || "-"}
-                        </p>
-                        <p className="text-xs text-slate-700 break-all">
-                          Current reference: {form.signed_moa_reference || "-"}
-                        </p>
+                  <div className="upload-field">
+                    <div className="upload-picker">
+                      <div className="upload-picker-info">
+                        <FileText
+                          size={16}
+                          className="mt-0.5 text-slate-500"
+                          aria-hidden="true"
+                        />
+                        <div className="space-y-0.5">
+                          <p className="upload-picker-name">
+                            {moaFile?.name || "No file selected"}
+                          </p>
+                          <p className="upload-picker-sub">
+                            Size: {formatFileSize(moaFile?.size)}
+                          </p>
+                        </div>
                       </div>
+                      <label className="btn btn-outline upload-trigger">
+                        <Upload size={14} aria-hidden="true" />
+                        <span>{moaFile ? "Replace" : "Choose File"}</span>
+                        <input
+                          className="sr-only"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            const nextFile = e.target.files?.[0] || null;
+                            if (!nextFile) {
+                              setMoaFile(null);
+                              return;
+                            }
+                            if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
+                              setError("MOA file must be 25MB or smaller.");
+                              e.target.value = "";
+                              return;
+                            }
+                            setError("");
+                            setMoaFile(nextFile);
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="upload-field-preview">
+                      <p className="upload-field-preview-text">
+                        Current reference: {form.signed_moa_reference || "-"}
+                      </p>
+                      <p className="upload-field-hint">
+                        Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Upload is saved when you submit/save revision.
+                      </p>
                     </div>
                   </div>
-                </label>
+                </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Start date
@@ -1472,11 +1547,12 @@ export default function SubmitAffiliationPage() {
                   />
                 </label>
               </div>
-            </>
+              </div>
+            </div>
           ) : null}
 
           {step === 3 ? (
-            <>
+            <div className="space-y-5">
               <div className="app-card-muted app-card-compact text-sm text-slate-700">
                 <p className="font-semibold text-slate-900">
                   Submission checklist
@@ -1487,6 +1563,16 @@ export default function SubmitAffiliationPage() {
                   <li>Dates and funding values are logically consistent.</li>
                 </ul>
               </div>
+
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">
+                    Outputs and Resources
+                  </p>
+                  <p className="form-section-note">
+                    Add expected outputs and link supporting evidence files.
+                  </p>
+                </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-slate-700">
@@ -1585,7 +1671,7 @@ export default function SubmitAffiliationPage() {
                   />
                 ) : null}
               </div>
-              <label className="block space-y-1 text-sm">
+              <label className="block space-y-1 text-sm sm:max-w-2xl">
                 <span className="font-semibold text-slate-700">
                   Supporting MOV link (optional)
                 </span>
@@ -1601,7 +1687,8 @@ export default function SubmitAffiliationPage() {
                   }
                 />
               </label>
-            </>
+              </div>
+            </div>
           ) : null}
 
           {step === 4 ? (
@@ -2062,51 +2149,72 @@ export default function SubmitAffiliationPage() {
                   }
                 />
               </label>
-              <label className="block space-y-1 text-sm">
+              <div className="block space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Output file (optional)
                 </span>
-                <input
-                  className="control-input"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                  onChange={(e) => {
-                    const selectedFile = e.target.files?.[0] || null;
-                    if (
-                      selectedFile &&
-                      selectedFile.size > MAX_OUTPUT_FILE_SIZE_BYTES
-                    ) {
-                      setError(
-                        "Each expected output file must be 25MB or smaller.",
-                      );
-                      return;
-                    }
-                    setError("");
-                    setNewOutputDraft((prev) => ({
-                      ...prev,
-                      file: selectedFile,
-                      file_name: selectedFile?.name || "",
-                      mime_type: selectedFile?.type || "",
-                      file_size: selectedFile?.size || null,
-                      file_path: "",
-                      needs_file_reselect: false,
-                    }));
-                  }}
-                />
-                <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-slate-50/70 p-2">
-                  <div className="flex items-start gap-2">
-                    <Upload
-                      size={15}
-                      className="mt-0.5 text-slate-500"
-                      aria-hidden="true"
-                    />
-                    <p className="text-xs text-slate-700">
-                      Selected:{" "}
-                      {newOutputDraft.file?.name || "No file selected"}
+                <div className="upload-field">
+                  <div className="upload-picker">
+                    <div className="upload-picker-info">
+                      <FileText
+                        size={16}
+                        className="mt-0.5 text-slate-500"
+                        aria-hidden="true"
+                      />
+                      <div className="space-y-0.5">
+                        <p className="upload-picker-name">
+                          {newOutputDraft.file?.name ||
+                            newOutputDraft.file_name ||
+                            "No file selected"}
+                        </p>
+                        <p className="upload-picker-sub">
+                          Size:{" "}
+                          {formatFileSize(
+                            newOutputDraft.file?.size || newOutputDraft.file_size,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="btn btn-outline upload-trigger">
+                      <Upload size={14} aria-hidden="true" />
+                      <span>{newOutputDraft.file ? "Replace" : "Choose File"}</span>
+                      <input
+                        className="sr-only"
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                        onChange={(e) => {
+                          const selectedFile = e.target.files?.[0] || null;
+                          if (
+                            selectedFile &&
+                            selectedFile.size > MAX_OUTPUT_FILE_SIZE_BYTES
+                          ) {
+                            setError(
+                              "Each expected output file must be 25MB or smaller.",
+                            );
+                            e.target.value = "";
+                            return;
+                          }
+                          setError("");
+                          setNewOutputDraft((prev) => ({
+                            ...prev,
+                            file: selectedFile,
+                            file_name: selectedFile?.name || "",
+                            mime_type: selectedFile?.type || "",
+                            file_size: selectedFile?.size || null,
+                            file_path: "",
+                            needs_file_reselect: false,
+                          }));
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="upload-field-preview">
+                    <p className="upload-field-hint">
+                      Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
                     </p>
                   </div>
                 </div>
-              </label>
+              </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button
