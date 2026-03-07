@@ -58,11 +58,6 @@ import {
 import { logAuditEvent } from "./stores/audit.store.js";
 import { registerAuthRoutes } from "./modules/auth/auth.routes.js";
 import { registerProfileRoutes } from "./modules/profile/profile.routes.js";
-import { registerCkanIntegrationRoutes } from "./modules/integrations/ckan.routes.js";
-import { registerReferenceRoutes } from "./modules/reference/reference.routes.js";
-import { registerDashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
-import { registerSubmissionsRoutes } from "./modules/submissions/submissions.routes.js";
-import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 
 if (!config.ckanVerifyTls) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -175,6 +170,97 @@ function normalizeOutputType(value) {
     return "patent_ip";
   }
   return base;
+}
+
+function toCkanName(value) {
+  const base = asTrimmedString(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_\-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  if (base) return base;
+  return `dataset-${Date.now()}`;
+}
+
+function formatOutputResourceName(row, index) {
+  const outputType = asTrimmedString(row?.output_type || row?.outputType);
+  const targetCount = Math.max(
+    1,
+    Number(row?.target_count || row?.targetCount || 1) || 1,
+  );
+  if (outputType) return `${outputType} (Target: ${targetCount})`;
+  return `Expected Output ${index + 1}`;
+}
+
+function toDatasetExtras(form = {}, user = null) {
+  const submittedAt = new Date().toISOString();
+  const traceId = crypto.randomUUID();
+  return [
+    { key: "submitted_by_user_id", value: asTrimmedString(user?.id) || null },
+    { key: "submitted_by_email", value: asTrimmedString(user?.email) || null },
+    {
+      key: "submitted_by_name",
+      value: asTrimmedString(user?.full_name) || null,
+    },
+    { key: "submitted_by_role", value: asTrimmedString(user?.role) || null },
+    { key: "submitted_at", value: submittedAt },
+    { key: "submission_trace_id", value: traceId },
+    {
+      key: "lead_researcher",
+      value: asTrimmedString(form.lead_researcher) || null,
+    },
+    { key: "faculty_team", value: asTrimmedString(form.faculty_team) || null },
+    { key: "student_team", value: asTrimmedString(form.student_team) || null },
+    { key: "project_year", value: asTrimmedString(form.year) || null },
+    {
+      key: "department_id",
+      value: asTrimmedString(form.department_id) || null,
+    },
+    {
+      key: "research_agenda_id",
+      value: asTrimmedString(form.research_agenda_id) || null,
+    },
+    {
+      key: "scholarly_type",
+      value: asTrimmedString(form.scholarly_type) || null,
+    },
+    { key: "funding_type", value: asTrimmedString(form.funding_type) || null },
+    {
+      key: "funding_category",
+      value: asTrimmedString(form.funding_category) || null,
+    },
+    {
+      key: "industry_partner",
+      value: asTrimmedString(form.industry_partner) || null,
+    },
+    {
+      key: "funding_source",
+      value: asTrimmedString(form.funding_source) || null,
+    },
+    {
+      key: "funding_amount",
+      value: String(asNumber(form.funding_amount, 0)),
+    },
+    {
+      key: "classification",
+      value: asTrimmedString(form.classification) || null,
+    },
+    { key: "project_status", value: asTrimmedString(form.status) || null },
+    {
+      key: "expected_outputs_summary",
+      value: asTrimmedString(form.expected_outputs) || null,
+    },
+    {
+      key: "supporting_mov_link",
+      value: asTrimmedString(form.supporting_mov_link) || null,
+    },
+    {
+      key: "signed_moa_reference",
+      value: asTrimmedString(form.signed_moa_reference) || null,
+    },
+    { key: "start_date", value: asTrimmedString(form.start_date) || null },
+    { key: "end_date", value: asTrimmedString(form.end_date) || null },
+  ].filter((item) => item.value != null && item.value !== "");
 }
 
 function getExtraByKey(extras, key) {
@@ -374,62 +460,1201 @@ registerProfileRoutes(app, {
   computeAffiliateProfileMetrics,
 });
 
-registerCkanIntegrationRoutes(app, {
-  authMiddleware,
-  listOrganizations,
-  listGroups,
-  listOrganizationMembers,
-  listUsers,
-  listDatasets,
-  listOrganizationAgendas,
+app.get("/api/integrations/ckan/organizations", async (req, res) => {
+  try {
+    const rows = await listOrganizations();
+    return res.json({ data: rows });
+  } catch (error) {
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load organizations."),
+    });
+  }
 });
 
-registerReferenceRoutes(app, {
-  authMiddleware,
-  listOrganizations,
-  listGroups,
-  listOrganizationAgendas,
+app.get("/api/integrations/ckan/groups", async (req, res) => {
+  try {
+    const rows = await listGroups();
+    return res.json({ data: rows });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: String(error?.message || "Failed to load groups.") });
+  }
 });
 
-registerDashboardRoutes(app, {
-  authMiddleware,
-  asTrimmedString,
-  listDatasets,
-  listGroups,
-  listOrganizationAgendas,
+app.get("/api/integrations/ckan/users", authMiddleware, async (req, res) => {
+  try {
+    const orgId = String(req.query?.org_id || "").trim();
+    const rows = orgId
+      ? await listOrganizationMembers(orgId)
+      : await listUsers();
+    return res.json({
+      data: (rows || [])
+        .filter(
+          (row) => String(row?.state || "active").toLowerCase() !== "deleted",
+        )
+        .map((row) => ({
+          id: row?.id || null,
+          name:
+            row?.fullname ||
+            row?.display_name ||
+            row?.name ||
+            row?.email ||
+            "CKAN User",
+          username: row?.name || null,
+          email: row?.email || null,
+          state: row?.state || "active",
+          capacity: row?.capacity || null,
+        })),
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: String(error?.message || "Failed to load CKAN users.") });
+  }
 });
 
-registerSubmissionsRoutes(app, {
-  authMiddleware,
-  badRequest,
-  config,
-  asTrimmedString,
-  asNumber,
-  listDatasets,
-  createDataset,
-  updateDataset,
-  deleteDataset,
-  createDatasetResource,
-  getExtraByKey,
+app.get("/api/integrations/ckan/datasets", async (req, res) => {
+  try {
+    const orgId = String(req.query?.org_id || "").trim();
+    const q = String(req.query?.q || "").trim();
+    const page = Number(req.query?.page || 1);
+    const limit = Number(req.query?.limit || 20);
+    const result = await listDatasets({ orgId, q, page, limit });
+    return res.json({
+      data: result.datasets,
+      total: result.count,
+      page: result.page,
+      limit: result.limit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load datasets."),
+    });
+  }
 });
 
-registerAdminRoutes(app, {
-  authMiddleware,
-  badRequest,
-  listOrganizations,
-  listGroups,
-  listUsers,
-  listOrganizationMembers,
-  listGroupMembers,
-  listOrganizationAgendas,
-  listDatasets,
-  createOrganization,
-  deleteOrganization,
-  assignUserToOrganizationAdmin,
-  getOrganization,
-  updateOrganizationMetadata,
-  setOrganizationMemberRole,
+app.get(
+  "/api/integrations/ckan/organizations/:orgId/agendas",
+  async (req, res) => {
+    try {
+      const rows = await listOrganizationAgendas(req.params.orgId);
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load organization agendas."),
+      });
+    }
+  },
+);
+
+app.get("/api/reference-data", authMiddleware, async (req, res) => {
+  try {
+    const orgId = String(req.query?.org_id || "").trim();
+    const [centers, groups, agendas] = await Promise.all([
+      listOrganizations(),
+      listGroups(),
+      orgId ? listOrganizationAgendas(orgId) : Promise.resolve([]),
+    ]);
+
+    return res.json({
+      centers: centers.map((row) => ({
+        id: row.name || row.id,
+        name: row.title || row.display_name || row.name,
+      })),
+      agendas: agendas.map((row) => ({
+        id: row.id || row.name,
+        name: row.title || row.name,
+      })),
+      departments: groups.map((row) => ({
+        id: row.name || row.id,
+        name: row.title || row.display_name || row.name,
+      })),
+      proponents: [],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load reference data."),
+    });
+  }
 });
+
+async function listAllDatasetsForDashboard({ orgId = "" } = {}) {
+  const rows = [];
+  const limit = 100;
+  let page = 1;
+
+  while (page <= 20) {
+    const result = await listDatasets({ orgId, page, limit });
+    const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+    rows.push(...datasets);
+
+    const total = Number(result?.count || 0);
+    if (!datasets.length || rows.length >= total || datasets.length < limit) {
+      break;
+    }
+    page += 1;
+  }
+
+  return rows;
+}
+
+function toDashboardProjectRow(
+  dataset,
+  { groupNameById = {}, agendaNameById = {} } = {},
+) {
+  const meta = extrasToMap(dataset?.extras);
+  const researchCenterId =
+    asTrimmedString(meta.research_center_id) ||
+    asTrimmedString(dataset?.organization?.name) ||
+    asTrimmedString(dataset?.owner_org) ||
+    null;
+  const departmentId = asTrimmedString(meta.department_id) || null;
+  const agendaId =
+    asTrimmedString(meta.research_agenda_id) ||
+    asTrimmedString(meta.agenda_id) ||
+    null;
+  const submittedAt =
+    asTrimmedString(meta.submitted_at) ||
+    asTrimmedString(dataset?.metadata_created) ||
+    null;
+  const updatedAt =
+    asTrimmedString(dataset?.metadata_modified) ||
+    asTrimmedString(dataset?.metadata_created) ||
+    null;
+  const status =
+    asTrimmedString(meta.project_status) ||
+    asTrimmedString(meta.status) ||
+    "proposal";
+
+  return {
+    id: dataset?.id || dataset?.name || crypto.randomUUID(),
+    title:
+      asTrimmedString(dataset?.title || dataset?.name) || "Untitled project",
+    abstract: asTrimmedString(dataset?.notes) || null,
+    status,
+    year:
+      asTrimmedString(meta.project_year) ||
+      (submittedAt ? String(new Date(submittedAt).getFullYear()) : ""),
+    classification: asTrimmedString(meta.classification) || null,
+    research_center_id: researchCenterId,
+    research_agenda_id: agendaId,
+    agenda_id: agendaId,
+    agenda_name: agendaId ? agendaNameById[agendaId] || agendaId : null,
+    department_id: departmentId,
+    department_name: departmentId
+      ? groupNameById[departmentId] || departmentId
+      : null,
+    lead_researcher: asTrimmedString(meta.lead_researcher) || null,
+    expected_outputs: asTrimmedString(meta.expected_outputs_summary) || null,
+    start_date: asTrimmedString(meta.start_date) || null,
+    end_date: asTrimmedString(meta.end_date) || null,
+    submitted_by:
+      asTrimmedString(meta.submitted_by_user_id) ||
+      asTrimmedString(meta.submitted_by) ||
+      null,
+    submitted_at: submittedAt,
+    created_at: asTrimmedString(dataset?.metadata_created) || null,
+    updated_at: updatedAt,
+    ckan_dataset_id: dataset?.id || null,
+    ckan_dataset_name: dataset?.name || null,
+    private: Boolean(dataset?.private),
+  };
+}
+
+app.get("/api/dashboard/projects", authMiddleware, async (req, res) => {
+  try {
+    const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+    const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
+    if (!isAdmin && !orgId) {
+      return res.json({ data: [] });
+    }
+
+    const [datasets, groups, agendas] = await Promise.all([
+      listAllDatasetsForDashboard({ orgId }),
+      listGroups(),
+      orgId ? listOrganizationAgendas(orgId) : Promise.resolve([]),
+    ]);
+
+    const groupNameById = (groups || []).reduce((acc, row) => {
+      const id = asTrimmedString(row?.name || row?.id);
+      if (!id) return acc;
+      acc[id] =
+        asTrimmedString(row?.title || row?.display_name || row?.name) || id;
+      return acc;
+    }, {});
+    const agendaNameById = (agendas || []).reduce((acc, row) => {
+      const id = asTrimmedString(row?.id || row?.name);
+      if (!id) return acc;
+      acc[id] = asTrimmedString(row?.name || row?.title || row?.id) || id;
+      return acc;
+    }, {});
+
+    const rows = (datasets || [])
+      .map((dataset) =>
+        toDashboardProjectRow(dataset, { groupNameById, agendaNameById }),
+      )
+      .sort(
+        (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
+      );
+
+    return res.json({ data: rows });
+  } catch (error) {
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load dashboard projects."),
+    });
+  }
+});
+
+app.get("/api/dashboard/status-history", authMiddleware, async (req, res) => {
+  const projectIds = String(req.query?.projectIds || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  void projectIds;
+  return res.json({ data: [] });
+});
+
+app.post(
+  "/api/dashboard/notify-upcoming-deadlines",
+  authMiddleware,
+  async (req, res) => {
+    const days = Number(req.body?.days || 14);
+    void days;
+    return res.json({ data: 0 });
+  },
+);
+
+app.get(
+  "/api/submissions/mine/research-outputs",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+      const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
+      const page = Math.max(1, Number(req.query?.page || 1));
+      const limit = Math.max(1, Math.min(100, Number(req.query?.limit || 100)));
+      const q = asTrimmedString(req.query?.q || "");
+
+      const result = await listDatasets({ orgId, q, page, limit });
+      const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+      const rows = [];
+
+      for (const dataset of datasets) {
+        const resources = Array.isArray(dataset?.resources)
+          ? dataset.resources
+          : [];
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const projectStatus =
+          getExtraByKey(extras, "project_status") ||
+          getExtraByKey(extras, "status") ||
+          dataset?.state ||
+          null;
+
+        for (const resource of resources) {
+          rows.push({
+            id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
+            output_type: String(resource?.format || "resource")
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "_"),
+            file_name: resource?.name || null,
+            file_path: resource?.url || null,
+            mime_type: resource?.mimetype || resource?.format || null,
+            file_size: resource?.size || null,
+            notes: resource?.description || null,
+            ckan_resource_id: resource?.id || null,
+            ckan_dataset_id: dataset?.id || null,
+            ckan_dataset_name: dataset?.title || dataset?.name || null,
+            project_title: dataset?.title || dataset?.name || null,
+            project_ckan_org_id:
+              dataset?.organization?.name || dataset?.owner_org || null,
+            project_org_name:
+              dataset?.organization?.title ||
+              dataset?.organization?.display_name ||
+              dataset?.organization?.name ||
+              dataset?.owner_org ||
+              null,
+            project_public_visible: !Boolean(dataset?.private),
+            project_status: projectStatus,
+            ckan_sync_status: dataset?.state || null,
+            ckan_last_synced_at:
+              resource?.last_modified ||
+              dataset?.metadata_modified ||
+              dataset?.metadata_created ||
+              null,
+            created_at: resource?.created || dataset?.metadata_created || null,
+            updated_at:
+              resource?.last_modified ||
+              dataset?.metadata_modified ||
+              dataset?.metadata_created ||
+              null,
+          });
+        }
+      }
+
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load research outputs."),
+      });
+    }
+  },
+);
+
+app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
+  const form = req.body?.form || {};
+  const expectedOutputs = Array.isArray(req.body?.expected_outputs)
+    ? req.body.expected_outputs
+    : [];
+  const datasetId = asTrimmedString(req.body?.dataset_id);
+
+  const title = asTrimmedString(form.title);
+  if (!title) return badRequest(res, "Project title is required.");
+
+  const ownerOrg =
+    asTrimmedString(form.research_center_id) ||
+    asTrimmedString(req.user?.ckan_org_id);
+  if (!ownerOrg) {
+    return badRequest(res, "Research center (CKAN organization) is required.");
+  }
+
+  const notes = asTrimmedString(form.abstract);
+  const supportingMovLink = asTrimmedString(form.supporting_mov_link);
+  const fallbackResourceUrl =
+    supportingMovLink || `${config.ckanBaseUrl}/dataset`;
+
+  const baseDatasetPayload = {
+    name: toCkanName(title),
+    title,
+    notes,
+    owner_org: ownerOrg,
+    author:
+      asTrimmedString(req.user?.full_name) ||
+      asTrimmedString(req.user?.email) ||
+      null,
+    author_email: asTrimmedString(req.user?.email) || null,
+    maintainer:
+      asTrimmedString(req.user?.full_name) ||
+      asTrimmedString(req.user?.email) ||
+      null,
+    maintainer_email: asTrimmedString(req.user?.email) || null,
+    // Business rule: all submitted project datasets start as private in CKAN.
+    private: true,
+    tags: [
+      asTrimmedString(form.classification),
+      asTrimmedString(form.status),
+      asTrimmedString(form.scholarly_type),
+    ]
+      .filter(Boolean)
+      .map((value) => ({
+        name: value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      })),
+    extras: toDatasetExtras(form, req.user),
+  };
+
+  let dataset = null;
+  const createdNow = !datasetId;
+  try {
+    dataset = datasetId
+      ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+      : await createDataset(baseDatasetPayload);
+
+    const createdResources = [];
+    for (let i = 0; i < expectedOutputs.length; i += 1) {
+      const row = expectedOutputs[i] || {};
+      const name = formatOutputResourceName(row, i);
+      const description = asTrimmedString(row.notes);
+      const fileName =
+        asTrimmedString(row.file_name) || asTrimmedString(row.fileName) || "";
+      const mimeType =
+        asTrimmedString(row.mime_type) || asTrimmedString(row.mimeType) || "";
+      const fileSize = Number(row.file_size || row.fileSize || 0);
+      const filePath =
+        asTrimmedString(row.file_path) || asTrimmedString(row.filePath) || "";
+      const url =
+        /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
+          ? filePath
+          : fallbackResourceUrl;
+      const format = fileName.includes(".")
+        ? fileName.split(".").pop()?.toUpperCase() || ""
+        : "";
+
+      const resource = await createDatasetResource({
+        package_id: dataset.id || dataset.name,
+        name,
+        description: description || null,
+        url,
+        format: format || null,
+        mimetype: mimeType || null,
+        size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+      });
+      createdResources.push(resource);
+    }
+
+    return res.status(createdNow ? 201 : 200).json({
+      data: {
+        id: dataset.id,
+        name: dataset.name,
+        title: dataset.title,
+        owner_org: dataset.owner_org,
+        resources_created: createdResources.length,
+      },
+    });
+  } catch (error) {
+    if (createdNow && dataset?.id) {
+      try {
+        await deleteDataset(dataset.id);
+      } catch {
+        // Best-effort cleanup only.
+      }
+    }
+    return res.status(500).json({
+      error: String(error?.message || "Failed to publish dataset to CKAN."),
+    });
+  }
+});
+
+function getExtraValue(row, key) {
+  const extras = Array.isArray(row?.extras) ? row.extras : [];
+  const found = extras.find(
+    (item) =>
+      String(item?.key || "")
+        .trim()
+        .toLowerCase() ===
+      String(key || "")
+        .trim()
+        .toLowerCase(),
+  );
+  return found?.value || null;
+}
+
+function normalizeAgendaNames(values) {
+  const input = Array.isArray(values) ? values : [];
+  const seen = new Set();
+  return input
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function getUserExtraValue(user, key) {
+  const extras = Array.isArray(user?.extras) ? user.extras : [];
+  const found = extras.find(
+    (item) =>
+      String(item?.key || "")
+        .trim()
+        .toLowerCase() ===
+      String(key || "")
+        .trim()
+        .toLowerCase(),
+  );
+  return found?.value ?? null;
+}
+
+function toBool(value, fallback = false) {
+  if (value == null) return fallback;
+  const text = String(value).trim().toLowerCase();
+  if (["true", "1", "yes", "y"].includes(text)) return true;
+  if (["false", "0", "no", "n"].includes(text)) return false;
+  return fallback;
+}
+
+function toInt(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : fallback;
+}
+
+function extrasToMap(extras) {
+  const rows = Array.isArray(extras) ? extras : [];
+  return rows.reduce((acc, item) => {
+    const key = String(item?.key || "")
+      .trim()
+      .toLowerCase();
+    if (!key) return acc;
+    acc[key] = item?.value ?? null;
+    return acc;
+  }, {});
+}
+
+app.get("/api/admin/affiliates", authMiddleware, async (req, res) => {
+  try {
+    const [centers, groups, ckanUsers] = await Promise.all([
+      listOrganizations(),
+      listGroups(),
+      listUsers(),
+    ]);
+
+    const userOrgMap = {};
+    const userDepartmentMap = {};
+    await Promise.all(
+      (centers || []).map(async (center) => {
+        const orgId = center?.name || center?.id;
+        if (!orgId) return;
+        try {
+          const members = await listOrganizationMembers(orgId);
+          (members || []).forEach((member) => {
+            const memberId = String(member?.id || "").trim();
+            if (memberId && !userOrgMap[memberId]) {
+              userOrgMap[memberId] = orgId;
+            }
+          });
+        } catch {
+          // Best-effort only.
+        }
+      }),
+    );
+
+    await Promise.all(
+      (groups || []).map(async (group) => {
+        const groupId = group?.name || group?.id;
+        if (!groupId) return;
+        const groupLabel = String(
+          group?.title || group?.display_name || group?.name || "",
+        ).trim();
+        if (!groupLabel) return;
+        try {
+          const members = await listGroupMembers(groupId);
+          (members || []).forEach((member) => {
+            const memberId = String(member?.id || "").trim();
+            if (memberId && !userDepartmentMap[memberId]) {
+              userDepartmentMap[memberId] = groupLabel;
+            }
+          });
+        } catch {
+          // Best-effort only.
+        }
+      }),
+    );
+
+    const rows = (ckanUsers || [])
+      .filter((user) => String(user?.state || "").toLowerCase() !== "deleted")
+      .map((user) => {
+        const fullName =
+          user?.fullname ||
+          user?.display_name ||
+          user?.name ||
+          user?.email ||
+          "CKAN User";
+        const ckanOrgId = userOrgMap[String(user?.id || "").trim()] || null;
+        const departmentFromMembership =
+          userDepartmentMap[String(user?.id || "").trim()] || null;
+        const departmentFromExtras =
+          getUserExtraValue(user, "department") ||
+          getUserExtraValue(user, "dept") ||
+          null;
+        const department = departmentFromMembership || departmentFromExtras;
+        const gsLink =
+          getUserExtraValue(user, "google_scholar_link") ||
+          getUserExtraValue(user, "scholar_link") ||
+          getUserExtraValue(user, "google_scholar") ||
+          null;
+        const roleExtra =
+          String(getUserExtraValue(user, "role") || "")
+            .trim()
+            .toLowerCase() || "";
+        const role = user?.sysadmin
+          ? "admin"
+          : roleExtra === "admin"
+            ? "admin"
+            : roleExtra === "student"
+              ? "student"
+              : roleExtra === "faculty"
+                ? "faculty"
+                : "faculty";
+        const isActive =
+          String(user?.state || "active").toLowerCase() !== "deleted";
+
+        return {
+          id: user?.id || user?.name || crypto.randomUUID(),
+          full_name: String(fullName).trim(),
+          email: user?.email || null,
+          role,
+          department,
+          ckan_org_id: ckanOrgId,
+          ckan_username: user?.name || null,
+          ckan_user_id: user?.id || null,
+          source: "ckan_only",
+          link_status: "ckan_only",
+          is_active: isActive,
+          google_scholar_link: gsLink,
+          employment_status:
+            getUserExtraValue(user, "employment_status") || null,
+          designation: getUserExtraValue(user, "designation") || null,
+          is_gs_faculty: toBool(
+            getUserExtraValue(user, "is_gs_faculty"),
+            false,
+          ),
+          publication_count: toInt(
+            getUserExtraValue(user, "publication_count"),
+            0,
+          ),
+          research_project_count: toInt(
+            getUserExtraValue(user, "research_project_count"),
+            0,
+          ),
+          creative_work_count: toInt(
+            getUserExtraValue(user, "creative_work_count"),
+            0,
+          ),
+          awards_count: toInt(getUserExtraValue(user, "awards_count"), 0),
+          ip_count: toInt(getUserExtraValue(user, "ip_count"), 0),
+          created_at: user?.created || null,
+          updated_at: user?.activity_streams_email_notifications || null,
+        };
+      });
+
+    return res.json({
+      rows,
+      centers: (centers || []).map((center) => ({
+        id: center?.name || center?.id,
+        name: center?.title || center?.display_name || center?.name || "-",
+      })),
+      ckan_user_mode: "enabled",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: String(error?.message || "Failed to load affiliates.") });
+  }
+});
+
+app.patch("/api/admin/affiliates/:userId", authMiddleware, async (req, res) => {
+  return res.status(501).json({
+    error:
+      "CKAN-sourced affiliate records are read-only in this page. Update user details directly in CKAN.",
+  });
+});
+
+app.get(
+  "/api/admin/controls/reference-data",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const [centers, departments, ckanUsers] = await Promise.all([
+        listOrganizations(),
+        listGroups(),
+        listUsers(),
+      ]);
+      const centerChiefByOrg = {};
+      await Promise.all(
+        (centers || []).map(async (row) => {
+          const orgId = row?.name || row?.id;
+          if (!orgId) return;
+          try {
+            const members = await listOrganizationMembers(orgId);
+            const adminMember =
+              (members || []).find(
+                (member) =>
+                  String(member?.capacity || "")
+                    .trim()
+                    .toLowerCase() === "admin",
+              ) || null;
+            if (adminMember?.id || adminMember?.name) {
+              centerChiefByOrg[orgId] = {
+                id: adminMember?.id || null,
+                name:
+                  adminMember?.fullname ||
+                  adminMember?.display_name ||
+                  adminMember?.name ||
+                  adminMember?.email ||
+                  null,
+              };
+            }
+          } catch {
+            // Best-effort only.
+          }
+        }),
+      );
+
+      return res.json({
+        centers: (centers || []).map((row) => ({
+          id: row?.name || row?.id,
+          name: row?.title || row?.display_name || row?.name || "-",
+          code: String(row?.name || row?.id || "")
+            .toUpperCase()
+            .replace(/[^A-Z0-9_]/g, "_"),
+          center_chief_id:
+            centerChiefByOrg[row?.name || row?.id]?.id ||
+            getExtraValue(row, "center_chief_id"),
+          center_chief_name:
+            centerChiefByOrg[row?.name || row?.id]?.name ||
+            getExtraValue(row, "center_chief_name"),
+          agenda_count: 0,
+          extras_count: Array.isArray(row?.extras) ? row.extras.length : 0,
+        })),
+        agendas: [],
+        departments: (departments || []).map((row) => ({
+          id: row?.name || row?.id,
+          name: row?.title || row?.display_name || row?.name || "-",
+        })),
+        proponents: [],
+        ckan_users: (ckanUsers || [])
+          .filter((row) => String(row?.state || "").toLowerCase() !== "deleted")
+          .map((row) => ({
+            id: row?.id || null,
+            name:
+              row?.name ||
+              row?.display_name ||
+              row?.fullname ||
+              row?.email ||
+              "CKAN User",
+            username: row?.name || null,
+            email: row?.email || null,
+            state: row?.state || "active",
+          })),
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load admin reference data."),
+      });
+    }
+  },
+);
+
+app.get(
+  "/api/admin/controls/reference-usage",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const type = String(req.query?.type || "")
+        .trim()
+        .toLowerCase();
+      const id = String(req.query?.id || "").trim();
+      if (type !== "center" || !id) {
+        return res.json({
+          projectCount: 0,
+          profileCount: 0,
+          memberBreakdown: {
+            adminCount: 0,
+            editorCount: 0,
+            memberCount: 0,
+            totalCount: 0,
+          },
+        });
+      }
+
+      const [members, datasets] = await Promise.all([
+        listOrganizationMembers(id),
+        listDatasets({ orgId: id, page: 1, limit: 1 }),
+      ]);
+      const activeMembers = (members || []).filter(
+        (member) =>
+          String(member?.state || "active").toLowerCase() !== "deleted",
+      );
+      const adminCount = activeMembers.filter(
+        (member) =>
+          String(member?.capacity || "")
+            .trim()
+            .toLowerCase() === "admin",
+      ).length;
+      const editorCount = activeMembers.filter(
+        (member) =>
+          String(member?.capacity || "")
+            .trim()
+            .toLowerCase() === "editor",
+      ).length;
+      const memberCount = Math.max(
+        0,
+        activeMembers.length - adminCount - editorCount,
+      );
+
+      return res.json({
+        projectCount: Number(datasets?.count || 0),
+        profileCount: activeMembers.length,
+        memberBreakdown: {
+          adminCount,
+          editorCount,
+          memberCount,
+          totalCount: activeMembers.length,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load reference usage."),
+      });
+    }
+  },
+);
+
+app.get(
+  "/api/admin/controls/reference-links",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const type = String(req.query?.type || "")
+        .trim()
+        .toLowerCase();
+      const id = String(req.query?.id || "").trim();
+      if (type === "center" && id) {
+        const [agendas, members, datasets, groups] = await Promise.all([
+          listOrganizationAgendas(id),
+          listOrganizationMembers(id),
+          listDatasets({ orgId: id, page: 1, limit: 100 }),
+          listGroups(),
+        ]);
+        const groupNameById = (groups || []).reduce((acc, group) => {
+          const key = String(group?.name || group?.id || "").trim();
+          if (!key) return acc;
+          acc[key] =
+            String(
+              group?.title || group?.display_name || group?.name || "",
+            ).trim() || key;
+          return acc;
+        }, {});
+        const agendaNameById = (agendas || []).reduce((acc, agenda) => {
+          const key = String(agenda?.id || "").trim();
+          const label = String(agenda?.name || "").trim();
+          if (!key || !label) return acc;
+          acc[key] = label;
+          return acc;
+        }, {});
+
+        const profiles = (members || [])
+          .filter(
+            (member) =>
+              String(member?.state || "active").toLowerCase() !== "deleted",
+          )
+          .map((member) => {
+            const memberExtras = extrasToMap(member?.extras);
+            const deptId =
+              String(
+                memberExtras.department_id || memberExtras.department || "",
+              ).trim() || null;
+            const roleFromCapacity =
+              String(member?.capacity || "")
+                .trim()
+                .toLowerCase() === "admin"
+                ? "admin"
+                : String(member?.capacity || "")
+                      .trim()
+                      .toLowerCase() === "editor"
+                  ? "faculty"
+                  : "student";
+            return {
+              id: member?.id || member?.name || null,
+              full_name:
+                member?.fullname ||
+                member?.display_name ||
+                member?.name ||
+                member?.email ||
+                "CKAN User",
+              email: member?.email || null,
+              role: roleFromCapacity,
+              department: deptId ? groupNameById[deptId] || deptId : null,
+              is_active: true,
+            };
+          });
+
+        const projects = (datasets?.datasets || []).map((dataset) => {
+          const meta = extrasToMap(dataset?.extras);
+          const deptId = String(meta.department_id || "").trim();
+          const agendaId = String(meta.research_agenda_id || "").trim();
+          return {
+            id: dataset?.id || dataset?.name || crypto.randomUUID(),
+            title: dataset?.title || dataset?.name || "-",
+            status:
+              meta.project_status ||
+              dataset?.state ||
+              (dataset?.private ? "private" : "public"),
+            year: meta.project_year || null,
+            lead_researcher: meta.lead_researcher || null,
+            department_name: deptId ? groupNameById[deptId] || deptId : null,
+            agenda_name: agendaId ? agendaNameById[agendaId] || agendaId : null,
+            start_date: meta.start_date || null,
+            end_date: meta.end_date || null,
+          };
+        });
+
+        return res.json({
+          profiles,
+          projects,
+          agendas: agendas.map((row) => ({
+            id: row.id || row.name,
+            name: row.name || row.id,
+          })),
+        });
+      }
+      return res.json({ profiles: [], projects: [], agendas: [] });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load reference links."),
+      });
+    }
+  },
+);
+
+app.post(
+  "/api/admin/controls/sync-ckan-orgs",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const centers = await listOrganizations();
+      return res.json({
+        summary: { synced: Array.isArray(centers) ? centers.length : 0 },
+      });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ error: String(error?.message || "Sync failed.") });
+    }
+  },
+);
+
+app.post(
+  "/api/admin/controls/reassign-dependencies",
+  authMiddleware,
+  async (req, res) => {
+    return res.json({ data: { updated: 0 } });
+  },
+);
+
+app.post(
+  "/api/admin/controls/reference/:type",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const type = String(req.params?.type || "")
+        .trim()
+        .toLowerCase();
+      if (type !== "center") {
+        return res.status(501).json({
+          error: "Only center create is implemented in this backend.",
+        });
+      }
+
+      const name = String(req.body?.name || "").trim();
+      const codeRaw = String(req.body?.code || "").trim();
+      const centerChiefId = String(req.body?.center_chief_id || "").trim();
+      const agendaNames = normalizeAgendaNames(req.body?.research_agendas);
+      if (!name) return badRequest(res, "Research center name is required.");
+      if (!codeRaw) return badRequest(res, "Research center code is required.");
+      if (!centerChiefId) {
+        return badRequest(res, "Center chief is required.");
+      }
+
+      const orgName = codeRaw.toLowerCase().replace(/[^a-z0-9_\-]+/g, "-");
+      if (!orgName) return badRequest(res, "Research center code is invalid.");
+
+      const users = await listUsers();
+      const selected = (users || []).find(
+        (row) => String(row?.id || "") === centerChiefId,
+      );
+      const centerChiefUsername = String(selected?.name || "").trim();
+      if (!centerChiefUsername) {
+        return badRequest(
+          res,
+          "Selected center chief CKAN user was not found.",
+        );
+      }
+
+      const extras = [];
+      extras.push({
+        key: "code",
+        value: codeRaw,
+      });
+      if (agendaNames.length > 0) {
+        extras.push({
+          key: "research_agendas",
+          value: agendaNames.join("; "),
+        });
+      }
+      let created = null;
+      try {
+        created = await createOrganization({
+          name: orgName,
+          title: name,
+          extras,
+        });
+        await assignUserToOrganizationAdmin({
+          orgId: created?.name || created?.id || orgName,
+          username: centerChiefUsername,
+        });
+      } catch (error) {
+        if (created?.name || created?.id) {
+          try {
+            await deleteOrganization(created?.name || created?.id);
+          } catch {
+            // Best-effort cleanup only.
+          }
+        }
+        throw error;
+      }
+
+      return res.status(201).json({
+        data: {
+          id: created?.name || created?.id || orgName,
+          name:
+            created?.title || created?.display_name || created?.name || name,
+          code: String(created?.name || orgName || "")
+            .toUpperCase()
+            .replace(/[^A-Z0-9_]/g, "_"),
+          center_chief_id: centerChiefId || null,
+          center_chief_name:
+            String(
+              selected?.fullname ||
+                selected?.display_name ||
+                selected?.name ||
+                selected?.email ||
+                "",
+            ).trim() || null,
+          research_agendas: agendaNames,
+        },
+      });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ error: String(error?.message || "Reference create failed.") });
+    }
+  },
+);
+
+app.patch(
+  "/api/admin/controls/reference/:type/:id",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const type = String(req.params?.type || "")
+        .trim()
+        .toLowerCase();
+      const id = String(req.params?.id || "").trim();
+      if (!id) return badRequest(res, "Reference id is required.");
+      if (type !== "center") {
+        return res.status(501).json({
+          error: "Only center update is implemented in this backend.",
+        });
+      }
+
+      const currentOrg = await getOrganization(id);
+      if (!currentOrg) {
+        return res
+          .status(404)
+          .json({ error: "Research center was not found." });
+      }
+
+      const name = String(req.body?.name || "").trim();
+      const codeRaw = String(req.body?.code || "").trim();
+      const centerChiefId = String(req.body?.center_chief_id || "").trim();
+      const agendaNames = normalizeAgendaNames(req.body?.research_agendas);
+      const joinedAgenda = agendaNames.join("; ");
+      if (!codeRaw) return badRequest(res, "Research center code is required.");
+
+      let centerChiefName = "";
+      let centerChiefUsername = "";
+      if (centerChiefId) {
+        const users = await listUsers();
+        const selected = (users || []).find(
+          (row) => String(row?.id || "") === centerChiefId,
+        );
+        centerChiefUsername = String(selected?.name || "").trim();
+        if (!centerChiefUsername) {
+          return badRequest(
+            res,
+            "Selected center chief CKAN user was not found.",
+          );
+        }
+        centerChiefName = String(
+          selected?.fullname ||
+            selected?.display_name ||
+            selected?.name ||
+            selected?.email ||
+            "",
+        ).trim();
+      }
+
+      const existingExtras = Array.isArray(currentOrg?.extras)
+        ? currentOrg.extras
+        : [];
+      const nextExtras = existingExtras.filter((item) => {
+        const key = String(item?.key || "")
+          .trim()
+          .toLowerCase();
+        return (
+          key !== "code" &&
+          key !== "research_agendas" &&
+          key !== "research_agenda"
+        );
+      });
+
+      nextExtras.push({ key: "code", value: codeRaw });
+      if (joinedAgenda) {
+        nextExtras.push({ key: "research_agendas", value: joinedAgenda });
+      }
+
+      const updated = await updateOrganizationMetadata({
+        orgId: id,
+        title: name || currentOrg?.title || currentOrg?.display_name || id,
+        extras: nextExtras,
+      });
+
+      if (centerChiefUsername) {
+        const targetOrgId = updated?.name || updated?.id || id;
+        let previousAdminUsername = "";
+        try {
+          const members = await listOrganizationMembers(targetOrgId);
+          const currentAdmin = (members || []).find(
+            (member) =>
+              String(member?.capacity || "")
+                .trim()
+                .toLowerCase() === "admin",
+          );
+          previousAdminUsername = String(currentAdmin?.name || "").trim();
+        } catch {
+          previousAdminUsername = "";
+        }
+
+        if (
+          previousAdminUsername &&
+          previousAdminUsername.toLowerCase() !==
+            centerChiefUsername.toLowerCase()
+        ) {
+          await setOrganizationMemberRole({
+            orgId: targetOrgId,
+            username: previousAdminUsername,
+            role: "editor",
+          });
+        }
+
+        await setOrganizationMemberRole({
+          orgId: targetOrgId,
+          username: centerChiefUsername,
+          role: "admin",
+        });
+      }
+
+      return res.json({
+        data: {
+          id: updated?.name || updated?.id || id,
+          name: updated?.title || updated?.display_name || updated?.name || id,
+          code: codeRaw,
+          center_chief_id: centerChiefId || null,
+          center_chief_name: centerChiefName || null,
+          research_agendas: agendaNames,
+        },
+      });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ error: String(error?.message || "Reference update failed.") });
+    }
+  },
+);
+
+app.delete(
+  "/api/admin/controls/reference/:type/:id",
+  authMiddleware,
+  async (req, res) => {
+    return res.status(501).json({
+      error: "Reference delete is not implemented in this backend yet.",
+    });
+  },
+);
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Internal server error." });
@@ -438,4 +1663,3 @@ app.use((err, req, res, next) => {
 app.listen(config.port, () => {
   console.log(`ARMS backend listening on http://localhost:${config.port}`);
 });
-
