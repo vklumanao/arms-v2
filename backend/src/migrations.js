@@ -34,6 +34,79 @@ export async function runMigrations() {
   await query(
     `CREATE INDEX IF NOT EXISTS idx_users_ckan_username ON users (ckan_username)`,
   );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_scholar_link TEXT`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS employment_status TEXT`,
+  );
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS designation TEXT`);
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_gs_faculty BOOLEAN NOT NULL DEFAULT FALSE`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS publication_count INTEGER NOT NULL DEFAULT 0`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS research_project_count INTEGER NOT NULL DEFAULT 0`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS creative_work_count INTEGER NOT NULL DEFAULT 0`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS awards_count INTEGER NOT NULL DEFAULT 0`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_count INTEGER NOT NULL DEFAULT 0`,
+  );
+  await query(
+    `
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_publication_count_nonnegative'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_publication_count_nonnegative CHECK (publication_count >= 0);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_research_project_count_nonnegative'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_research_project_count_nonnegative CHECK (research_project_count >= 0);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_creative_work_count_nonnegative'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_creative_work_count_nonnegative CHECK (creative_work_count >= 0);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_awards_count_nonnegative'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_awards_count_nonnegative CHECK (awards_count >= 0);
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_ip_count_nonnegative'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_ip_count_nonnegative CHECK (ip_count >= 0);
+      END IF;
+    END
+    $$;
+    `,
+  );
 
   await query(`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
