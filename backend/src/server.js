@@ -40,6 +40,7 @@ import {
   verifyPassword,
 } from "./userStore.js";
 import {
+  affiliateProfileUpdateSchema,
   forgotPasswordSchema,
   loginSchema,
   parseOrThrow,
@@ -133,6 +134,39 @@ function asTrimmedString(value) {
 function asNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeOutputType(value) {
+  const base = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\(target:[^)]+\)\s*$/i, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (!base) return "";
+  if (["publication", "publications", "journal_article"].includes(base)) {
+    return "publication";
+  }
+  if (
+    ["creative_work", "creative_works", "creative"].includes(base)
+  ) {
+    return "creative_work";
+  }
+  if (["award", "awards", "recognition"].includes(base)) {
+    return "award";
+  }
+  if (
+    [
+      "patent_ip",
+      "patent",
+      "ip",
+      "intellectual_property",
+      "patent_intellectual_property",
+    ].includes(base)
+  ) {
+    return "patent_ip";
+  }
+  return base;
 }
 
 function toCkanName(value) {
@@ -238,6 +272,93 @@ function getExtraByKey(extras, key) {
         .toLowerCase(),
   );
   return match?.value ?? null;
+}
+
+function isDatasetOwnedByUser(dataset, user) {
+  const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+  const submittedByUserId = asTrimmedString(
+    getExtraByKey(extras, "submitted_by_user_id"),
+  );
+  const submittedByEmail = asTrimmedString(
+    getExtraByKey(extras, "submitted_by_email"),
+  ).toLowerCase();
+  const submittedBy = asTrimmedString(getExtraByKey(extras, "submitted_by"));
+  const userId = asTrimmedString(user?.id);
+  const userEmail = asTrimmedString(user?.email).toLowerCase();
+
+  if (submittedByUserId && userId && submittedByUserId === userId) return true;
+  if (submittedByEmail && userEmail && submittedByEmail === userEmail) {
+    return true;
+  }
+  if (submittedBy && userId && submittedBy === userId) return true;
+  if (
+    asTrimmedString(dataset?.author_email).toLowerCase() === userEmail &&
+    userEmail
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function inferOutputTypeFromResource(resource) {
+  const fromName = normalizeOutputType(resource?.name || "");
+  if (fromName) return fromName;
+  const fromDescription = normalizeOutputType(resource?.description || "");
+  if (fromDescription) return fromDescription;
+  const fromFormat = normalizeOutputType(resource?.format || "");
+  if (fromFormat) return fromFormat;
+  return "";
+}
+
+async function listOwnedDatasets(user) {
+  const role = String(user?.role || "").toLowerCase();
+  const orgId =
+    role === "admin" ? "" : asTrimmedString(user?.ckan_org_id || "");
+  if (role !== "admin" && !orgId) return [];
+
+  const rows = [];
+  const limit = 100;
+  let page = 1;
+
+  while (page <= 20) {
+    const result = await listDatasets({ orgId, page, limit });
+    const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+    if (!datasets.length) break;
+
+    rows.push(...datasets.filter((dataset) => isDatasetOwnedByUser(dataset, user)));
+    const total = Number(result?.count || 0);
+    if (datasets.length < limit || (page * limit >= total && total > 0)) break;
+    page += 1;
+  }
+
+  return rows;
+}
+
+async function computeAffiliateProfileMetrics(user) {
+  const ownedDatasets = await listOwnedDatasets(user);
+  let publicationCount = 0;
+  let creativeWorkCount = 0;
+  let awardsCount = 0;
+  let ipCount = 0;
+
+  for (const dataset of ownedDatasets) {
+    const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+    for (const resource of resources) {
+      const outputType = inferOutputTypeFromResource(resource);
+      if (outputType === "publication") publicationCount += 1;
+      if (outputType === "creative_work") creativeWorkCount += 1;
+      if (outputType === "award") awardsCount += 1;
+      if (outputType === "patent_ip") ipCount += 1;
+    }
+  }
+
+  return {
+    publication_count: publicationCount,
+    research_project_count: ownedDatasets.length,
+    creative_work_count: creativeWorkCount,
+    awards_count: awardsCount,
+    ip_count: ipCount,
+  };
 }
 
 function byAnyId(rows, value) {
@@ -477,6 +598,84 @@ app.post("/api/auth/login", loginRateLimit, async (req, res) => {
 
 app.get("/api/auth/me", authMiddleware, async (req, res) => {
   return res.json(toAuthPayload(req.user, null));
+});
+
+app.get("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
+  try {
+    const metrics = await computeAffiliateProfileMetrics(req.user);
+    return res.json({
+      data: {
+        id: req.user.id,
+        full_name: req.user.full_name || "",
+        email: req.user.email || "",
+        role: req.user.role || "faculty",
+        department: req.user.department || "",
+        ckan_org_id: req.user.ckan_org_id || "",
+        ckan_group_id: req.user.ckan_group_id || "",
+        ckan_username: req.user.ckan_username || "",
+        ckan_user_id: req.user.ckan_user_id || "",
+        google_scholar_link: req.user.google_scholar_link || "",
+        employment_status: req.user.employment_status || "",
+        designation: req.user.designation || "",
+        is_gs_faculty: Boolean(req.user.is_gs_faculty),
+        ...metrics,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load affiliate profile."),
+    });
+  }
+});
+
+app.patch("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
+  try {
+    const parsed = parseOrThrow(
+      affiliateProfileUpdateSchema,
+      req.body || {},
+      "Invalid affiliate profile payload.",
+    );
+
+    const patch = {};
+    if ("full_name" in parsed) patch.full_name = parsed.full_name || null;
+    if ("google_scholar_link" in parsed) {
+      patch.google_scholar_link = parsed.google_scholar_link || null;
+    }
+    if ("employment_status" in parsed) {
+      patch.employment_status = parsed.employment_status || null;
+    }
+    if ("designation" in parsed) patch.designation = parsed.designation || null;
+    if ("is_gs_faculty" in parsed) {
+      patch.is_gs_faculty = Boolean(parsed.is_gs_faculty);
+    }
+
+    const updatedUser = await updateUser(req.user.id, patch);
+    const latest = updatedUser || (await findUserById(req.user.id));
+    const metrics = await computeAffiliateProfileMetrics(latest || req.user);
+
+    return res.json({
+      data: {
+        id: latest?.id || req.user.id,
+        full_name: latest?.full_name || "",
+        email: latest?.email || "",
+        role: latest?.role || req.user.role || "faculty",
+        department: latest?.department || "",
+        ckan_org_id: latest?.ckan_org_id || "",
+        ckan_group_id: latest?.ckan_group_id || "",
+        ckan_username: latest?.ckan_username || "",
+        ckan_user_id: latest?.ckan_user_id || "",
+        google_scholar_link: latest?.google_scholar_link || "",
+        employment_status: latest?.employment_status || "",
+        designation: latest?.designation || "",
+        is_gs_faculty: Boolean(latest?.is_gs_faculty),
+        ...metrics,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      error: String(error?.message || "Failed to update affiliate profile."),
+    });
+  }
 });
 
 app.post("/api/auth/logout", authMiddleware, async (req, res) => {
