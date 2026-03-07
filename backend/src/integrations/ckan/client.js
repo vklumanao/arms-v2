@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { config } from "./config.js";
+import { config } from "../../config/index.js";
 
 function safeSlug(value) {
   return String(value || "")
@@ -464,3 +464,4 @@ export async function updateOrganizationMetadata({
     return ckanAction("organization_update", payload);
   }
 }
+

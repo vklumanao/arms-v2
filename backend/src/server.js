@@ -2,8 +2,11 @@ import crypto from "node:crypto";
 import cors from "cors";
 import express from "express";
 import jwt from "jsonwebtoken";
-import { assertConfig, config } from "./config.js";
-import { importLegacyUsersJsonIfNeeded, runMigrations } from "./migrations.js";
+import { assertConfig, config } from "./config/index.js";
+import {
+  importLegacyUsersJsonIfNeeded,
+  runMigrations,
+} from "./db/migrations.js";
 import {
   assignUserToGroupEditor,
   assignUserToOrganizationAdmin,
@@ -27,8 +30,8 @@ import {
   updateDataset,
   updateOrganizationMetadata,
   updateCkanUserPassword,
-} from "./ckanClient.js";
-import { ROLE_PERMISSIONS } from "./rolePermissions.js";
+} from "./integrations/ckan/client.js";
+import { ROLE_PERMISSIONS } from "./security/rolePermissions.js";
 import {
   createUser,
   ensureDefaultAdmin,
@@ -38,7 +41,7 @@ import {
   toAuthPayload,
   updateUser,
   verifyPassword,
-} from "./userStore.js";
+} from "./stores/user.store.js";
 import {
   affiliateProfileUpdateSchema,
   forgotPasswordSchema,
@@ -46,13 +49,15 @@ import {
   parseOrThrow,
   registerSchema,
   resetPasswordSchema,
-} from "./validation.js";
-import { createRateLimiter } from "./rateLimit.js";
+} from "./validation/schemas.js";
+import { createRateLimiter } from "./security/rateLimit.js";
 import {
   consumePasswordResetToken,
   createPasswordResetToken,
-} from "./passwordResetStore.js";
-import { logAuditEvent } from "./auditStore.js";
+} from "./stores/passwordReset.store.js";
+import { logAuditEvent } from "./stores/audit.store.js";
+import { registerAuthRoutes } from "./modules/auth/auth.routes.js";
+import { registerProfileRoutes } from "./modules/profile/profile.routes.js";
 
 if (!config.ckanVerifyTls) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -407,387 +412,50 @@ const resetRateLimit = createRateLimiter({
   keyFn: (req) => `${requestIdentity(req)}|reset`,
 });
 
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, service: "arms-backend" });
+registerAuthRoutes(app, {
+  registerRateLimit,
+  loginRateLimit,
+  forgotRateLimit,
+  resetRateLimit,
+  authMiddleware,
+  parseOrThrow,
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  config,
+  ROLE_PERMISSIONS,
+  normalizeRole,
+  badRequest,
+  unauthorized,
+  byAnyId,
+  listOrganizations,
+  listGroups,
+  createOrGetUser,
+  assignUserToOrganizationEditor,
+  assignUserToGroupEditor,
+  findUserByEmail,
+  findUserById,
+  createUser,
+  updateUser,
+  verifyPassword,
+  hashPassword,
+  toAuthPayload,
+  signSession,
+  createApiTokenForUser,
+  updateCkanUserPassword,
+  createPasswordResetToken,
+  consumePasswordResetToken,
+  logAuditEvent,
 });
 
-app.post("/api/auth/register", registerRateLimit, async (req, res) => {
-  try {
-    const parsed = parseOrThrow(
-      registerSchema,
-      req.body,
-      "Invalid registration payload.",
-    );
-
-    const full_name = parsed.full_name.trim();
-    const email = parsed.email.trim().toLowerCase();
-    const password = parsed.password;
-    const role = normalizeRole(parsed.role);
-    const department = String(parsed.department || "").trim();
-    const ckan_org_id = String(parsed.ckan_org_id || "").trim();
-    const ckan_group_id = String(
-      parsed.ckan_group_id || department || "",
-    ).trim();
-
-    if (role === "admin") {
-      return badRequest(res, "Admin role cannot be self-registered.");
-    }
-
-    const existing = await findUserByEmail(email);
-    if (existing) {
-      await logAuditEvent({
-        eventType: "auth.register_conflict",
-        details: { email },
-      });
-      return res.status(409).json({ error: "Email is already registered." });
-    }
-
-    const [orgs, groups] = await Promise.all([
-      listOrganizations(),
-      listGroups(),
-    ]);
-    const selectedOrg = byAnyId(orgs, ckan_org_id);
-    if (!selectedOrg) {
-      return badRequest(res, "Selected CKAN organization was not found.");
-    }
-
-    let selectedGroup = null;
-    if (ckan_group_id) {
-      selectedGroup = byAnyId(groups, ckan_group_id);
-      if (!selectedGroup) {
-        return badRequest(res, "Selected CKAN group/department was not found.");
-      }
-    }
-
-    const ckanUser = await createOrGetUser({
-      email,
-      fullName: full_name,
-      password,
-    });
-
-    await assignUserToOrganizationEditor({
-      orgId: selectedOrg.name || selectedOrg.id,
-      username: ckanUser.name,
-    });
-
-    if (selectedGroup) {
-      await assignUserToGroupEditor({
-        groupId: selectedGroup.name || selectedGroup.id,
-        username: ckanUser.name,
-      });
-    }
-
-    const password_hash = await hashPassword(password);
-    const created = await createUser({
-      full_name,
-      email,
-      password_hash,
-      role,
-      department:
-        selectedGroup?.title ||
-        selectedGroup?.display_name ||
-        selectedGroup?.name ||
-        department ||
-        null,
-      ckan_org_id: selectedOrg.name || selectedOrg.id,
-      ckan_group_id: selectedGroup?.name || selectedGroup?.id || null,
-      ckan_username: ckanUser.name,
-      ckan_user_id: ckanUser.id || null,
-    });
-
-    await logAuditEvent({
-      actorUserId: created.id,
-      eventType: "auth.register_success",
-      details: {
-        email: created.email,
-        role: created.role,
-        ckan_org_id: created.ckan_org_id,
-        ckan_group_id: created.ckan_group_id,
-      },
-    });
-
-    return res.status(201).json({ ok: true });
-  } catch (error) {
-    await logAuditEvent({
-      eventType: "auth.register_failed",
-      details: { message: String(error?.message || "Registration failed.") },
-    });
-    return res
-      .status(500)
-      .json({ error: String(error?.message || "Registration failed.") });
-  }
-});
-
-app.post("/api/auth/login", loginRateLimit, async (req, res) => {
-  try {
-    const parsed = parseOrThrow(
-      loginSchema,
-      req.body,
-      "Invalid login payload.",
-    );
-    const email = parsed.email.trim().toLowerCase();
-    const password = parsed.password;
-
-    const user = await findUserByEmail(email);
-    if (!user) {
-      await logAuditEvent({
-        eventType: "auth.login_failed",
-        details: { email, reason: "user_not_found" },
-      });
-      return unauthorized(res, "Invalid email or password.");
-    }
-    if (user.is_active === false) {
-      await logAuditEvent({
-        actorUserId: user.id,
-        eventType: "auth.login_blocked",
-        details: { reason: "inactive" },
-      });
-      return unauthorized(res, "Account is deactivated.");
-    }
-
-    const ok = await verifyPassword(user, password);
-    if (!ok) {
-      await logAuditEvent({
-        actorUserId: user.id,
-        eventType: "auth.login_failed",
-        details: { reason: "bad_password" },
-      });
-      return unauthorized(res, "Invalid email or password.");
-    }
-
-    if (user.ckan_username) {
-      try {
-        const tokenResult = await createApiTokenForUser(user.ckan_username);
-        await updateUser(user.id, {
-          ckan_api_token: tokenResult?.token || null,
-          ckan_api_token_created_at: new Date().toISOString(),
-        });
-        await logAuditEvent({
-          actorUserId: user.id,
-          eventType: "ckan.api_token_generated",
-          details: {
-            ckan_username: user.ckan_username,
-            token_id: tokenResult?.id || null,
-          },
-        });
-      } catch (error) {
-        await logAuditEvent({
-          actorUserId: user.id,
-          eventType: "ckan.api_token_generation_failed",
-          details: { message: String(error?.message || "Unknown error") },
-        });
-      }
-    }
-
-    const latest = (await findUserById(user.id)) || user;
-    const token = signSession(latest);
-
-    await logAuditEvent({
-      actorUserId: user.id,
-      eventType: "auth.login_success",
-      details: { email: user.email },
-    });
-
-    return res.json(toAuthPayload(latest, token));
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ error: String(error?.message || "Login failed.") });
-  }
-});
-
-app.get("/api/auth/me", authMiddleware, async (req, res) => {
-  return res.json(toAuthPayload(req.user, null));
-});
-
-app.get("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
-  try {
-    const metrics = await computeAffiliateProfileMetrics(req.user);
-    return res.json({
-      data: {
-        id: req.user.id,
-        full_name: req.user.full_name || "",
-        email: req.user.email || "",
-        role: req.user.role || "faculty",
-        department: req.user.department || "",
-        ckan_org_id: req.user.ckan_org_id || "",
-        ckan_group_id: req.user.ckan_group_id || "",
-        ckan_username: req.user.ckan_username || "",
-        ckan_user_id: req.user.ckan_user_id || "",
-        google_scholar_link: req.user.google_scholar_link || "",
-        employment_status: req.user.employment_status || "",
-        designation: req.user.designation || "",
-        is_gs_faculty: Boolean(req.user.is_gs_faculty),
-        ...metrics,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      error: String(error?.message || "Failed to load affiliate profile."),
-    });
-  }
-});
-
-app.patch("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
-  try {
-    const parsed = parseOrThrow(
-      affiliateProfileUpdateSchema,
-      req.body || {},
-      "Invalid affiliate profile payload.",
-    );
-
-    const patch = {};
-    if ("full_name" in parsed) patch.full_name = parsed.full_name || null;
-    if ("google_scholar_link" in parsed) {
-      patch.google_scholar_link = parsed.google_scholar_link || null;
-    }
-    if ("employment_status" in parsed) {
-      patch.employment_status = parsed.employment_status || null;
-    }
-    if ("designation" in parsed) patch.designation = parsed.designation || null;
-    if ("is_gs_faculty" in parsed) {
-      patch.is_gs_faculty = Boolean(parsed.is_gs_faculty);
-    }
-
-    const updatedUser = await updateUser(req.user.id, patch);
-    const latest = updatedUser || (await findUserById(req.user.id));
-    const metrics = await computeAffiliateProfileMetrics(latest || req.user);
-
-    return res.json({
-      data: {
-        id: latest?.id || req.user.id,
-        full_name: latest?.full_name || "",
-        email: latest?.email || "",
-        role: latest?.role || req.user.role || "faculty",
-        department: latest?.department || "",
-        ckan_org_id: latest?.ckan_org_id || "",
-        ckan_group_id: latest?.ckan_group_id || "",
-        ckan_username: latest?.ckan_username || "",
-        ckan_user_id: latest?.ckan_user_id || "",
-        google_scholar_link: latest?.google_scholar_link || "",
-        employment_status: latest?.employment_status || "",
-        designation: latest?.designation || "",
-        is_gs_faculty: Boolean(latest?.is_gs_faculty),
-        ...metrics,
-      },
-    });
-  } catch (error) {
-    return res.status(400).json({
-      error: String(error?.message || "Failed to update affiliate profile."),
-    });
-  }
-});
-
-app.post("/api/auth/logout", authMiddleware, async (req, res) => {
-  await logAuditEvent({
-    actorUserId: req.user.id,
-    eventType: "auth.logout",
-    details: { email: req.user.email },
-  });
-  return res.json({ ok: true });
-});
-
-app.post("/api/auth/forgot-password", forgotRateLimit, async (req, res) => {
-  try {
-    const parsed = parseOrThrow(
-      forgotPasswordSchema,
-      req.body,
-      "Invalid forgot-password payload.",
-    );
-    const email = parsed.email.trim().toLowerCase();
-    const user = await findUserByEmail(email);
-
-    if (!user || user.is_active === false) {
-      await logAuditEvent({
-        eventType: "auth.forgot_password_ignored",
-        details: { email },
-      });
-      return res.json({ ok: true });
-    }
-
-    const token = await createPasswordResetToken(
-      user.id,
-      config.resetTokenTtlMinutes,
-    );
-
-    await logAuditEvent({
-      actorUserId: user.id,
-      eventType: "auth.forgot_password_requested",
-      details: { email: user.email },
-    });
-
-    const payload = { ok: true };
-    if (config.nodeEnv !== "production" && config.exposeResetTokenInResponse) {
-      payload.reset_token = token;
-    }
-
-    return res.json(payload);
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ error: String(error?.message || "Forgot password failed.") });
-  }
-});
-
-app.post("/api/auth/reset-password", resetRateLimit, async (req, res) => {
-  try {
-    const parsed = parseOrThrow(
-      resetPasswordSchema,
-      req.body,
-      "Invalid reset-password payload.",
-    );
-
-    const consumed = await consumePasswordResetToken(parsed.token);
-    if (!consumed) {
-      return res.status(400).json({ error: "Invalid or expired reset token." });
-    }
-
-    const user = await findUserById(consumed.user_id);
-    if (!user || user.is_active === false) {
-      return res
-        .status(400)
-        .json({ error: "Account is not eligible for reset." });
-    }
-
-    const password_hash = await hashPassword(parsed.password);
-    await updateUser(user.id, { password_hash });
-
-    if (user.ckan_username) {
-      try {
-        await updateCkanUserPassword(user.ckan_username, parsed.password);
-        await logAuditEvent({
-          actorUserId: user.id,
-          eventType: "ckan.password_sync_success",
-          details: { ckan_username: user.ckan_username },
-        });
-      } catch (error) {
-        await logAuditEvent({
-          actorUserId: user.id,
-          eventType: "ckan.password_sync_failed",
-          details: {
-            ckan_username: user.ckan_username,
-            message: String(error?.message || "Unknown error"),
-          },
-        });
-      }
-    }
-
-    await logAuditEvent({
-      actorUserId: user.id,
-      eventType: "auth.password_reset_completed",
-      details: { email: user.email },
-    });
-
-    return res.json({ ok: true });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ error: String(error?.message || "Reset password failed.") });
-  }
-});
-
-app.get("/api/permissions/role-map", authMiddleware, (req, res) => {
-  return res.json({ map: ROLE_PERMISSIONS });
+registerProfileRoutes(app, {
+  authMiddleware,
+  parseOrThrow,
+  affiliateProfileUpdateSchema,
+  updateUser,
+  findUserById,
+  computeAffiliateProfileMetrics,
 });
 
 app.get("/api/integrations/ckan/organizations", async (req, res) => {

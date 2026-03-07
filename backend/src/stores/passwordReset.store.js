@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { query } from "./db.js";
+import { query } from "../db/client.js";
 
 function hashToken(token) {
   return crypto
@@ -53,3 +53,4 @@ export async function consumePasswordResetToken(rawToken) {
 
   return result.rows?.[0] || null;
 }
+

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
-import { config } from "./config.js";
-import { encryptSecret } from "./cryptoUtil.js";
-import { query } from "./db.js";
+import { config } from "../config/index.js";
+import { encryptSecret } from "../security/crypto.js";
+import { query } from "./client.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -226,3 +226,4 @@ export async function importLegacyUsersJsonIfNeeded() {
 
   return { imported, skipped, reason: "ok" };
 }
+

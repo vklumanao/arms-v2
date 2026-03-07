@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { config } from "./config.js";
+import { config } from "../config/index.js";
 
 const algorithm = "aes-256-gcm";
 const key = Buffer.from(config.encryptionKeyHex, "hex");
@@ -53,3 +53,4 @@ export function decryptSecret(payload) {
   const plain = Buffer.concat([decipher.update(encrypted), decipher.final()]);
   return plain.toString("utf8");
 }
+

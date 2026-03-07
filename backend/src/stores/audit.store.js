@@ -1,4 +1,4 @@
-import { query } from "./db.js";
+import { query } from "../db/client.js";
 
 export async function logAuditEvent({
   actorUserId = null,
@@ -13,3 +13,4 @@ export async function logAuditEvent({
     [actorUserId, eventType, JSON.stringify(details || {})],
   );
 }
+

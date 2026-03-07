@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { config } from "./config.js";
-import { decryptSecret, encryptSecret } from "./cryptoUtil.js";
-import { query } from "./db.js";
+import { config } from "../config/index.js";
+import { decryptSecret, encryptSecret } from "../security/crypto.js";
+import { query } from "../db/client.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -290,3 +290,4 @@ export function toAuthPayload(user, token) {
     profile: sanitizeProfile(user),
   };
 }
+

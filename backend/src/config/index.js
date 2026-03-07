@@ -6,7 +6,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const backendRoot = path.resolve(__dirname, "..");
+const backendRoot = path.resolve(__dirname, "../..");
 
 function readBool(value, fallback = false) {
   if (value == null) return fallback;
@@ -83,3 +83,4 @@ export function assertConfig() {
     );
   }
 }
+
