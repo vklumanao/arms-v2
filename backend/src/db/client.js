@@ -24,4 +24,3 @@ export async function withTransaction(fn) {
     client.release();
   }
 }
-
