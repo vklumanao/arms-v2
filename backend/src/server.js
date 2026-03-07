@@ -152,9 +152,7 @@ function normalizeOutputType(value) {
   if (["publication", "publications", "journal_article"].includes(base)) {
     return "publication";
   }
-  if (
-    ["creative_work", "creative_works", "creative"].includes(base)
-  ) {
+  if (["creative_work", "creative_works", "creative"].includes(base)) {
     return "creative_work";
   }
   if (["award", "awards", "recognition"].includes(base)) {
@@ -330,7 +328,9 @@ async function listOwnedDatasets(user) {
     const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
     if (!datasets.length) break;
 
-    rows.push(...datasets.filter((dataset) => isDatasetOwnedByUser(dataset, user)));
+    rows.push(
+      ...datasets.filter((dataset) => isDatasetOwnedByUser(dataset, user)),
+    );
     const total = Number(result?.count || 0);
     if (datasets.length < limit || (page * limit >= total && total > 0)) break;
     page += 1;
@@ -347,7 +347,9 @@ async function computeAffiliateProfileMetrics(user) {
   let ipCount = 0;
 
   for (const dataset of ownedDatasets) {
-    const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+    const resources = Array.isArray(dataset?.resources)
+      ? dataset.resources
+      : [];
     for (const resource of resources) {
       const outputType = inferOutputTypeFromResource(resource);
       if (outputType === "publication") publicationCount += 1;
@@ -698,11 +700,9 @@ app.get("/api/dashboard/projects", authMiddleware, async (req, res) => {
 
     return res.json({ data: rows });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: String(error?.message || "Failed to load dashboard projects."),
-      });
+    return res.status(500).json({
+      error: String(error?.message || "Failed to load dashboard projects."),
+    });
   }
 });
 
