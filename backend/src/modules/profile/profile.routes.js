@@ -52,7 +52,8 @@ export function registerProfileRoutes(app, deps) {
       if ("employment_status" in parsed) {
         patch.employment_status = parsed.employment_status || null;
       }
-      if ("designation" in parsed) patch.designation = parsed.designation || null;
+      if ("designation" in parsed)
+        patch.designation = parsed.designation || null;
       if ("is_gs_faculty" in parsed) {
         patch.is_gs_faculty = Boolean(parsed.is_gs_faculty);
       }
