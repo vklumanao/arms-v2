@@ -27,6 +27,14 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8),
 });
 
+export const affiliateProfileUpdateSchema = z.object({
+  full_name: z.string().trim().min(3).optional().nullable(),
+  google_scholar_link: z.string().trim().url().optional().nullable(),
+  employment_status: z.string().trim().max(160).optional().nullable(),
+  designation: z.string().trim().max(160).optional().nullable(),
+  is_gs_faculty: z.boolean().optional(),
+});
+
 export function parseOrThrow(schema, input, fallbackMessage) {
   const result = schema.safeParse(input);
   if (result.success) return result.data;
