@@ -88,20 +88,6 @@ export default function AffiliateProfilePage() {
       return;
     }
 
-    const counts = [
-      ["Publications", form.publication_count],
-      ["Projects", form.research_project_count],
-      ["Creative works", form.creative_work_count],
-      ["Awards", form.awards_count],
-      ["IPs", form.ip_count],
-    ];
-    for (const [label, value] of counts) {
-      if (Number(value) < 0) {
-        setError(`${label} count cannot be negative.`);
-        return;
-      }
-    }
-
     if (!confirmed) {
       setConfirmSave(true);
       return;
@@ -114,11 +100,6 @@ export default function AffiliateProfilePage() {
       employment_status: form.employment_status?.trim() || null,
       designation: form.designation?.trim() || null,
       is_gs_faculty: Boolean(form.is_gs_faculty),
-      publication_count: Number(form.publication_count || 0),
-      research_project_count: Number(form.research_project_count || 0),
-      creative_work_count: Number(form.creative_work_count || 0),
-      awards_count: Number(form.awards_count || 0),
-      ip_count: Number(form.ip_count || 0),
     };
 
     const { error: updateError } = await updateAffiliateProfileService(payload);
@@ -269,12 +250,8 @@ export default function AffiliateProfilePage() {
                   type="number"
                   min="0"
                   value={form.publication_count}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      publication_count: e.target.value,
-                    }))
-                  }
+                  readOnly
+                  disabled
                 />
               </label>
               <label className="space-y-1 text-sm">
@@ -284,12 +261,8 @@ export default function AffiliateProfilePage() {
                   type="number"
                   min="0"
                   value={form.research_project_count}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      research_project_count: e.target.value,
-                    }))
-                  }
+                  readOnly
+                  disabled
                 />
               </label>
               <label className="space-y-1 text-sm">
@@ -301,12 +274,8 @@ export default function AffiliateProfilePage() {
                   type="number"
                   min="0"
                   value={form.creative_work_count}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      creative_work_count: e.target.value,
-                    }))
-                  }
+                  readOnly
+                  disabled
                 />
               </label>
               <label className="space-y-1 text-sm">
@@ -316,12 +285,8 @@ export default function AffiliateProfilePage() {
                   type="number"
                   min="0"
                   value={form.awards_count}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      awards_count: e.target.value,
-                    }))
-                  }
+                  readOnly
+                  disabled
                 />
               </label>
               <label className="space-y-1 text-sm">
@@ -331,12 +296,15 @@ export default function AffiliateProfilePage() {
                   type="number"
                   min="0"
                   value={form.ip_count}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, ip_count: e.target.value }))
-                  }
+                  readOnly
+                  disabled
                 />
               </label>
             </div>
+            <p className="text-xs text-slate-500">
+              Productivity counts are auto-calculated from your submitted
+              projects and output resources.
+            </p>
 
             <div className="flex justify-end">
               <button className="btn btn-primary" disabled={saving}>
