@@ -27,6 +27,15 @@ function sanitizeProfile(user) {
     ckan_org_id: user.ckan_org_id || null,
     ckan_group_id: user.ckan_group_id || null,
     ckan_username: user.ckan_username || null,
+    google_scholar_link: user.google_scholar_link || null,
+    employment_status: user.employment_status || null,
+    designation: user.designation || null,
+    is_gs_faculty: Boolean(user.is_gs_faculty),
+    publication_count: Number(user.publication_count || 0),
+    research_project_count: Number(user.research_project_count || 0),
+    creative_work_count: Number(user.creative_work_count || 0),
+    awards_count: Number(user.awards_count || 0),
+    ip_count: Number(user.ip_count || 0),
   };
 }
 
@@ -45,6 +54,15 @@ function mapUserRow(row) {
     ckan_user_id: row.ckan_user_id,
     ckan_api_token: decryptSecret(row.ckan_api_token),
     ckan_api_token_created_at: row.ckan_api_token_created_at,
+    google_scholar_link: row.google_scholar_link,
+    employment_status: row.employment_status,
+    designation: row.designation,
+    is_gs_faculty: row.is_gs_faculty,
+    publication_count: row.publication_count,
+    research_project_count: row.research_project_count,
+    creative_work_count: row.creative_work_count,
+    awards_count: row.awards_count,
+    ip_count: row.ip_count,
     is_active: row.is_active,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -108,6 +126,21 @@ export async function createUser(input) {
     ckan_user_id: input.ckan_user_id || null,
     ckan_api_token: input.ckan_api_token || null,
     ckan_api_token_created_at: input.ckan_api_token_created_at || null,
+    google_scholar_link: input.google_scholar_link || null,
+    employment_status: input.employment_status || null,
+    designation: input.designation || null,
+    is_gs_faculty: input.is_gs_faculty === true,
+    publication_count: Math.max(0, Number(input.publication_count || 0) || 0),
+    research_project_count: Math.max(
+      0,
+      Number(input.research_project_count || 0) || 0,
+    ),
+    creative_work_count: Math.max(
+      0,
+      Number(input.creative_work_count || 0) || 0,
+    ),
+    awards_count: Math.max(0, Number(input.awards_count || 0) || 0),
+    ip_count: Math.max(0, Number(input.ip_count || 0) || 0),
     is_active: input.is_active !== false,
     created_at: input.created_at || nowIso(),
     updated_at: input.updated_at || nowIso(),
@@ -118,11 +151,16 @@ export async function createUser(input) {
     INSERT INTO users (
       id, full_name, email, password_hash, role, department,
       ckan_org_id, ckan_group_id, ckan_username, ckan_user_id,
-      ckan_api_token, ckan_api_token_created_at, is_active, created_at, updated_at
+      ckan_api_token, ckan_api_token_created_at,
+      google_scholar_link, employment_status, designation, is_gs_faculty,
+      publication_count, research_project_count, creative_work_count, awards_count, ip_count,
+      is_active, created_at, updated_at
     ) VALUES (
       $1,$2,$3,$4,$5,$6,
       $7,$8,$9,$10,
-      $11,$12,$13,$14,$15
+      $11,$12,$13,$14,$15,$16,
+      $17,$18,$19,$20,$21,
+      $22,$23,$24
     )
     RETURNING *
     `,
@@ -139,6 +177,15 @@ export async function createUser(input) {
       user.ckan_user_id,
       encryptSecret(user.ckan_api_token),
       user.ckan_api_token_created_at,
+      user.google_scholar_link,
+      user.employment_status,
+      user.designation,
+      user.is_gs_faculty,
+      user.publication_count,
+      user.research_project_count,
+      user.creative_work_count,
+      user.awards_count,
+      user.ip_count,
       user.is_active,
       user.created_at,
       user.updated_at,
@@ -161,6 +208,15 @@ export async function updateUser(id, patch) {
     "ckan_user_id",
     "ckan_api_token",
     "ckan_api_token_created_at",
+    "google_scholar_link",
+    "employment_status",
+    "designation",
+    "is_gs_faculty",
+    "publication_count",
+    "research_project_count",
+    "creative_work_count",
+    "awards_count",
+    "ip_count",
     "is_active",
   ]);
 
@@ -180,6 +236,26 @@ export async function updateUser(id, patch) {
             .trim()
             .toLowerCase()
         : value;
+    if (
+      key === "google_scholar_link" ||
+      key === "employment_status" ||
+      key === "designation"
+    ) {
+      const trimmed = String(value || "").trim();
+      nextValue = trimmed || null;
+    }
+    if (key === "is_gs_faculty") {
+      nextValue = Boolean(value);
+    }
+    if (
+      key === "publication_count" ||
+      key === "research_project_count" ||
+      key === "creative_work_count" ||
+      key === "awards_count" ||
+      key === "ip_count"
+    ) {
+      nextValue = Math.max(0, Number(value || 0) || 0);
+    }
     if (key === "ckan_api_token") {
       nextValue = encryptSecret(value);
     }
