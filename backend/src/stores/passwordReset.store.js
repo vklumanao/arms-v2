@@ -53,4 +53,3 @@ export async function consumePasswordResetToken(rawToken) {
 
   return result.rows?.[0] || null;
 }
-
