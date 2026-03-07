@@ -13,4 +13,3 @@ export async function logAuditEvent({
     [actorUserId, eventType, JSON.stringify(details || {})],
   );
 }
-
