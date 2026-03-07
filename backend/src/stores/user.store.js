@@ -290,4 +290,3 @@ export function toAuthPayload(user, token) {
     profile: sanitizeProfile(user),
   };
 }
-
