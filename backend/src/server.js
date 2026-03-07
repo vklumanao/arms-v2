@@ -1000,6 +1000,9 @@ app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
       const description = asTrimmedString(row.notes);
       const fileName =
         asTrimmedString(row.file_name) || asTrimmedString(row.fileName) || "";
+      const mimeType =
+        asTrimmedString(row.mime_type) || asTrimmedString(row.mimeType) || "";
+      const fileSize = Number(row.file_size || row.fileSize || 0);
       const filePath =
         asTrimmedString(row.file_path) || asTrimmedString(row.filePath) || "";
       const url =
@@ -1016,6 +1019,8 @@ app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
         description: description || null,
         url,
         format: format || null,
+        mimetype: mimeType || null,
+        size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
       });
       createdResources.push(resource);
     }

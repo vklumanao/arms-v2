@@ -53,6 +53,8 @@ function serializeExpectedOutputs(rows = []) {
     notes: row.notes || "",
     file_path: row.file_path || "",
     file_name: row.file_name || row.file?.name || "",
+    file_size: Number(row.file_size || row.file?.size || 0) || null,
+    mime_type: row.mime_type || row.file?.type || "",
   }));
 }
 

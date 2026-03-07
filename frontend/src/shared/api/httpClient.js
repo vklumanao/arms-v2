@@ -55,7 +55,7 @@ function mockApiPayload(path, options = {}) {
         student: [
           "dashboard.view",
           "affiliate_profile.view",
-          "research_projects.manage",
+          "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
           "my_submissions.view",
@@ -65,7 +65,7 @@ function mockApiPayload(path, options = {}) {
         faculty: [
           "dashboard.view",
           "affiliate_profile.view",
-          "research_projects.manage",
+          "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
           "my_submissions.view",
@@ -75,7 +75,7 @@ function mockApiPayload(path, options = {}) {
         admin: [
           "dashboard.view",
           "affiliate_profile.view",
-          "research_projects.manage",
+          "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
           "my_submissions.view",

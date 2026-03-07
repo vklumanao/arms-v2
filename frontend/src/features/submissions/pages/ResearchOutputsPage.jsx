@@ -93,6 +93,21 @@ export default function ResearchOutputsPage() {
     [],
   );
 
+  const normalizeResourceName = useMemo(
+    () => (value) => {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+
+      const targetMatch = raw.match(/^(.+?)\s*\(Target:\s*\d+\)\s*$/i);
+      const base = String(targetMatch?.[1] || raw).trim();
+      const key = base.toLowerCase().replace(/\s+/g, "_");
+
+      if (outputTypeLabelByValue[key]) return outputTypeLabelByValue[key];
+      return base;
+    },
+    [outputTypeLabelByValue],
+  );
+
   const tableRows = useMemo(
     () =>
       sortedRows.map((row) => {
@@ -106,7 +121,7 @@ export default function ResearchOutputsPage() {
           centerNameById[orgRef] ||
           orgRef ||
           "-";
-        const resourceName = String(row?.file_name || "").trim();
+        const resourceName = normalizeResourceName(row?.file_name);
         const projectTitle = String(row?.project_title || "").trim();
         const datasetName =
           String(row?.ckan_dataset_name || "").trim() ||
@@ -135,7 +150,7 @@ export default function ResearchOutputsPage() {
             row?.updated_at || row?.created_at || row?.ckan_last_synced_at,
         };
       }),
-    [centerNameById, outputTypeLabelByValue, sortedRows],
+    [centerNameById, normalizeResourceName, outputTypeLabelByValue, sortedRows],
   );
 
   const stateOptions = useMemo(
@@ -359,7 +374,7 @@ export default function ResearchOutputsPage() {
                         className="btn btn-outline"
                         onClick={() => setViewTarget(row)}
                       >
-                        View
+                        View Details
                       </button>
                     </td>
                   </tr>

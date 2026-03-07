@@ -158,7 +158,7 @@ export default function AppShell() {
         to: "/submit-affiliation",
         label: "Research Projects",
         icon: FolderOpen,
-        permission: PERMISSIONS.RESEARCH_PROJECTS_MANAGE,
+        permission: PERMISSIONS.AFFILIATIONS_MANAGE,
       },
       {
         to: "/research-outputs",

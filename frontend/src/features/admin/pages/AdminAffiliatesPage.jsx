@@ -556,6 +556,3 @@ export default function AdminAffiliatesPage() {
     </section>
   );
 }
-
-
-

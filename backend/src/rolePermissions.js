@@ -2,7 +2,7 @@ export const ROLE_PERMISSIONS = {
   student: [
     "dashboard.view",
     "affiliate_profile.view",
-    "research_projects.manage",
+    "affiliations.manage",
     "research_outputs.view",
     "awards_recognition.view",
     "my_submissions.view",
@@ -12,7 +12,7 @@ export const ROLE_PERMISSIONS = {
   faculty: [
     "dashboard.view",
     "affiliate_profile.view",
-    "research_projects.manage",
+    "affiliations.manage",
     "research_outputs.view",
     "awards_recognition.view",
     "my_submissions.view",
@@ -22,7 +22,7 @@ export const ROLE_PERMISSIONS = {
   admin: [
     "dashboard.view",
     "affiliate_profile.view",
-    "research_projects.manage",
+    "affiliations.manage",
     "research_outputs.view",
     "awards_recognition.view",
     "my_submissions.view",

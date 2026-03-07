@@ -85,9 +85,7 @@ export default function AppRoutes() {
             <Route
               path="/submit-affiliation"
               element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.RESEARCH_PROJECTS_MANAGE}
-                >
+                <PermissionRoute permission={PERMISSIONS.AFFILIATIONS_MANAGE}>
                   <ResearchProjectsHubPage />
                 </PermissionRoute>,
               )}
@@ -95,9 +93,7 @@ export default function AppRoutes() {
             <Route
               path="/submit-affiliation/submit"
               element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.RESEARCH_PROJECTS_MANAGE}
-                >
+                <PermissionRoute permission={PERMISSIONS.AFFILIATIONS_MANAGE}>
                   <SubmitAffiliationPage />
                 </PermissionRoute>,
               )}
@@ -217,4 +213,3 @@ export default function AppRoutes() {
     </Routes>
   );
 }
-

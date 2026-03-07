@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle2, CircleDot, FileText, Lock, Upload } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import {
@@ -270,6 +271,10 @@ export default function SubmitAffiliationPage() {
   const highestUnlockedStep = useMemo(() => {
     return getHighestUnlockedSubmissionStep(form, expectedOutputRows);
   }, [form, expectedOutputRows]);
+  const progressPercent = useMemo(
+    () => Math.round(((step + 1) / SUBMISSION_STEPS.length) * 100),
+    [step],
+  );
 
   const expectedOutputsTotalPages = useMemo(
     () =>
@@ -865,38 +870,95 @@ export default function SubmitAffiliationPage() {
         }
       />
 
-      <div className="grid gap-2 md:grid-cols-5">
-        {SUBMISSION_STEPS.map((item) => {
-          const locked = !canAccessSubmissionStep(
-            form,
-            item.id,
-            expectedOutputRows,
-          );
-          return (
-            <button
-              type="button"
-              key={item.id}
-              className={`rounded-[var(--radius-sm)] border px-3 py-2 text-left text-sm ${
-                step === item.id
-                  ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]"
-                  : locked
-                    ? "cursor-not-allowed border-[var(--border)] bg-[var(--surface-muted)] text-slate-400"
-                    : "border-[var(--border)] bg-white text-slate-700"
-              }`}
-              onClick={() => {
-                if (locked) return;
-                setStep(item.id);
-              }}
-              disabled={locked}
-              title={locked ? "Complete previous steps first." : ""}
-            >
-              <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                Step {item.id + 1}
-              </p>
-              <p className="font-semibold">{item.label}</p>
-            </button>
-          );
-        })}
+      <div className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
+              Progressive Flow
+            </p>
+            <p className="text-xs text-slate-500">
+              Complete current step to unlock the next stage.
+            </p>
+          </div>
+          <p className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+            {step + 1}/{SUBMISSION_STEPS.length}
+          </p>
+        </div>
+
+        <div className="relative mt-5">
+          <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-200" />
+          <div
+            className="absolute left-0 top-4 h-1 rounded-full bg-[linear-gradient(90deg,#0284c7,#10b981)] transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+          <div className="relative grid grid-cols-5 gap-2">
+            {SUBMISSION_STEPS.map((item) => {
+              const locked = !canAccessSubmissionStep(
+                form,
+                item.id,
+                expectedOutputRows,
+              );
+              const completed = item.id < step && !locked;
+              const active = step === item.id;
+              const Icon = completed ? CheckCircle2 : active ? CircleDot : Lock;
+              const statusText = locked
+                ? "Locked"
+                : active
+                  ? "Current"
+                  : completed
+                    ? "Done"
+                    : "Ready";
+
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  className="text-left"
+                  onClick={() => {
+                    if (locked) return;
+                    setStep(item.id);
+                  }}
+                  disabled={locked}
+                  title={locked ? "Complete previous steps first." : ""}
+                >
+                  <div
+                    className={`mx-auto inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm ${
+                      active
+                        ? "border-sky-300 bg-sky-100 text-sky-700"
+                        : completed
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                          : locked
+                            ? "border-slate-300 bg-slate-100 text-slate-400"
+                            : "border-slate-300 bg-white text-slate-600"
+                    }`}
+                  >
+                    <Icon size={14} aria-hidden="true" />
+                  </div>
+                  <p
+                    className={`mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] ${
+                      locked
+                        ? "text-slate-400"
+                        : active
+                          ? "text-sky-700"
+                          : completed
+                            ? "text-emerald-700"
+                            : "text-slate-600"
+                    }`}
+                  >
+                    {statusText}
+                  </p>
+                  <p
+                    className={`text-center text-xs font-semibold ${
+                      locked ? "text-slate-400" : "text-slate-800"
+                    }`}
+                  >
+                    {item.label}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {loadingEdit ? (
@@ -1098,7 +1160,10 @@ export default function SubmitAffiliationPage() {
                   placeholder="Comma-separated names (optional)"
                   value={form.student_team}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, student_team: e.target.value }))
+                    setForm((p) => ({
+                      ...p,
+                      student_team: e.target.value,
+                    }))
                   }
                 />
               </label>
@@ -1150,7 +1215,10 @@ export default function SubmitAffiliationPage() {
                   required
                   value={form.classification}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, classification: e.target.value }))
+                    setForm((p) => ({
+                      ...p,
+                      classification: e.target.value,
+                    }))
                   }
                 >
                   <option value="academic">Academic</option>
@@ -1223,7 +1291,10 @@ export default function SubmitAffiliationPage() {
                   placeholder="e.g. Industry-based, Other Scholarly"
                   value={form.scholarly_type}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, scholarly_type: e.target.value }))
+                    setForm((p) => ({
+                      ...p,
+                      scholarly_type: e.target.value,
+                    }))
                   }
                 />
               </label>
@@ -1241,7 +1312,10 @@ export default function SubmitAffiliationPage() {
                     className="control-select"
                     value={form.funding_type}
                     onChange={(e) =>
-                      setForm((p) => ({ ...p, funding_type: e.target.value }))
+                      setForm((p) => ({
+                        ...p,
+                        funding_type: e.target.value,
+                      }))
                     }
                   >
                     <option value="none">None</option>
@@ -1275,7 +1349,10 @@ export default function SubmitAffiliationPage() {
                     placeholder="e.g. ARMS Grants Office"
                     value={form.funding_source}
                     onChange={(e) =>
-                      setForm((p) => ({ ...p, funding_source: e.target.value }))
+                      setForm((p) => ({
+                        ...p,
+                        funding_source: e.target.value,
+                      }))
                     }
                   />
                 </label>
@@ -1290,7 +1367,10 @@ export default function SubmitAffiliationPage() {
                     min="0"
                     value={form.funding_amount}
                     onChange={(e) =>
-                      setForm((p) => ({ ...p, funding_amount: e.target.value }))
+                      setForm((p) => ({
+                        ...p,
+                        funding_amount: e.target.value,
+                      }))
                     }
                   />
                 </label>
@@ -1335,15 +1415,26 @@ export default function SubmitAffiliationPage() {
                       setMoaFile(nextFile);
                     }}
                   />
-                  <p className="text-xs text-slate-500">
-                    Upload is saved when you submit/save revision.
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    Selected file: {moaFile?.name || "-"}
-                  </p>
-                  <p className="text-xs text-slate-600 break-all">
-                    Current reference: {form.signed_moa_reference || "-"}
-                  </p>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-slate-50/70 p-2">
+                    <div className="flex items-start gap-2">
+                      <FileText
+                        size={15}
+                        className="mt-0.5 text-slate-500"
+                        aria-hidden="true"
+                      />
+                      <div className="space-y-1">
+                        <p className="text-xs text-slate-600">
+                          Upload is saved when you submit/save revision.
+                        </p>
+                        <p className="text-xs text-slate-700">
+                          Selected file: {moaFile?.name || "-"}
+                        </p>
+                        <p className="text-xs text-slate-700 break-all">
+                          Current reference: {form.signed_moa_reference || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </label>
               </div>
 
@@ -1357,7 +1448,10 @@ export default function SubmitAffiliationPage() {
                     type="date"
                     value={form.start_date}
                     onChange={(e) =>
-                      setForm((p) => ({ ...p, start_date: e.target.value }))
+                      setForm((p) => ({
+                        ...p,
+                        start_date: e.target.value,
+                      }))
                     }
                   />
                 </label>
@@ -1370,7 +1464,10 @@ export default function SubmitAffiliationPage() {
                     type="date"
                     value={form.end_date}
                     onChange={(e) =>
-                      setForm((p) => ({ ...p, end_date: e.target.value }))
+                      setForm((p) => ({
+                        ...p,
+                        end_date: e.target.value,
+                      }))
                     }
                   />
                 </label>
@@ -1885,6 +1982,7 @@ export default function SubmitAffiliationPage() {
 
       <ConfirmActionModal
         open={showSubmitConfirm}
+        align="center"
         title="Confirm Submission"
         message={`You are about to ${editId ? "save this revision" : "submit this research project"}. Please confirm that all Step 1 to Step 4 information is correct.`}
         confirmLabel={editId ? "Confirm Save" : "Confirm Submit"}
@@ -1995,9 +2093,19 @@ export default function SubmitAffiliationPage() {
                     }));
                   }}
                 />
-                <p className="text-xs text-slate-500">
-                  Selected: {newOutputDraft.file?.name || "No file selected"}
-                </p>
+                <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-slate-50/70 p-2">
+                  <div className="flex items-start gap-2">
+                    <Upload
+                      size={15}
+                      className="mt-0.5 text-slate-500"
+                      aria-hidden="true"
+                    />
+                    <p className="text-xs text-slate-700">
+                      Selected:{" "}
+                      {newOutputDraft.file?.name || "No file selected"}
+                    </p>
+                  </div>
+                </div>
               </label>
             </div>
             <div className="mt-4 flex justify-end gap-2">
