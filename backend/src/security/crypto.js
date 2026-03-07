@@ -53,4 +53,3 @@ export function decryptSecret(payload) {
   const plain = Buffer.concat([decipher.update(encrypted), decipher.final()]);
   return plain.toString("utf8");
 }
-
