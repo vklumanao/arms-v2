@@ -12,6 +12,7 @@ import {
   deleteOwnedProject,
   fetchProjectResources,
   quickEditOwnedProject,
+  updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
 import {
@@ -75,6 +76,7 @@ export default function ResearchProjectsHubPage() {
     syncEnabled: true,
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
   const toast = useToast();
 
   useEffect(() => {
@@ -392,6 +394,49 @@ export default function ResearchProjectsHubPage() {
     setMessage("Project deleted successfully.");
   };
 
+  const handleToggleVisibility = async (project) => {
+    const datasetId = String(project?.ckan_dataset_id || "").trim();
+    if (!datasetId) {
+      setError("Dataset id is missing.");
+      return;
+    }
+
+    const nextIsPublic = Boolean(project?.private);
+    setVisibilitySavingByDataset((prev) => ({ ...prev, [datasetId]: true }));
+
+    const { data, error: updateError } = await updateResearchOutputVisibility({
+      datasetId,
+      isPublic: nextIsPublic,
+    });
+
+    setVisibilitySavingByDataset((prev) => {
+      const next = { ...prev };
+      delete next[datasetId];
+      return next;
+    });
+
+    if (updateError) {
+      setError(updateError.message || "Unable to update project visibility.");
+      return;
+    }
+
+    const isNowPublic = Boolean(data?.project_public_visible);
+    setProjects((prev) =>
+      prev.map((item) =>
+        String(item?.ckan_dataset_id || "").trim() === datasetId
+          ? {
+              ...item,
+              project_public_visible: isNowPublic,
+              private: !isNowPublic,
+            }
+          : item,
+      ),
+    );
+    setMessage(
+      isNowPublic ? "Project is now public." : "Project is now private.",
+    );
+  };
+
   const triggerDownload = (filename, content, mimeType) => {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -697,6 +742,7 @@ export default function ResearchProjectsHubPage() {
                     <th>Submitted By</th>
                     <th>Year</th>
                     <th>Status</th>
+                    <th>Visibility</th>
                     <th>Organization</th>
                     <th>Submitted</th>
                     <th>Action</th>
@@ -705,6 +751,17 @@ export default function ResearchProjectsHubPage() {
                 <tbody>
                   {paginatedProjects.map((project, index) => {
                     const status = normalizeStatus(project.status);
+                    const canToggleVisibility =
+                      Boolean(project?.ckan_dataset_id) &&
+                      (isAdmin ||
+                        String(project?.submitted_by || "") ===
+                          String(user?.id || "") ||
+                        String(project?.submitted_by_email || "")
+                          .trim()
+                          .toLowerCase() ===
+                          String(user?.email || "")
+                            .trim()
+                            .toLowerCase());
                     const canEdit =
                       project.source !== "ckan" &&
                       (isAdmin || project.submitted_by === user?.id);
@@ -733,6 +790,34 @@ export default function ResearchProjectsHubPage() {
                           <span className={`status-chip status-${status}`}>
                             {status}
                           </span>
+                        </td>
+                        <td>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`status-chip ${project.private ? "status-rejected" : "status-completed"}`}
+                            >
+                              {project.private ? "Private" : "Public"}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              disabled={
+                                !canToggleVisibility ||
+                                Boolean(
+                                  visibilitySavingByDataset[
+                                    project.ckan_dataset_id
+                                  ],
+                                )
+                              }
+                              onClick={() => handleToggleVisibility(project)}
+                            >
+                              {visibilitySavingByDataset[project.ckan_dataset_id]
+                                ? "Saving..."
+                                : project.private
+                                  ? "Make Public"
+                                  : "Make Private"}
+                            </button>
+                          </div>
                         </td>
                         <td className="text-slate-600">
                           {getProjectOrganization(project)}
