@@ -5,6 +5,8 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import {
   fetchMyResearchOutputs,
+  deleteResearchOutput,
+  updateResearchOutput,
   updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
@@ -23,6 +25,17 @@ export default function ResearchOutputsPage() {
   const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewTarget, setViewTarget] = useState(null);
+  const [editingTarget, setEditingTarget] = useState(null);
+  const [editForm, setEditForm] = useState({
+    file_name: "",
+    notes: "",
+    file_path: "",
+    mime_type: "",
+    file_size: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingByResource, setDeletingByResource] = useState({});
   const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
   const pageSize = 10;
 
@@ -282,6 +295,142 @@ export default function ResearchOutputsPage() {
     );
   };
 
+  const handleOpenEdit = (row) => {
+    setEditingTarget(row);
+    setEditForm({
+      file_name: String(row?.title || "").trim(),
+      notes: String(row?.notes || "").trim(),
+      file_path: String(row?.resourceUrl || "").trim(),
+      mime_type: String(row?.mimeType || "").trim(),
+      file_size:
+        Number(row?.fileSize || 0) > 0 ? String(Number(row.fileSize)) : "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    const resourceId = String(editingTarget?.resourceId || "").trim();
+    if (!resourceId) {
+      toast.error("Edit failed", "Resource id is missing.");
+      return;
+    }
+
+    const payload = {
+      file_name: String(editForm.file_name || "").trim(),
+      notes: String(editForm.notes || "").trim(),
+      file_path: String(editForm.file_path || "").trim(),
+      mime_type: String(editForm.mime_type || "").trim(),
+    };
+
+    const sizeRaw = String(editForm.file_size || "").trim();
+    if (sizeRaw) {
+      const parsedSize = Number(sizeRaw);
+      if (!Number.isFinite(parsedSize) || parsedSize < 0) {
+        toast.error("Edit failed", "File size must be a valid non-negative number.");
+        return;
+      }
+      payload.file_size = parsedSize;
+    }
+
+    setEditSaving(true);
+    const { data, error: updateError } = await updateResearchOutput({
+      resourceId,
+      payload,
+    });
+    setEditSaving(false);
+
+    if (updateError) {
+      toast.error(
+        "Edit failed",
+        String(updateError?.message || "Unable to update resource."),
+      );
+      return;
+    }
+
+    const nextFileName = String(data?.file_name || payload.file_name || "").trim();
+    const nextNotes = data?.notes ?? payload.notes ?? null;
+    const nextPath = data?.file_path ?? payload.file_path ?? null;
+    const nextMime = data?.mime_type ?? payload.mime_type ?? null;
+    const nextSize =
+      data?.file_size != null
+        ? Number(data.file_size) || null
+        : payload.file_size != null
+          ? Number(payload.file_size) || null
+          : null;
+    const nextUpdatedAt = data?.updated_at || new Date().toISOString();
+
+    setRows((prev) =>
+      prev.map((item) =>
+        String(item?.ckan_resource_id || "").trim() === resourceId
+          ? {
+              ...item,
+              file_name: nextFileName || item.file_name,
+              notes: nextNotes,
+              file_path: nextPath,
+              mime_type: nextMime,
+              file_size: nextSize,
+              updated_at: nextUpdatedAt,
+            }
+          : item,
+      ),
+    );
+
+    setViewTarget((prev) => {
+      if (!prev) return prev;
+      if (String(prev?.resourceId || "").trim() !== resourceId) return prev;
+      return {
+        ...prev,
+        title: nextFileName || prev.title,
+        notes: nextNotes,
+        resourceUrl: nextPath,
+        mimeType: nextMime,
+        fileSize: nextSize,
+        metadataModified: nextUpdatedAt,
+      };
+    });
+
+    setEditingTarget(null);
+    toast.success("Research output updated", "Changes were saved.");
+  };
+
+  const handleDeleteResource = async (row) => {
+    const resourceId = String(row?.resourceId || "").trim();
+    if (!resourceId) {
+      toast.error("Delete failed", "Resource id is missing.");
+      return;
+    }
+
+    setDeletingByResource((prev) => ({ ...prev, [resourceId]: true }));
+    const { error: deleteError } = await deleteResearchOutput({ resourceId });
+    setDeletingByResource((prev) => {
+      const next = { ...prev };
+      delete next[resourceId];
+      return next;
+    });
+
+    if (deleteError) {
+      toast.error(
+        "Delete failed",
+        String(deleteError?.message || "Unable to delete resource."),
+      );
+      return;
+    }
+
+    setRows((prev) =>
+      prev.filter(
+        (item) => String(item?.ckan_resource_id || "").trim() !== resourceId,
+      ),
+    );
+    setViewTarget((prev) =>
+      String(prev?.resourceId || "").trim() === resourceId ? null : prev,
+    );
+    setEditingTarget((prev) =>
+      String(prev?.resourceId || "").trim() === resourceId ? null : prev,
+    );
+    setDeleteTarget(null);
+
+    toast.success("Research output deleted", "Resource was removed.");
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -441,13 +590,33 @@ export default function ResearchOutputsPage() {
                         : "-"}
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={() => setViewTarget(row)}
-                      >
-                        View Details
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={() => setViewTarget(row)}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          disabled={Boolean(deletingByResource[row.resourceId])}
+                          onClick={() => handleOpenEdit(row)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          disabled={Boolean(deletingByResource[row.resourceId])}
+                          onClick={() => setDeleteTarget(row)}
+                        >
+                          {deletingByResource[row.resourceId]
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -626,6 +795,182 @@ export default function ResearchOutputsPage() {
                   </div>
                 </div>
               </section>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {editingTarget ? (
+        <div
+          className="modal-overlay modal-overlay-centered"
+          onClick={() => !editSaving && setEditingTarget(null)}
+        >
+          <aside
+            className="modal-dialog modal-dialog-xl max-h-[92vh] overflow-y-auto"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="app-card">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Edit Research Output
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Update the selected resource fields.
+              </p>
+
+              <div className="mt-4 grid gap-3">
+                <label className="block space-y-1">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    File Name
+                  </span>
+                  <input
+                    type="text"
+                    value={editForm.file_name}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        file_name: event.target.value,
+                      }))
+                    }
+                    className="control-input"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Notes
+                  </span>
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                    className="control-input min-h-[90px]"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    File URL / Path
+                  </span>
+                  <input
+                    type="text"
+                    value={editForm.file_path}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        file_path: event.target.value,
+                      }))
+                    }
+                    className="control-input"
+                  />
+                </label>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="block space-y-1">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      MIME Type
+                    </span>
+                    <input
+                      type="text"
+                      value={editForm.mime_type}
+                      onChange={(event) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          mime_type: event.target.value,
+                        }))
+                      }
+                      className="control-input"
+                    />
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      File Size (bytes)
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editForm.file_size}
+                      onChange={(event) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          file_size: event.target.value,
+                        }))
+                      }
+                      className="control-input"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  disabled={editSaving}
+                  onClick={() => setEditingTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={editSaving}
+                  onClick={handleSaveEdit}
+                >
+                  {editSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div
+          className="modal-overlay modal-overlay-centered"
+          onClick={() =>
+            !deletingByResource[deleteTarget.resourceId] && setDeleteTarget(null)
+          }
+        >
+          <aside
+            className="modal-dialog max-w-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="app-card">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Delete Research Output
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                This will permanently remove the selected resource from CKAN.
+              </p>
+              <p className="mt-2 text-sm font-medium text-slate-800">
+                {deleteTarget.title || "-"}
+              </p>
+
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  disabled={Boolean(deletingByResource[deleteTarget.resourceId])}
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={Boolean(deletingByResource[deleteTarget.resourceId])}
+                  onClick={() => handleDeleteResource(deleteTarget)}
+                >
+                  {deletingByResource[deleteTarget.resourceId]
+                    ? "Deleting..."
+                    : "Delete"}
+                </button>
+              </div>
             </div>
           </aside>
         </div>
