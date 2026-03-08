@@ -1,5 +1,12 @@
 import { config } from "../../../config/index.js";
 
+/**
+ * Builds a readable error message from CKAN error payload structure.
+ *
+ * Important logic:
+ * - Handles multiple CKAN error shapes (`string`, `__type`, object trees).
+ * - Falls back to caller-provided default when payload is missing/unknown.
+ */
 function ckanErrorMessage(payload, fallback) {
   const err = payload?.error;
   if (!err) return fallback;
@@ -21,6 +28,18 @@ function ckanErrorMessage(payload, fallback) {
   return fallback;
 }
 
+/**
+ * Executes a CKAN action endpoint request.
+ *
+ * System flow:
+ * - Compose action URL from configured CKAN base URL.
+ * - Send authenticated JSON POST request.
+ * - Parse CKAN payload and validate `success` contract.
+ * - Throw enriched Error on transport or CKAN-level failures.
+ *
+ * Dependencies:
+ * - Uses `config.ckanApiKey` for Authorization header.
+ */
 export async function ckanAction(action, body = {}) {
   const url = `${config.ckanBaseUrl}/api/3/action/${action}`;
   const response = await fetch(url, {
