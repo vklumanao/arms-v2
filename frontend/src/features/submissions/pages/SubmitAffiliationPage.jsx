@@ -878,10 +878,7 @@ export default function SubmitAffiliationPage() {
         }
       />
 
-      <div
-        id="onboarding-submission-flow"
-        className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4"
-      >
+      <div className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
@@ -1008,237 +1005,234 @@ export default function SubmitAffiliationPage() {
                     Start with the core project details to establish context.
                   </p>
                 </div>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Project title
-                </span>
-                <input
-                  id="onboarding-form-project-title"
-                  className="control-input"
-                  placeholder="e.g. AI Mentorship in Public Schools"
-                  required
-                  value={form.title}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, title: e.target.value }))
-                  }
-                />
-                <p className="text-xs text-slate-500">
-                  Use a concise, descriptive title that will appear in reports.
-                </p>
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Project abstract/summary
-                </span>
-                <textarea
-                  className="control-textarea min-h-24"
-                  placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
-                  value={form.abstract}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, abstract: e.target.value }))
-                  }
-                />
-              </label>
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Project title
+                  </span>
+                  <input
+                    className="control-input"
+                    placeholder="e.g. AI Mentorship in Public Schools"
+                    required
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, title: e.target.value }))
+                    }
+                  />
+                  <p className="text-xs text-slate-500">
+                    Use a concise, descriptive title that will appear in
+                    reports.
+                  </p>
+                </label>
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Project abstract/summary
+                  </span>
+                  <textarea
+                    className="control-textarea min-h-24"
+                    placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
+                    value={form.abstract}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, abstract: e.target.value }))
+                    }
+                  />
+                </label>
               </div>
 
               <div className="form-section">
                 <div className="form-section-head">
-                  <p className="form-section-title">
-                    Research Team
-                  </p>
+                  <p className="form-section-title">Research Team</p>
                 </div>
-              <div className="form-fields-grid form-fields-grid-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Lead researcher
-                  </span>
-                  <div ref={leadFieldRef} className="relative space-y-2">
-                    <input
-                      id="onboarding-form-lead-researcher"
-                      className="control-input"
-                      placeholder="Type a CKAN user name"
-                      value={leadSearch}
-                      onFocus={() => setLeadDropdownOpen(true)}
-                      onChange={(e) => {
-                        setLeadSearch(e.target.value);
-                        setLeadDropdownOpen(true);
-                      }}
-                    />
-                    {leadDropdownOpen && leadSuggestions.length > 0 ? (
-                      <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
-                        {leadSuggestions.map((ckanUser) => (
-                          <button
-                            key={`lead-option-${ckanUser.id}`}
-                            type="button"
-                            className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
-                            onClick={() => {
-                              setLeadResearcherSelection(ckanUser.name);
-                              setLeadSearch("");
-                              setLeadDropdownOpen(false);
-                            }}
-                          >
-                            {ckanUser.name}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    {!selectedLeadResearcher ? (
-                      <p className="text-xs text-slate-500">
-                        No CKAN user selected yet.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        <span
-                          key={`lead-chip-${selectedLeadResearcher}`}
-                          className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
-                        >
-                          {selectedLeadResearcher}
-                          <button
-                            type="button"
-                            className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
-                            onClick={() => setLeadResearcherSelection("")}
-                            aria-label={`Remove ${selectedLeadResearcher}`}
-                          >
-                            x
-                          </button>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Type to search and select one CKAN user only.
-                  </p>
-                </label>
-                <label className="block space-y-1 text-sm lg:col-span-1">
-                  <span className="font-semibold text-slate-700">
-                    Research team (faculty)
-                  </span>
-                  <div ref={facultyFieldRef} className="relative space-y-2">
-                    <input
-                      className="control-input"
-                      placeholder="Type a CKAN user name"
-                      value={facultySearch}
-                      onFocus={() => setFacultyDropdownOpen(true)}
-                      onChange={(e) => {
-                        setFacultySearch(e.target.value);
-                        setFacultyDropdownOpen(true);
-                      }}
-                    />
-                    {facultyDropdownOpen && facultySuggestions.length > 0 ? (
-                      <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
-                        {facultySuggestions.map((ckanUser) => (
-                          <button
-                            key={`faculty-option-${ckanUser.id}`}
-                            type="button"
-                            className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
-                            onClick={() => {
-                              addProponentSelection(
-                                "faculty_team",
-                                ckanUser.name,
-                              );
-                              setFacultySearch("");
-                              setFacultyDropdownOpen(false);
-                            }}
-                          >
-                            {ckanUser.name}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    {facultyTeamSelections.length === 0 ? (
-                      <p className="text-xs text-slate-500">
-                        No CKAN users selected yet.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {facultyTeamSelections.map((name) => (
+                <div className="form-fields-grid form-fields-grid-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Lead researcher
+                    </span>
+                    <div ref={leadFieldRef} className="relative space-y-2">
+                      <input
+                        className="control-input"
+                        placeholder="Type a CKAN user name"
+                        value={leadSearch}
+                        onFocus={() => setLeadDropdownOpen(true)}
+                        onChange={(e) => {
+                          setLeadSearch(e.target.value);
+                          setLeadDropdownOpen(true);
+                        }}
+                      />
+                      {leadDropdownOpen && leadSuggestions.length > 0 ? (
+                        <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
+                          {leadSuggestions.map((ckanUser) => (
+                            <button
+                              key={`lead-option-${ckanUser.id}`}
+                              type="button"
+                              className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
+                              onClick={() => {
+                                setLeadResearcherSelection(ckanUser.name);
+                                setLeadSearch("");
+                                setLeadDropdownOpen(false);
+                              }}
+                            >
+                              {ckanUser.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="app-card-muted app-card-micro">
+                      {!selectedLeadResearcher ? (
+                        <p className="text-xs text-slate-500">
+                          No CKAN user selected yet.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
                           <span
-                            key={`faculty-chip-${name}`}
+                            key={`lead-chip-${selectedLeadResearcher}`}
                             className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
                           >
-                            {name}
+                            {selectedLeadResearcher}
                             <button
                               type="button"
                               className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
-                              onClick={() =>
-                                removeProponentSelection("faculty_team", name)
-                              }
-                              aria-label={`Remove ${name}`}
+                              onClick={() => setLeadResearcherSelection("")}
+                              aria-label={`Remove ${selectedLeadResearcher}`}
                             >
                               x
                             </button>
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Type to search and select one or more CKAN users.
-                  </p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Type to search and select one CKAN user only.
+                    </p>
+                  </label>
+                  <label className="block space-y-1 text-sm lg:col-span-1">
+                    <span className="font-semibold text-slate-700">
+                      Research team (faculty)
+                    </span>
+                    <div ref={facultyFieldRef} className="relative space-y-2">
+                      <input
+                        className="control-input"
+                        placeholder="Type a CKAN user name"
+                        value={facultySearch}
+                        onFocus={() => setFacultyDropdownOpen(true)}
+                        onChange={(e) => {
+                          setFacultySearch(e.target.value);
+                          setFacultyDropdownOpen(true);
+                        }}
+                      />
+                      {facultyDropdownOpen && facultySuggestions.length > 0 ? (
+                        <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
+                          {facultySuggestions.map((ckanUser) => (
+                            <button
+                              key={`faculty-option-${ckanUser.id}`}
+                              type="button"
+                              className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
+                              onClick={() => {
+                                addProponentSelection(
+                                  "faculty_team",
+                                  ckanUser.name,
+                                );
+                                setFacultySearch("");
+                                setFacultyDropdownOpen(false);
+                              }}
+                            >
+                              {ckanUser.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="app-card-muted app-card-micro">
+                      {facultyTeamSelections.length === 0 ? (
+                        <p className="text-xs text-slate-500">
+                          No CKAN users selected yet.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {facultyTeamSelections.map((name) => (
+                            <span
+                              key={`faculty-chip-${name}`}
+                              className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
+                            >
+                              {name}
+                              <button
+                                type="button"
+                                className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
+                                onClick={() =>
+                                  removeProponentSelection("faculty_team", name)
+                                }
+                                aria-label={`Remove ${name}`}
+                              >
+                                x
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Type to search and select one or more CKAN users.
+                    </p>
+                  </label>
+                </div>
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Research team (students)
+                  </span>
+                  <input
+                    className="control-input"
+                    placeholder="Comma-separated names (optional)"
+                    value={form.student_team}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        student_team: e.target.value,
+                      }))
+                    }
+                  />
                 </label>
-              </div>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Research team (students)
-                </span>
-                <input
-                  className="control-input"
-                  placeholder="Comma-separated names (optional)"
-                  value={form.student_team}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      student_team: e.target.value,
-                    }))
-                  }
-                />
-              </label>
               </div>
 
               <div className="form-section">
                 <div className="form-section-head">
-                  <p className="form-section-title">
-                    Project Context
-                  </p>
+                  <p className="form-section-title">Project Context</p>
                 </div>
-              <div className="form-fields-grid form-fields-grid-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Project year
-                  </span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="2000"
-                    max="2100"
-                    placeholder="e.g. 2026"
-                    required
-                    value={form.year}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, year: e.target.value }))
-                    }
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Research center
-                  </span>
-                  <input
-                    className="control-input"
-                    value={
-                      centerName === "-"
-                        ? form.research_center_id || profile?.ckan_org_id || ""
-                        : centerName
-                    }
-                    readOnly
-                    disabled
-                  />
-                </label>
-              </div>
+                <div className="form-fields-grid form-fields-grid-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Project year
+                    </span>
+                    <input
+                      className="control-input"
+                      type="number"
+                      min="2000"
+                      max="2100"
+                      placeholder="e.g. 2026"
+                      required
+                      value={form.year}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, year: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Research center
+                    </span>
+                    <input
+                      className="control-input"
+                      value={
+                        centerName === "-"
+                          ? form.research_center_id ||
+                            profile?.ckan_org_id ||
+                            ""
+                          : centerName
+                      }
+                      readOnly
+                      disabled
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           ) : null}
@@ -1246,106 +1240,104 @@ export default function SubmitAffiliationPage() {
           {step === 1 ? (
             <div className="form-section">
               <div className="form-section-head">
-                <p className="form-section-title">
-                  Classification Details
-                </p>
+                <p className="form-section-title">Classification Details</p>
                 <p className="form-section-note">
                   Classify the project for reporting, routing, and review.
                 </p>
               </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Project classification
-                </span>
-                <select
-                  id="onboarding-form-classification"
-                  className="control-select"
-                  required
-                  value={form.classification}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      classification: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="academic">Academic</option>
-                  <option value="industry">Industry</option>
-                </select>
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Project classification
+                  </span>
+                  <select
+                    className="control-select"
+                    required
+                    value={form.classification}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        classification: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="academic">Academic</option>
+                    <option value="industry">Industry</option>
+                  </select>
+                </label>
 
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Status</span>
-                <select
-                  className="control-select"
-                  required
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, status: e.target.value }))
-                  }
-                >
-                  <option value="proposal">Proposal</option>
-                  <option value="ongoing">On-going</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </label>
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Status</span>
+                  <select
+                    className="control-select"
+                    required
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, status: e.target.value }))
+                    }
+                  >
+                    <option value="proposal">Proposal</option>
+                    <option value="ongoing">On-going</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </label>
 
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Research agenda
-                </span>
-                <select
-                  id="onboarding-form-agenda"
-                  className="control-select"
-                  value={form.research_agenda_id}
-                  disabled={effectiveAgendas.length === 0}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      research_agenda_id: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Select research agenda</option>
-                  {effectiveAgendas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-                {effectiveAgendas.length === 0 ? (
-                  <p className="text-xs text-amber-700">
-                    No research agenda found in your organization custom fields
-                    (CKAN extras).
-                  </p>
-                ) : null}
-              </label>
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Research agenda
+                  </span>
+                  <select
+                    className="control-select"
+                    value={form.research_agenda_id}
+                    disabled={effectiveAgendas.length === 0}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        research_agenda_id: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select research agenda</option>
+                    {effectiveAgendas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                  {effectiveAgendas.length === 0 ? (
+                    <p className="text-xs text-amber-700">
+                      No research agenda found in your organization custom
+                      fields (CKAN extras).
+                    </p>
+                  ) : null}
+                </label>
 
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Department</span>
-                <input
-                  className="control-input"
-                  value={departmentName === "-" ? "" : departmentName}
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="block space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">
-                  Scholarly type
-                </span>
-                <input
-                  className="control-input"
-                  placeholder="e.g. Industry-based, Other Scholarly"
-                  value={form.scholarly_type}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      scholarly_type: e.target.value,
-                    }))
-                  }
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Department
+                  </span>
+                  <input
+                    className="control-input"
+                    value={departmentName === "-" ? "" : departmentName}
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="block space-y-1 text-sm sm:col-span-2">
+                  <span className="font-semibold text-slate-700">
+                    Scholarly type
+                  </span>
+                  <input
+                    className="control-input"
+                    placeholder="e.g. Industry-based, Other Scholarly"
+                    value={form.scholarly_type}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        scholarly_type: e.target.value,
+                      }))
+                    }
                   />
                 </label>
               </div>
@@ -1356,204 +1348,201 @@ export default function SubmitAffiliationPage() {
             <div className="space-y-5">
               <div className="form-section">
                 <div className="form-section-head">
-                  <p className="form-section-title">
-                    Funding Details
-                  </p>
+                  <p className="form-section-title">Funding Details</p>
                   <p className="form-section-note">
-                    Enter funding values and source details as accurately as possible.
+                    Enter funding values and source details as accurately as
+                    possible.
                   </p>
                 </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Funding type
-                  </span>
-                  <select
-                    className="control-select"
-                    value={form.funding_type}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        funding_type: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="none">None</option>
-                    <option value="internal">Internal</option>
-                    <option value="external">External</option>
-                    <option value="self_funded">Self Funded</option>
-                  </select>
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Funding category
-                  </span>
-                  <input
-                    className="control-input"
-                    placeholder="e.g. External (Industry-Sponsored)"
-                    value={form.funding_category}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        funding_category: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Funding source
-                  </span>
-                  <input
-                    className="control-input"
-                    placeholder="e.g. ARMS Grants Office"
-                    value={form.funding_source}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        funding_source: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Funding amount
-                  </span>
-                  <input
-                    className="control-input"
-                    placeholder="e.g. 50000"
-                    type="number"
-                    min="0"
-                    value={form.funding_amount}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        funding_amount: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Funding type
+                    </span>
+                    <select
+                      className="control-select"
+                      value={form.funding_type}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          funding_type: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="none">None</option>
+                      <option value="internal">Internal</option>
+                      <option value="external">External</option>
+                      <option value="self_funded">Self Funded</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Funding category
+                    </span>
+                    <input
+                      className="control-input"
+                      placeholder="e.g. External (Industry-Sponsored)"
+                      value={form.funding_category}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          funding_category: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Funding source
+                    </span>
+                    <input
+                      className="control-input"
+                      placeholder="e.g. ARMS Grants Office"
+                      value={form.funding_source}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          funding_source: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Funding amount
+                    </span>
+                    <input
+                      className="control-input"
+                      placeholder="e.g. 50000"
+                      type="number"
+                      min="0"
+                      value={form.funding_amount}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          funding_amount: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="form-section">
                 <div className="form-section-head">
-                  <p className="form-section-title">
-                    MOA and Timeline
-                  </p>
+                  <p className="form-section-title">MOA and Timeline</p>
                 </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Industry/Agency partner
-                  </span>
-                  <input
-                    className="control-input"
-                    placeholder="e.g. PNP, DA-BAFE"
-                    value={form.industry_partner}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        industry_partner: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <div id="onboarding-form-moa" className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Signed MOA reference
-                  </span>
-                  <div className="upload-field">
-                    <div className="upload-picker">
-                      <div className="upload-picker-info">
-                        <FileText
-                          size={16}
-                          className="mt-0.5 text-slate-500"
-                          aria-hidden="true"
-                        />
-                        <div className="space-y-0.5">
-                          <p className="upload-picker-name">
-                            {moaFile?.name || "No file selected"}
-                          </p>
-                          <p className="upload-picker-sub">
-                            Size: {formatFileSize(moaFile?.size)}
-                          </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Industry/Agency partner
+                    </span>
+                    <input
+                      className="control-input"
+                      placeholder="e.g. PNP, DA-BAFE"
+                      value={form.industry_partner}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          industry_partner: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <div className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Signed MOA reference
+                    </span>
+                    <div className="upload-field">
+                      <div className="upload-picker">
+                        <div className="upload-picker-info">
+                          <FileText
+                            size={16}
+                            className="mt-0.5 text-slate-500"
+                            aria-hidden="true"
+                          />
+                          <div className="space-y-0.5">
+                            <p className="upload-picker-name">
+                              {moaFile?.name || "No file selected"}
+                            </p>
+                            <p className="upload-picker-sub">
+                              Size: {formatFileSize(moaFile?.size)}
+                            </p>
+                          </div>
                         </div>
+                        <label className="btn btn-outline upload-trigger">
+                          <Upload size={14} aria-hidden="true" />
+                          <span>{moaFile ? "Replace" : "Choose File"}</span>
+                          <input
+                            className="sr-only"
+                            type="file"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                            onChange={(e) => {
+                              const nextFile = e.target.files?.[0] || null;
+                              if (!nextFile) {
+                                setMoaFile(null);
+                                return;
+                              }
+                              if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
+                                setError("MOA file must be 25MB or smaller.");
+                                e.target.value = "";
+                                return;
+                              }
+                              setError("");
+                              setMoaFile(nextFile);
+                            }}
+                          />
+                        </label>
                       </div>
-                      <label className="btn btn-outline upload-trigger">
-                        <Upload size={14} aria-hidden="true" />
-                        <span>{moaFile ? "Replace" : "Choose File"}</span>
-                        <input
-                          className="sr-only"
-                          type="file"
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                          onChange={(e) => {
-                            const nextFile = e.target.files?.[0] || null;
-                            if (!nextFile) {
-                              setMoaFile(null);
-                              return;
-                            }
-                            if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
-                              setError("MOA file must be 25MB or smaller.");
-                              e.target.value = "";
-                              return;
-                            }
-                            setError("");
-                            setMoaFile(nextFile);
-                          }}
-                        />
-                      </label>
-                    </div>
-                    <div className="upload-field-preview">
-                      <p className="upload-field-preview-text">
-                        Current reference: {form.signed_moa_reference || "-"}
-                      </p>
-                      <p className="upload-field-hint">
-                        Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        Upload is saved when you submit/save revision.
-                      </p>
+                      <div className="upload-field-preview">
+                        <p className="upload-field-preview-text">
+                          Current reference: {form.signed_moa_reference || "-"}
+                        </p>
+                        <p className="upload-field-hint">
+                          Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Upload is saved when you submit/save revision.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Start date
-                  </span>
-                  <input
-                    className="control-input"
-                    type="date"
-                    value={form.start_date}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        start_date: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    End date (due date)
-                  </span>
-                  <input
-                    className="control-input"
-                    type="date"
-                    value={form.end_date}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        end_date: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Start date
+                    </span>
+                    <input
+                      className="control-input"
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          start_date: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      End date (due date)
+                    </span>
+                    <input
+                      className="control-input"
+                      type="date"
+                      value={form.end_date}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          end_date: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           ) : null}
@@ -1573,129 +1562,126 @@ export default function SubmitAffiliationPage() {
 
               <div className="form-section">
                 <div className="form-section-head">
-                  <p className="form-section-title">
-                    Outputs and Resources
-                  </p>
+                  <p className="form-section-title">Outputs and Resources</p>
                   <p className="form-section-note">
                     Add expected outputs and link supporting evidence files.
                   </p>
                 </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-700">
-                    Expected research outputs
-                  </span>
-                  <button
-                    id="onboarding-form-add-output"
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={openAddOutputModal}
-                  >
-                    Add Output
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Rows are finalized in database when you submit/save revision.
-                </p>
-                <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Output Type</th>
-                        <th>Target</th>
-                        <th>Notes</th>
-                        <th>File</th>
-                        <th className="text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expectedOutputRows.length === 0 ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-slate-700">
+                      Expected research outputs
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={openAddOutputModal}
+                    >
+                      Add Output
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Rows are finalized in database when you submit/save
+                    revision.
+                  </p>
+                  <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
+                    <table className="data-table">
+                      <thead>
                         <tr>
-                          <td
-                            colSpan={5}
-                            className="px-3 py-4 text-center text-xs text-slate-500"
-                          >
-                            No expected outputs added yet.
-                          </td>
+                          <th>Output Type</th>
+                          <th>Target</th>
+                          <th>Notes</th>
+                          <th>File</th>
+                          <th className="text-right">Action</th>
                         </tr>
-                      ) : (
-                        paginatedExpectedOutputRows.map((row) => (
-                          <tr key={row.client_id}>
-                            <td>
-                              {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
-                                (item) => item.value === row.output_type,
-                              )?.label ||
-                                row.output_type ||
-                                "-"}
-                            </td>
-                            <td className="text-slate-600">
-                              {Math.max(1, Number(row.target_count) || 1)}
-                            </td>
-                            <td className="text-slate-600">
-                              {row.notes || "-"}
-                              {row.needs_file_reselect ? (
-                                <p className="text-xs text-amber-700">
-                                  File needs re-attach after refresh.
-                                </p>
-                              ) : null}
-                            </td>
-                            <td className="text-slate-600 break-all">
-                              {row.file_name ||
-                                row.file?.name ||
-                                row.file_path ||
-                                "-"}
-                            </td>
-                            <td className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline"
-                                  onClick={() => openEditOutputModal(row)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline"
-                                  onClick={() =>
-                                    deleteExpectedOutputRow(row.client_id)
-                                  }
-                                >
-                                  Delete
-                                </button>
-                              </div>
+                      </thead>
+                      <tbody>
+                        {expectedOutputRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="px-3 py-4 text-center text-xs text-slate-500"
+                            >
+                              No expected outputs added yet.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          paginatedExpectedOutputRows.map((row) => (
+                            <tr key={row.client_id}>
+                              <td>
+                                {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
+                                  (item) => item.value === row.output_type,
+                                )?.label ||
+                                  row.output_type ||
+                                  "-"}
+                              </td>
+                              <td className="text-slate-600">
+                                {Math.max(1, Number(row.target_count) || 1)}
+                              </td>
+                              <td className="text-slate-600">
+                                {row.notes || "-"}
+                                {row.needs_file_reselect ? (
+                                  <p className="text-xs text-amber-700">
+                                    File needs re-attach after refresh.
+                                  </p>
+                                ) : null}
+                              </td>
+                              <td className="text-slate-600 break-all">
+                                {row.file_name ||
+                                  row.file?.name ||
+                                  row.file_path ||
+                                  "-"}
+                              </td>
+                              <td className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() => openEditOutputModal(row)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() =>
+                                      deleteExpectedOutputRow(row.client_id)
+                                    }
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {expectedOutputRows.length > 0 ? (
+                    <PaginationControls
+                      page={expectedOutputsPage}
+                      totalPages={expectedOutputsTotalPages}
+                      onPageChange={setExpectedOutputsPage}
+                    />
+                  ) : null}
                 </div>
-                {expectedOutputRows.length > 0 ? (
-                  <PaginationControls
-                    page={expectedOutputsPage}
-                    totalPages={expectedOutputsTotalPages}
-                    onPageChange={setExpectedOutputsPage}
+                <label className="block space-y-1 text-sm sm:max-w-2xl">
+                  <span className="font-semibold text-slate-700">
+                    Supporting MOV link (optional)
+                  </span>
+                  <input
+                    className="control-input"
+                    placeholder="Google Drive link or repository of supporting MOVs"
+                    value={form.supporting_mov_link}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        supporting_mov_link: e.target.value,
+                      }))
+                    }
                   />
-                ) : null}
-              </div>
-              <label className="block space-y-1 text-sm sm:max-w-2xl">
-                <span className="font-semibold text-slate-700">
-                  Supporting MOV link (optional)
-                </span>
-                <input
-                  id="onboarding-form-mov-link"
-                  className="control-input"
-                  placeholder="Google Drive link or repository of supporting MOVs"
-                  value={form.supporting_mov_link}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      supporting_mov_link: e.target.value,
-                    }))
-                  }
-                />
-              </label>
+                </label>
               </div>
             </div>
           ) : null}
@@ -2024,7 +2010,6 @@ export default function SubmitAffiliationPage() {
                 </button>
               ) : (
                 <button
-                  id="onboarding-form-submit"
                   type="submit"
                   className={`btn btn-primary ${disabledButtonClass}`}
                   disabled={Boolean(getSubmissionValidationError())}
@@ -2180,14 +2165,17 @@ export default function SubmitAffiliationPage() {
                         <p className="upload-picker-sub">
                           Size:{" "}
                           {formatFileSize(
-                            newOutputDraft.file?.size || newOutputDraft.file_size,
+                            newOutputDraft.file?.size ||
+                              newOutputDraft.file_size,
                           )}
                         </p>
                       </div>
                     </div>
                     <label className="btn btn-outline upload-trigger">
                       <Upload size={14} aria-hidden="true" />
-                      <span>{newOutputDraft.file ? "Replace" : "Choose File"}</span>
+                      <span>
+                        {newOutputDraft.file ? "Replace" : "Choose File"}
+                      </span>
                       <input
                         className="sr-only"
                         type="file"

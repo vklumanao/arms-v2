@@ -5,11 +5,6 @@ import NotificationPanel from "@/shared/components/navigation/NotificationPanel"
 import Breadcrumbs from "@/shared/components/navigation/Breadcrumbs";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ONBOARDING_ID_BY_ROUTE,
-  OnboardingStartButton,
-  useOnboardingTour,
-} from "@/features/onboarding";
-import {
   hasPermission,
   PERMISSIONS,
   PERMISSIONS_UPDATED_EVENT,
@@ -49,12 +44,6 @@ export default function AppShell() {
   const desktopSidebarScrollTopRef = useRef(0);
   const mobileSidebarScrollTopRef = useRef(0);
   const mobileNavLockScrollYRef = useRef(0);
-  const { tourRunning, startOnboardingTour } = useOnboardingTour({
-    userId: user?.id,
-    role: profile?.role,
-    profileLoading,
-    pathname: location.pathname,
-  });
 
   const isAuthPage = [
     "/login",
@@ -87,11 +76,9 @@ export default function AppShell() {
         .filter((item) => hasPermission(profile?.role, item.permission))
         .map((item) => {
           const Icon = item.icon;
-          const onboardingId = ONBOARDING_ID_BY_ROUTE[item.to];
           return (
             <NavLink
               key={item.to}
-              id={onboardingId}
               to={item.to}
               onClick={() => setMobileNavOpen(false)}
               className={({ isActive }) =>
@@ -471,7 +458,6 @@ export default function AppShell() {
               </p>
               <p className="text-xs text-slate-600">{profile.role}</p>
               <button
-                id="onboarding-logout"
                 className="btn btn-outline mt-3 w-full"
                 onClick={signOut}
               >
@@ -496,7 +482,6 @@ export default function AppShell() {
             ) : null}
             {shouldShowSidebar ? (
               <button
-                id="onboarding-menu-toggle"
                 type="button"
                 aria-label={
                   isShellCollapsed ? "Show navigation" : "Hide navigation"
@@ -507,7 +492,7 @@ export default function AppShell() {
                 <Menu size={16} />
               </button>
             ) : null}
-            <div id="onboarding-breadcrumbs" className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1">
               <Breadcrumbs />
             </div>
           </div>
@@ -525,17 +510,9 @@ export default function AppShell() {
               ))}
             </nav>
             {profile ? (
-              <>
-                <div id="onboarding-notifications" className="shrink-0">
-                  <NotificationPanel />
-                </div>
-                <div className="shrink-0">
-                  <OnboardingStartButton
-                    onStart={() => startOnboardingTour({ required: false })}
-                    tourRunning={tourRunning}
-                  />
-                </div>
-              </>
+              <div className="shrink-0">
+                <NotificationPanel />
+              </div>
             ) : user && profileLoading ? (
               <span className="text-sm text-slate-600">Loading profile...</span>
             ) : (
