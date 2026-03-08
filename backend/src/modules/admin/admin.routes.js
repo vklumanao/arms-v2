@@ -1,5 +1,16 @@
 import crypto from "node:crypto";
 
+/**
+ * Registers admin controls and reference-management routes.
+ *
+ * System flow:
+ * - Exposes affiliate listing sourced from CKAN users/memberships.
+ * - Exposes reference data/usage/link endpoints for admin controls.
+ * - Supports create/update flows for research centers (CKAN organizations).
+ *
+ * Dependency pattern:
+ * - Core CKAN operations are injected from integration client.
+ */
 export function registerAdminRoutes(app, deps) {
   const {
     authMiddleware,
@@ -19,6 +30,9 @@ export function registerAdminRoutes(app, deps) {
     setOrganizationMemberRole,
   } = deps;
 
+  /**
+   * Reads organization extra value by case-insensitive key.
+   */
   function getExtraValue(row, key) {
     const extras = Array.isArray(row?.extras) ? row.extras : [];
     const found = extras.find(
@@ -33,6 +47,9 @@ export function registerAdminRoutes(app, deps) {
     return found?.value || null;
   }
 
+  /**
+   * Normalizes and deduplicates agenda names from request payload.
+   */
   function normalizeAgendaNames(values) {
     const input = Array.isArray(values) ? values : [];
     const seen = new Set();
@@ -47,6 +64,9 @@ export function registerAdminRoutes(app, deps) {
       });
   }
 
+  /**
+   * Reads CKAN user extra value by case-insensitive key.
+   */
   function getUserExtraValue(user, key) {
     const extras = Array.isArray(user?.extras) ? user.extras : [];
     const found = extras.find(
@@ -61,6 +81,9 @@ export function registerAdminRoutes(app, deps) {
     return found?.value ?? null;
   }
 
+  /**
+   * Parses a permissive boolean-like value from user extras.
+   */
   function toBool(value, fallback = false) {
     if (value == null) return fallback;
     const text = String(value).trim().toLowerCase();
@@ -69,11 +92,17 @@ export function registerAdminRoutes(app, deps) {
     return fallback;
   }
 
+  /**
+   * Parses non-negative integer-like values from user extras.
+   */
   function toInt(value, fallback = 0) {
     const n = Number(value);
     return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : fallback;
   }
 
+  /**
+   * Converts extras array into lowercase-key map.
+   */
   function extrasToMap(extras) {
     const rows = Array.isArray(extras) ? extras : [];
     return rows.reduce((acc, item) => {
@@ -88,6 +117,7 @@ export function registerAdminRoutes(app, deps) {
 
   app.get("/api/admin/affiliates", authMiddleware, async (req, res) => {
     try {
+      // Build affiliate rows from CKAN users enriched with org/group membership lookups.
       const [centers, groups, ckanUsers] = await Promise.all([
         listOrganizations(),
         listGroups(),
@@ -109,6 +139,7 @@ export function registerAdminRoutes(app, deps) {
               }
             });
           } catch {
+            // Skip organizations that cannot be read; continue best-effort enrichment.
             // Best-effort only.
           }
         }),
@@ -131,6 +162,7 @@ export function registerAdminRoutes(app, deps) {
               }
             });
           } catch {
+            // Skip groups that cannot be read; continue best-effort enrichment.
             // Best-effort only.
           }
         }),
@@ -232,6 +264,7 @@ export function registerAdminRoutes(app, deps) {
     "/api/admin/affiliates/:userId",
     authMiddleware,
     async (req, res) => {
+      // Local edit is intentionally disabled because source-of-truth is CKAN.
       return res.status(501).json({
         error:
           "CKAN-sourced affiliate records are read-only in this page. Update user details directly in CKAN.",
@@ -244,6 +277,7 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        // Aggregate center/department/user references for admin control forms.
         const [centers, departments, ckanUsers] = await Promise.all([
           listOrganizations(),
           listGroups(),
@@ -275,6 +309,7 @@ export function registerAdminRoutes(app, deps) {
                 };
               }
             } catch {
+              // Ignore failed org-member lookups so endpoint remains available.
               // Best-effort only.
             }
           }),
@@ -339,6 +374,7 @@ export function registerAdminRoutes(app, deps) {
           .toLowerCase();
         const id = String(req.query?.id || "").trim();
         if (type !== "center" || !id) {
+          // Return empty usage payload for unsupported or missing reference target.
           return res.json({
             projectCount: 0,
             profileCount: 0,
@@ -404,6 +440,7 @@ export function registerAdminRoutes(app, deps) {
           .toLowerCase();
         const id = String(req.query?.id || "").trim();
         if (type === "center" && id) {
+          // Resolve linked members/projects/agendas for a single research center.
           const [agendas, members, datasets, groups] = await Promise.all([
             listOrganizationAgendas(id),
             listOrganizationMembers(id),
@@ -494,6 +531,7 @@ export function registerAdminRoutes(app, deps) {
             })),
           });
         }
+        // Default empty response preserves client contract for unsupported types.
         return res.json({ profiles: [], projects: [], agendas: [] });
       } catch (error) {
         return res.status(500).json({
@@ -508,6 +546,7 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        // Currently reports discoverable organization count as sync summary.
         const centers = await listOrganizations();
         return res.json({
           summary: { synced: Array.isArray(centers) ? centers.length : 0 },
@@ -524,6 +563,7 @@ export function registerAdminRoutes(app, deps) {
     "/api/admin/controls/reassign-dependencies",
     authMiddleware,
     async (req, res) => {
+      // Placeholder endpoint reserved for future dependency reassignment workflow.
       return res.json({ data: { updated: 0 } });
     },
   );
@@ -582,6 +622,7 @@ export function registerAdminRoutes(app, deps) {
         }
         let created = null;
         try {
+          // Create org first, then assign center chief as org admin.
           created = await createOrganization({
             name: orgName,
             title: name,
@@ -594,6 +635,7 @@ export function registerAdminRoutes(app, deps) {
         } catch (error) {
           if (created?.name || created?.id) {
             try {
+              // Roll back partially created organization on membership assignment failure.
               await deleteOrganization(created?.name || created?.id);
             } catch {
               // Best-effort cleanup only.
@@ -687,6 +729,7 @@ export function registerAdminRoutes(app, deps) {
         const existingExtras = Array.isArray(currentOrg?.extras)
           ? currentOrg.extras
           : [];
+        // Replace managed extras while preserving unrelated metadata keys.
         const nextExtras = existingExtras.filter((item) => {
           const key = String(item?.key || "")
             .trim()
@@ -710,6 +753,7 @@ export function registerAdminRoutes(app, deps) {
         });
 
         if (centerChiefUsername) {
+          // Keep single-admin intent by demoting previous admin when rotating center chief.
           const targetOrgId = updated?.name || updated?.id || id;
           let previousAdminUsername = "";
           try {
@@ -767,6 +811,7 @@ export function registerAdminRoutes(app, deps) {
     "/api/admin/controls/reference/:type/:id",
     authMiddleware,
     async (req, res) => {
+      // Delete flow intentionally deferred until dependency safety rules are implemented.
       return res.status(501).json({
         error: "Reference delete is not implemented in this backend yet.",
       });
