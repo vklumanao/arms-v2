@@ -66,9 +66,15 @@ import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
 
 if (!config.ckanVerifyTls) {
+  // Local/dev deployments may run CKAN behind self-signed certs.
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
+// Startup flow:
+// 1) Validate required environment configuration.
+// 2) Ensure schema is up to date.
+// 3) Optionally import legacy bootstrap data.
+// 4) Ensure a default admin exists for first login.
 assertConfig();
 await runMigrations();
 const importSummary = await importLegacyUsersJsonIfNeeded();
@@ -83,25 +89,45 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
+    // CORS origins are centrally configured to match frontend hosts.
     origin: config.corsOrigins,
     credentials: true,
   }),
 );
 
+/**
+ * Sends a standardized 400 response payload.
+ *
+ * Shared by route modules via dependency injection to keep error shape consistent.
+ */
 function badRequest(res, message) {
   return res.status(400).json({ error: message });
 }
 
+/**
+ * Sends a standardized 401 response payload.
+ *
+ * Used by auth middleware and auth handlers to avoid leaking internal failure details.
+ */
 function unauthorized(res, message = "Unauthorized") {
   return res.status(401).json({ error: message });
 }
 
+/**
+ * Issues a JWT session token for an authenticated user.
+ *
+ * Payload fields:
+ * - `sub`: user id (primary identity for auth middleware lookup).
+ * - `email`, `role`: convenience claims used by clients.
+ * - `sid`: per-session identifier for auditing/revocation strategies.
+ */
 function signSession(user) {
   return jwt.sign(
     {
       sub: user.id,
       email: user.email,
       role: user.role,
+      // Unique session id supports revocation/audit patterns even for same user.
       sid: crypto.randomUUID(),
     },
     config.jwtSecret,
@@ -109,6 +135,18 @@ function signSession(user) {
   );
 }
 
+/**
+ * Authenticates requests using `Authorization: Bearer <jwt>`.
+ *
+ * System flow:
+ * - Validate bearer token format.
+ * - Verify JWT signature and expiry.
+ * - Resolve current user from DB.
+ * - Reject deactivated/missing users even if token is valid.
+ *
+ * Side effects:
+ * - Attaches `req.user` and `req.auth` on success.
+ */
 async function authMiddleware(req, res, next) {
   const header = String(req.headers.authorization || "");
   if (!header.startsWith("Bearer ")) return unauthorized(res);
@@ -128,6 +166,13 @@ async function authMiddleware(req, res, next) {
   }
 }
 
+/**
+ * Normalizes incoming role values to supported role enum.
+ *
+ * Data transformation:
+ * - Accepts arbitrary role input.
+ * - Returns one of: `student`, `faculty`, `admin`.
+ */
 function normalizeRole(role) {
   const value = String(role || "student").toLowerCase();
   return value === "faculty"
@@ -137,16 +182,35 @@ function normalizeRole(role) {
       : "student";
 }
 
+/**
+ * Normalizes arbitrary input to a trimmed string.
+ *
+ * Utility used throughout route modules to reduce null/undefined branching.
+ */
 function asTrimmedString(value) {
   if (value == null) return "";
   return String(value).trim();
 }
 
+/**
+ * Coerces input into number with fallback.
+ *
+ * Edge case:
+ * - Non-finite values (`NaN`, `Infinity`) resolve to provided fallback.
+ */
 function asNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
 }
 
+/**
+ * Normalizes resource/output type labels into canonical buckets.
+ *
+ * Important logic:
+ * - Removes "(Target: n)" suffix pattern used in submission-generated labels.
+ * - Normalizes separators/casing.
+ * - Maps known synonyms to canonical values consumed by metrics.
+ */
 function normalizeOutputType(value) {
   const base = String(value || "")
     .trim()
@@ -178,6 +242,11 @@ function normalizeOutputType(value) {
   return base;
 }
 
+/**
+ * Retrieves an `extras` metadata value by case-insensitive key.
+ *
+ * Used by dataset ownership and project metadata extraction paths.
+ */
 function getExtraByKey(extras, key) {
   const rows = Array.isArray(extras) ? extras : [];
   const match = rows.find(
@@ -192,7 +261,19 @@ function getExtraByKey(extras, key) {
   return match?.value ?? null;
 }
 
+/**
+ * Determines whether a dataset belongs to the provided user.
+ *
+ * Important logic:
+ * - Checks current and historical ownership markers:
+ *   `submitted_by_user_id`, `submitted_by_email`, `submitted_by`.
+ * - Falls back to `author_email` for older datasets.
+ *
+ * Edge case:
+ * - Ownership checks are resilient to mixed casing/whitespace in metadata.
+ */
 function isDatasetOwnedByUser(dataset, user) {
+  // Ownership is inferred from multiple legacy metadata fields for backward compatibility.
   const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
   const submittedByUserId = asTrimmedString(
     getExtraByKey(extras, "submitted_by_user_id"),
@@ -218,6 +299,13 @@ function isDatasetOwnedByUser(dataset, user) {
   return false;
 }
 
+/**
+ * Infers a normalized output type from a CKAN resource.
+ *
+ * System flow:
+ * - Try resource name first, then description, then format.
+ * - Return first canonical match from `normalizeOutputType`.
+ */
 function inferOutputTypeFromResource(resource) {
   const fromName = normalizeOutputType(resource?.name || "");
   if (fromName) return fromName;
@@ -228,6 +316,17 @@ function inferOutputTypeFromResource(resource) {
   return "";
 }
 
+/**
+ * Lists datasets owned by a user across CKAN pages.
+ *
+ * System flow:
+ * - Non-admin users are scoped to their `ckan_org_id`.
+ * - Admin users query across organizations.
+ * - Filters each page by `isDatasetOwnedByUser`.
+ *
+ * Edge case:
+ * - Hard page cap prevents runaway fetch loops when upstream totals are inaccurate.
+ */
 async function listOwnedDatasets(user) {
   const role = String(user?.role || "").toLowerCase();
   const orgId =
@@ -238,6 +337,7 @@ async function listOwnedDatasets(user) {
   const limit = 100;
   let page = 1;
 
+  // Safety cap prevents runaway pagination if CKAN returns inconsistent totals.
   while (page <= 20) {
     const result = await listDatasets({ orgId, page, limit });
     const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
@@ -254,6 +354,16 @@ async function listOwnedDatasets(user) {
   return rows;
 }
 
+/**
+ * Computes affiliate profile counters from owned datasets/resources.
+ *
+ * Data transformation:
+ * - `research_project_count` = owned dataset count.
+ * - Resource-level outputs are categorized into publication/creative/award/IP counts.
+ *
+ * Dependency:
+ * - Relies on `listOwnedDatasets` + `inferOutputTypeFromResource`.
+ */
 async function computeAffiliateProfileMetrics(user) {
   const ownedDatasets = await listOwnedDatasets(user);
   let publicationCount = 0;
@@ -283,6 +393,12 @@ async function computeAffiliateProfileMetrics(user) {
   };
 }
 
+/**
+ * Resolves an entity from CKAN rows by either `id` or `name`.
+ *
+ * Used for organization/group selection during registration where the client
+ * may submit either identifier form.
+ */
 function byAnyId(rows, value) {
   const candidate = String(value || "")
     .trim()
@@ -294,7 +410,14 @@ function byAnyId(rows, value) {
   );
 }
 
+/**
+ * Produces a stable requester identity key for rate limiting.
+ *
+ * Priority:
+ * - First forwarded IP (proxy-aware), then socket/express IP fallback.
+ */
 function requestIdentity(req) {
+  // Prefer the first forwarded IP when behind a proxy/load balancer.
   const ip =
     (req.headers["x-forwarded-for"] || "").toString().split(",")[0].trim() ||
     req.socket?.remoteAddress ||
@@ -306,6 +429,7 @@ function requestIdentity(req) {
 const loginRateLimit = createRateLimiter({
   windowMs: 5 * 60 * 1000,
   maxRequests: 12,
+  // Per-email key reduces credential-stuffing impact against a single account.
   keyFn: (req) =>
     `${requestIdentity(req)}|${String(req.body?.email || "").toLowerCase()}`,
 });
@@ -329,6 +453,8 @@ const resetRateLimit = createRateLimiter({
   keyFn: (req) => `${requestIdentity(req)}|reset`,
 });
 
+// Register module routes with explicit dependency injection.
+// This keeps route files decoupled from direct imports and simplifies testing/mocking.
 registerAuthRoutes(app, {
   registerRateLimit,
   loginRateLimit,
@@ -440,11 +566,22 @@ registerAdminUserRoutes(app, {
   setOrganizationMemberRole,
   logAuditEvent,
 });
+
+/**
+ * Final error middleware.
+ *
+ * Behavior:
+ * - Logs error server-side.
+ * - Returns generic 500 message to avoid leaking internals to clients.
+ */
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Internal server error." });
 });
 
+/**
+ * Starts the HTTP server on configured port.
+ */
 app.listen(config.port, () => {
   console.log(`ARMS backend listening on http://localhost:${config.port}`);
 });
