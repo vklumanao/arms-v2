@@ -28,11 +28,8 @@ export const ROLE_PERMISSIONS = {
     "my_submissions.view",
     "publications.manage",
     "program_dashboard.view",
-    "admin.review_queue.manage",
     "admin.controls.manage",
     "admin.users.manage",
     "admin.affiliates.manage",
-    "admin.reports.view",
-    "admin.audit.view",
   ],
 };

@@ -81,12 +81,9 @@ function mockApiPayload(path, options = {}) {
           "my_submissions.view",
           "publications.manage",
           "program_dashboard.view",
-          "admin.review_queue.manage",
           "admin.controls.manage",
           "admin.users.manage",
           "admin.affiliates.manage",
-          "admin.reports.view",
-          "admin.audit.view",
         ],
       },
     };
@@ -138,66 +135,6 @@ function mockApiPayload(path, options = {}) {
   }
   if (cleanPath.includes("/admin/users/")) return { data: null };
 
-  if (cleanPath === "/admin/review/queue-snapshot") {
-    return {
-      statusSummary: { proposal: 0, ongoing: 0, completed: 0, rejected: 0 },
-      items: [],
-      centers: [],
-      departments: [],
-      assignments: {},
-      reviewerNameById: {},
-      submitterNameById: {},
-      auditPreviewByProject: {},
-      latestEditByProject: {},
-      editorNameById: {},
-    };
-  }
-  if (cleanPath === "/admin/review/reviewed-today") return { count: 0 };
-  if (
-    cleanPath.includes("/admin/review/project/") &&
-    cleanPath.endsWith("/detail")
-  ) {
-    return { project: null, movs: [], history: [], reviews: [] };
-  }
-  if (cleanPath === "/admin/review/assign-reviewer") return { ok: true };
-  if (cleanPath === "/admin/review/mark-completed") return { ok: true };
-  if (
-    cleanPath.includes("/admin/review/project/") &&
-    cleanPath.endsWith("/visibility")
-  ) {
-    return { ok: true };
-  }
-  if (cleanPath === "/admin/review/review-decision") return { ok: true };
-
-  if (cleanPath === "/admin/reports/dataset") {
-    return {
-      projects: [],
-      publications: [],
-      profiles: [],
-      movs: [],
-      centers: [],
-      departments: [],
-    };
-  }
-  if (
-    cleanPath.includes("/admin/reports/project/") &&
-    cleanPath.endsWith("/detail")
-  ) {
-    return { project: null, history: [], reviews: [] };
-  }
-  if (
-    cleanPath.includes("/admin/reports/project/") &&
-    cleanPath.endsWith("/mov-documents")
-  ) {
-    return { data: [] };
-  }
-  if (
-    cleanPath.includes("/admin/reports/project/") &&
-    cleanPath.endsWith("/visibility")
-  ) {
-    return { data: null };
-  }
-
   if (cleanPath === "/admin/controls/reference-data") {
     return {
       centers: [],
@@ -226,22 +163,6 @@ function mockApiPayload(path, options = {}) {
   if (cleanPath.includes("/admin/controls/reference/")) {
     if (method === "PATCH") return { data: null };
     return { ok: true };
-  }
-
-  if (cleanPath === "/admin/audit/console") {
-    return {
-      notifications: [],
-      recentActions: [],
-      roleSummary: [],
-      dailyCounts: [],
-      staleNotifications: [],
-    };
-  }
-  if (cleanPath === "/admin/audit/notification-metrics") {
-    return { data: { totals: [], timeline: [] } };
-  }
-  if (cleanPath === "/admin/audit/archive-old-notifications") {
-    return { data: 0 };
   }
 
   if (cleanPath === "/admin/affiliates") return { data: [] };

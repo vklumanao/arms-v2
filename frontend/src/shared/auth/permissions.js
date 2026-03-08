@@ -9,12 +9,9 @@ export const PERMISSIONS = {
   MY_SUBMISSIONS_VIEW: "my_submissions.view",
   PUBLICATIONS_MANAGE: "publications.manage",
   PROGRAM_DASHBOARD_VIEW: "program_dashboard.view",
-  ADMIN_REVIEW_QUEUE_MANAGE: "admin.review_queue.manage",
   ADMIN_CONTROLS_MANAGE: "admin.controls.manage",
   ADMIN_USERS_MANAGE: "admin.users.manage",
   ADMIN_AFFILIATES_MANAGE: "admin.affiliates.manage",
-  ADMIN_REPORTS_VIEW: "admin.reports.view",
-  ADMIN_AUDIT_VIEW: "admin.audit.view",
 };
 
 export const PERMISSION_LABELS = {
@@ -26,12 +23,9 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.MY_SUBMISSIONS_VIEW]: "My Submissions: View",
   [PERMISSIONS.PUBLICATIONS_MANAGE]: "Publications: Manage",
   [PERMISSIONS.PROGRAM_DASHBOARD_VIEW]: "Program Dashboards: View",
-  [PERMISSIONS.ADMIN_REVIEW_QUEUE_MANAGE]: "Admin Review Queue: Manage",
   [PERMISSIONS.ADMIN_CONTROLS_MANAGE]: "Admin Controls: Manage",
   [PERMISSIONS.ADMIN_USERS_MANAGE]: "Admin Users: Manage",
   [PERMISSIONS.ADMIN_AFFILIATES_MANAGE]: "Admin Affiliates: Manage",
-  [PERMISSIONS.ADMIN_REPORTS_VIEW]: "Admin Reports: View",
-  [PERMISSIONS.ADMIN_AUDIT_VIEW]: "Admin Audit: View",
 };
 
 export const ROLE_LABELS = {
@@ -55,12 +49,9 @@ const FACULTY_PERMISSIONS = [...STUDENT_PERMISSIONS];
 
 const ADMIN_PERMISSIONS = [
   ...STUDENT_PERMISSIONS,
-  PERMISSIONS.ADMIN_REVIEW_QUEUE_MANAGE,
   PERMISSIONS.ADMIN_CONTROLS_MANAGE,
   PERMISSIONS.ADMIN_USERS_MANAGE,
   PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
-  PERMISSIONS.ADMIN_REPORTS_VIEW,
-  PERMISSIONS.ADMIN_AUDIT_VIEW,
 ];
 
 export const ROLE_PERMISSIONS = {

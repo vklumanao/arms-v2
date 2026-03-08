@@ -31,17 +31,18 @@ import {
 import {
   AdminAffiliatesModulePage,
   AdminAffiliatesPage,
-  AdminAuditConsolePage,
   AdminControlsPage,
-  AdminReportsPage,
   AdminResearchCenterPage,
-  AdminReviewQueuePage,
   AdminUsersPage,
 } from "@/features/admin";
 
 const withBoundary = (element) => (
   <RouteErrorBoundary>{element}</RouteErrorBoundary>
 );
+const withPermission = (permission, element) =>
+  withBoundary(
+    <PermissionRoute permission={permission}>{element}</PermissionRoute>,
+  );
 
 export default function AppRoutes() {
   return (
@@ -74,132 +75,87 @@ export default function AppRoutes() {
           >
             <Route
               path="/affiliate-profile"
-              element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.AFFILIATE_PROFILE_VIEW}
-                >
-                  <AffiliateProfilePage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.AFFILIATE_PROFILE_VIEW,
+                <AffiliateProfilePage />,
               )}
             />
             <Route
               path="/submit-affiliation"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.AFFILIATIONS_MANAGE}>
-                  <ResearchProjectsHubPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.AFFILIATIONS_MANAGE,
+                <ResearchProjectsHubPage />,
               )}
             />
             <Route
               path="/submit-affiliation/submit"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.AFFILIATIONS_MANAGE}>
-                  <SubmitAffiliationPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.AFFILIATIONS_MANAGE,
+                <SubmitAffiliationPage />,
               )}
             />
             <Route
               path="/research-outputs"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.RESEARCH_OUTPUTS_VIEW}>
-                  <ResearchOutputsPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
+                <ResearchOutputsPage />,
               )}
             />
             <Route
               path="/awards-recognition"
-              element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.AWARDS_RECOGNITION_VIEW}
-                >
-                  <AwardsRecognitionPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.AWARDS_RECOGNITION_VIEW,
+                <AwardsRecognitionPage />,
               )}
             />
             <Route
               path="/my-submissions"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.MY_SUBMISSIONS_VIEW}>
-                  <MySubmissionsPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.MY_SUBMISSIONS_VIEW,
+                <MySubmissionsPage />,
               )}
             />
             <Route
               path="/publications"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.PUBLICATIONS_MANAGE}>
-                  <PublicationsPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.PUBLICATIONS_MANAGE,
+                <PublicationsPage />,
               )}
             />
           </Route>
 
           <Route element={<RoleRoute allow={["admin"]} />}>
             <Route
-              path="/admin/review-queue"
-              element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.ADMIN_REVIEW_QUEUE_MANAGE}
-                >
-                  <AdminReviewQueuePage />
-                </PermissionRoute>,
-              )}
-            />
-            <Route
               path="/admin/controls"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.ADMIN_CONTROLS_MANAGE}>
-                  <AdminControlsPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+                <AdminControlsPage />,
               )}
             />
             <Route
               path="/admin/users"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.ADMIN_USERS_MANAGE}>
-                  <AdminUsersPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.ADMIN_USERS_MANAGE,
+                <AdminUsersPage />,
               )}
             />
             <Route
               path="/admin/affiliates"
-              element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.ADMIN_AFFILIATES_MANAGE}
-                >
-                  <AdminAffiliatesModulePage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+                <AdminAffiliatesModulePage />,
               )}
             />
             <Route
               path="/admin/affiliates-registry"
-              element={withBoundary(
-                <PermissionRoute
-                  permission={PERMISSIONS.ADMIN_AFFILIATES_MANAGE}
-                >
-                  <AdminAffiliatesPage />
-                </PermissionRoute>,
-              )}
-            />
-            <Route
-              path="/admin/reports"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.ADMIN_REPORTS_VIEW}>
-                  <AdminReportsPage />
-                </PermissionRoute>,
+              element={withPermission(
+                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+                <AdminAffiliatesPage />,
               )}
             />
             <Route
               path="/admin/research-center"
               element={withBoundary(<AdminResearchCenterPage />)}
-            />
-            <Route
-              path="/admin/audit"
-              element={withBoundary(
-                <PermissionRoute permission={PERMISSIONS.ADMIN_AUDIT_VIEW}>
-                  <AdminAuditConsolePage />
-                </PermissionRoute>,
-              )}
             />
           </Route>
         </Route>
