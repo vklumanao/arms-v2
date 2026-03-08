@@ -8,8 +8,6 @@ const SEGMENT_LABELS = {
   "research-outputs": "Research Outputs",
   "awards-recognition": "Awards and Recognition",
   "affiliate-profile": "Affiliate Profile",
-  "my-submissions": "My Submissions",
-  publications: "Publications",
   admin: "Admin",
   affiliates: "Affiliates",
   "affiliates-registry": "Affiliate Registry",
