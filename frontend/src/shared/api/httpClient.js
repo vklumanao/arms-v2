@@ -207,6 +207,25 @@ function mockApiPayload(path, options = {}) {
   ) {
     return { data: null };
   }
+  if (
+    cleanPath.includes("/submissions/datasets/") &&
+    cleanPath.endsWith("/visibility") &&
+    method === "PATCH"
+  ) {
+    let isPublic = false;
+    try {
+      const parsed = JSON.parse(String(options.body || "{}"));
+      isPublic = parsed?.isPublic === true;
+    } catch {
+      isPublic = false;
+    }
+    return {
+      data: {
+        dataset_id: "mock-dataset-id",
+        project_public_visible: isPublic,
+      },
+    };
+  }
   if (cleanPath === "/submissions" || cleanPath.startsWith("/submissions/")) {
     return { data: null };
   }
