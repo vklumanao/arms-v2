@@ -11,7 +11,6 @@ import { useToast } from "@/app/providers/ToastProvider";
 import {
   deleteOwnedProject,
   fetchProjectResources,
-  quickEditOwnedProject,
   updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
@@ -20,7 +19,6 @@ import {
   formatDate,
   mapDatasetToProjectRecord,
   STATUS_OPTIONS,
-  toDateInputValue,
 } from "@/features/submissions/utils";
 import {
   CheckCircle2,
@@ -50,21 +48,8 @@ export default function ResearchProjectsHubPage() {
     sortBy: "submitted_desc",
   });
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [editingProject, setEditingProject] = useState(null);
-  const [editForm, setEditForm] = useState({
-    title: "",
-    abstract: "",
-    year: "",
-    industry_partner: "",
-    funding_source: "",
-    funding_amount: "",
-    start_date: "",
-    end_date: "",
-  });
-  const [savingEdit, setSavingEdit] = useState(false);
   const [deletingProjectId, setDeletingProjectId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [exportingType, setExportingType] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -76,7 +61,9 @@ export default function ResearchProjectsHubPage() {
     syncEnabled: true,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
+  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState(
+    {},
+  );
   const toast = useToast();
 
   useEffect(() => {
@@ -314,46 +301,16 @@ export default function ResearchProjectsHubPage() {
   };
 
   const openEditModal = (project) => {
-    const datasetId = String(project?.ckan_dataset_id || project?.id || "").trim();
+    const datasetId = String(
+      project?.ckan_dataset_id || project?.id || "",
+    ).trim();
     if (!datasetId) {
       setError("Project id is missing.");
       return;
     }
-    navigate(`/submit-affiliation/submit?edit=${encodeURIComponent(datasetId)}`);
-  };
-
-  const handleEditField = (key, value) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const submitQuickEdit = async () => {
-    if (!editingProject?.id) return;
-    setSavingEdit(true);
-    setMessage("");
-    setError("");
-
-    const { data, error: updateError } = await quickEditOwnedProject({
-      projectId: editingProject.id,
-      form: editForm,
-    });
-
-    if (updateError) {
-      setError(updateError.message || "Unable to update project.");
-      setSavingEdit(false);
-      return;
-    }
-
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === editingProject.id
-          ? { ...project, ...(data || {}) }
-          : project,
-      ),
+    navigate(
+      `/submit-affiliation/submit?edit=${encodeURIComponent(datasetId)}`,
     );
-
-    setSavingEdit(false);
-    setEditingProject(null);
-    setMessage("Project updated successfully.");
   };
 
   const handleDeleteProject = async (project) => {
@@ -764,6 +721,12 @@ export default function ResearchProjectsHubPage() {
                           .toLowerCase() ===
                           String(user?.email || "")
                             .trim()
+                            .toLowerCase() ||
+                        String(project?.project_author_email || "")
+                          .trim()
+                          .toLowerCase() ===
+                          String(user?.email || "")
+                            .trim()
                             .toLowerCase());
                     return (
                       <tr key={project.id} className="align-top">
@@ -811,7 +774,9 @@ export default function ResearchProjectsHubPage() {
                               }
                               onClick={() => handleToggleVisibility(project)}
                             >
-                              {visibilitySavingByDataset[project.ckan_dataset_id]
+                              {visibilitySavingByDataset[
+                                project.ckan_dataset_id
+                              ]
                                 ? "Saving..."
                                 : project.private
                                   ? "Make Public"
@@ -1052,128 +1017,6 @@ export default function ResearchProjectsHubPage() {
         </div>
       ) : null}
 
-      {editingProject ? (
-        <div className="modal-overlay modal-overlay-centered">
-          <div className="panel w-full max-w-6xl">
-            <div className="panel-header flex items-center justify-between gap-3">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Edit Project
-              </h2>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setEditingProject(null)}
-                disabled={savingEdit}
-              >
-                Close
-              </button>
-            </div>
-            <div className="panel-body grid gap-4 sm:grid-cols-2">
-              <label className="block space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">
-                  Project title
-                </span>
-                <input
-                  className="control-input"
-                  value={editForm.title}
-                  onChange={(e) => handleEditField("title", e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">Abstract</span>
-                <textarea
-                  className="control-textarea min-h-28"
-                  value={editForm.abstract}
-                  onChange={(e) => handleEditField("abstract", e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Year</span>
-                <input
-                  className="control-input"
-                  value={editForm.year}
-                  onChange={(e) => handleEditField("year", e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Funding amount
-                </span>
-                <input
-                  className="control-input"
-                  value={editForm.funding_amount}
-                  onChange={(e) =>
-                    handleEditField("funding_amount", e.target.value)
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Industry partner
-                </span>
-                <input
-                  className="control-input"
-                  value={editForm.industry_partner}
-                  onChange={(e) =>
-                    handleEditField("industry_partner", e.target.value)
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Funding source
-                </span>
-                <input
-                  className="control-input"
-                  value={editForm.funding_source}
-                  onChange={(e) =>
-                    handleEditField("funding_source", e.target.value)
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Start date</span>
-                <input
-                  type="date"
-                  className="control-input"
-                  value={editForm.start_date}
-                  onChange={(e) =>
-                    handleEditField("start_date", e.target.value)
-                  }
-                />
-              </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">End date</span>
-                <input
-                  type="date"
-                  className="control-input"
-                  value={editForm.end_date}
-                  onChange={(e) => handleEditField("end_date", e.target.value)}
-                />
-              </label>
-              <div className="sm:col-span-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setEditingProject(null)}
-                  disabled={savingEdit}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setConfirmSaveOpen(true)}
-                  disabled={savingEdit}
-                >
-                  {savingEdit ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       <ConfirmActionModal
         open={Boolean(deleteTarget)}
         title="Delete Research Project"
@@ -1183,23 +1026,6 @@ export default function ResearchProjectsHubPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDeleteProject}
       />
-
-      <ConfirmActionModal
-        open={confirmSaveOpen}
-        title="Save Project Changes"
-        message="Apply these updates to this project now?"
-        confirmLabel="Save"
-        loading={savingEdit}
-        onCancel={() => setConfirmSaveOpen(false)}
-        onConfirm={async () => {
-          setConfirmSaveOpen(false);
-          await submitQuickEdit();
-        }}
-      />
     </section>
   );
 }
-
-
-
-
