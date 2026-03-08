@@ -4,10 +4,21 @@ import { config } from "../config/index.js";
 import { decryptSecret, encryptSecret } from "../security/crypto.js";
 import { query } from "../db/client.js";
 
+/**
+ * Returns current timestamp in ISO-8601 format.
+ *
+ * Used as a default when create/update callers do not supply timestamps.
+ */
 function nowIso() {
   return new Date().toISOString();
 }
 
+/**
+ * Produces compact auth-safe user payload for session responses.
+ *
+ * Data transformation:
+ * - Excludes sensitive fields such as password hash and CKAN API token.
+ */
 function sanitizeUser(user) {
   return {
     id: user.id,
@@ -17,6 +28,13 @@ function sanitizeUser(user) {
   };
 }
 
+/**
+ * Produces profile payload shape expected by frontend auth/profile consumers.
+ *
+ * Data transformation:
+ * - Converts nullable fields to explicit `null` defaults.
+ * - Normalizes booleans/numeric counters into predictable JSON types.
+ */
 function sanitizeProfile(user) {
   return {
     id: user.id,
@@ -39,6 +57,15 @@ function sanitizeProfile(user) {
   };
 }
 
+/**
+ * Maps raw DB row to internal user domain object.
+ *
+ * Important logic:
+ * - Decrypts stored CKAN API token transparently so callers can use plaintext token.
+ *
+ * Edge case:
+ * - Returns `null` when row is missing.
+ */
 function mapUserRow(row) {
   if (!row) return null;
   return {
@@ -69,6 +96,16 @@ function mapUserRow(row) {
   };
 }
 
+/**
+ * Ensures bootstrap admin account exists.
+ *
+ * System flow:
+ * - Look up configured default admin email.
+ * - If absent, hash configured password and create admin record.
+ *
+ * Dependency:
+ * - Used during server startup after migrations.
+ */
 export async function ensureDefaultAdmin() {
   const existing = await findUserByEmail(config.defaultAdminEmail);
   if (existing) return;
@@ -93,6 +130,12 @@ export async function ensureDefaultAdmin() {
   });
 }
 
+/**
+ * Finds a user by email.
+ *
+ * Data transformation:
+ * - Normalizes input email (trim + lowercase) before query.
+ */
 export async function findUserByEmail(email) {
   const normalized = String(email || "")
     .trim()
@@ -103,6 +146,9 @@ export async function findUserByEmail(email) {
   return mapUserRow(result.rows?.[0] || null);
 }
 
+/**
+ * Finds a user by id.
+ */
 export async function findUserById(id) {
   const result = await query(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [
     String(id || ""),
@@ -110,6 +156,19 @@ export async function findUserById(id) {
   return mapUserRow(result.rows?.[0] || null);
 }
 
+/**
+ * Creates a new user row.
+ *
+ * System flow:
+ * - Normalize and sanitize input values.
+ * - Clamp numeric counters to non-negative values.
+ * - Encrypt CKAN API token before persistence.
+ * - Insert and return mapped row.
+ *
+ * Edge cases:
+ * - Missing id/timestamps are auto-generated.
+ * - Optional profile fields default to `null`.
+ */
 export async function createUser(input) {
   const user = {
     id: input.id || crypto.randomUUID(),
@@ -192,9 +251,23 @@ export async function createUser(input) {
     ],
   );
 
+  // Return canonical in-memory shape (includes decrypted token field if present).
   return mapUserRow(result.rows?.[0] || null);
 }
 
+/**
+ * Partially updates a user record with an allowlisted patch.
+ *
+ * System flow:
+ * - Filter patch keys against allowed fields.
+ * - Normalize values per field type (email/text/boolean/counters/token).
+ * - Build dynamic SQL update statement.
+ * - Always refresh `updated_at`.
+ *
+ * Edge cases:
+ * - Empty/invalid patch returns current user unchanged.
+ * - CKAN token updates are encrypted before DB write.
+ */
 export async function updateUser(id, patch) {
   const allowed = new Set([
     "full_name",
@@ -257,6 +330,7 @@ export async function updateUser(id, patch) {
       nextValue = Math.max(0, Number(value || 0) || 0);
     }
     if (key === "ckan_api_token") {
+      // Keep encrypted-at-rest invariant for external API secrets.
       nextValue = encryptSecret(value);
     }
     values.push(nextValue);
@@ -275,14 +349,26 @@ export async function updateUser(id, patch) {
   return mapUserRow(result.rows?.[0] || null);
 }
 
+/**
+ * Verifies plaintext password against stored hash.
+ */
 export async function verifyPassword(user, plainPassword) {
   return bcrypt.compare(String(plainPassword || ""), user.password_hash);
 }
 
+/**
+ * Hashes plaintext password for storage.
+ */
 export async function hashPassword(plainPassword) {
   return bcrypt.hash(String(plainPassword || ""), 10);
 }
 
+/**
+ * Builds auth response payload for login/session endpoints.
+ *
+ * Dependency:
+ * - Uses `sanitizeUser` and `sanitizeProfile` to avoid leaking sensitive fields.
+ */
 export function toAuthPayload(user, token) {
   return {
     token,
