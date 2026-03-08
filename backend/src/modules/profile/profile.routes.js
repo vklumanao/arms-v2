@@ -1,3 +1,14 @@
+/**
+ * Registers affiliate profile API routes.
+ *
+ * System flow:
+ * - `GET /api/affiliate-profile/me` returns authenticated user profile + computed metrics.
+ * - `PATCH /api/affiliate-profile/me` validates patchable fields, persists updates,
+ *   then returns latest profile + refreshed metrics.
+ *
+ * Dependencies:
+ * - Uses injected auth, validation, store, and metrics functions from server composition.
+ */
 export function registerProfileRoutes(app, deps) {
   const {
     authMiddleware,
@@ -8,6 +19,7 @@ export function registerProfileRoutes(app, deps) {
     computeAffiliateProfileMetrics,
   } = deps;
 
+  // Returns current user's profile view model with live research metrics.
   app.get("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
     try {
       const metrics = await computeAffiliateProfileMetrics(req.user);
@@ -36,6 +48,7 @@ export function registerProfileRoutes(app, deps) {
     }
   });
 
+  // Updates editable affiliate profile fields only; immutable auth fields stay untouched.
   app.patch("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
     try {
       const parsed = parseOrThrow(
@@ -45,6 +58,7 @@ export function registerProfileRoutes(app, deps) {
       );
 
       const patch = {};
+      // Build sparse patch so omitted fields are not overwritten.
       if ("full_name" in parsed) patch.full_name = parsed.full_name || null;
       if ("google_scholar_link" in parsed) {
         patch.google_scholar_link = parsed.google_scholar_link || null;
@@ -59,6 +73,7 @@ export function registerProfileRoutes(app, deps) {
       }
 
       const updatedUser = await updateUser(req.user.id, patch);
+      // Re-read latest state when store returns null to keep response deterministic.
       const latest = updatedUser || (await findUserById(req.user.id));
       const metrics = await computeAffiliateProfileMetrics(latest || req.user);
 
