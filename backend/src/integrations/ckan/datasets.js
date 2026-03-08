@@ -47,10 +47,48 @@ export async function createDataset(payload) {
 }
 
 /**
+ * Loads a CKAN dataset/package by id or name.
+ *
+ * Edge case:
+ * - Returns `null` when id is empty.
+ */
+export async function getDataset(datasetId) {
+  const id = toText(datasetId);
+  if (!id) return null;
+  return ckanAction("package_show", { id });
+}
+
+/**
  * Updates CKAN dataset/package.
  */
 export async function updateDataset(payload) {
   return ckanAction("package_update", payload || {});
+}
+
+/**
+ * Updates only dataset visibility (`private`) with patch-first strategy.
+ *
+ * System flow:
+ * - Attempt `package_patch` for minimal-field update.
+ * - Fallback to `package_update` with existing dataset snapshot for CKAN builds
+ *   where patch is unavailable.
+ */
+export async function setDatasetVisibility({ datasetId, isPrivate }) {
+  const id = toText(datasetId);
+  if (!id) throw new Error("Dataset id is required.");
+
+  const privateFlag = Boolean(isPrivate);
+  try {
+    return await ckanAction("package_patch", { id, private: privateFlag });
+  } catch {
+    const current = await getDataset(id);
+    if (!current) throw new Error("Dataset not found.");
+    return updateDataset({
+      ...current,
+      id: current.id || id,
+      private: privateFlag,
+    });
+  }
 }
 
 /**
