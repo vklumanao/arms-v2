@@ -109,3 +109,22 @@ export async function deleteDataset(datasetId) {
 export async function createDatasetResource(payload) {
   return ckanAction("resource_create", payload || {});
 }
+
+/**
+ * Updates a CKAN dataset resource.
+ */
+export async function updateDatasetResource(payload) {
+  return ckanAction("resource_update", payload || {});
+}
+
+/**
+ * Deletes a CKAN dataset resource by id.
+ *
+ * Edge case:
+ * - No-op when resource id is empty after normalization.
+ */
+export async function deleteDatasetResource(resourceId) {
+  const id = toText(resourceId);
+  if (!id) return;
+  await ckanAction("resource_delete", { id });
+}
