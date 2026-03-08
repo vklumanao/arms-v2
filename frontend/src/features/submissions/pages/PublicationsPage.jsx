@@ -406,7 +406,3 @@ export default function PublicationsPage() {
     </section>
   );
 }
-
-
-
-
