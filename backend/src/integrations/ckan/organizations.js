@@ -1,6 +1,11 @@
 import { ckanAction } from "./http/ckanAction.js";
 import { addMember, removeMember } from "./memberships.js";
 
+/**
+ * Lists CKAN organizations with full fields and extras.
+ *
+ * Used as a reference-data source across registration and admin modules.
+ */
 export async function listOrganizations() {
   return ckanAction("organization_list", {
     all_fields: true,
@@ -8,6 +13,12 @@ export async function listOrganizations() {
   });
 }
 
+/**
+ * Loads a single organization by id/name.
+ *
+ * Edge case:
+ * - Returns `null` when input id is empty.
+ */
 export async function getOrganization(orgId) {
   const id = String(orgId || "").trim();
   if (!id) return null;
@@ -22,6 +33,12 @@ export async function getOrganization(orgId) {
   });
 }
 
+/**
+ * Lists members of a CKAN organization.
+ *
+ * Data source:
+ * - Uses `organization_show` with `include_users: true`.
+ */
 export async function listOrganizationMembers(orgId) {
   const id = String(orgId || "").trim();
   if (!id) return [];
@@ -37,6 +54,14 @@ export async function listOrganizationMembers(orgId) {
   return Array.isArray(result?.users) ? result.users : [];
 }
 
+/**
+ * Extracts research agenda entries from organization extras.
+ *
+ * Important logic:
+ * - Accepts multiple legacy agenda key variants.
+ * - Supports arrays, JSON-encoded values, and delimiter-separated strings.
+ * - Deduplicates values case-insensitively and returns `{ id, name }` rows.
+ */
 export async function listOrganizationAgendas(orgId) {
   const id = String(orgId || "").trim();
   if (!id) return [];
@@ -52,6 +77,7 @@ export async function listOrganizationAgendas(orgId) {
 
   const extras = Array.isArray(result?.extras) ? result.extras : [];
   const agendaValues = [];
+  // CKAN instances store agendas under inconsistent extra keys; accept common variants.
   const allowedAgendaKeys = new Set([
     "research_agenda",
     "research_agendas",
@@ -77,6 +103,7 @@ export async function listOrganizationAgendas(orgId) {
     const asString = String(rawValue || "").trim();
     if (!asString) continue;
 
+    // Some CKAN extras store JSON as plain strings.
     const looksLikeJsonArray =
       (asString.startsWith("[") && asString.endsWith("]")) ||
       (asString.startsWith("{") && asString.endsWith("}"));
@@ -92,6 +119,7 @@ export async function listOrganizationAgendas(orgId) {
       }
     }
 
+    // Fallback for semicolon/comma/newline-delimited free-text extras.
     const splitValues = asString
       .split(/[,;\n]+/g)
       .map((value) => value.trim())
@@ -121,6 +149,9 @@ export async function listOrganizationAgendas(orgId) {
     });
 }
 
+/**
+ * Grants organization `editor` role to a user.
+ */
 export async function assignUserToOrganizationEditor({ orgId, username }) {
   await addMember("organization_member_create", {
     id: orgId,
@@ -129,6 +160,9 @@ export async function assignUserToOrganizationEditor({ orgId, username }) {
   });
 }
 
+/**
+ * Grants organization `admin` role to a user.
+ */
 export async function assignUserToOrganizationAdmin({ orgId, username }) {
   await addMember("organization_member_create", {
     id: orgId,
@@ -137,6 +171,16 @@ export async function assignUserToOrganizationAdmin({ orgId, username }) {
   });
 }
 
+/**
+ * Reassigns organization membership role.
+ *
+ * System flow:
+ * - Remove existing membership first.
+ * - Recreate membership with target role.
+ *
+ * Dependency:
+ * - Relies on idempotent behavior in `removeMember`/`addMember` helpers.
+ */
 export async function setOrganizationMemberRole({ orgId, username, role }) {
   const id = String(orgId || "").trim();
   const user = String(username || "").trim();
@@ -154,16 +198,33 @@ export async function setOrganizationMemberRole({ orgId, username, role }) {
   });
 }
 
+/**
+ * Creates a CKAN organization.
+ */
 export async function createOrganization(payload) {
   return ckanAction("organization_create", payload || {});
 }
 
+/**
+ * Deletes a CKAN organization by id/name.
+ *
+ * Edge case:
+ * - No-op when id is empty.
+ */
 export async function deleteOrganization(orgId) {
   const id = String(orgId || "").trim();
   if (!id) return;
   await ckanAction("organization_delete", { id });
 }
 
+/**
+ * Updates organization title/extras metadata.
+ *
+ * System flow:
+ * - Build normalized payload from incoming values.
+ * - Attempt `organization_patch` first.
+ * - Fallback to `organization_update` for CKAN versions lacking patch support.
+ */
 export async function updateOrganizationMetadata({
   orgId,
   title,
@@ -179,8 +240,10 @@ export async function updateOrganizationMetadata({
   };
 
   try {
+    // Prefer patch to avoid clobbering unrelated org fields on CKAN.
     return await ckanAction("organization_patch", payload);
   } catch {
+    // Older CKAN setups may not expose organization_patch.
     return ckanAction("organization_update", payload);
   }
 }
