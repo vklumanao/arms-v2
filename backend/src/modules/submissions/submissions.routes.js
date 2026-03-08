@@ -18,8 +18,10 @@ export function registerSubmissionsRoutes(app, deps) {
     asTrimmedString,
     asNumber,
     listDatasets,
+    getDataset,
     createDataset,
     updateDataset,
+    setDatasetVisibility,
     deleteDataset,
     createDatasetResource,
     getExtraByKey,
@@ -147,6 +149,37 @@ export function registerSubmissionsRoutes(app, deps) {
       { key: "start_date", value: asTrimmedString(form.start_date) || null },
       { key: "end_date", value: asTrimmedString(form.end_date) || null },
     ].filter((item) => item.value != null && item.value !== "");
+  }
+
+  /**
+   * Checks dataset ownership against submission metadata fields.
+   *
+   * Used to ensure non-admin users can only mutate visibility of their own datasets.
+   */
+  function isDatasetOwnedByUser(dataset, user) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const submittedByUserId = asTrimmedString(
+      getExtraByKey(extras, "submitted_by_user_id"),
+    );
+    const submittedByEmail = asTrimmedString(
+      getExtraByKey(extras, "submitted_by_email"),
+    ).toLowerCase();
+    const submittedBy = asTrimmedString(getExtraByKey(extras, "submitted_by"));
+    const userId = asTrimmedString(user?.id);
+    const userEmail = asTrimmedString(user?.email).toLowerCase();
+
+    if (submittedByUserId && userId && submittedByUserId === userId) return true;
+    if (submittedByEmail && userEmail && submittedByEmail === userEmail) {
+      return true;
+    }
+    if (submittedBy && userId && submittedBy === userId) return true;
+    if (
+      asTrimmedString(dataset?.author_email).toLowerCase() === userEmail &&
+      userEmail
+    ) {
+      return true;
+    }
+    return false;
   }
 
   app.get(
@@ -351,4 +384,50 @@ export function registerSubmissionsRoutes(app, deps) {
       });
     }
   });
+
+  app.patch(
+    "/api/submissions/datasets/:datasetId/visibility",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const datasetId = asTrimmedString(req.params?.datasetId);
+        if (!datasetId) {
+          return badRequest(res, "Dataset id is required.");
+        }
+
+        const isPublic = req.body?.isPublic;
+        if (typeof isPublic !== "boolean") {
+          return badRequest(res, "isPublic must be a boolean.");
+        }
+
+        const dataset = await getDataset(datasetId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Dataset not found." });
+        }
+
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to update this dataset visibility.",
+          });
+        }
+
+        const updated = await setDatasetVisibility({
+          datasetId,
+          isPrivate: !isPublic,
+        });
+
+        return res.json({
+          data: {
+            dataset_id: updated?.id || datasetId,
+            project_public_visible: !Boolean(updated?.private),
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to update dataset visibility."),
+        });
+      }
+    },
+  );
 }
