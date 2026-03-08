@@ -58,9 +58,6 @@ function mockApiPayload(path, options = {}) {
           "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
-          "my_submissions.view",
-          "publications.manage",
-          "program_dashboard.view",
         ],
         faculty: [
           "dashboard.view",
@@ -68,9 +65,6 @@ function mockApiPayload(path, options = {}) {
           "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
-          "my_submissions.view",
-          "publications.manage",
-          "program_dashboard.view",
         ],
         admin: [
           "dashboard.view",
@@ -78,9 +72,6 @@ function mockApiPayload(path, options = {}) {
           "affiliations.manage",
           "research_outputs.view",
           "awards_recognition.view",
-          "my_submissions.view",
-          "publications.manage",
-          "program_dashboard.view",
           "admin.controls.manage",
           "admin.users.manage",
           "admin.affiliates.manage",
@@ -128,7 +119,6 @@ function mockApiPayload(path, options = {}) {
       data: {
         profile: null,
         researchProjects: [],
-        publications: [],
         reviews: [],
       },
     };
@@ -174,9 +164,6 @@ function mockApiPayload(path, options = {}) {
   if (cleanPath === "/submissions/mine/research-outputs") return { data: [] };
   if (cleanPath === "/submissions/mov-summary") return { data: [] };
   if (cleanPath === "/submissions/reviewer-profiles") return { data: [] };
-  if (cleanPath === "/publications/projects-for-user") return { data: [] };
-  if (cleanPath === "/publications/mine") return { data: [] };
-  if (cleanPath === "/publications") return { data: [] };
 
   if (cleanPath.includes("/submissions/") && cleanPath.endsWith("/resources")) {
     return { data: { dataset: null, resources: [], syncEnabled: true } };
@@ -191,13 +178,53 @@ function mockApiPayload(path, options = {}) {
     return { project: null, history: [], reviews: [] };
   }
   if (cleanPath.includes("/submissions/") && cleanPath.endsWith("/editable")) {
-    return { data: null };
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-project-id",
+        title: "Mock Research Project",
+        lead_researcher: "Demo Lead",
+        faculty_team: "Demo Faculty 1; Demo Faculty 2",
+        student_team: "Demo Student 1",
+        abstract: "Mock abstract",
+        year: "2026",
+        research_center_id: "org-1",
+        research_agenda_id: "agenda-1",
+        department_id: "dept-1",
+        scholarly_type: "applied",
+        funding_type: "internal",
+        funding_category: "grant",
+        industry_partner: "Demo Industry",
+        funding_source: "Demo Fund",
+        funding_amount: "100000",
+        classification: "academic",
+        status: "ongoing",
+        expected_outputs: "Publication (Target: 1)",
+        supporting_mov_link: "https://example.com/mov",
+        signed_moa_reference: "MOA-2026-0001",
+        start_date: "2026-01-10",
+        end_date: "2026-12-10",
+        public_visible: false,
+      },
+    };
   }
   if (
     cleanPath.includes("/submissions/") &&
     cleanPath.endsWith("/expected-outputs")
   ) {
-    return { data: [] };
+    return {
+      data: [
+        {
+          id: "mock-output-1",
+          output_type: "publication",
+          target_count: 1,
+          notes: "Mock output note",
+          file_path: "https://example.com/resource.pdf",
+          file_name: "publication (Target: 1)",
+          mime_type: "application/pdf",
+          file_size: 102400,
+        },
+      ],
+    };
   }
   if (cleanPath.includes("/submissions/expected-outputs/"))
     return { data: null };
@@ -205,7 +232,28 @@ function mockApiPayload(path, options = {}) {
     cleanPath.includes("/submissions/") &&
     cleanPath.endsWith("/owner-edit")
   ) {
-    return { data: null };
+    let parsed = {};
+    try {
+      parsed = JSON.parse(String(options.body || "{}"));
+    } catch {
+      parsed = {};
+    }
+    const form = parsed?.form || {};
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-project-id",
+        ckan_dataset_id: cleanPath.split("/")[2] || "mock-project-id",
+        title: String(form?.title || "Updated Project"),
+        abstract: String(form?.abstract || ""),
+        year: String(form?.year || "-"),
+        industry_partner: String(form?.industry_partner || ""),
+        funding_source: String(form?.funding_source || ""),
+        funding_amount: String(form?.funding_amount || "0"),
+        start_date: String(form?.start_date || ""),
+        end_date: String(form?.end_date || ""),
+        updated_at: new Date().toISOString(),
+      },
+    };
   }
   if (
     cleanPath.includes("/submissions/datasets/") &&
@@ -223,6 +271,43 @@ function mockApiPayload(path, options = {}) {
       data: {
         dataset_id: "mock-dataset-id",
         project_public_visible: isPublic,
+      },
+    };
+  }
+  if (cleanPath.includes("/submissions/resources/") && method === "PATCH") {
+    let parsed = {};
+    try {
+      parsed = JSON.parse(String(options.body || "{}"));
+    } catch {
+      parsed = {};
+    }
+    return {
+      data: {
+        resource_id: cleanPath.split("/").pop() || "mock-resource-id",
+        dataset_id: "mock-dataset-id",
+        file_name: parsed?.file_name || "Updated Resource File",
+        notes: parsed?.notes || null,
+        file_path: parsed?.file_path || "https://example.com/resource",
+        mime_type: parsed?.mime_type || "application/pdf",
+        file_size: Number(parsed?.file_size || 0) || null,
+        updated_at: new Date().toISOString(),
+      },
+    };
+  }
+  if (cleanPath.includes("/submissions/resources/") && method === "DELETE") {
+    return {
+      data: {
+        resource_id: cleanPath.split("/").pop() || "mock-resource-id",
+        dataset_id: "mock-dataset-id",
+        deleted: true,
+      },
+    };
+  }
+  if (cleanPath.startsWith("/submissions/") && method === "DELETE") {
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-project-id",
+        deleted: true,
       },
     };
   }
