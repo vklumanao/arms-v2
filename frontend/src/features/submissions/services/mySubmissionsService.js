@@ -68,6 +68,32 @@ export async function updateResearchOutputVisibility({ datasetId, isPublic }) {
   }
 }
 
+export async function updateResearchOutput({ resourceId, payload }) {
+  try {
+    const id = encodeURIComponent(String(resourceId || "").trim());
+    const body = payload && typeof payload === "object" ? payload : {};
+    const response = await apiFetch(`/submissions/resources/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    return { data: response?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function deleteResearchOutput({ resourceId }) {
+  try {
+    const id = encodeURIComponent(String(resourceId || "").trim());
+    const response = await apiFetch(`/submissions/resources/${id}`, {
+      method: "DELETE",
+    });
+    return { data: response?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export async function quickEditOwnedProject({ projectId, form }) {
   try {
     const payload = await apiFetch(`/submissions/${projectId}/owner-edit`, {
