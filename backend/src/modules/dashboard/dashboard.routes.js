@@ -1,5 +1,16 @@
 import crypto from "node:crypto";
 
+/**
+ * Registers dashboard-related API routes.
+ *
+ * System flow:
+ * - Builds normalized dashboard project rows from CKAN datasets.
+ * - Restricts non-admin users to datasets scoped to their CKAN organization.
+ * - Returns sorted project list for dashboard consumption.
+ *
+ * Dependencies:
+ * - Receives auth and CKAN access functions through injected `deps`.
+ */
 export function registerDashboardRoutes(app, deps) {
   const {
     authMiddleware,
@@ -9,6 +20,13 @@ export function registerDashboardRoutes(app, deps) {
     listOrganizationAgendas,
   } = deps;
 
+  /**
+   * Converts CKAN `extras` array into a case-insensitive key-value map.
+   *
+   * Data transformation:
+   * - Normalizes keys to lowercase trimmed strings.
+   * - Keeps last value encountered for duplicate keys.
+   */
   function extrasToMap(extras) {
     const rows = Array.isArray(extras) ? extras : [];
     return rows.reduce((acc, item) => {
@@ -21,11 +39,19 @@ export function registerDashboardRoutes(app, deps) {
     }, {});
   }
 
+  /**
+   * Loads all datasets needed for dashboard views with bounded pagination.
+   *
+   * Edge case:
+   * - Uses hard page cap to avoid infinite loops when upstream count metadata
+   *   is inconsistent.
+   */
   async function listAllDatasetsForDashboard({ orgId = "" } = {}) {
     const rows = [];
     const limit = 100;
     let page = 1;
 
+    // Safety cap prevents runaway requests on malformed pagination metadata.
     while (page <= 20) {
       const result = await listDatasets({ orgId, page, limit });
       const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
@@ -41,6 +67,14 @@ export function registerDashboardRoutes(app, deps) {
     return rows;
   }
 
+  /**
+   * Normalizes a CKAN dataset into dashboard project row shape.
+   *
+   * Important logic:
+   * - Reconciles project metadata from both CKAN top-level fields and extras.
+   * - Resolves human-readable department/agenda labels from lookup maps.
+   * - Adds generated fallback id when CKAN id/name is unavailable.
+   */
   function toDashboardProjectRow(
     dataset,
     { groupNameById = {}, agendaNameById = {} } = {},
@@ -109,6 +143,7 @@ export function registerDashboardRoutes(app, deps) {
       const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
       const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
       if (!isAdmin && !orgId) {
+        // Non-admin users without org scope cannot have dashboard project visibility.
         return res.json({ data: [] });
       }
 
@@ -136,6 +171,7 @@ export function registerDashboardRoutes(app, deps) {
         .map((dataset) =>
           toDashboardProjectRow(dataset, { groupNameById, agendaNameById }),
         )
+        // Show most recently updated projects first for dashboard relevance.
         .sort(
           (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
         );
@@ -149,6 +185,7 @@ export function registerDashboardRoutes(app, deps) {
   });
 
   app.get("/api/dashboard/status-history", authMiddleware, async (req, res) => {
+    // Endpoint placeholder kept for frontend contract; implementation pending.
     const projectIds = String(req.query?.projectIds || "")
       .split(",")
       .map((value) => value.trim())
@@ -161,6 +198,7 @@ export function registerDashboardRoutes(app, deps) {
     "/api/dashboard/notify-upcoming-deadlines",
     authMiddleware,
     async (req, res) => {
+      // Endpoint placeholder kept for frontend contract; implementation pending.
       const days = Number(req.body?.days || 14);
       void days;
       return res.json({ data: 0 });
