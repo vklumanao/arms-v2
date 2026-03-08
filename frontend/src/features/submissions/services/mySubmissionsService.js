@@ -53,6 +53,21 @@ export async function fetchMyResearchOutputs() {
   }
 }
 
+export async function updateResearchOutputVisibility({ datasetId, isPublic }) {
+  try {
+    const payload = await apiFetch(
+      `/submissions/datasets/${encodeURIComponent(String(datasetId || "").trim())}/visibility`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isPublic: Boolean(isPublic) }),
+      },
+    );
+    return { data: payload?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export async function quickEditOwnedProject({ projectId, form }) {
   try {
     const payload = await apiFetch(`/submissions/${projectId}/owner-edit`, {
