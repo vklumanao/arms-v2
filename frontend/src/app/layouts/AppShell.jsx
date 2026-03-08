@@ -11,10 +11,8 @@ import {
 } from "@/shared/auth/permissions";
 import {
   Award,
-  BookOpen,
   Building2,
   ChartNoAxesColumn,
-  ClipboardCheck,
   Database,
   FolderOpen,
   Menu,
@@ -163,24 +161,6 @@ export default function AppShell() {
     [],
   );
 
-  const workspaceRecordsLinks = useMemo(
-    () => [
-      {
-        to: "/my-submissions",
-        label: "My Submissions",
-        icon: ClipboardCheck,
-        permission: PERMISSIONS.MY_SUBMISSIONS_VIEW,
-      },
-      {
-        to: "/publications",
-        label: "Publications",
-        icon: BookOpen,
-        permission: PERMISSIONS.PUBLICATIONS_MANAGE,
-      },
-    ],
-    [],
-  );
-
   const workspaceProfileLinks = useMemo(
     () => [
       {
@@ -197,13 +177,11 @@ export default function AppShell() {
     () => [
       ...workspaceCoreLinks,
       ...workspaceResearchLinks,
-      ...workspaceRecordsLinks,
       ...workspaceProfileLinks,
     ],
     [
       workspaceCoreLinks,
       workspaceResearchLinks,
-      workspaceRecordsLinks,
       workspaceProfileLinks,
     ],
   );
@@ -215,7 +193,6 @@ export default function AppShell() {
     <div className="space-y-5">
       <NavSection title="Core Modules" links={workspaceCoreLinks} />
       <NavSection title="Research Modules" links={workspaceResearchLinks} />
-      <NavSection title="Records" links={workspaceRecordsLinks} />
       <NavSection title="Profile" links={workspaceProfileLinks} />
     </div>
   ) : isAdminRole ? (
