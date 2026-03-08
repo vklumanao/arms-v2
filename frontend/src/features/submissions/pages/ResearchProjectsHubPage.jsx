@@ -314,20 +314,12 @@ export default function ResearchProjectsHubPage() {
   };
 
   const openEditModal = (project) => {
-    setMessage("");
-    setError("");
-    setEditingProject(project);
-    setConfirmSaveOpen(false);
-    setEditForm({
-      title: project.title || "",
-      abstract: project.abstract || "",
-      year: project.year || "",
-      industry_partner: project.industry_partner || "",
-      funding_source: project.funding_source || "",
-      funding_amount: project.funding_amount ?? "",
-      start_date: toDateInputValue(project.start_date),
-      end_date: toDateInputValue(project.end_date),
-    });
+    const datasetId = String(project?.ckan_dataset_id || project?.id || "").trim();
+    if (!datasetId) {
+      setError("Project id is missing.");
+      return;
+    }
+    navigate(`/submit-affiliation/submit?edit=${encodeURIComponent(datasetId)}`);
   };
 
   const handleEditField = (key, value) => {
@@ -763,8 +755,16 @@ export default function ResearchProjectsHubPage() {
                             .trim()
                             .toLowerCase());
                     const canEdit =
-                      project.source !== "ckan" &&
-                      (isAdmin || project.submitted_by === user?.id);
+                      Boolean(project?.ckan_dataset_id) &&
+                      (isAdmin ||
+                        String(project?.submitted_by || "") ===
+                          String(user?.id || "") ||
+                        String(project?.submitted_by_email || "")
+                          .trim()
+                          .toLowerCase() ===
+                          String(user?.email || "")
+                            .trim()
+                            .toLowerCase());
                     return (
                       <tr key={project.id} className="align-top">
                         <td>
