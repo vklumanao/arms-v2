@@ -1,3 +1,10 @@
+/**
+ * Registers CKAN integration passthrough/reference routes.
+ *
+ * System flow:
+ * - Exposes organizations, groups, users, datasets, and org agendas.
+ * - Normalizes output shapes for frontend consumption.
+ */
 export function registerCkanIntegrationRoutes(app, deps) {
   const {
     authMiddleware,
@@ -11,6 +18,7 @@ export function registerCkanIntegrationRoutes(app, deps) {
 
   app.get("/api/integrations/ckan/organizations", async (req, res) => {
     try {
+      // Publicly used as reference data in registration/admin screens.
       const rows = await listOrganizations();
       return res.json({ data: rows });
     } catch (error) {
@@ -22,6 +30,7 @@ export function registerCkanIntegrationRoutes(app, deps) {
 
   app.get("/api/integrations/ckan/groups", async (req, res) => {
     try {
+      // Publicly used as reference data for department/group selectors.
       const rows = await listGroups();
       return res.json({ data: rows });
     } catch (error) {
@@ -34,11 +43,13 @@ export function registerCkanIntegrationRoutes(app, deps) {
   app.get("/api/integrations/ckan/users", authMiddleware, async (req, res) => {
     try {
       const orgId = String(req.query?.org_id || "").trim();
+      // Optionally scope to members of a specific organization.
       const rows = orgId
         ? await listOrganizationMembers(orgId)
         : await listUsers();
       return res.json({
         data: (rows || [])
+          // Hide deleted users from selector/list contexts.
           .filter(
             (row) => String(row?.state || "active").toLowerCase() !== "deleted",
           )
@@ -70,6 +81,7 @@ export function registerCkanIntegrationRoutes(app, deps) {
       const page = Number(req.query?.page || 1);
       const limit = Number(req.query?.limit || 20);
       const result = await listDatasets({ orgId, q, page, limit });
+      // Preserve pagination metadata for client-side table controls.
       return res.json({
         data: result.datasets,
         total: result.count,
@@ -87,6 +99,7 @@ export function registerCkanIntegrationRoutes(app, deps) {
     "/api/integrations/ckan/organizations/:orgId/agendas",
     async (req, res) => {
       try {
+        // Agendas are derived from organization extras in CKAN.
         const rows = await listOrganizationAgendas(req.params.orgId);
         return res.json({ data: rows });
       } catch (error) {
