@@ -192,8 +192,7 @@ export function registerSubmissionsRoutes(app, deps) {
     const rows = Array.isArray(extras) ? extras : [];
     const normalizedKey = asTrimmedString(key).toLowerCase();
     const filtered = rows.filter(
-      (item) =>
-        asTrimmedString(item?.key).toLowerCase() !== normalizedKey,
+      (item) => asTrimmedString(item?.key).toLowerCase() !== normalizedKey,
     );
     if (value == null || value === "") return filtered;
     return [...filtered, { key, value }];
@@ -214,7 +213,9 @@ export function registerSubmissionsRoutes(app, deps) {
     return {
       id: dataset?.id || dataset?.name || null,
       title: asTrimmedString(dataset?.title || dataset?.name),
-      lead_researcher: asTrimmedString(getExtraByKey(extras, "lead_researcher")),
+      lead_researcher: asTrimmedString(
+        getExtraByKey(extras, "lead_researcher"),
+      ),
       faculty_team: asTrimmedString(getExtraByKey(extras, "faculty_team")),
       student_team: asTrimmedString(getExtraByKey(extras, "student_team")),
       abstract: asTrimmedString(dataset?.notes),
@@ -226,13 +227,19 @@ export function registerSubmissionsRoutes(app, deps) {
       research_center_id: asTrimmedString(
         dataset?.organization?.name || dataset?.owner_org,
       ),
-      research_agenda_id: asTrimmedString(getExtraByKey(extras, "research_agenda_id")),
+      research_agenda_id: asTrimmedString(
+        getExtraByKey(extras, "research_agenda_id"),
+      ),
       department_id: asTrimmedString(getExtraByKey(extras, "department_id")),
       scholarly_type: asTrimmedString(getExtraByKey(extras, "scholarly_type")),
       funding_type:
         asTrimmedString(getExtraByKey(extras, "funding_type")) || "none",
-      funding_category: asTrimmedString(getExtraByKey(extras, "funding_category")),
-      industry_partner: asTrimmedString(getExtraByKey(extras, "industry_partner")),
+      funding_category: asTrimmedString(
+        getExtraByKey(extras, "funding_category"),
+      ),
+      industry_partner: asTrimmedString(
+        getExtraByKey(extras, "industry_partner"),
+      ),
       funding_source: asTrimmedString(getExtraByKey(extras, "funding_source")),
       funding_amount:
         asTrimmedString(getExtraByKey(extras, "funding_amount")) || "0",
@@ -246,7 +253,9 @@ export function registerSubmissionsRoutes(app, deps) {
       expected_outputs: asTrimmedString(
         getExtraByKey(extras, "expected_outputs_summary"),
       ),
-      supporting_mov_link: asTrimmedString(getExtraByKey(extras, "supporting_mov_link")),
+      supporting_mov_link: asTrimmedString(
+        getExtraByKey(extras, "supporting_mov_link"),
+      ),
       signed_moa_reference: asTrimmedString(
         getExtraByKey(extras, "signed_moa_reference"),
       ),
@@ -260,7 +269,17 @@ export function registerSubmissionsRoutes(app, deps) {
    * Maps CKAN dataset resources into expected-output rows used by submit edit mode.
    */
   function mapResourcesToExpectedOutputs(dataset) {
-    const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+    const allowedOutputTypes = new Set([
+      "publication",
+      "patent_ip",
+      "people_services",
+      "places_partnerships",
+      "policies",
+      "product_software",
+    ]);
+    const resources = Array.isArray(dataset?.resources)
+      ? dataset.resources
+      : [];
     return resources.map((resource, index) => {
       const name = asTrimmedString(resource?.name);
       const targetMatch = name.match(/\(target:\s*(\d+)\)/i);
@@ -271,10 +290,24 @@ export function registerSubmissionsRoutes(app, deps) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "");
+      const normalizedType =
+        rawType === "patent" || rawType === "ip"
+          ? "patent_ip"
+          : rawType === "people_service"
+            ? "people_services"
+            : rawType === "place_partnerships" ||
+                rawType === "places_and_partnerships"
+              ? "places_partnerships"
+              : rawType === "products_software_application" ||
+                  rawType === "product_software_application"
+                ? "product_software"
+                : rawType;
 
       return {
         id: resource?.id || `resource-${index + 1}`,
-        output_type: rawType || "publication",
+        output_type: allowedOutputTypes.has(normalizedType)
+          ? normalizedType
+          : "publication",
         target_count: targetCount,
         notes: asTrimmedString(resource?.description),
         file_path: asTrimmedString(resource?.url),
@@ -412,30 +445,36 @@ export function registerSubmissionsRoutes(app, deps) {
     },
   );
 
-  app.get("/api/submissions/:projectId/editable", authMiddleware, async (req, res) => {
-    try {
-      const projectId = asTrimmedString(req.params?.projectId);
-      if (!projectId) return badRequest(res, "Project id is required.");
+  app.get(
+    "/api/submissions/:projectId/editable",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const projectId = asTrimmedString(req.params?.projectId);
+        if (!projectId) return badRequest(res, "Project id is required.");
 
-      const dataset = await getDataset(projectId);
-      if (!dataset) {
-        return res.status(404).json({ error: "Project dataset not found." });
-      }
+        const dataset = await getDataset(projectId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Project dataset not found." });
+        }
 
-      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-      if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
-        return res.status(403).json({
-          error: "You are not allowed to edit this project.",
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to edit this project.",
+          });
+        }
+
+        return res.json({ data: mapDatasetToEditableForm(dataset) });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load editable submission.",
+          ),
         });
       }
-
-      return res.json({ data: mapDatasetToEditableForm(dataset) });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(error?.message || "Failed to load editable submission."),
-      });
-    }
-  });
+    },
+  );
 
   app.get(
     "/api/submissions/:projectId/expected-outputs",
@@ -477,60 +516,106 @@ export function registerSubmissionsRoutes(app, deps) {
     const title = asTrimmedString(form.title);
     if (!title) return badRequest(res, "Project title is required.");
 
-    const ownerOrg =
-      asTrimmedString(form.research_center_id) ||
-      asTrimmedString(req.user?.ckan_org_id);
-    if (!ownerOrg) {
-      return badRequest(
-        res,
-        "Research center (CKAN organization) is required.",
-      );
-    }
-
     const notes = asTrimmedString(form.abstract);
     const supportingMovLink = asTrimmedString(form.supporting_mov_link);
     const fallbackResourceUrl =
       supportingMovLink || `${config.ckanBaseUrl}/dataset`;
 
-    const baseDatasetPayload = {
-      name: toCkanName(title),
-      title,
-      notes,
-      owner_org: ownerOrg,
-      author:
-        asTrimmedString(req.user?.full_name) ||
-        asTrimmedString(req.user?.email) ||
-        null,
-      author_email: asTrimmedString(req.user?.email) || null,
-      maintainer:
-        asTrimmedString(req.user?.full_name) ||
-        asTrimmedString(req.user?.email) ||
-        null,
-      maintainer_email: asTrimmedString(req.user?.email) || null,
-      private: true,
-      // Preserve searchable categorical tags from key form fields.
-      tags: [
-        asTrimmedString(form.classification),
-        asTrimmedString(form.status),
-        asTrimmedString(form.scholarly_type),
-      ]
-        .filter(Boolean)
-        .map((value) => ({
-          name: value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        })),
-      extras: toDatasetExtras(form, req.user),
-    };
-
     let dataset = null;
     const createdNow = !datasetId;
     try {
+      const existingDataset = datasetId ? await getDataset(datasetId) : null;
+      if (datasetId && !existingDataset) {
+        return res.status(404).json({ error: "Dataset not found." });
+      }
+
+      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+      if (
+        existingDataset &&
+        !isAdmin &&
+        !isDatasetOwnedByUser(existingDataset, req.user)
+      ) {
+        return res.status(403).json({
+          error: "You are not allowed to edit this project.",
+        });
+      }
+
+      const ownerOrg =
+        asTrimmedString(form.research_center_id) ||
+        asTrimmedString(existingDataset?.owner_org) ||
+        asTrimmedString(req.user?.ckan_org_id);
+      if (!ownerOrg) {
+        return badRequest(
+          res,
+          "Research center (CKAN organization) is required.",
+        );
+      }
+
+      let extras = toDatasetExtras(form, req.user);
+      if (existingDataset) {
+        const existingExtras = Array.isArray(existingDataset?.extras)
+          ? existingDataset.extras
+          : [];
+        // Preserve original submitter/ownership metadata during edits.
+        for (const key of [
+          "submitted_by_user_id",
+          "submitted_by_email",
+          "submitted_by_name",
+          "submitted_by_role",
+          "submitted_at",
+          "submission_trace_id",
+        ]) {
+          const value = asTrimmedString(getExtraByKey(existingExtras, key));
+          if (value) extras = upsertExtra(extras, key, value);
+        }
+      }
+
+      const baseDatasetPayload = {
+        name: asTrimmedString(existingDataset?.name) || toCkanName(title),
+        title,
+        notes,
+        owner_org: ownerOrg,
+        author:
+          asTrimmedString(existingDataset?.author) ||
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        author_email:
+          asTrimmedString(existingDataset?.author_email) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        maintainer:
+          asTrimmedString(existingDataset?.maintainer) ||
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        maintainer_email:
+          asTrimmedString(existingDataset?.maintainer_email) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        private: existingDataset ? Boolean(existingDataset?.private) : true,
+        // Preserve searchable categorical tags from key form fields.
+        tags: [
+          asTrimmedString(form.classification),
+          asTrimmedString(form.status),
+          asTrimmedString(form.scholarly_type),
+        ]
+          .filter(Boolean)
+          .map((value) => ({
+            name: value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          })),
+        extras,
+      };
+
       // Update existing dataset when dataset id is supplied, otherwise create new one.
       dataset = datasetId
         ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
         : await createDataset(baseDatasetPayload);
 
       if (datasetId) {
-        const current = await getDataset(dataset?.id || dataset?.name || datasetId);
+        const current = await getDataset(
+          dataset?.id || dataset?.name || datasetId,
+        );
         const existingResources = Array.isArray(current?.resources)
           ? current.resources
           : [];
@@ -655,17 +740,15 @@ export function registerSubmissionsRoutes(app, deps) {
           asTrimmedString(form.funding_source) || currentFundingSource;
         const nextFundingAmount =
           asTrimmedString(form.funding_amount) || currentFundingAmount;
-        const nextStartDate = asTrimmedString(form.start_date) || currentStartDate;
+        const nextStartDate =
+          asTrimmedString(form.start_date) || currentStartDate;
         const nextEndDate = asTrimmedString(form.end_date) || currentEndDate;
-        const nextAbstract = asTrimmedString(form.abstract) || dataset?.notes || "";
+        const nextAbstract =
+          asTrimmedString(form.abstract) || dataset?.notes || "";
 
         let extras = extrasRows;
         extras = upsertExtra(extras, "project_year", nextYear);
-        extras = upsertExtra(
-          extras,
-          "industry_partner",
-          nextIndustryPartner,
-        );
+        extras = upsertExtra(extras, "industry_partner", nextIndustryPartner);
         extras = upsertExtra(extras, "funding_source", nextFundingSource);
         extras = upsertExtra(extras, "funding_amount", nextFundingAmount);
         extras = upsertExtra(extras, "start_date", nextStartDate);
@@ -707,9 +790,7 @@ export function registerSubmissionsRoutes(app, deps) {
               nextStartDate ||
               "",
             end_date:
-              getExtraByKey(updated?.extras, "end_date") ||
-              nextEndDate ||
-              "",
+              getExtraByKey(updated?.extras, "end_date") || nextEndDate || "",
             updated_at: updated?.metadata_modified || new Date().toISOString(),
           },
         });
@@ -721,38 +802,42 @@ export function registerSubmissionsRoutes(app, deps) {
     },
   );
 
-  app.delete("/api/submissions/:projectId", authMiddleware, async (req, res) => {
-    try {
-      const projectId = asTrimmedString(req.params?.projectId);
-      if (!projectId) {
-        return badRequest(res, "Project id is required.");
-      }
+  app.delete(
+    "/api/submissions/:projectId",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const projectId = asTrimmedString(req.params?.projectId);
+        if (!projectId) {
+          return badRequest(res, "Project id is required.");
+        }
 
-      const dataset = await getDataset(projectId);
-      if (!dataset) {
-        return res.status(404).json({ error: "Project dataset not found." });
-      }
+        const dataset = await getDataset(projectId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Project dataset not found." });
+        }
 
-      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-      if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
-        return res.status(403).json({
-          error: "You are not allowed to delete this project.",
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to delete this project.",
+          });
+        }
+
+        await deleteDataset(projectId);
+        return res.json({
+          data: {
+            id: projectId,
+            deleted: true,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to delete project."),
         });
       }
-
-      await deleteDataset(projectId);
-      return res.json({
-        data: {
-          id: projectId,
-          deleted: true,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(error?.message || "Failed to delete project."),
-      });
-    }
-  });
+    },
+  );
 
   app.patch(
     "/api/submissions/datasets/:datasetId/visibility",
