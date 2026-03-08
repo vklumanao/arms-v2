@@ -421,9 +421,6 @@ export default function DashboardPage() {
           <Link className="btn btn-primary" to="/submit-affiliation">
             Open Research Projects
           </Link>
-          <Link className="btn btn-outline" to="/my-submissions">
-            View My Submissions
-          </Link>
           <Link className="btn btn-outline" to="/public-records">
             Browse Public Records
           </Link>
