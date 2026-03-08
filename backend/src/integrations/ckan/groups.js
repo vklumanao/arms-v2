@@ -1,6 +1,9 @@
 import { ckanAction } from "./http/ckanAction.js";
 import { addMember } from "./memberships.js";
 
+/**
+ * Lists CKAN groups with full fields and extras.
+ */
 export async function listGroups() {
   return ckanAction("group_list", {
     all_fields: true,
@@ -8,6 +11,12 @@ export async function listGroups() {
   });
 }
 
+/**
+ * Lists users who are members of a CKAN group.
+ *
+ * Edge case:
+ * - Returns empty array when group id is missing.
+ */
 export async function listGroupMembers(groupId) {
   const id = String(groupId || "").trim();
   if (!id) return [];
@@ -23,6 +32,9 @@ export async function listGroupMembers(groupId) {
   return Array.isArray(result?.users) ? result.users : [];
 }
 
+/**
+ * Grants CKAN group `editor` role to a user.
+ */
 export async function assignUserToGroupEditor({ groupId, username }) {
   await addMember("group_member_create", {
     id: groupId,
