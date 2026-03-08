@@ -2,22 +2,42 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 
+// Load environment variables from .env before computing derived config values.
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const backendRoot = path.resolve(__dirname, "../..");
 
+/**
+ * Reads a boolean-like environment value.
+ *
+ * Data transformation:
+ * - Only string `"true"` (case-insensitive) is treated as true.
+ * - Missing values fall back to provided default.
+ */
 function readBool(value, fallback = false) {
   if (value == null) return fallback;
   return String(value).toLowerCase() === "true";
 }
 
+/**
+ * Reads a positive numeric environment value.
+ *
+ * Edge case:
+ * - Non-numeric or non-positive values resolve to fallback.
+ */
 function readNumber(value, fallback) {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/**
+ * Reads a comma-separated env value into a trimmed string array.
+ *
+ * Edge case:
+ * - Empty input returns fallback list.
+ */
 function readCsv(value, fallback = []) {
   const raw = String(value || "")
     .split(",")
@@ -26,6 +46,7 @@ function readCsv(value, fallback = []) {
   return raw.length > 0 ? raw : fallback;
 }
 
+// Central runtime configuration consumed across DB, auth, CKAN integration, and startup.
 export const config = {
   port: Number(process.env.PORT || 4000),
   databaseUrl: String(process.env.DATABASE_URL || ""),
@@ -64,6 +85,14 @@ export const config = {
   ckanTokenNamePrefix: String(process.env.CKAN_TOKEN_NAME_PREFIX || "arms"),
 };
 
+/**
+ * Validates required runtime configuration and security prerequisites.
+ *
+ * System flow:
+ * - Enforce required external dependencies (DB + CKAN).
+ * - Warn on weak default JWT secret.
+ * - Enforce 32-byte hex encryption key for secret at-rest encryption.
+ */
 export function assertConfig() {
   if (!config.databaseUrl) {
     throw new Error("DATABASE_URL is required.");
