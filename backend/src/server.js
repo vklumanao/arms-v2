@@ -63,6 +63,7 @@ import { registerReferenceRoutes } from "./modules/reference/reference.routes.js
 import { registerDashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
 import { registerSubmissionsRoutes } from "./modules/submissions/submissions.routes.js";
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
+import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
 
 if (!config.ckanVerifyTls) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -429,6 +430,15 @@ registerAdminRoutes(app, {
   getOrganization,
   updateOrganizationMetadata,
   setOrganizationMemberRole,
+});
+
+registerAdminUserRoutes(app, {
+  authMiddleware,
+  ROLE_PERMISSIONS,
+  listDatasets,
+  updateUser,
+  setOrganizationMemberRole,
+  logAuditEvent,
 });
 app.use((err, req, res, next) => {
   console.error(err);
