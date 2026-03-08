@@ -1,3 +1,16 @@
+/**
+ * Registers auth- and permission-related API routes.
+ *
+ * System flow:
+ * - Exposes health endpoint.
+ * - Handles register/login/logout/session endpoints.
+ * - Implements forgot/reset password flows.
+ * - Exposes role-permission mapping for authorized clients.
+ *
+ * Dependency pattern:
+ * - All collaborators are injected through `deps` to keep this module decoupled
+ *   from direct imports and easier to test.
+ */
 export function registerAuthRoutes(app, deps) {
   const {
     registerRateLimit,
@@ -40,6 +53,11 @@ export function registerAuthRoutes(app, deps) {
     res.json({ ok: true, service: "arms-backend" });
   });
 
+  // Registration flow:
+  // 1) Validate payload + role constraints.
+  // 2) Verify organization/group existence in CKAN.
+  // 3) Create/reuse CKAN user and memberships.
+  // 4) Persist local user and audit outcome.
   app.post("/api/auth/register", registerRateLimit, async (req, res) => {
     try {
       const parsed = parseOrThrow(
@@ -59,6 +77,7 @@ export function registerAuthRoutes(app, deps) {
       ).trim();
 
       if (role === "admin") {
+        // Admin accounts must be created through controlled admin channels.
         return badRequest(res, "Admin role cannot be self-registered.");
       }
 
@@ -75,6 +94,7 @@ export function registerAuthRoutes(app, deps) {
         listOrganizations(),
         listGroups(),
       ]);
+      // Accept either CKAN id or name from client-provided selection.
       const selectedOrg = byAnyId(orgs, ckan_org_id);
       if (!selectedOrg) {
         return badRequest(res, "Selected CKAN organization was not found.");
@@ -97,12 +117,14 @@ export function registerAuthRoutes(app, deps) {
         password,
       });
 
+      // Assign baseline org role required for creating/editing datasets.
       await assignUserToOrganizationEditor({
         orgId: selectedOrg.name || selectedOrg.id,
         username: ckanUser.name,
       });
 
       if (selectedGroup) {
+        // Department/group membership is optional depending on registration input.
         await assignUserToGroupEditor({
           groupId: selectedGroup.name || selectedGroup.id,
           username: ckanUser.name,
@@ -150,6 +172,11 @@ export function registerAuthRoutes(app, deps) {
     }
   });
 
+  // Login flow:
+  // 1) Validate credentials.
+  // 2) Enforce account active status.
+  // 3) Optionally refresh CKAN API token.
+  // 4) Return signed JWT + sanitized user/profile payload.
   app.post("/api/auth/login", loginRateLimit, async (req, res) => {
     try {
       const parsed = parseOrThrow(
@@ -189,6 +216,7 @@ export function registerAuthRoutes(app, deps) {
 
       if (user.ckan_username) {
         try {
+          // Keep user CKAN token fresh for downstream integration requests.
           const tokenResult = await createApiTokenForUser(user.ckan_username);
           await updateUser(user.id, {
             ckan_api_token: tokenResult?.token || null,
@@ -212,6 +240,7 @@ export function registerAuthRoutes(app, deps) {
       }
 
       const latest = (await findUserById(user.id)) || user;
+      // Re-fetch user to include freshly persisted token/timestamps in response.
       const token = signSession(latest);
 
       await logAuditEvent({
@@ -232,6 +261,7 @@ export function registerAuthRoutes(app, deps) {
     return res.json(toAuthPayload(req.user, null));
   });
 
+  // Stateless logout endpoint retained for audit trail symmetry.
   app.post("/api/auth/logout", authMiddleware, async (req, res) => {
     await logAuditEvent({
       actorUserId: req.user.id,
@@ -241,6 +271,7 @@ export function registerAuthRoutes(app, deps) {
     return res.json({ ok: true });
   });
 
+  // Forgot-password flow intentionally returns generic success to avoid account enumeration.
   app.post("/api/auth/forgot-password", forgotRateLimit, async (req, res) => {
     try {
       const parsed = parseOrThrow(
@@ -271,6 +302,7 @@ export function registerAuthRoutes(app, deps) {
       });
 
       const payload = { ok: true };
+      // Non-production convenience mode exposes token for local/test workflows.
       if (config.nodeEnv !== "production" && config.exposeResetTokenInResponse) {
         payload.reset_token = token;
       }
@@ -283,6 +315,11 @@ export function registerAuthRoutes(app, deps) {
     }
   });
 
+  // Reset-password flow:
+  // 1) Validate request.
+  // 2) Consume token atomically (single-use).
+  // 3) Update local password hash.
+  // 4) Best-effort sync password to CKAN account.
   app.post("/api/auth/reset-password", resetRateLimit, async (req, res) => {
     try {
       const parsed = parseOrThrow(
@@ -308,6 +345,7 @@ export function registerAuthRoutes(app, deps) {
 
       if (user.ckan_username) {
         try {
+          // CKAN password sync failure should not block successful local reset.
           await updateCkanUserPassword(user.ckan_username, parsed.password);
           await logAuditEvent({
             actorUserId: user.id,
@@ -340,6 +378,7 @@ export function registerAuthRoutes(app, deps) {
     }
   });
 
+  // Permission map is protected to avoid exposing full authorization model publicly.
   app.get("/api/permissions/role-map", authMiddleware, (req, res) => {
     return res.json({ map: ROLE_PERMISSIONS });
   });
