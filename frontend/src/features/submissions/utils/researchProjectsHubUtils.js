@@ -87,6 +87,8 @@ export function mapDatasetToProjectRecord(dataset) {
       dataset?.organization?.display_name ||
       dataset?.organization?.name ||
       "-",
+    project_public_visible: !Boolean(dataset?.private),
+    private: Boolean(dataset?.private),
     project_ckan_org_id: dataset?.organization?.name || null,
     research_center_id: dataset?.organization?.name || null,
     resources: Array.isArray(dataset?.resources) ? dataset.resources : [],
