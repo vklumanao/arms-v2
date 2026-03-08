@@ -1,10 +1,23 @@
 import { query } from "../../db/client.js";
 
+/**
+ * Normalizes arbitrary input into a trimmed string.
+ *
+ * Used across this service to avoid null/undefined handling spread throughout
+ * ownership, role-sync, and CKAN metadata lookups.
+ */
 function asTrimmedString(value) {
   if (value == null) return "";
   return String(value).trim();
 }
 
+/**
+ * Maps arbitrary role input into supported ARMS roles.
+ *
+ * Data transformation:
+ * - Accepts any string-like value.
+ * - Returns one of: `admin`, `faculty`, `student`.
+ */
 function normalizeRole(role) {
   const value = String(role || "student").trim().toLowerCase();
   if (value === "admin") return "admin";
@@ -12,6 +25,14 @@ function normalizeRole(role) {
   return "student";
 }
 
+/**
+ * Translates ARMS roles to CKAN organization member roles.
+ *
+ * Dependency between systems:
+ * - ARMS `admin`   -> CKAN `admin`
+ * - ARMS `faculty` -> CKAN `editor`
+ * - ARMS `student` -> CKAN `member`
+ */
 function roleToCkanOrgRole(role) {
   const normalized = normalizeRole(role);
   if (normalized === "admin") return "admin";
@@ -19,6 +40,11 @@ function roleToCkanOrgRole(role) {
   return "member";
 }
 
+/**
+ * Reads an extra metadata value by case-insensitive key.
+ *
+ * Used for CKAN dataset extras where key casing and formatting are inconsistent.
+ */
 function getExtraByKey(extras, key) {
   const rows = Array.isArray(extras) ? extras : [];
   const match = rows.find(
@@ -33,7 +59,19 @@ function getExtraByKey(extras, key) {
   return match?.value ?? null;
 }
 
+/**
+ * Determines whether a CKAN dataset should be treated as owned by a user.
+ *
+ * Important logic:
+ * - Checks multiple legacy ownership markers from dataset extras.
+ * - Falls back to author email match for older records.
+ *
+ * Edge case:
+ * - Historical submissions used different key names; this function preserves
+ *   compatibility across those variants.
+ */
 function isDatasetOwnedByUser(dataset, user) {
+  // Preserve multiple ownership signals because historical submissions used different keys.
   const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
   const submittedByUserId = asTrimmedString(
     getExtraByKey(extras, "submitted_by_user_id"),
@@ -59,6 +97,12 @@ function isDatasetOwnedByUser(dataset, user) {
   return false;
 }
 
+/**
+ * Counts currently active admin users.
+ *
+ * Used by role/status update flows to prevent removing or deactivating the
+ * last active admin account.
+ */
 async function getActiveAdminCount() {
   const result = await query(
     `SELECT COUNT(*)::int AS count FROM users WHERE role = 'admin' AND is_active = TRUE`,
@@ -66,6 +110,12 @@ async function getActiveAdminCount() {
   return Number(result.rows?.[0]?.count || 0);
 }
 
+/**
+ * Loads a raw user row by id.
+ *
+ * This service uses raw rows for admin operations before shaping output with
+ * `toAdminUserRow`.
+ */
 async function findUserByIdRaw(userId) {
   const result = await query(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [
     String(userId || ""),
@@ -73,6 +123,13 @@ async function findUserByIdRaw(userId) {
   return result.rows?.[0] || null;
 }
 
+/**
+ * Converts a user DB row into admin-list response shape.
+ *
+ * Data transformation:
+ * - Applies nullable defaults.
+ * - Exposes only fields required by admin UI.
+ */
 function toAdminUserRow(row) {
   return {
     id: row.id,
@@ -92,6 +149,12 @@ function toAdminUserRow(row) {
   };
 }
 
+/**
+ * Lists users for the admin users table.
+ *
+ * Database dependency:
+ * - Reads user rows ordered by newest created accounts first.
+ */
 export async function listAdminUsers() {
   const result = await query(
     `
@@ -115,6 +178,17 @@ export async function listAdminUsers() {
   return (result.rows || []).map(toAdminUserRow);
 }
 
+/**
+ * Lists datasets owned by a target user for admin detail views.
+ *
+ * System flow:
+ * - Resolve CKAN org scope for non-admin users.
+ * - Paginate CKAN datasets with hard upper bound.
+ * - Filter datasets by ownership markers.
+ *
+ * Edge case:
+ * - Returns empty list for non-admin users without `ckan_org_id`.
+ */
 async function listOwnedDatasetsForUser(user, listDatasets) {
   const role = String(user?.role || "").toLowerCase();
   const orgId =
@@ -125,6 +199,7 @@ async function listOwnedDatasetsForUser(user, listDatasets) {
   const limit = 100;
   let page = 1;
 
+  // Safety cap avoids unbounded pagination if upstream total/count is inconsistent.
   while (page <= 20) {
     const result = await listDatasets({ orgId, page, limit });
     const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
@@ -139,6 +214,16 @@ async function listOwnedDatasetsForUser(user, listDatasets) {
   return rows;
 }
 
+/**
+ * Loads role-change audit history for a user.
+ *
+ * System flow:
+ * - Fetch recent `admin.user.role_updated` events for target user.
+ * - Resolve actor ids to names/emails for UI display.
+ *
+ * Database dependency:
+ * - Reads from `audit_logs` and `users`.
+ */
 async function loadRoleAudit(userId) {
   const result = await query(
     `
@@ -187,6 +272,18 @@ async function loadRoleAudit(userId) {
   return { roleAudit, roleAuditActorMap };
 }
 
+/**
+ * Builds admin user detail payload (profile + project and audit summaries).
+ *
+ * System flow:
+ * - Load user.
+ * - Collect owned datasets and aggregate status counters.
+ * - Sort recent projects by latest update.
+ * - Attach role audit history and actor label map.
+ *
+ * Edge case:
+ * - Unknown statuses are counted under `proposal` to keep chart totals stable.
+ */
 export async function getAdminUserDetail(userId, { listDatasets }) {
   const user = await findUserByIdRaw(userId);
   if (!user) return null;
@@ -210,6 +307,7 @@ export async function getAdminUserDetail(userId, { listDatasets }) {
       .trim()
       .toLowerCase();
 
+    // Keep unknown status values visible in totals without expanding fixed buckets.
     if (statusCounts[status] == null) {
       statusCounts.proposal += 1;
     } else {
@@ -243,6 +341,18 @@ export async function getAdminUserDetail(userId, { listDatasets }) {
   };
 }
 
+/**
+ * Updates a user's role in ARMS and attempts to mirror it in CKAN.
+ *
+ * System flow:
+ * - Validate target user and role transition.
+ * - Enforce "cannot remove last active admin" safety rule.
+ * - Best-effort sync CKAN organization role when CKAN identity exists.
+ * - Persist ARMS role update and write audit log.
+ *
+ * Edge case:
+ * - CKAN sync failures do not block ARMS role update; failure is captured in audit details.
+ */
 export async function updateAdminUserRole(
   { actorUserId, targetUserId, role },
   { updateUser, setOrganizationMemberRole, logAuditEvent },
@@ -257,6 +367,7 @@ export async function updateAdminUserRole(
   }
 
   if (currentRole === "admin" && nextRole !== "admin" && target.is_active) {
+    // Prevent lockout by ensuring at least one active admin remains.
     const activeAdminCount = await getActiveAdminCount();
     if (activeAdminCount <= 1) {
       return {
@@ -271,6 +382,7 @@ export async function updateAdminUserRole(
   const username = asTrimmedString(target.ckan_username);
   if (orgId && username) {
     try {
+      // Keep CKAN membership capacity aligned with ARMS authorization role.
       await setOrganizationMemberRole({
         orgId,
         username,
@@ -298,6 +410,16 @@ export async function updateAdminUserRole(
   return { data: toAdminUserRow(updated || target) };
 }
 
+/**
+ * Activates/deactivates a user account.
+ *
+ * System flow:
+ * - Validate target user and requested status change.
+ * - Enforce admin safety rules:
+ *   - cannot deactivate last active admin
+ *   - cannot self-deactivate
+ * - Persist status update and emit audit event.
+ */
 export async function updateAdminUserStatus(
   { actorUserId, targetUserId, isActive },
   { updateUser, logAuditEvent },
@@ -312,6 +434,7 @@ export async function updateAdminUserStatus(
   }
 
   if (target.role === "admin" && !nextActive) {
+    // Prevent lockout by ensuring at least one active admin remains.
     const activeAdminCount = await getActiveAdminCount();
     if (activeAdminCount <= 1) {
       return {
