@@ -14,6 +14,8 @@ import {
   createOrganization,
   createDataset,
   createDatasetResource,
+  updateDatasetResource,
+  deleteDatasetResource,
   createApiTokenForUser,
   createOrGetUser,
   deleteOrganization,
@@ -541,6 +543,8 @@ registerSubmissionsRoutes(app, {
   setDatasetVisibility,
   deleteDataset,
   createDatasetResource,
+  updateDatasetResource,
+  deleteDatasetResource,
   getExtraByKey,
 });
 
