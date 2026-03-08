@@ -1,6 +1,14 @@
 import { ckanAction } from "./http/ckanAction.js";
 import { toText } from "./utils/normalize.js";
 
+/**
+ * Searches CKAN datasets with pagination and optional organization filter.
+ *
+ * Data transformation:
+ * - Sanitizes page/limit to safe bounds.
+ * - Builds CKAN filter query (`fq`) when org is provided.
+ * - Returns normalized response shape used by route modules.
+ */
 export async function listDatasets({
   orgId = "",
   q = "",
@@ -31,20 +39,35 @@ export async function listDatasets({
   };
 }
 
+/**
+ * Creates CKAN dataset/package.
+ */
 export async function createDataset(payload) {
   return ckanAction("package_create", payload || {});
 }
 
+/**
+ * Updates CKAN dataset/package.
+ */
 export async function updateDataset(payload) {
   return ckanAction("package_update", payload || {});
 }
 
+/**
+ * Deletes CKAN dataset/package by id/name.
+ *
+ * Edge case:
+ * - No-op when dataset id is empty after normalization.
+ */
 export async function deleteDataset(datasetId) {
   const id = toText(datasetId);
   if (!id) return;
   await ckanAction("package_delete", { id });
 }
 
+/**
+ * Creates a CKAN dataset resource.
+ */
 export async function createDatasetResource(payload) {
   return ckanAction("resource_create", payload || {});
 }
