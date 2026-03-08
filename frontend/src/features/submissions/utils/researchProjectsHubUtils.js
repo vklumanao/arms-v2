@@ -55,6 +55,25 @@ export function mapDatasetToProjectRecord(dataset) {
   const yearFromMetadata = metadataCreated
     ? new Date(metadataCreated).getFullYear()
     : null;
+  const yearFromExtra = String(
+    getDatasetExtra(dataset, "project_year") || getDatasetExtra(dataset, "year"),
+  ).trim();
+  const industryPartner = String(
+    getDatasetExtra(dataset, "industry_partner"),
+  ).trim();
+  const fundingSource = String(getDatasetExtra(dataset, "funding_source")).trim();
+  const fundingAmount = String(getDatasetExtra(dataset, "funding_amount")).trim();
+  const startDate = String(getDatasetExtra(dataset, "start_date")).trim();
+  const endDate = String(getDatasetExtra(dataset, "end_date")).trim();
+  const submittedByUserId = String(
+    getDatasetExtra(dataset, "submitted_by_user_id"),
+  ).trim();
+  const submittedByEmail = String(
+    getDatasetExtra(dataset, "submitted_by_email"),
+  ).trim();
+  const submittedByName = String(
+    getDatasetExtra(dataset, "submitted_by_name"),
+  ).trim();
   const mappedStatus = String(
     getDatasetExtra(dataset, "status") || dataset?.state || "ongoing",
   )
@@ -75,20 +94,31 @@ export function mapDatasetToProjectRecord(dataset) {
     lead_researcher: dataset?.author || "-",
     faculty_team: getDatasetExtra(dataset, "faculty_team"),
     student_team: getDatasetExtra(dataset, "student_team"),
-    year: Number.isFinite(yearFromMetadata) ? yearFromMetadata : "-",
+    industry_partner: industryPartner,
+    funding_source: fundingSource,
+    funding_amount: fundingAmount,
+    start_date: startDate,
+    end_date: endDate,
+    year:
+      yearFromExtra ||
+      (Number.isFinite(yearFromMetadata) ? String(yearFromMetadata) : "-"),
     status: normalizeStatus(normalizedMappedStatus),
     submitted_by_name:
-      dataset?.maintainer || dataset?.author || "CKAN Dataset Owner",
-    submitted_by_email: dataset?.maintainer_email || "-",
-    submitted_by: dataset?.creator_user_id || null,
+      submittedByName ||
+      dataset?.maintainer ||
+      dataset?.author ||
+      "CKAN Dataset Owner",
+    submitted_by_email:
+      submittedByEmail || dataset?.maintainer_email || dataset?.author_email || "-",
+    submitted_by: submittedByUserId || dataset?.creator_user_id || null,
     submitted_at: metadataCreated || dataset?.metadata_modified || null,
     submitted_by_org_name:
       dataset?.organization?.title ||
       dataset?.organization?.display_name ||
       dataset?.organization?.name ||
       "-",
-    project_public_visible: !Boolean(dataset?.private),
-    private: Boolean(dataset?.private),
+    project_public_visible: dataset?.private !== true,
+    private: dataset?.private === true,
     project_ckan_org_id: dataset?.organization?.name || null,
     research_center_id: dataset?.organization?.name || null,
     resources: Array.isArray(dataset?.resources) ? dataset.resources : [],
