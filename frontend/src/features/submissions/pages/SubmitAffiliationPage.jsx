@@ -833,7 +833,7 @@ export default function SubmitAffiliationPage() {
       );
       setShowSubmitConfirm(false);
       setSubmitting(false);
-      navigate("/my-submissions");
+      navigate("/submit-affiliation");
       return;
     }
 
