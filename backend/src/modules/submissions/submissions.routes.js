@@ -1,5 +1,15 @@
 import crypto from "node:crypto";
 
+/**
+ * Registers submission routes for research outputs and CKAN publishing.
+ *
+ * System flow:
+ * - Lists current user's submitted research-output resources.
+ * - Creates/updates CKAN dataset plus resources for project submissions.
+ *
+ * Dependency pattern:
+ * - Route logic is composed with injected helpers and CKAN client calls.
+ */
 export function registerSubmissionsRoutes(app, deps) {
   const {
     authMiddleware,
@@ -15,6 +25,12 @@ export function registerSubmissionsRoutes(app, deps) {
     getExtraByKey,
   } = deps;
 
+  /**
+   * Converts free-text title into CKAN-compatible dataset name slug.
+   *
+   * Edge case:
+   * - Generates timestamp-based fallback when slug would be empty.
+   */
   function toCkanName(value) {
     const base = asTrimmedString(value)
       .toLowerCase()
@@ -25,6 +41,13 @@ export function registerSubmissionsRoutes(app, deps) {
     return `dataset-${Date.now()}`;
   }
 
+  /**
+   * Builds a display name for each expected output resource.
+   *
+   * Data transformation:
+   * - Prefers explicit output type + target count when available.
+   * - Falls back to indexed generic label.
+   */
   function formatOutputResourceName(row, index) {
     const outputType = asTrimmedString(row?.output_type || row?.outputType);
     const targetCount = Math.max(
@@ -35,8 +58,16 @@ export function registerSubmissionsRoutes(app, deps) {
     return `Expected Output ${index + 1}`;
   }
 
+  /**
+   * Converts submission form fields into CKAN dataset extras metadata.
+   *
+   * Important logic:
+   * - Captures submitter identity metadata for ownership and audit correlation.
+   * - Filters empty values so CKAN extras remain compact.
+   */
   function toDatasetExtras(form = {}, user = null) {
     const submittedAt = new Date().toISOString();
+    // Trace id helps correlate CKAN datasets/resources with audit logs.
     const traceId = crypto.randomUUID();
     return [
       { key: "submitted_by_user_id", value: asTrimmedString(user?.id) || null },
@@ -123,6 +154,7 @@ export function registerSubmissionsRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        // Non-admins are scoped by CKAN org; admins can view all.
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
         const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
         const page = Math.max(1, Number(req.query?.page || 1));
@@ -147,6 +179,7 @@ export function registerSubmissionsRoutes(app, deps) {
             dataset?.state ||
             null;
 
+          // Flatten each dataset resource into table-friendly response rows.
           for (const resource of resources) {
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
@@ -200,6 +233,7 @@ export function registerSubmissionsRoutes(app, deps) {
   );
 
   app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
+    // Accepts both create and update flow depending on `dataset_id`.
     const form = req.body?.form || {};
     const expectedOutputs = Array.isArray(req.body?.expected_outputs)
       ? req.body.expected_outputs
@@ -240,6 +274,7 @@ export function registerSubmissionsRoutes(app, deps) {
         null,
       maintainer_email: asTrimmedString(req.user?.email) || null,
       private: true,
+      // Preserve searchable categorical tags from key form fields.
       tags: [
         asTrimmedString(form.classification),
         asTrimmedString(form.status),
@@ -255,6 +290,7 @@ export function registerSubmissionsRoutes(app, deps) {
     let dataset = null;
     const createdNow = !datasetId;
     try {
+      // Update existing dataset when dataset id is supplied, otherwise create new one.
       dataset = datasetId
         ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
         : await createDataset(baseDatasetPayload);
@@ -275,6 +311,7 @@ export function registerSubmissionsRoutes(app, deps) {
           /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
             ? filePath
             : fallbackResourceUrl;
+        // Infer format from filename extension when explicit format is missing.
         const format = fileName.includes(".")
           ? fileName.split(".").pop()?.toUpperCase() || ""
           : "";
@@ -303,6 +340,7 @@ export function registerSubmissionsRoutes(app, deps) {
     } catch (error) {
       if (createdNow && dataset?.id) {
         try {
+          // Roll back orphan dataset when resource creation fails mid-request.
           await deleteDataset(dataset.id);
         } catch {
           // Best-effort cleanup only.
