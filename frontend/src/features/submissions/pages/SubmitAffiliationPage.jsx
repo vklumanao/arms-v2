@@ -878,7 +878,10 @@ export default function SubmitAffiliationPage() {
         }
       />
 
-      <div className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4">
+      <div
+        id="onboarding-submission-flow"
+        className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4"
+      >
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
@@ -1010,6 +1013,7 @@ export default function SubmitAffiliationPage() {
                   Project title
                 </span>
                 <input
+                  id="onboarding-form-project-title"
                   className="control-input"
                   placeholder="e.g. AI Mentorship in Public Schools"
                   required
@@ -1050,6 +1054,7 @@ export default function SubmitAffiliationPage() {
                   </span>
                   <div ref={leadFieldRef} className="relative space-y-2">
                     <input
+                      id="onboarding-form-lead-researcher"
                       className="control-input"
                       placeholder="Type a CKAN user name"
                       value={leadSearch}
@@ -1254,6 +1259,7 @@ export default function SubmitAffiliationPage() {
                   Project classification
                 </span>
                 <select
+                  id="onboarding-form-classification"
                   className="control-select"
                   required
                   value={form.classification}
@@ -1291,6 +1297,7 @@ export default function SubmitAffiliationPage() {
                   Research agenda
                 </span>
                 <select
+                  id="onboarding-form-agenda"
                   className="control-select"
                   value={form.research_agenda_id}
                   disabled={effectiveAgendas.length === 0}
@@ -1453,7 +1460,7 @@ export default function SubmitAffiliationPage() {
                     }
                   />
                 </label>
-                <div className="block space-y-1 text-sm">
+                <div id="onboarding-form-moa" className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Signed MOA reference
                   </span>
@@ -1579,6 +1586,7 @@ export default function SubmitAffiliationPage() {
                     Expected research outputs
                   </span>
                   <button
+                    id="onboarding-form-add-output"
                     type="button"
                     className="btn btn-outline"
                     onClick={openAddOutputModal}
@@ -1676,6 +1684,7 @@ export default function SubmitAffiliationPage() {
                   Supporting MOV link (optional)
                 </span>
                 <input
+                  id="onboarding-form-mov-link"
                   className="control-input"
                   placeholder="Google Drive link or repository of supporting MOVs"
                   value={form.supporting_mov_link}
@@ -2015,6 +2024,7 @@ export default function SubmitAffiliationPage() {
                 </button>
               ) : (
                 <button
+                  id="onboarding-form-submit"
                   type="submit"
                   className={`btn btn-primary ${disabledButtonClass}`}
                   disabled={Boolean(getSubmissionValidationError())}

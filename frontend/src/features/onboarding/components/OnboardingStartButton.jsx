@@ -17,7 +17,7 @@ export default function OnboardingStartButton({ onStart, tourRunning }) {
     return () => media.removeEventListener("change", handleChange);
   }, []);
 
-  const label = tourRunning ? "Tour Running..." : "Start Tour";
+  const label = tourRunning ? "Tour Running..." : "Guided Tour";
 
   return (
     <button
