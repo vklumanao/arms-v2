@@ -5,12 +5,25 @@ import {
   updateAdminUserStatus,
 } from "./users.service.js";
 
+/**
+ * Checks whether user role includes required permission.
+ */
 function hasPermission(user, permission, ROLE_PERMISSIONS) {
   const role = String(user?.role || "").toLowerCase();
   const permissions = ROLE_PERMISSIONS?.[role] || [];
   return permissions.includes(permission);
 }
 
+/**
+ * Registers admin user-management routes.
+ *
+ * System flow:
+ * - Lists users and user details.
+ * - Updates user role/status with audit-backed service methods.
+ *
+ * Dependencies:
+ * - Route logic delegates domain rules to `users.service.js`.
+ */
 export function registerAdminUserRoutes(app, deps) {
   const {
     authMiddleware,
@@ -21,6 +34,9 @@ export function registerAdminUserRoutes(app, deps) {
     logAuditEvent,
   } = deps;
 
+  /**
+   * Middleware guard for `admin.users.manage` permission.
+   */
   function requireAdminUsersManage(req, res, next) {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     if (!hasPermission(req.user, "admin.users.manage", ROLE_PERMISSIONS)) {
@@ -35,6 +51,7 @@ export function registerAdminUserRoutes(app, deps) {
     requireAdminUsersManage,
     async (req, res) => {
       try {
+        // Returns flattened admin-facing user table rows.
         const rows = await listAdminUsers();
         return res.json({ data: rows });
       } catch (error) {
@@ -51,6 +68,7 @@ export function registerAdminUserRoutes(app, deps) {
     requireAdminUsersManage,
     async (req, res) => {
       try {
+        // Includes project and role-audit summaries for selected user.
         const payload = await getAdminUserDetail(req.params.userId, {
           listDatasets,
         });
@@ -72,6 +90,7 @@ export function registerAdminUserRoutes(app, deps) {
     requireAdminUsersManage,
     async (req, res) => {
       try {
+        // Service enforces lockout checks and CKAN role sync semantics.
         const result = await updateAdminUserRole(
           {
             actorUserId: req.user?.id,
@@ -101,6 +120,7 @@ export function registerAdminUserRoutes(app, deps) {
     requireAdminUsersManage,
     async (req, res) => {
       try {
+        // Service enforces self-deactivation and last-admin safety rules.
         const result = await updateAdminUserStatus(
           {
             actorUserId: req.user?.id,
