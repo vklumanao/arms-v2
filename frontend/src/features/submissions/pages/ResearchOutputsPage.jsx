@@ -3,7 +3,10 @@ import EmptyState from "@/shared/components/feedback/EmptyState";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { fetchMyResearchOutputs } from "@/features/submissions/services";
+import {
+  fetchMyResearchOutputs,
+  updateResearchOutputVisibility,
+} from "@/features/submissions/services";
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
@@ -20,6 +23,7 @@ export default function ResearchOutputsPage() {
   const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewTarget, setViewTarget] = useState(null);
+  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
   const pageSize = 10;
 
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
@@ -227,6 +231,57 @@ export default function ResearchOutputsPage() {
     return `${size >= 10 ? size.toFixed(0) : size.toFixed(1)} ${units[unitIndex]}`;
   };
 
+  const handleToggleVisibility = async (row) => {
+    const datasetId = String(row?.datasetId || "").trim();
+    if (!datasetId) {
+      toast.error("Visibility update failed", "Dataset id is missing.");
+      return;
+    }
+
+    const nextIsPublic = Boolean(row?.private);
+    setVisibilitySavingByDataset((prev) => ({ ...prev, [datasetId]: true }));
+
+    const { data, error: updateError } = await updateResearchOutputVisibility({
+      datasetId,
+      isPublic: nextIsPublic,
+    });
+
+    setVisibilitySavingByDataset((prev) => {
+      const next = { ...prev };
+      delete next[datasetId];
+      return next;
+    });
+
+    if (updateError) {
+      toast.error(
+        "Visibility update failed",
+        String(updateError?.message || "Unable to update visibility."),
+      );
+      return;
+    }
+
+    const isNowPublic = Boolean(data?.project_public_visible);
+    setRows((prev) =>
+      prev.map((item) =>
+        String(item?.ckan_dataset_id || "").trim() === datasetId
+          ? { ...item, project_public_visible: isNowPublic }
+          : item,
+      ),
+    );
+
+    setViewTarget((prev) => {
+      if (!prev) return prev;
+      return String(prev?.datasetId || "").trim() === datasetId
+        ? { ...prev, private: !isNowPublic }
+        : prev;
+    });
+
+    toast.success(
+      "Visibility updated",
+      isNowPublic ? "Dataset is now public." : "Dataset is now private.",
+    );
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -356,11 +411,28 @@ export default function ResearchOutputsPage() {
                     <td>{row.datasetName || "-"}</td>
                     <td>{row.organization || "-"}</td>
                     <td>
-                      <span
-                        className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
-                      >
-                        {row.private ? "Private" : "Public"}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
+                        >
+                          {row.private ? "Private" : "Public"}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          disabled={
+                            !row.datasetId ||
+                            Boolean(visibilitySavingByDataset[row.datasetId])
+                          }
+                          onClick={() => handleToggleVisibility(row)}
+                        >
+                          {visibilitySavingByDataset[row.datasetId]
+                            ? "Saving..."
+                            : row.private
+                              ? "Make Public"
+                              : "Make Private"}
+                        </button>
+                      </div>
                     </td>
                     <td>{row.state || "-"}</td>
                     <td>
