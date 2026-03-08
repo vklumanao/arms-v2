@@ -1,3 +1,12 @@
+// Role-to-permission matrix used by authorization checks in route middleware.
+//
+// System flow dependency:
+// - Server exposes this map via `/api/permissions/role-map`.
+// - Admin route guards (for example `admin.users.manage`) check membership
+//   in these per-role permission arrays.
+//
+// Important note:
+// - `student` and `faculty` currently share the same baseline permissions.
 export const ROLE_PERMISSIONS = {
   student: [
     "dashboard.view",
