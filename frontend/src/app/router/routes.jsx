@@ -22,8 +22,6 @@ import { DashboardPage } from "@/features/dashboard";
 import {
   AffiliateProfilePage,
   AwardsRecognitionPage,
-  MySubmissionsPage,
-  PublicationsPage,
   ResearchOutputsPage,
   ResearchProjectsHubPage,
   SubmitAffiliationPage,
@@ -106,20 +104,6 @@ export default function AppRoutes() {
               element={withPermission(
                 PERMISSIONS.AWARDS_RECOGNITION_VIEW,
                 <AwardsRecognitionPage />,
-              )}
-            />
-            <Route
-              path="/my-submissions"
-              element={withPermission(
-                PERMISSIONS.MY_SUBMISSIONS_VIEW,
-                <MySubmissionsPage />,
-              )}
-            />
-            <Route
-              path="/publications"
-              element={withPermission(
-                PERMISSIONS.PUBLICATIONS_MANAGE,
-                <PublicationsPage />,
               )}
             />
           </Route>
