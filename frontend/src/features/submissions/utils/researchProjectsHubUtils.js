@@ -56,13 +56,18 @@ export function mapDatasetToProjectRecord(dataset) {
     ? new Date(metadataCreated).getFullYear()
     : null;
   const yearFromExtra = String(
-    getDatasetExtra(dataset, "project_year") || getDatasetExtra(dataset, "year"),
+    getDatasetExtra(dataset, "project_year") ||
+      getDatasetExtra(dataset, "year"),
   ).trim();
   const industryPartner = String(
     getDatasetExtra(dataset, "industry_partner"),
   ).trim();
-  const fundingSource = String(getDatasetExtra(dataset, "funding_source")).trim();
-  const fundingAmount = String(getDatasetExtra(dataset, "funding_amount")).trim();
+  const fundingSource = String(
+    getDatasetExtra(dataset, "funding_source"),
+  ).trim();
+  const fundingAmount = String(
+    getDatasetExtra(dataset, "funding_amount"),
+  ).trim();
   const startDate = String(getDatasetExtra(dataset, "start_date")).trim();
   const endDate = String(getDatasetExtra(dataset, "end_date")).trim();
   const submittedByUserId = String(
@@ -74,8 +79,14 @@ export function mapDatasetToProjectRecord(dataset) {
   const submittedByName = String(
     getDatasetExtra(dataset, "submitted_by_name"),
   ).trim();
+  const leadResearcher = String(
+    getDatasetExtra(dataset, "lead_researcher"),
+  ).trim();
   const mappedStatus = String(
-    getDatasetExtra(dataset, "status") || dataset?.state || "ongoing",
+    getDatasetExtra(dataset, "project_status") ||
+      getDatasetExtra(dataset, "status") ||
+      dataset?.state ||
+      "ongoing",
   )
     .trim()
     .toLowerCase();
@@ -91,7 +102,7 @@ export function mapDatasetToProjectRecord(dataset) {
     ckan_dataset_id: dataset?.id || null,
     title: dataset?.title || dataset?.name || "-",
     abstract: dataset?.notes || "",
-    lead_researcher: dataset?.author || "-",
+    lead_researcher: leadResearcher || dataset?.author || "-",
     faculty_team: getDatasetExtra(dataset, "faculty_team"),
     student_team: getDatasetExtra(dataset, "student_team"),
     industry_partner: industryPartner,
@@ -109,8 +120,12 @@ export function mapDatasetToProjectRecord(dataset) {
       dataset?.author ||
       "CKAN Dataset Owner",
     submitted_by_email:
-      submittedByEmail || dataset?.maintainer_email || dataset?.author_email || "-",
+      submittedByEmail ||
+      dataset?.maintainer_email ||
+      dataset?.author_email ||
+      "-",
     submitted_by: submittedByUserId || dataset?.creator_user_id || null,
+    project_author_email: dataset?.author_email || null,
     submitted_at: metadataCreated || dataset?.metadata_modified || null,
     submitted_by_org_name:
       dataset?.organization?.title ||
