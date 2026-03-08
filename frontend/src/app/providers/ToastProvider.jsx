@@ -1,14 +1,16 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
   useMemo,
   useState,
 } from "react";
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 const ToastContext = createContext(null);
 
 const DEFAULT_DURATION = 4500;
+const MAX_TOASTS = 5;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -28,7 +30,7 @@ export function ToastProvider({ children }) {
       if (!text) return;
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       setToasts((prev) => [
-        ...prev,
+        ...prev.slice(-(MAX_TOASTS - 1)),
         {
           id,
           type,
@@ -62,39 +64,61 @@ export function ToastProvider({ children }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed right-4 top-4 z-[120] flex w-full max-w-sm flex-col gap-2"
+        className="pointer-events-none fixed inset-x-0 top-4 z-[120] flex items-start justify-center px-3 sm:inset-x-auto sm:right-4 sm:top-4 sm:block sm:px-0"
       >
-        {toasts.map((toast) => {
-          const tone =
-            toast.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : toast.type === "error"
-                ? "border-rose-200 bg-rose-50 text-rose-900"
-                : "border-sky-200 bg-sky-50 text-sky-900";
-          return (
-            <div
-              key={toast.id}
-              className={`pointer-events-auto rounded-lg border p-3 shadow-lg ${tone}`}
-              role="status"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  {toast.title ? (
-                    <p className="text-sm font-semibold">{toast.title}</p>
-                  ) : null}
-                  <p className="text-sm">{toast.message}</p>
+        <div className="flex w-full max-w-md flex-col gap-2">
+          {toasts.map((toast) => {
+            const tone =
+              toast.type === "success"
+                ? {
+                    card: "border-emerald-300/70 bg-emerald-50/95 text-emerald-950",
+                    icon: "bg-emerald-100 text-emerald-700",
+                    label: "Success",
+                    Icon: CheckCircle2,
+                  }
+                : toast.type === "error"
+                  ? {
+                      card: "border-rose-300/70 bg-rose-50/95 text-rose-950",
+                      icon: "bg-rose-100 text-rose-700",
+                      label: "Error",
+                      Icon: AlertTriangle,
+                    }
+                  : {
+                      card: "border-sky-300/70 bg-sky-50/95 text-sky-950",
+                      icon: "bg-sky-100 text-sky-700",
+                      label: "Info",
+                      Icon: Info,
+                    };
+            return (
+              <div
+                key={toast.id}
+                className={`pointer-events-auto rounded-xl border px-3 py-3 shadow-lg backdrop-blur-sm transition ${tone.card}`}
+                role="status"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${tone.icon}`}
+                  >
+                    <tone.Icon size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] opacity-80">
+                      {toast.title || tone.label}
+                    </p>
+                    <p className="mt-0.5 text-sm leading-snug">{toast.message}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-current/80 transition hover:bg-black/5 hover:text-current"
+                    onClick={() => dismiss(toast.id)}
+                  >
+                    Dismiss
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="rounded px-1 text-xs font-semibold opacity-80 hover:opacity-100"
-                  onClick={() => dismiss(toast.id)}
-                >
-                  Close
-                </button>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </ToastContext.Provider>
   );
@@ -107,4 +131,3 @@ export function useToast() {
   }
   return context;
 }
-
