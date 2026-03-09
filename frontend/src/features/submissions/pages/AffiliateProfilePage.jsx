@@ -111,20 +111,20 @@ export default function AffiliateProfilePage() {
     }
 
     setSaving(false);
-    setMessage("Affiliate profile updated successfully.");
+    setMessage("Profile updated successfully.");
   };
 
   return (
     <section className="page-stack-lg">
       <PageHeader
-        title="Affiliate Profile"
+        title="My Profile"
         description="Maintain your researcher affiliation details, scholar link, and productivity counts."
       />
 
       {loading ? (
         <div className="panel">
           <div className="panel-body text-sm text-slate-600">
-            Loading affiliate profile...
+            Loading profile...
           </div>
         </div>
       ) : (
@@ -160,7 +160,7 @@ export default function AffiliateProfilePage() {
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
-                  Affiliated RDI Center
+                  Research Center
                 </span>
                 <input
                   className="control-input"
@@ -318,7 +318,7 @@ export default function AffiliateProfilePage() {
       <ConfirmActionModal
         open={confirmSave}
         title="Confirm Profile Update"
-        message="Save changes to your affiliate profile?"
+        message="Save changes to your profile?"
         confirmLabel="Save Changes"
         loading={saving}
         onCancel={() => setConfirmSave(false)}
