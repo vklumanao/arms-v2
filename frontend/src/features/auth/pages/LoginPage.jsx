@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
 import { toDisplayFirstName } from "@/features/auth/utils";
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const toast = useToast();
   const { user, loading: authLoading, signIn } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
@@ -117,16 +119,26 @@ export default function LoginPage() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Password</span>
-          <input
-            className="control-input"
-            placeholder="Enter your password"
-            type="password"
-            required
-            value={form.password}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, password: e.target.value }))
-            }
-          />
+          <div className="relative">
+            <input
+              className="control-input pr-16"
+              placeholder="Enter your password"
+              type={showPassword ? "text" : "password"}
+              required
+              value={form.password}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, password: e.target.value }))
+              }
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </label>
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button
@@ -155,3 +167,4 @@ export default function LoginPage() {
     </section>
   );
 }
+
