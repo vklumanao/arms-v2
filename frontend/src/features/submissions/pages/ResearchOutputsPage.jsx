@@ -5,6 +5,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import {
+  createResearchOutput,
+  createResearchOutputWithFile,
+  fetchUserProjects,
   fetchMyResearchOutputs,
   deleteResearchOutput,
   updateResearchOutput,
@@ -13,6 +16,18 @@ import {
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
+
+const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
+  "Software Applications",
+  "Video Games",
+  "Websites and Web Systems",
+  "Digital Art and Generative Art",
+  "Interactive Media Projects",
+  "Data Visualization Projects",
+  "Artificial Intelligence Creations",
+  "Educational Technology Tools",
+];
+const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 export default function ResearchOutputsPage() {
   const toast = useToast();
@@ -42,7 +57,20 @@ export default function ResearchOutputsPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deletingByResource, setDeletingByResource] = useState({});
-  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
+  const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState(
+    {},
+  );
+  const [showAddOutputModal, setShowAddOutputModal] = useState(false);
+  const [projectOptions, setProjectOptions] = useState([]);
+  const [addingOutput, setAddingOutput] = useState(false);
+  const [addOutputForm, setAddOutputForm] = useState({
+    project_id: "",
+    output_type: "",
+    specific_output: "",
+    target_count: 1,
+    notes: "",
+  });
+  const [addOutputFile, setAddOutputFile] = useState(null);
   const pageSize = 10;
 
   useEffect(() => {
@@ -76,6 +104,26 @@ export default function ResearchOutputsPage() {
       }
     };
     load();
+    return () => {
+      cancelled = true;
+    };
+  }, [missingAffiliation, profile?.id]);
+
+  useEffect(() => {
+    if (missingAffiliation) {
+      setProjectOptions([]);
+      return;
+    }
+    let cancelled = false;
+    fetchUserProjects({ userId: profile?.id })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setProjectOptions(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProjectOptions([]);
+      });
     return () => {
       cancelled = true;
     };
@@ -204,6 +252,36 @@ export default function ResearchOutputsPage() {
       }),
     [centerNameById, normalizeResourceName, outputTypeLabelByValue, sortedRows],
   );
+
+  const projectOptionsFromRows = useMemo(() => {
+    const seen = new Set();
+    const items = [];
+    for (const row of tableRows) {
+      const id = String(row?.datasetId || "").trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      items.push({
+        id,
+        title: String(row?.subtitle || row?.datasetName || "").trim() || id,
+      });
+    }
+    return items;
+  }, [tableRows]);
+
+  const mergedProjectOptions = useMemo(() => {
+    const byId = new Map();
+    [...projectOptions, ...projectOptionsFromRows].forEach((project) => {
+      const id = String(project?.id || "").trim();
+      if (!id) return;
+      if (!byId.has(id)) {
+        byId.set(id, {
+          id,
+          title: String(project?.title || "").trim() || id,
+        });
+      }
+    });
+    return Array.from(byId.values());
+  }, [projectOptions, projectOptionsFromRows]);
 
   const stateOptions = useMemo(
     () =>
@@ -360,7 +438,10 @@ export default function ResearchOutputsPage() {
     if (sizeRaw) {
       const parsedSize = Number(sizeRaw);
       if (!Number.isFinite(parsedSize) || parsedSize < 0) {
-        toast.error("Edit failed", "File size must be a valid non-negative number.");
+        toast.error(
+          "Edit failed",
+          "File size must be a valid non-negative number.",
+        );
         return;
       }
       payload.file_size = parsedSize;
@@ -381,7 +462,9 @@ export default function ResearchOutputsPage() {
       return;
     }
 
-    const nextFileName = String(data?.file_name || payload.file_name || "").trim();
+    const nextFileName = String(
+      data?.file_name || payload.file_name || "",
+    ).trim();
     const nextNotes = data?.notes ?? payload.notes ?? null;
     const nextPath = data?.file_path ?? payload.file_path ?? null;
     const nextMime = data?.mime_type ?? payload.mime_type ?? null;
@@ -466,6 +549,94 @@ export default function ResearchOutputsPage() {
     toast.success("Research output deleted", "Resource was removed.");
   };
 
+  const openAddOutputModal = () => {
+    setAddOutputForm({
+      project_id: "",
+      output_type: "",
+      specific_output: "",
+      target_count: 1,
+      notes: "",
+    });
+    setAddOutputFile(null);
+    setShowAddOutputModal(true);
+  };
+
+  const handleCreateOutput = async () => {
+    const projectId = String(addOutputForm.project_id || "").trim();
+    const outputType = String(addOutputForm.output_type || "").trim();
+    const specificOutput = String(addOutputForm.specific_output || "").trim();
+    const targetCount = Math.max(
+      1,
+      Number(addOutputForm.target_count || 1) || 1,
+    );
+    const notes = String(addOutputForm.notes || "").trim();
+
+    if (!projectId) {
+      toast.error("Add output failed", "Please select a project.");
+      return;
+    }
+    if (!outputType) {
+      toast.error("Add output failed", "Please select an output type.");
+      return;
+    }
+    if (outputType === "product_software" && !specificOutput) {
+      toast.error(
+        "Add output failed",
+        "Specific output is required for Product/Software Application.",
+      );
+      return;
+    }
+
+    const fullNotes =
+      outputType === "product_software" && specificOutput
+        ? `Specific output: ${specificOutput}${notes ? `\n${notes}` : ""}`
+        : notes;
+    if (addOutputFile && addOutputFile.size > MAX_OUTPUT_FILE_SIZE_BYTES) {
+      toast.error("Add output failed", "Output file must be 25MB or smaller.");
+      return;
+    }
+
+    setAddingOutput(true);
+    const { error: createError } = addOutputFile
+      ? await createResearchOutputWithFile({
+          projectId,
+          outputType,
+          targetCount,
+          notes: fullNotes,
+          file: addOutputFile,
+        })
+      : await createResearchOutput({
+          projectId,
+          outputType,
+          targetCount,
+          notes: fullNotes,
+          filePath: null,
+          fileName: null,
+          mimeType: null,
+          fileSize: null,
+        });
+    setAddingOutput(false);
+
+    if (createError) {
+      const rawMessage = String(
+        createError?.message || "Unable to create output.",
+      );
+      const friendlyMessage =
+        rawMessage.includes("404") ||
+        rawMessage.toLowerCase().includes("not found")
+          ? "Create endpoint not found. Restart backend and try again."
+          : rawMessage;
+      toast.error("Add output failed", friendlyMessage);
+      return;
+    }
+
+    const payload = await fetchMyResearchOutputs();
+    setRows(Array.isArray(payload?.data) ? payload.data : []);
+    setAddOutputFile(null);
+    setShowAddOutputModal(false);
+    toast.success("Output added", "Research output was added successfully.");
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -476,6 +647,15 @@ export default function ResearchOutputsPage() {
             : "Your submitted resource files from project expected outputs."
         }
       />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={openAddOutputModal}
+        >
+          Add Output
+        </button>
+      </div>
 
       {loading ? (
         <div className="panel">
@@ -567,92 +747,94 @@ export default function ResearchOutputsPage() {
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Resource/File</th>
-                  <th>Project</th>
-                  <th>Research Center</th>
-                  <th>Visibility</th>
-                  <th>Updated</th>
-                  <th>Action</th>
-                </tr>
+                  <tr>
+                    <th>No.</th>
+                    <th>Resource/File</th>
+                    <th>Project</th>
+                    <th>Research Center</th>
+                    <th>Visibility</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
                 </thead>
                 <tbody className="text-slate-700">
-                {paginatedRows.map((row, index) => (
-                  <tr key={row.id}>
-                    <td>
-                      {(currentPage - 1) * pageSize + index + 1}
-                    </td>
-                    <td>
-                      <div className="font-medium">{row.title}</div>
-                      {row.subtitle ? (
-                        <div className="text-xs text-slate-500">
-                          {row.subtitle}
+                  {paginatedRows.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                      <td>
+                        <div className="font-medium">{row.title}</div>
+                        {row.subtitle ? (
+                          <div className="text-xs text-slate-500">
+                            {row.subtitle}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>{row.datasetName || "-"}</td>
+                      <td>{row.organization || "-"}</td>
+                      <td>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
+                          >
+                            {row.private ? "Private" : "Public"}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            disabled={
+                              !row.datasetId ||
+                              Boolean(visibilitySavingByDataset[row.datasetId])
+                            }
+                            onClick={() => handleToggleVisibility(row)}
+                          >
+                            {visibilitySavingByDataset[row.datasetId]
+                              ? "Saving..."
+                              : row.private
+                                ? "Make Public"
+                                : "Make Private"}
+                          </button>
                         </div>
-                      ) : null}
-                    </td>
-                    <td>{row.datasetName || "-"}</td>
-                    <td>{row.organization || "-"}</td>
-                    <td>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
-                        >
-                          {row.private ? "Private" : "Public"}
-                        </span>
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          disabled={
-                            !row.datasetId ||
-                            Boolean(visibilitySavingByDataset[row.datasetId])
-                          }
-                          onClick={() => handleToggleVisibility(row)}
-                        >
-                          {visibilitySavingByDataset[row.datasetId]
-                            ? "Saving..."
-                            : row.private
-                              ? "Make Public"
-                              : "Make Private"}
-                        </button>
-                      </div>
-                    </td>
-                    <td>
-                      {row.metadataModified
-                        ? new Date(row.metadataModified).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          onClick={() => setViewTarget(row)}
-                        >
-                          View Details
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          disabled={Boolean(deletingByResource[row.resourceId])}
-                          onClick={() => handleOpenEdit(row)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          disabled={Boolean(deletingByResource[row.resourceId])}
-                          onClick={() => setDeleteTarget(row)}
-                        >
-                          {deletingByResource[row.resourceId]
-                            ? "Deleting..."
-                            : "Delete"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        {row.metadataModified
+                          ? new Date(row.metadataModified).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={() => setViewTarget(row)}
+                          >
+                            View Details
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            disabled={Boolean(
+                              deletingByResource[row.resourceId],
+                            )}
+                            onClick={() => handleOpenEdit(row)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            disabled={Boolean(
+                              deletingByResource[row.resourceId],
+                            )}
+                            onClick={() => setDeleteTarget(row)}
+                          >
+                            {deletingByResource[row.resourceId]
+                              ? "Deleting..."
+                              : "Delete"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -673,6 +855,175 @@ export default function ResearchOutputsPage() {
               onPageChange={setCurrentPage}
             />
           ) : null}
+        </div>
+      ) : null}
+
+      {showAddOutputModal ? (
+        <div
+          className="modal-overlay modal-overlay-centered"
+          onClick={() => !addingOutput && setShowAddOutputModal(false)}
+        >
+          <aside
+            className="modal-dialog max-w-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="app-card">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Add Output
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Add a new output entry to a selected research project.
+              </p>
+              <div className="mt-4 grid gap-3">
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Project</span>
+                  <select
+                    className="control-select"
+                    value={addOutputForm.project_id}
+                    onChange={(event) =>
+                      setAddOutputForm((prev) => ({
+                        ...prev,
+                        project_id: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select project</option>
+                    {mergedProjectOptions.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.title || project.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Output Type
+                  </span>
+                  <select
+                    className="control-select"
+                    value={addOutputForm.output_type}
+                    onChange={(event) =>
+                      setAddOutputForm((prev) => ({
+                        ...prev,
+                        output_type: event.target.value,
+                        specific_output:
+                          event.target.value === "product_software"
+                            ? prev.specific_output
+                            : "",
+                      }))
+                    }
+                  >
+                    <option value="">Select output type</option>
+                    {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {addOutputForm.output_type === "product_software" ? (
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Specific Output
+                    </span>
+                    <select
+                      className="control-select"
+                      value={addOutputForm.specific_output}
+                      onChange={(event) =>
+                        setAddOutputForm((prev) => ({
+                          ...prev,
+                          specific_output: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select specific output</option>
+                      {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Target Count
+                  </span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={addOutputForm.target_count}
+                    onChange={(event) =>
+                      setAddOutputForm((prev) => ({
+                        ...prev,
+                        target_count: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Notes</span>
+                  <textarea
+                    className="control-input min-h-[90px]"
+                    value={addOutputForm.notes}
+                    onChange={(event) =>
+                      setAddOutputForm((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Output file (optional)
+                  </span>
+                  <input
+                    className="control-input"
+                    type="file"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setAddOutputFile(file);
+                    }}
+                  />
+                  <p className="text-xs text-slate-500">
+                    {addOutputFile
+                      ? `${addOutputFile.name} (${Math.max(
+                          1,
+                          Math.round(addOutputFile.size / 1024),
+                        )} KB)`
+                      : "No file selected"}
+                  </p>
+                </label>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  disabled={addingOutput}
+                  onClick={() => setShowAddOutputModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={addingOutput}
+                  onClick={handleCreateOutput}
+                >
+                  {addingOutput ? "Adding..." : "Add Output"}
+                </button>
+              </div>
+            </div>
+          </aside>
         </div>
       ) : null}
 
@@ -966,7 +1317,8 @@ export default function ResearchOutputsPage() {
         <div
           className="modal-overlay modal-overlay-centered"
           onClick={() =>
-            !deletingByResource[deleteTarget.resourceId] && setDeleteTarget(null)
+            !deletingByResource[deleteTarget.resourceId] &&
+            setDeleteTarget(null)
           }
         >
           <aside
@@ -988,7 +1340,9 @@ export default function ResearchOutputsPage() {
                 <button
                   type="button"
                   className="btn btn-outline"
-                  disabled={Boolean(deletingByResource[deleteTarget.resourceId])}
+                  disabled={Boolean(
+                    deletingByResource[deleteTarget.resourceId],
+                  )}
                   onClick={() => setDeleteTarget(null)}
                 >
                   Cancel
@@ -996,7 +1350,9 @@ export default function ResearchOutputsPage() {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  disabled={Boolean(deletingByResource[deleteTarget.resourceId])}
+                  disabled={Boolean(
+                    deletingByResource[deleteTarget.resourceId],
+                  )}
                   onClick={() => handleDeleteResource(deleteTarget)}
                 >
                   {deletingByResource[deleteTarget.resourceId]
@@ -1011,6 +1367,3 @@ export default function ResearchOutputsPage() {
     </section>
   );
 }
-
-
-
