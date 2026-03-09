@@ -23,11 +23,6 @@ const INITIAL_FORM = {
   employment_status: "",
   designation: "",
   is_gs_faculty: false,
-  publication_count: 0,
-  research_project_count: 0,
-  creative_work_count: 0,
-  awards_count: 0,
-  ip_count: 0,
 };
 
 const INITIAL_PASSWORD_FORM = {
@@ -197,7 +192,7 @@ export default function AffiliateProfilePage() {
     <section className="page-stack-lg">
       <PageHeader
         title="My Profile"
-        description="Maintain your researcher affiliation details, scholar link, and productivity counts."
+        description="Maintain your researcher affiliation details and scholar profile."
       />
 
       {loading ? (
@@ -337,68 +332,6 @@ export default function AffiliateProfilePage() {
                 />
                 Mark as GS Faculty
               </label>
-
-              <div className="grid gap-2 md:grid-cols-5">
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Publications</span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="0"
-                    value={form.publication_count}
-                    readOnly
-                    disabled
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Projects</span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="0"
-                    value={form.research_project_count}
-                    readOnly
-                    disabled
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Creative Works</span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="0"
-                    value={form.creative_work_count}
-                    readOnly
-                    disabled
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Awards</span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="0"
-                    value={form.awards_count}
-                    readOnly
-                    disabled
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">IPs</span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min="0"
-                    value={form.ip_count}
-                    readOnly
-                    disabled
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-slate-500">
-                Productivity counts are auto-calculated from your submitted
-                projects and output resources.
-              </p>
 
               <div className="flex justify-end">
                 <button className="btn btn-primary" disabled={saving}>
