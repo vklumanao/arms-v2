@@ -11,13 +11,13 @@ export async function fetchAffiliateProfile() {
 
 export async function updateAffiliateProfile(payload) {
   try {
-    await apiFetch("/affiliate-profile/me", {
+    const data = await apiFetch("/affiliate-profile/me", {
       method: "PATCH",
       body: JSON.stringify(payload),
     });
-    return { error: null };
+    return { data, error: null };
   } catch (error) {
-    return { error };
+    return { data: null, error };
   }
 }
 
