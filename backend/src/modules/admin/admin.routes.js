@@ -92,12 +92,148 @@ export function registerAdminRoutes(app, deps) {
     return fallback;
   }
 
-  /**
-   * Parses non-negative integer-like values from user extras.
-   */
-  function toInt(value, fallback = 0) {
-    const n = Number(value);
-    return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : fallback;
+  function asTrimmedString(value) {
+    if (value == null) return "";
+    return String(value).trim();
+  }
+
+  function getDatasetExtraByKey(extras, key) {
+    const rows = Array.isArray(extras) ? extras : [];
+    const match = rows.find(
+      (item) =>
+        String(item?.key || "")
+          .trim()
+          .toLowerCase() ===
+        String(key || "")
+          .trim()
+          .toLowerCase(),
+    );
+    return match?.value ?? null;
+  }
+
+  function normalizeOutputType(value) {
+    const base = String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s*\(target:[^)]+\)\s*$/i, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!base) return "";
+    if (["publication", "publications", "journal_article"].includes(base)) {
+      return "publication";
+    }
+    if (["creative_work", "creative_works", "creative"].includes(base)) {
+      return "creative_work";
+    }
+    if (["award", "awards", "recognition"].includes(base)) return "award";
+    if (
+      [
+        "patent_ip",
+        "patent",
+        "ip",
+        "intellectual_property",
+        "patent_intellectual_property",
+      ].includes(base)
+    ) {
+      return "patent_ip";
+    }
+    return base;
+  }
+
+  function inferOutputTypeFromResource(resource) {
+    const fromName = normalizeOutputType(resource?.name || "");
+    if (fromName) return fromName;
+    const fromDescription = normalizeOutputType(resource?.description || "");
+    if (fromDescription) return fromDescription;
+    const fromFormat = normalizeOutputType(resource?.format || "");
+    if (fromFormat) return fromFormat;
+    return "";
+  }
+
+  function createZeroMetrics() {
+    return {
+      publication_count: 0,
+      research_project_count: 0,
+      creative_work_count: 0,
+      awards_count: 0,
+      ip_count: 0,
+    };
+  }
+
+  async function listAllDatasetsAcrossCkan() {
+    const rows = [];
+    const limit = 100;
+    let page = 1;
+    while (page <= 50) {
+      const result = await listDatasets({ page, limit });
+      const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+      if (!datasets.length) break;
+      rows.push(...datasets);
+      const total = Number(result?.count || 0);
+      if (datasets.length < limit || (total > 0 && page * limit >= total)) {
+        break;
+      }
+      page += 1;
+    }
+    return rows;
+  }
+
+  function buildLiveMetricsByCkanUserId(ckanUsers, datasets) {
+    const identityToUserId = new Map();
+    const metricsByUserId = {};
+
+    (ckanUsers || []).forEach((user) => {
+      const userId = asTrimmedString(user?.id).toLowerCase();
+      if (!userId) return;
+      metricsByUserId[userId] = createZeroMetrics();
+      identityToUserId.set(`id:${userId}`, userId);
+      const email = asTrimmedString(user?.email).toLowerCase();
+      const username = asTrimmedString(user?.name).toLowerCase();
+      if (email) identityToUserId.set(`email:${email}`, userId);
+      if (username) identityToUserId.set(`username:${username}`, userId);
+    });
+
+    (datasets || []).forEach((dataset) => {
+      const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+      const identities = [
+        `id:${asTrimmedString(dataset?.creator_user_id).toLowerCase()}`,
+        `id:${asTrimmedString(
+          getDatasetExtraByKey(extras, "submitted_by_user_id"),
+        ).toLowerCase()}`,
+        `email:${asTrimmedString(
+          getDatasetExtraByKey(extras, "submitted_by_email"),
+        ).toLowerCase()}`,
+        `email:${asTrimmedString(dataset?.author_email).toLowerCase()}`,
+        `username:${asTrimmedString(
+          getDatasetExtraByKey(extras, "submitted_by_ckan_username"),
+        ).toLowerCase()}`,
+        `username:${asTrimmedString(
+          getDatasetExtraByKey(extras, "submitted_by_username"),
+        ).toLowerCase()}`,
+      ].filter((key) => !key.endsWith(":"));
+
+      const ownerUserId =
+        identities
+          .map((identity) => identityToUserId.get(identity))
+          .find(Boolean) || null;
+
+      if (!ownerUserId) return;
+      const metrics = metricsByUserId[ownerUserId] || createZeroMetrics();
+      metrics.research_project_count += 1;
+
+      const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+      resources.forEach((resource) => {
+        const outputType = inferOutputTypeFromResource(resource);
+        if (outputType === "publication") metrics.publication_count += 1;
+        if (outputType === "creative_work") metrics.creative_work_count += 1;
+        if (outputType === "award") metrics.awards_count += 1;
+        if (outputType === "patent_ip") metrics.ip_count += 1;
+      });
+
+      metricsByUserId[ownerUserId] = metrics;
+    });
+
+    return metricsByUserId;
   }
 
   /**
@@ -123,6 +259,11 @@ export function registerAdminRoutes(app, deps) {
         listGroups(),
         listUsers(),
       ]);
+      const allDatasets = await listAllDatasetsAcrossCkan();
+      const liveMetricsByCkanUserId = buildLiveMetricsByCkanUserId(
+        ckanUsers,
+        allDatasets,
+      );
 
       const userOrgMap = {};
       const userDepartmentMap = {};
@@ -205,6 +346,12 @@ export function registerAdminRoutes(app, deps) {
                   : "faculty";
           const isActive =
             String(user?.state || "active").toLowerCase() !== "deleted";
+          const liveMetrics =
+            liveMetricsByCkanUserId[
+              String(user?.id || "")
+                .trim()
+                .toLowerCase()
+            ] || createZeroMetrics();
 
           return {
             id: user?.id || user?.name || crypto.randomUUID(),
@@ -226,20 +373,11 @@ export function registerAdminRoutes(app, deps) {
               getUserExtraValue(user, "is_gs_faculty"),
               false,
             ),
-            publication_count: toInt(
-              getUserExtraValue(user, "publication_count"),
-              0,
-            ),
-            research_project_count: toInt(
-              getUserExtraValue(user, "research_project_count"),
-              0,
-            ),
-            creative_work_count: toInt(
-              getUserExtraValue(user, "creative_work_count"),
-              0,
-            ),
-            awards_count: toInt(getUserExtraValue(user, "awards_count"), 0),
-            ip_count: toInt(getUserExtraValue(user, "ip_count"), 0),
+            publication_count: liveMetrics.publication_count,
+            research_project_count: liveMetrics.research_project_count,
+            creative_work_count: liveMetrics.creative_work_count,
+            awards_count: liveMetrics.awards_count,
+            ip_count: liveMetrics.ip_count,
             created_at: user?.created || null,
             updated_at: user?.activity_streams_email_notifications || null,
           };
