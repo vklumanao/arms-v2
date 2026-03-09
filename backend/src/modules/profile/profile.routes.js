@@ -13,10 +13,19 @@ export function registerProfileRoutes(app, deps) {
   const {
     authMiddleware,
     parseOrThrow,
+    badRequest,
     affiliateProfileUpdateSchema,
     updateUser,
     findUserById,
     computeAffiliateProfileMetrics,
+    listOrganizations,
+    listGroups,
+    byAnyId,
+    assignUserToOrganizationEditor,
+    assignUserToGroupEditor,
+    removeUserFromOrganization,
+    removeUserFromGroup,
+    logAuditEvent,
   } = deps;
 
   // Returns current user's profile view model with live research metrics.
@@ -57,9 +66,64 @@ export function registerProfileRoutes(app, deps) {
         "Invalid affiliate profile payload.",
       );
 
+      const previousOrgId = String(req.user?.ckan_org_id || "").trim();
+      const requestedOrgId = String(parsed?.ckan_org_id || "").trim();
+      if (previousOrgId && "ckan_org_id" in parsed && !requestedOrgId) {
+        return badRequest(
+          res,
+          "Research Center cannot be cleared once it has been set.",
+        );
+      }
+
+      let selectedOrg = null;
+      let selectedGroup = null;
+      if (requestedOrgId || String(parsed?.ckan_group_id || "").trim()) {
+        const [orgs, groups] = await Promise.all([
+          listOrganizations(),
+          listGroups(),
+        ]);
+
+        if (requestedOrgId) {
+          selectedOrg = byAnyId(orgs, requestedOrgId);
+          if (!selectedOrg) {
+            return badRequest(res, "Selected Research Center was not found.");
+          }
+        }
+
+        const requestedGroupId = String(parsed?.ckan_group_id || "").trim();
+        if (requestedGroupId) {
+          selectedGroup = byAnyId(groups, requestedGroupId);
+          if (!selectedGroup) {
+            return badRequest(res, "Selected department was not found.");
+          }
+        }
+      }
+
       const patch = {};
       // Build sparse patch so omitted fields are not overwritten.
       if ("full_name" in parsed) patch.full_name = parsed.full_name || null;
+      if ("department" in parsed) patch.department = parsed.department || null;
+      if ("ckan_org_id" in parsed) {
+        patch.ckan_org_id =
+          selectedOrg?.name ||
+          selectedOrg?.id ||
+          parsed.ckan_org_id ||
+          null;
+      }
+      if ("ckan_group_id" in parsed) {
+        patch.ckan_group_id =
+          selectedGroup?.name ||
+          selectedGroup?.id ||
+          parsed.ckan_group_id ||
+          null;
+      }
+      if ("ckan_group_id" in parsed && !("department" in parsed)) {
+        patch.department =
+          selectedGroup?.title ||
+          selectedGroup?.display_name ||
+          selectedGroup?.name ||
+          null;
+      }
       if ("google_scholar_link" in parsed) {
         patch.google_scholar_link = parsed.google_scholar_link || null;
       }
@@ -75,6 +139,88 @@ export function registerProfileRoutes(app, deps) {
       const updatedUser = await updateUser(req.user.id, patch);
       // Re-read latest state when store returns null to keep response deterministic.
       const latest = updatedUser || (await findUserById(req.user.id));
+      const latestOrgId = String(latest?.ckan_org_id || "").trim();
+      const latestGroupId = String(latest?.ckan_group_id || "").trim();
+      const latestUsername = String(latest?.ckan_username || "").trim();
+      const previousGroupId = String(req.user?.ckan_group_id || "").trim();
+      const warnings = [];
+
+      if (latestUsername && latestOrgId && latestOrgId !== previousOrgId) {
+        try {
+          if (previousOrgId) {
+            await removeUserFromOrganization({
+              orgId: previousOrgId,
+              username: latestUsername,
+            });
+          }
+          await assignUserToOrganizationEditor({
+            orgId: latestOrgId,
+            username: latestUsername,
+          });
+          await logAuditEvent({
+            actorUserId: latest?.id || req.user.id,
+            eventType: "ckan.organization_membership_move_success",
+            details: {
+              previous_ckan_org_id: previousOrgId || null,
+              ckan_org_id: latestOrgId,
+              ckan_username: latestUsername,
+            },
+          });
+        } catch (error) {
+          warnings.push(
+            "Profile was updated, but moving organization membership in CKAN failed.",
+          );
+          await logAuditEvent({
+            actorUserId: latest?.id || req.user.id,
+            eventType: "ckan.organization_membership_move_failed",
+            details: {
+              previous_ckan_org_id: previousOrgId || null,
+              ckan_org_id: latestOrgId,
+              ckan_username: latestUsername,
+              message: String(error?.message || "Unknown error"),
+            },
+          });
+        }
+      }
+
+      if (latestUsername && latestGroupId && latestGroupId !== previousGroupId) {
+        try {
+          if (previousGroupId) {
+            await removeUserFromGroup({
+              groupId: previousGroupId,
+              username: latestUsername,
+            });
+          }
+          await assignUserToGroupEditor({
+            groupId: latestGroupId,
+            username: latestUsername,
+          });
+          await logAuditEvent({
+            actorUserId: latest?.id || req.user.id,
+            eventType: "ckan.group_membership_move_success",
+            details: {
+              previous_ckan_group_id: previousGroupId || null,
+              ckan_group_id: latestGroupId,
+              ckan_username: latestUsername,
+            },
+          });
+        } catch (error) {
+          warnings.push(
+            "Profile was updated, but moving department membership in CKAN failed.",
+          );
+          await logAuditEvent({
+            actorUserId: latest?.id || req.user.id,
+            eventType: "ckan.group_membership_move_failed",
+            details: {
+              previous_ckan_group_id: previousGroupId || null,
+              ckan_group_id: latestGroupId,
+              ckan_username: latestUsername,
+              message: String(error?.message || "Unknown error"),
+            },
+          });
+        }
+      }
+
       const metrics = await computeAffiliateProfileMetrics(latest || req.user);
 
       return res.json({
@@ -94,6 +240,7 @@ export function registerProfileRoutes(app, deps) {
           is_gs_faculty: Boolean(latest?.is_gs_faculty),
           ...metrics,
         },
+        warnings,
       });
     } catch (error) {
       return res.status(400).json({
