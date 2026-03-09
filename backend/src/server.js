@@ -16,6 +16,7 @@ import {
   createOrganization,
   createDataset,
   createDatasetResource,
+  createDatasetResourceUpload,
   updateDatasetResource,
   deleteDatasetResource,
   createApiTokenForUser,
@@ -93,7 +94,7 @@ if (importSummary.imported > 0) {
 await ensureDefaultAdmin();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "40mb" }));
 app.use(
   cors({
     // CORS origins are centrally configured to match frontend hosts.
@@ -563,6 +564,7 @@ registerSubmissionsRoutes(app, {
   setDatasetVisibility,
   deleteDataset,
   createDatasetResource,
+  createDatasetResourceUpload,
   updateDatasetResource,
   deleteDatasetResource,
   getExtraByKey,
