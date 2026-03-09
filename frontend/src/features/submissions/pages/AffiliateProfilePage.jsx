@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
@@ -37,8 +37,8 @@ const INITIAL_PASSWORD_FORM = {
 };
 
 export default function AffiliateProfilePage() {
-  const { user, profile } = useAuth();
-  const { centers, error: referenceError } = useReferenceData();
+  const { user, profile, refreshProfile } = useAuth();
+  const { centers, departments, error: referenceError } = useReferenceData();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,20 +49,13 @@ export default function AffiliateProfilePage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordForm, setPasswordForm] = useState(INITIAL_PASSWORD_FORM);
+  const [originalOrgId, setOriginalOrgId] = useState("");
   const [showPassword, setShowPassword] = useState({
     current: false,
     next: false,
     confirm: false,
   });
   const toast = useToast();
-
-  const centerNameById = useMemo(() => {
-    const map = {};
-    (centers || []).forEach((center) => {
-      map[center.id] = center.name;
-    });
-    return map;
-  }, [centers]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -72,6 +65,7 @@ export default function AffiliateProfilePage() {
           ...INITIAL_FORM,
           ...profileRes.data,
         });
+        setOriginalOrgId(String(profileRes.data?.ckan_org_id || "").trim());
       } else if (profile) {
         setForm((prev) => ({
           ...prev,
@@ -79,6 +73,7 @@ export default function AffiliateProfilePage() {
           department: profile.department || "",
           ckan_org_id: profile.ckan_org_id || "",
         }));
+        setOriginalOrgId(String(profile?.ckan_org_id || "").trim());
       }
       setLoading(false);
     });
@@ -108,6 +103,11 @@ export default function AffiliateProfilePage() {
       setSaving(false);
       return;
     }
+    if (originalOrgId && !String(form.ckan_org_id || "").trim()) {
+      setError("Research Center cannot be cleared once it has been set.");
+      setSaving(false);
+      return;
+    }
 
     if (!confirmed) {
       setConfirmSave(true);
@@ -117,13 +117,16 @@ export default function AffiliateProfilePage() {
 
     const payload = {
       full_name: form.full_name?.trim() || null,
+      department: form.department?.trim() || null,
+      ckan_org_id: form.ckan_org_id?.trim() || null,
+      ckan_group_id: form.ckan_group_id?.trim() || null,
       google_scholar_link: form.google_scholar_link?.trim() || null,
       employment_status: form.employment_status?.trim() || null,
       designation: form.designation?.trim() || null,
       is_gs_faculty: Boolean(form.is_gs_faculty),
     };
 
-    const { error: updateError } = await updateAffiliateProfileService(payload);
+    const { data, error: updateError } = await updateAffiliateProfileService(payload);
 
     if (updateError) {
       setError(updateError.message || "Unable to save affiliate profile.");
@@ -132,6 +135,12 @@ export default function AffiliateProfilePage() {
     }
 
     setSaving(false);
+    await refreshProfile();
+    if (Array.isArray(data?.warnings) && data.warnings.length) {
+      data.warnings.forEach((warning) =>
+        toast.error("CKAN sync warning", String(warning || "Unknown warning.")),
+      );
+    }
     setMessage("Profile updated successfully.");
   };
 
@@ -217,28 +226,56 @@ export default function AffiliateProfilePage() {
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">Department</span>
-                  <input
-                    className="control-input"
-                    value={form.department || ""}
-                    readOnly
-                    disabled
-                  />
+                  <select
+                    className="control-select"
+                    value={form.ckan_group_id || ""}
+                    onChange={(e) => {
+                      const selected = (departments || []).find(
+                        (row) =>
+                          String(row?.id || "")
+                            .trim()
+                            .toLowerCase() ===
+                          String(e.target.value || "")
+                            .trim()
+                            .toLowerCase(),
+                      );
+                      setForm((prev) => ({
+                        ...prev,
+                        ckan_group_id: e.target.value,
+                        department: selected?.name || "",
+                      }));
+                    }}
+                  >
+                    <option value="">Select department</option>
+                    {(departments || []).map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">Research Center</span>
-                  <input
-                    className="control-input"
-                    value={
-                      form.ckan_org_id
-                        ? centerNameById[form.ckan_org_id] || "Selected"
-                        : ""
+                  <select
+                    className="control-select"
+                    value={form.ckan_org_id || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        ckan_org_id: e.target.value,
+                      }))
                     }
-                    readOnly
-                    disabled
-                  />
+                  >
+                    <option value="">Select research center</option>
+                    {(centers || []).map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">Google Scholar Link</span>
