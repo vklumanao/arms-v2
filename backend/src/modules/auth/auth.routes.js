@@ -17,12 +17,14 @@ export function registerAuthRoutes(app, deps) {
     loginRateLimit,
     forgotRateLimit,
     resetRateLimit,
+    changePasswordRateLimit,
     authMiddleware,
     parseOrThrow,
     registerSchema,
     loginSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
+    changePasswordSchema,
     config,
     ROLE_PERMISSIONS,
     normalizeRole,
@@ -270,6 +272,86 @@ export function registerAuthRoutes(app, deps) {
     });
     return res.json({ ok: true });
   });
+
+  // Authenticated change-password flow:
+  // 1) Validate payload and current password.
+  // 2) Update local password hash.
+  // 3) Best-effort sync to CKAN account.
+  app.post(
+    "/api/auth/change-password",
+    authMiddleware,
+    changePasswordRateLimit,
+    async (req, res) => {
+      try {
+        const parsed = parseOrThrow(
+          changePasswordSchema,
+          req.body,
+          "Invalid change-password payload.",
+        );
+
+        if (parsed.new_password !== parsed.confirm_password) {
+          return badRequest(res, "New password and confirmation do not match.");
+        }
+        if (parsed.current_password === parsed.new_password) {
+          return badRequest(
+            res,
+            "New password must be different from current password.",
+          );
+        }
+
+        const user = await findUserById(req.user.id);
+        if (!user || user.is_active === false) return unauthorized(res);
+
+        const ok = await verifyPassword(user, parsed.current_password);
+        if (!ok) {
+          await logAuditEvent({
+            actorUserId: user.id,
+            eventType: "auth.change_password_failed",
+            details: { reason: "bad_current_password" },
+          });
+          return unauthorized(res, "Current password is incorrect.");
+        }
+
+        const password_hash = await hashPassword(parsed.new_password);
+        await updateUser(user.id, { password_hash });
+
+        let warning = "";
+        if (user.ckan_username) {
+          try {
+            await updateCkanUserPassword(user.ckan_username, parsed.new_password);
+            await logAuditEvent({
+              actorUserId: user.id,
+              eventType: "ckan.password_sync_success",
+              details: { ckan_username: user.ckan_username },
+            });
+          } catch (error) {
+            warning =
+              "Password changed locally, but CKAN password sync failed. Please contact support if CKAN login is affected.";
+            await logAuditEvent({
+              actorUserId: user.id,
+              eventType: "ckan.password_sync_failed",
+              details: {
+                ckan_username: user.ckan_username,
+                message: String(error?.message || "Unknown error"),
+              },
+            });
+          }
+        }
+
+        await logAuditEvent({
+          actorUserId: user.id,
+          eventType: "auth.password_changed",
+          details: { email: user.email },
+        });
+
+        return res.json({ ok: true, warning: warning || null });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Change password failed."),
+        });
+      }
+    },
+  );
 
   // Forgot-password flow intentionally returns generic success to avoid account enumeration.
   app.post("/api/auth/forgot-password", forgotRateLimit, async (req, res) => {
