@@ -164,8 +164,8 @@ export default function AppShell() {
   const workspaceProfileLinks = useMemo(
     () => [
       {
-        to: "/affiliate-profile",
-        label: "Affiliate Profile",
+        to: "/my-profile",
+        label: "My Profile",
         icon: UserCircle,
         permission: PERMISSIONS.AFFILIATE_PROFILE_VIEW,
       },
