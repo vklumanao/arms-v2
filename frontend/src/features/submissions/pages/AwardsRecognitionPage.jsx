@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import PageHeader from "@/shared/components/layout/PageHeader";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export default function AwardsRecognitionPage() {
+  const { profile } = useAuth();
+  const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+  const missingAffiliation =
+    !isAdmin &&
+    (!String(profile?.ckan_org_id || "").trim() ||
+      !String(profile?.department || "").trim());
   const rows = [];
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
@@ -58,6 +66,28 @@ export default function AwardsRecognitionPage() {
     setLevelFilter("all");
     setYearFilter("all");
   };
+
+  if (missingAffiliation) {
+    return (
+      <section className="page-stack-lg">
+        <PageHeader
+          title="Awards and Recognition"
+          description="Track and manage awards and recognitions related to your research work."
+        />
+        <div className="panel">
+          <div className="panel-body space-y-3">
+            <p className="text-sm text-amber-700">
+              Please set your Organization (Research Center) and Department in
+              My Profile first before accessing Awards and Recognition.
+            </p>
+            <Link className="btn btn-primary" to="/my-profile">
+              Go to My Profile
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="page-stack-lg">
