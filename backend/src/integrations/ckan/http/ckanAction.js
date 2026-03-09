@@ -62,3 +62,30 @@ export async function ckanAction(action, body = {}) {
   }
   return payload.result;
 }
+
+/**
+ * Executes a CKAN action endpoint request with multipart/form-data.
+ *
+ * Used for APIs such as `resource_create` when uploading binary files.
+ */
+export async function ckanMultipartAction(action, formData) {
+  const url = `${config.ckanBaseUrl}/api/3/action/${action}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: config.ckanApiKey,
+    },
+    body: formData,
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.success) {
+    const message = ckanErrorMessage(payload, `CKAN action failed: ${action}`);
+    const error = new Error(message);
+    error.status = response.status;
+    error.action = action;
+    error.payload = payload;
+    throw error;
+  }
+  return payload.result;
+}
