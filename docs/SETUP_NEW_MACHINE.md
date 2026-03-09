@@ -46,6 +46,8 @@ No manual copy/paste needed for first run.
 
 ## 6) Stop services
 
+From `ckan-docker/`:
+
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml down
 ```
@@ -55,6 +57,32 @@ Remove volumes too (optional):
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml down -v
 ```
+
+## 7) Real-time code updates (Docker dev)
+
+Frontend and backend are configured for live development.
+
+- Frontend (`vite`): runs with file polling for reliable hot reload on Docker Desktop + Windows.
+- Backend (`node --watch`): restarts automatically when files under `backend/src` change.
+
+Frontend polling config is already set in:
+
+- `ckan-docker/docker-compose.arms.dev.yml`
+  - `CHOKIDAR_USEPOLLING: "true"`
+  - `CHOKIDAR_INTERVAL: "300"`
+- `frontend/vite.config.js`
+  - `server.watch.usePolling: true`
+  - `server.watch.interval: 300`
+
+If you change watcher config, recreate only the frontend container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml up -d --build frontend
+```
+
+Use this URL for frontend live reload:
+
+- `http://127.0.0.1:5173`
 
 ## Notes
 
