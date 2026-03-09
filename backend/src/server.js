@@ -52,6 +52,7 @@ import {
   loginSchema,
   parseOrThrow,
   registerSchema,
+  changePasswordSchema,
   resetPasswordSchema,
 } from "./validation/schemas.js";
 import { createRateLimiter } from "./security/rateLimit.js";
@@ -457,6 +458,12 @@ const resetRateLimit = createRateLimiter({
   keyFn: (req) => `${requestIdentity(req)}|reset`,
 });
 
+const changePasswordRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 20,
+  keyFn: (req) => `${requestIdentity(req)}|change|${String(req.user?.id || "anon")}`,
+});
+
 // Register module routes with explicit dependency injection.
 // This keeps route files decoupled from direct imports and simplifies testing/mocking.
 registerAuthRoutes(app, {
@@ -464,12 +471,14 @@ registerAuthRoutes(app, {
   loginRateLimit,
   forgotRateLimit,
   resetRateLimit,
+  changePasswordRateLimit,
   authMiddleware,
   parseOrThrow,
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
   config,
   ROLE_PERMISSIONS,
   normalizeRole,
