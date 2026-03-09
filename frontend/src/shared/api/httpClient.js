@@ -47,6 +47,7 @@ function mockApiPayload(path, options = {}) {
   if (cleanPath === "/auth/register") return { ok: true };
   if (cleanPath === "/auth/forgot-password") return { ok: true };
   if (cleanPath === "/auth/reset-password") return { ok: true };
+  if (cleanPath === "/auth/change-password") return { ok: true, warning: null };
   if (cleanPath === "/auth/logout") return { ok: true };
 
   if (cleanPath === "/permissions/role-map") {
