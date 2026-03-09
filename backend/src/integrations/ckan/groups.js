@@ -1,5 +1,5 @@
 import { ckanAction } from "./http/ckanAction.js";
-import { addMember } from "./memberships.js";
+import { addMember, removeMember } from "./memberships.js";
 
 /**
  * Lists CKAN groups with full fields and extras.
@@ -40,5 +40,18 @@ export async function assignUserToGroupEditor({ groupId, username }) {
     id: groupId,
     username,
     role: "editor",
+  });
+}
+
+/**
+ * Removes a user from a CKAN group.
+ *
+ * Idempotency:
+ * - Missing membership is treated as success by `removeMember`.
+ */
+export async function removeUserFromGroup({ groupId, username }) {
+  await removeMember("group_member_delete", {
+    id: groupId,
+    username,
   });
 }
