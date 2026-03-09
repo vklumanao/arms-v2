@@ -15,7 +15,7 @@ export const registerSchema = z.object({
   password: z.string().min(8),
   role,
   department: z.string().trim().optional().nullable(),
-  ckan_org_id: z.string().trim().min(1),
+  ckan_org_id: z.string().trim().optional().nullable(),
   ckan_group_id: z.string().trim().optional().nullable(),
 });
 
@@ -66,6 +66,9 @@ export const changePasswordSchema = z.object({
  */
 export const affiliateProfileUpdateSchema = z.object({
   full_name: z.string().trim().min(3).optional().nullable(),
+  department: z.string().trim().max(160).optional().nullable(),
+  ckan_org_id: z.string().trim().optional().nullable(),
+  ckan_group_id: z.string().trim().optional().nullable(),
   google_scholar_link: z.string().trim().url().optional().nullable(),
   employment_status: z.string().trim().max(160).optional().nullable(),
   designation: z.string().trim().max(160).optional().nullable(),
