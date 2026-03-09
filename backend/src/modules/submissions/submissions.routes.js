@@ -24,10 +24,22 @@ export function registerSubmissionsRoutes(app, deps) {
     setDatasetVisibility,
     deleteDataset,
     createDatasetResource,
+    createDatasetResourceUpload,
     updateDatasetResource,
     deleteDatasetResource,
     getExtraByKey,
   } = deps;
+
+  const ALLOWED_OUTPUT_TYPES = new Set([
+    "publication",
+    "patent_ip",
+    "people_services",
+    "places_partnerships",
+    "policies",
+    "product_software",
+    "others",
+  ]);
+  const MAX_OUTPUT_UPLOAD_BYTES = 25 * 1024 * 1024;
 
   /**
    * Converts free-text title into CKAN-compatible dataset name slug.
@@ -60,6 +72,40 @@ export function registerSubmissionsRoutes(app, deps) {
     );
     if (outputType) return `${outputType} (Target: ${targetCount})`;
     return `Expected Output ${index + 1}`;
+  }
+
+  function normalizeOutputType(value) {
+    const rawType = asTrimmedString(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return rawType === "patent" || rawType === "ip"
+      ? "patent_ip"
+      : rawType === "people_service"
+        ? "people_services"
+        : rawType === "place_partnerships" ||
+            rawType === "places_and_partnerships"
+          ? "places_partnerships"
+          : rawType === "products_software_application" ||
+              rawType === "product_software_application"
+            ? "product_software"
+            : rawType;
+  }
+
+  function decodeBase64File(payload) {
+    const raw = asTrimmedString(payload);
+    if (!raw) return { buffer: null, mimeType: "" };
+
+    const dataUrlMatch = raw.match(/^data:([^;]+);base64,(.+)$/i);
+    const mimeType = asTrimmedString(dataUrlMatch?.[1]);
+    const base64Payload = asTrimmedString(dataUrlMatch?.[2] || raw).replace(
+      /\s+/g,
+      "",
+    );
+    if (!base64Payload) return { buffer: null, mimeType };
+
+    const buffer = Buffer.from(base64Payload, "base64");
+    return { buffer, mimeType };
   }
 
   /**
@@ -276,6 +322,7 @@ export function registerSubmissionsRoutes(app, deps) {
       "places_partnerships",
       "policies",
       "product_software",
+      "others",
     ]);
     const resources = Array.isArray(dataset?.resources)
       ? dataset.resources
@@ -286,22 +333,8 @@ export function registerSubmissionsRoutes(app, deps) {
       const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
       const rawType = name
         .replace(/\s*\(target:[^)]+\)\s*$/i, "")
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_")
-        .replace(/^_+|_+$/g, "");
-      const normalizedType =
-        rawType === "patent" || rawType === "ip"
-          ? "patent_ip"
-          : rawType === "people_service"
-            ? "people_services"
-            : rawType === "place_partnerships" ||
-                rawType === "places_and_partnerships"
-              ? "places_partnerships"
-              : rawType === "products_software_application" ||
-                  rawType === "product_software_application"
-                ? "product_software"
-                : rawType;
+        .trim();
+      const normalizedType = normalizeOutputType(rawType);
 
       return {
         id: resource?.id || `resource-${index + 1}`,
@@ -394,12 +427,16 @@ export function registerSubmissionsRoutes(app, deps) {
 
           // Flatten each dataset resource into table-friendly response rows.
           for (const resource of resources) {
+            const resourceNameBase = asTrimmedString(resource?.name).replace(
+              /\s*\(target:[^)]+\)\s*$/i,
+              "",
+            );
+            const normalizedOutputType = normalizeOutputType(
+              asTrimmedString(resource?.format) || resourceNameBase || "resource",
+            );
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
-              output_type: String(resource?.format || "resource")
-                .trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "_"),
+              output_type: normalizedOutputType || "resource",
               file_name: resource?.name || null,
               file_path: resource?.url || null,
               mime_type: resource?.mimetype || resource?.format || null,
@@ -444,6 +481,50 @@ export function registerSubmissionsRoutes(app, deps) {
       }
     },
   );
+
+  app.get("/api/submissions/mine/projects", authMiddleware, async (req, res) => {
+    try {
+      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+      const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
+      if (!isAdmin && !orgId) return res.json({ data: [] });
+
+      const rows = [];
+      const limit = 100;
+      let page = 1;
+      while (page <= 20) {
+        const result = await listDatasets({ orgId, page, limit });
+        const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+        if (!datasets.length) break;
+
+        for (const dataset of datasets) {
+          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
+          rows.push({
+            id: dataset?.id || dataset?.name || null,
+            title: dataset?.title || dataset?.name || "Untitled project",
+            ckan_org_id:
+              dataset?.organization?.name || dataset?.owner_org || null,
+            project_status:
+              getExtraByKey(dataset?.extras, "project_status") ||
+              getExtraByKey(dataset?.extras, "status") ||
+              dataset?.state ||
+              null,
+          });
+        }
+
+        const total = Number(result?.count || 0);
+        if (datasets.length < limit || (total > 0 && page * limit >= total)) {
+          break;
+        }
+        page += 1;
+      }
+
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load user projects."),
+      });
+    }
+  });
 
   app.get(
     "/api/submissions/:projectId/editable",
@@ -982,6 +1063,166 @@ export function registerSubmissionsRoutes(app, deps) {
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to update resource."),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/submissions/:projectId/resources",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const projectId = asTrimmedString(req.params?.projectId);
+        if (!projectId) return badRequest(res, "Project id is required.");
+
+        const dataset = await getDataset(projectId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Project dataset not found." });
+        }
+
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to add resources to this project.",
+          });
+        }
+
+        const outputType = normalizeOutputType(req.body?.output_type);
+        const targetCount = Math.max(1, Number(req.body?.target_count || 1) || 1);
+        const notes = asTrimmedString(req.body?.notes);
+        const filePath = asTrimmedString(req.body?.file_path);
+        const fileName = asTrimmedString(req.body?.file_name);
+        const mimeType = asTrimmedString(req.body?.mime_type);
+        const fileSize = Number(req.body?.file_size || 0);
+        if (!outputType || !ALLOWED_OUTPUT_TYPES.has(outputType)) {
+          return badRequest(res, "Expected output type is invalid.");
+        }
+
+        const fallbackResourceUrl =
+          asTrimmedString(getExtraByKey(dataset?.extras, "supporting_mov_link")) ||
+          `${config.ckanBaseUrl}/dataset`;
+        const url =
+          /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
+            ? filePath
+            : fallbackResourceUrl;
+        const resource = await createDatasetResource({
+          package_id: dataset?.id || projectId,
+          name: formatOutputResourceName(
+            { output_type: outputType, target_count: targetCount },
+            0,
+          ),
+          description: notes || null,
+          url,
+          format: outputType,
+          mimetype: mimeType || null,
+          size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+        });
+
+        return res.status(201).json({
+          data: {
+            resource_id: resource?.id || null,
+            dataset_id: dataset?.id || projectId,
+            output_type: outputType,
+            target_count: targetCount,
+            file_name: resource?.name || null,
+            file_path: resource?.url || null,
+            mime_type: resource?.mimetype || resource?.format || null,
+            file_size: resource?.size || null,
+            notes: resource?.description || notes || null,
+            updated_at:
+              resource?.last_modified ||
+              dataset?.metadata_modified ||
+              new Date().toISOString(),
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to add project resource."),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/submissions/:projectId/resources/upload",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const projectId = asTrimmedString(req.params?.projectId);
+        if (!projectId) return badRequest(res, "Project id is required.");
+
+        const dataset = await getDataset(projectId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Project dataset not found." });
+        }
+
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to add resources to this project.",
+          });
+        }
+
+        const outputType = normalizeOutputType(req.body?.output_type);
+        const targetCount = Math.max(1, Number(req.body?.target_count || 1) || 1);
+        const notes = asTrimmedString(req.body?.notes);
+        const fileName =
+          asTrimmedString(req.body?.file_name) || "research-output.bin";
+        const mimeTypeFromBody = asTrimmedString(req.body?.mime_type);
+        const { buffer, mimeType: mimeTypeFromData } = decodeBase64File(
+          req.body?.file_base64,
+        );
+
+        if (!outputType || !ALLOWED_OUTPUT_TYPES.has(outputType)) {
+          return badRequest(res, "Expected output type is invalid.");
+        }
+        if (!buffer || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+          return badRequest(res, "Output file is required.");
+        }
+        if (buffer.length > MAX_OUTPUT_UPLOAD_BYTES) {
+          return badRequest(res, "Output file must be 25MB or smaller.");
+        }
+
+        const mimeType =
+          mimeTypeFromBody || mimeTypeFromData || "application/octet-stream";
+        const resource = await createDatasetResourceUpload({
+          fields: {
+            package_id: dataset?.id || projectId,
+            name: formatOutputResourceName(
+              { output_type: outputType, target_count: targetCount },
+              0,
+            ),
+            description: notes || null,
+            format: outputType,
+            mimetype: mimeType,
+            size: String(buffer.length),
+          },
+          fileBuffer: buffer,
+          fileName,
+          mimeType,
+        });
+
+        return res.status(201).json({
+          data: {
+            resource_id: resource?.id || null,
+            dataset_id: dataset?.id || projectId,
+            output_type: outputType,
+            target_count: targetCount,
+            file_name: resource?.name || null,
+            file_path: resource?.url || null,
+            mime_type: resource?.mimetype || resource?.format || mimeType,
+            file_size: resource?.size || buffer.length,
+            notes: resource?.description || notes || null,
+            updated_at:
+              resource?.last_modified ||
+              dataset?.metadata_modified ||
+              new Date().toISOString(),
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to upload project resource."),
         });
       }
     },
