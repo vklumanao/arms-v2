@@ -94,6 +94,74 @@ export async function deleteResearchOutput({ resourceId }) {
   }
 }
 
+export async function createResearchOutput({
+  projectId,
+  outputType,
+  targetCount,
+  notes,
+  filePath,
+  fileName,
+  mimeType,
+  fileSize,
+}) {
+  try {
+    const id = encodeURIComponent(String(projectId || "").trim());
+    const payload = await apiFetch(`/submissions/${id}/resources`, {
+      method: "POST",
+      body: JSON.stringify({
+        output_type: outputType,
+        target_count: targetCount,
+        notes,
+        file_path: filePath,
+        file_name: fileName,
+        mime_type: mimeType,
+        file_size: fileSize,
+      }),
+    });
+    return { data: payload?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function createResearchOutputWithFile({
+  projectId,
+  outputType,
+  targetCount,
+  notes,
+  file,
+}) {
+  try {
+    const id = encodeURIComponent(String(projectId || "").trim());
+    if (!file) {
+      throw new Error("No output file selected.");
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = window.btoa(binary);
+
+    const payload = await apiFetch(`/submissions/${id}/resources/upload`, {
+      method: "POST",
+      body: JSON.stringify({
+        output_type: outputType,
+        target_count: targetCount,
+        notes,
+        file_name: file.name || "research-output.bin",
+        mime_type: file.type || "application/octet-stream",
+        file_base64: base64,
+      }),
+    });
+    return { data: payload?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export async function quickEditOwnedProject({ projectId, form }) {
   try {
     const payload = await apiFetch(`/submissions/${projectId}/owner-edit`, {
