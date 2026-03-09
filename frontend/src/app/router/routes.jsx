@@ -78,13 +78,6 @@ export default function AppRoutes() {
               )}
             />
             <Route
-              path="/affiliate-profile"
-              element={withPermission(
-                PERMISSIONS.AFFILIATE_PROFILE_VIEW,
-                <AffiliateProfilePage />,
-              )}
-            />
-            <Route
               path="/submit-affiliation"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
