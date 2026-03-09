@@ -10,7 +10,6 @@ const SEGMENT_LABELS = {
   "affiliate-profile": "Affiliate Profile",
   admin: "Admin",
   affiliates: "Affiliates",
-  "affiliates-registry": "Affiliate Registry",
   "research-center": "Research Center",
   controls: "Controls",
   login: "Login",
