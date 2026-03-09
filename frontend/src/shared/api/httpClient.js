@@ -304,6 +304,26 @@ function mockApiPayload(path, options = {}) {
       },
     };
   }
+  if (
+    cleanPath.includes("/submissions/") &&
+    cleanPath.endsWith("/resources/upload") &&
+    method === "POST"
+  ) {
+    return {
+      data: {
+        resource_id: "mock-resource-id",
+        dataset_id: cleanPath.split("/")[2] || "mock-project-id",
+        output_type: "publication",
+        target_count: 1,
+        file_name: "uploaded-file.pdf",
+        file_path: "https://example.com/resource/uploaded-file.pdf",
+        mime_type: "application/pdf",
+        file_size: 102400,
+        notes: null,
+        updated_at: new Date().toISOString(),
+      },
+    };
+  }
   if (cleanPath.startsWith("/submissions/") && method === "DELETE") {
     return {
       data: {
