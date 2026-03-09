@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
-import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
 import { fetchCkanDatasets } from "@/shared/api/ckanApi";
@@ -42,7 +41,6 @@ export default function AdminAffiliatesModulePage() {
   const [editingAffiliate, setEditingAffiliate] = useState(null);
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
   const [savingEdit, setSavingEdit] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [affiliateProjectsPanel, setAffiliateProjectsPanel] = useState({
     loading: false,
@@ -205,43 +203,6 @@ export default function AdminAffiliatesModulePage() {
       setError(saveError.message || "Unable to update affiliate.");
     } finally {
       setSavingEdit(false);
-    }
-  };
-
-  const requestToggleActive = (row) => {
-    if (row.source === "ckan_only") {
-      setError(
-        "CKAN-only users are read-only in this page. Change active status directly in CKAN.",
-      );
-      return;
-    }
-    const nextActive = !row.is_active;
-    setConfirmAction({
-      row,
-      nextActive,
-      title: nextActive ? "Activate Affiliate" : "Deactivate Affiliate",
-      message: `${nextActive ? "Activate" : "Deactivate"} ${row.full_name || row.email || "this affiliate"}?`,
-      confirmLabel: nextActive ? "Activate" : "Deactivate",
-    });
-  };
-
-  const confirmToggleActive = async () => {
-    if (!confirmAction?.row?.id) return;
-    setError("");
-    setMessage("");
-    try {
-      await updateAffiliateProfile(confirmAction.row.id, {
-        is_active: confirmAction.nextActive,
-      });
-      updateRowById(confirmAction.row.id, {
-        is_active: confirmAction.nextActive,
-      });
-      setMessage(
-        `${confirmAction.row.full_name || confirmAction.row.email || "Affiliate"} ${confirmAction.nextActive ? "activated" : "deactivated"}.`,
-      );
-      setConfirmAction(null);
-    } catch (toggleError) {
-      setError(toggleError.message || "Unable to update affiliate status.");
     }
   };
 
@@ -615,19 +576,7 @@ export default function AdminAffiliatesModulePage() {
                             disabled={row.source === "ckan_only"}
                             onClick={() => openEditModal(row)}
                           >
-                            {row.source === "ckan_only" ? "Read only" : "Edit"}
-                          </button>
-                          <button
-                            type="button"
-                            className={`btn ${
-                              row.is_active
-                                ? "btn-danger-outline"
-                                : "btn-success-outline"
-                            }`}
-                            disabled={row.source === "ckan_only"}
-                            onClick={() => requestToggleActive(row)}
-                          >
-                            {row.is_active ? "Deactivate" : "Activate"}
+                            Edit
                           </button>
                         </div>
                       </td>
@@ -1062,16 +1011,6 @@ export default function AdminAffiliatesModulePage() {
           </div>
         </div>
       ) : null}
-
-      <ConfirmActionModal
-        open={Boolean(confirmAction)}
-        title={confirmAction?.title || "Confirm Action"}
-        message={confirmAction?.message || ""}
-        confirmLabel={confirmAction?.confirmLabel || "Confirm"}
-        loading={false}
-        onCancel={() => setConfirmAction(null)}
-        onConfirm={confirmToggleActive}
-      />
     </section>
   );
 }
