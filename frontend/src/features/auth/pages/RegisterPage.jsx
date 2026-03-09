@@ -128,12 +128,6 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-    if (!form.ckan_org_id) {
-      setError("Please select a CKAN organization.");
-      setLoading(false);
-      return;
-    }
-
     try {
       await register({
         full_name: form.full_name.trim(),
@@ -242,12 +236,11 @@ export default function RegisterPage() {
               setForm((p) => ({ ...p, ckan_org_id: e.target.value }))
             }
             disabled={ckanLoading}
-            required
           >
             <option value="">
               {ckanLoading
                 ? "Loading Research Centers..."
-                : "Select Research Center"}
+                : "Optional: Select Research Center"}
             </option>
             {ckanOrganizations.map((org) => (
               <option key={org.id} value={org.name || org.id}>
@@ -275,12 +268,11 @@ export default function RegisterPage() {
               })
             }
             disabled={ckanGroupsLoading}
-            required
           >
             <option value="">
               {ckanGroupsLoading
                 ? "Loading CKAN groups..."
-                : "Select department"}
+                : "Optional: Select department"}
             </option>
             {ckanGroups.map((group) => (
               <option key={group.id} value={group.name || group.id}>
