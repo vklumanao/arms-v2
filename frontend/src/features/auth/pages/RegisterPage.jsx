@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { fetchCkanGroups, fetchCkanOrganizations } from "@/shared/api/ckanApi";
 import {
@@ -12,6 +13,7 @@ const DEFAULT_SIGNUP_COOLDOWN_SECONDS = 300;
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -199,16 +201,26 @@ export default function RegisterPage() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Password</span>
-          <input
-            className="control-input"
-            placeholder="Create a password"
-            type="password"
-            required
-            value={form.password}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, password: e.target.value }))
-            }
-          />
+          <div className="relative">
+            <input
+              className="control-input pr-16"
+              placeholder="Create a password"
+              type={showPassword ? "text" : "password"}
+              required
+              value={form.password}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, password: e.target.value }))
+              }
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Role</span>
@@ -308,3 +320,4 @@ export default function RegisterPage() {
     </section>
   );
 }
+
