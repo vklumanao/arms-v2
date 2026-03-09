@@ -13,6 +13,7 @@ export const EXPECTED_OUTPUT_TYPE_OPTIONS = [
   { value: "places_partnerships", label: "Places and Partnerships" },
   { value: "policies", label: "Policies" },
   { value: "product_software", label: "Product/Software Application" },
+  { value: "others", label: "Others" },
 ];
 
 export const INITIAL_SUBMISSION_FORM = {
@@ -122,9 +123,7 @@ export function validateSubmissionStep(form, step, expectedOutputRows = []) {
     }
   }
   if (step === 3) {
-    if (!expectedOutputRows.length) {
-      return "At least one expected output is required.";
-    }
+    if (!expectedOutputRows.length) return "";
     const validTypeSet = new Set(
       EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => item.value),
     );
@@ -135,6 +134,12 @@ export function validateSubmissionStep(form, step, expectedOutputRows = []) {
       const targetCount = Number(row.target_count);
       if (!Number.isFinite(targetCount) || targetCount < 1) {
         return "Each expected output must have a target count of at least 1.";
+      }
+      if (
+        String(row.output_type || "").trim() === "product_software" &&
+        !String(row.specific_output || "").trim()
+      ) {
+        return "Specific output is required for Product/Software Application.";
       }
     }
   }
@@ -195,6 +200,7 @@ export function createLocalOutputRow() {
     client_id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     output_type: "",
     target_count: 1,
+    specific_output: "",
     notes: "",
     file_path: "",
     file_name: "",
@@ -212,6 +218,7 @@ export function mapDbOutputToLocalRow(row) {
     client_id: row.id,
     output_type: row.output_type || "",
     target_count: Math.max(1, Number(row.target_count) || 1),
+    specific_output: "",
     notes: row.notes || "",
     file_path: row.file_path || "",
     file_name: row.file_name || "",
