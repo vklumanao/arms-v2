@@ -21,3 +21,15 @@ export async function updateAffiliateProfile(payload) {
   }
 }
 
+export async function changeMyPassword(payload) {
+  try {
+    const data = await apiFetch("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
