@@ -11,6 +11,8 @@ import {
   assignUserToGroupEditor,
   assignUserToOrganizationAdmin,
   assignUserToOrganizationEditor,
+  removeUserFromGroup,
+  removeUserFromOrganization,
   createOrganization,
   createDataset,
   createDatasetResource,
@@ -508,10 +510,19 @@ registerAuthRoutes(app, {
 registerProfileRoutes(app, {
   authMiddleware,
   parseOrThrow,
+  badRequest,
   affiliateProfileUpdateSchema,
   updateUser,
   findUserById,
   computeAffiliateProfileMetrics,
+  listOrganizations,
+  listGroups,
+  byAnyId,
+  assignUserToOrganizationEditor,
+  assignUserToGroupEditor,
+  removeUserFromOrganization,
+  removeUserFromGroup,
+  logAuditEvent,
 });
 
 registerCkanIntegrationRoutes(app, {
