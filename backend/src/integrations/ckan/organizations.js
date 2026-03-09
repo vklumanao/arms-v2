@@ -161,6 +161,19 @@ export async function assignUserToOrganizationEditor({ orgId, username }) {
 }
 
 /**
+ * Removes a user from a CKAN organization.
+ *
+ * Idempotency:
+ * - Missing membership is treated as success by `removeMember`.
+ */
+export async function removeUserFromOrganization({ orgId, username }) {
+  await removeMember("organization_member_delete", {
+    id: orgId,
+    username,
+  });
+}
+
+/**
  * Grants organization `admin` role to a user.
  */
 export async function assignUserToOrganizationAdmin({ orgId, username }) {
