@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { isLikelyUrl } from "@/shared/utils/validation";
 import {
+  isLikelyUrl,
+  validatePasswordStrength,
+} from "@/shared/utils/validation";
+import {
+  changeMyPassword,
   fetchAffiliateProfile,
   updateAffiliateProfile as updateAffiliateProfileService,
 } from "@/features/submissions/services";
@@ -25,6 +30,12 @@ const INITIAL_FORM = {
   ip_count: 0,
 };
 
+const INITIAL_PASSWORD_FORM = {
+  current_password: "",
+  new_password: "",
+  confirm_password: "",
+};
+
 export default function AffiliateProfilePage() {
   const { user, profile } = useAuth();
   const { centers, error: referenceError } = useReferenceData();
@@ -34,7 +45,17 @@ export default function AffiliateProfilePage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [confirmSave, setConfirmSave] = useState(false);
+  const [confirmPasswordChange, setConfirmPasswordChange] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordForm, setPasswordForm] = useState(INITIAL_PASSWORD_FORM);
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
   const toast = useToast();
+
   const centerNameById = useMemo(() => {
     const map = {};
     (centers || []).forEach((center) => {
@@ -114,6 +135,55 @@ export default function AffiliateProfilePage() {
     setMessage("Profile updated successfully.");
   };
 
+  const validatePasswordForm = () => {
+    if (!passwordForm.current_password) {
+      return "Current password is required.";
+    }
+    const strengthError = validatePasswordStrength(passwordForm.new_password);
+    if (strengthError) return strengthError;
+    if (passwordForm.current_password === passwordForm.new_password) {
+      return "New password must be different from current password.";
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      return "New password and confirmation do not match.";
+    }
+    return "";
+  };
+
+  const requestPasswordChange = (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    const nextError = validatePasswordForm();
+    if (nextError) {
+      setPasswordError(nextError);
+      return;
+    }
+    setConfirmPasswordChange(true);
+  };
+
+  const confirmChangePassword = async () => {
+    setPasswordError("");
+    setChangingPassword(true);
+    const { data, error: changeError } = await changeMyPassword({
+      current_password: passwordForm.current_password,
+      new_password: passwordForm.new_password,
+      confirm_password: passwordForm.confirm_password,
+    });
+    setChangingPassword(false);
+
+    if (changeError) {
+      setPasswordError(changeError.message || "Unable to change password.");
+      return;
+    }
+
+    setPasswordForm(INITIAL_PASSWORD_FORM);
+    setConfirmPasswordChange(false);
+    toast.success(
+      "Password updated",
+      data?.warning || "Your password was changed successfully.",
+    );
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -123,196 +193,296 @@ export default function AffiliateProfilePage() {
 
       {loading ? (
         <div className="panel">
-          <div className="panel-body text-sm text-slate-600">
-            Loading profile...
-          </div>
+          <div className="panel-body text-sm text-slate-600">Loading profile...</div>
         </div>
       ) : (
-        <form className="panel overflow-hidden" onSubmit={saveProfile}>
-          <div className="panel-header">
-            <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-              Profile Details
-            </h2>
-          </div>
-          <div className="panel-body grid gap-4">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Full name</span>
-                <input
-                  className="control-input"
-                  value={form.full_name || ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, full_name: e.target.value }))
-                  }
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Department</span>
-                <input
-                  className="control-input"
-                  value={form.department || ""}
-                  readOnly
-                  disabled
-                />
-              </label>
+        <div className="page-stack">
+          <form className="panel overflow-hidden" onSubmit={saveProfile}>
+            <div className="panel-header">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Profile Details
+              </h2>
             </div>
+            <div className="panel-body grid gap-4">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Full name</span>
+                  <input
+                    className="control-input"
+                    value={form.full_name || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, full_name: e.target.value }))
+                    }
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Department</span>
+                  <input
+                    className="control-input"
+                    value={form.department || ""}
+                    readOnly
+                    disabled
+                  />
+                </label>
+              </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Research Center
-                </span>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Research Center</span>
+                  <input
+                    className="control-input"
+                    value={
+                      form.ckan_org_id
+                        ? centerNameById[form.ckan_org_id] || "Selected"
+                        : ""
+                    }
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Google Scholar Link</span>
+                  <input
+                    className="control-input"
+                    placeholder="https://scholar.google.com/..."
+                    value={form.google_scholar_link || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        google_scholar_link: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Employment Status</span>
+                  <input
+                    className="control-input"
+                    placeholder="e.g. Permanent, Lecturer"
+                    value={form.employment_status || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        employment_status: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="space-y-1 text-sm sm:col-span-2">
+                  <span className="font-semibold text-slate-700">Designation</span>
+                  <input
+                    className="control-input"
+                    placeholder="e.g. Department Head, Program Chair"
+                    value={form.designation || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        designation: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700">
                 <input
-                  className="control-input"
-                  value={
-                    form.ckan_org_id
-                      ? centerNameById[form.ckan_org_id] || "Selected"
-                      : ""
-                  }
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Google Scholar Link
-                </span>
-                <input
-                  className="control-input"
-                  placeholder="https://scholar.google.com/..."
-                  value={form.google_scholar_link || ""}
+                  type="checkbox"
+                  checked={Boolean(form.is_gs_faculty)}
                   onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      google_scholar_link: e.target.value,
+                      is_gs_faculty: e.target.checked,
                     }))
                   }
                 />
+                Mark as GS Faculty
               </label>
-            </div>
 
-            <div className="grid gap-2 sm:grid-cols-3">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Employment Status
-                </span>
-                <input
-                  className="control-input"
-                  placeholder="e.g. Permanent, Lecturer"
-                  value={form.employment_status || ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      employment_status: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">
-                  Designation
-                </span>
-                <input
-                  className="control-input"
-                  placeholder="e.g. Department Head, Program Chair"
-                  value={form.designation || ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      designation: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
+              <div className="grid gap-2 md:grid-cols-5">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Publications</span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min="0"
+                    value={form.publication_count}
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Projects</span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min="0"
+                    value={form.research_project_count}
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Creative Works</span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min="0"
+                    value={form.creative_work_count}
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">Awards</span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min="0"
+                    value={form.awards_count}
+                    readOnly
+                    disabled
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">IPs</span>
+                  <input
+                    className="control-input"
+                    type="number"
+                    min="0"
+                    value={form.ip_count}
+                    readOnly
+                    disabled
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-slate-500">
+                Productivity counts are auto-calculated from your submitted
+                projects and output resources.
+              </p>
 
-            <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={Boolean(form.is_gs_faculty)}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    is_gs_faculty: e.target.checked,
-                  }))
-                }
-              />
-              Mark as GS Faculty
-            </label>
-
-            <div className="grid gap-2 md:grid-cols-5">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Publications
-                </span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={form.publication_count}
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Projects</span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={form.research_project_count}
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Creative Works
-                </span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={form.creative_work_count}
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Awards</span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={form.awards_count}
-                  readOnly
-                  disabled
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">IPs</span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={form.ip_count}
-                  readOnly
-                  disabled
-                />
-              </label>
+              <div className="flex justify-end">
+                <button className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Save Profile"}
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-slate-500">
-              Productivity counts are auto-calculated from your submitted
-              projects and output resources.
-            </p>
+          </form>
 
-            <div className="flex justify-end">
-              <button className="btn btn-primary" disabled={saving}>
-                {saving ? "Saving..." : "Save Profile"}
-              </button>
+          <form className="panel overflow-hidden" onSubmit={requestPasswordChange}>
+            <div className="panel-header">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Change Password
+              </h2>
             </div>
-          </div>
-        </form>
+            <div className="panel-body grid gap-3 sm:grid-cols-3">
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">Current Password</span>
+                <div className="relative">
+                  <input
+                    className="control-input pr-10"
+                    type={showPassword.current ? "text" : "password"}
+                    value={passwordForm.current_password}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        current_password: e.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    aria-label={
+                      showPassword.current
+                        ? "Hide current password"
+                        : "Show current password"
+                    }
+                    onClick={() =>
+                      setShowPassword((prev) => ({ ...prev, current: !prev.current }))
+                    }
+                  >
+                    {showPassword.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">New Password</span>
+                <div className="relative">
+                  <input
+                    className="control-input pr-10"
+                    type={showPassword.next ? "text" : "password"}
+                    value={passwordForm.new_password}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        new_password: e.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    aria-label={showPassword.next ? "Hide new password" : "Show new password"}
+                    onClick={() =>
+                      setShowPassword((prev) => ({ ...prev, next: !prev.next }))
+                    }
+                  >
+                    {showPassword.next ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">Confirm New Password</span>
+                <div className="relative">
+                  <input
+                    className="control-input pr-10"
+                    type={showPassword.confirm ? "text" : "password"}
+                    value={passwordForm.confirm_password}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        confirm_password: e.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    aria-label={
+                      showPassword.confirm
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                    onClick={() =>
+                      setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))
+                    }
+                  >
+                    {showPassword.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+
+              <div className="sm:col-span-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                  Password must be at least 8 characters and include uppercase,
+                  lowercase, and a number.
+                </p>
+                <button className="btn btn-primary" disabled={changingPassword} type="submit">
+                  {changingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+
+              {passwordError ? (
+                <p className="sm:col-span-3 text-sm text-[var(--danger)]">{passwordError}</p>
+              ) : null}
+            </div>
+          </form>
+        </div>
       )}
 
       <ConfirmActionModal
@@ -327,9 +497,15 @@ export default function AffiliateProfilePage() {
           setConfirmSave(false);
         }}
       />
+      <ConfirmActionModal
+        open={confirmPasswordChange}
+        title="Confirm Password Change"
+        message="Update your account password now?"
+        confirmLabel="Update Password"
+        loading={changingPassword}
+        onCancel={() => setConfirmPasswordChange(false)}
+        onConfirm={confirmChangePassword}
+      />
     </section>
   );
 }
-
-
-
