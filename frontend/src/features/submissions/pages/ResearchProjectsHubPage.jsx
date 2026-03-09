@@ -692,7 +692,7 @@ export default function ResearchProjectsHubPage() {
                     <th>Year</th>
                     <th>Status</th>
                     <th>Visibility</th>
-                    <th>Organization</th>
+                    <th>Research Center</th>
                     <th>Submitted</th>
                     <th>Action</th>
                   </tr>
