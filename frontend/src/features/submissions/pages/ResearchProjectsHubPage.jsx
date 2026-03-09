@@ -37,6 +37,10 @@ export default function ResearchProjectsHubPage() {
     String(profile?.role || user?.role || "")
       .trim()
       .toLowerCase() === "admin";
+  const missingAffiliation =
+    !isAdmin &&
+    (!String(profile?.ckan_org_id || "").trim() ||
+      !String(profile?.department || "").trim());
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
@@ -88,6 +92,10 @@ export default function ResearchProjectsHubPage() {
 
   useEffect(() => {
     if (!user?.id) return;
+    if (missingAffiliation) {
+      setProjects([]);
+      return;
+    }
 
     let isMounted = true;
     const orgId = String(profile?.ckan_org_id || "").trim();
@@ -109,7 +117,7 @@ export default function ResearchProjectsHubPage() {
     return () => {
       isMounted = false;
     };
-  }, [isAdmin, profile?.ckan_org_id, user?.id]);
+  }, [isAdmin, missingAffiliation, profile?.ckan_org_id, user?.id]);
 
   const centerById = useMemo(
     () =>
@@ -521,6 +529,28 @@ export default function ResearchProjectsHubPage() {
       setExportingType("");
     }
   };
+
+  if (missingAffiliation) {
+    return (
+      <section className="page-stack-lg">
+        <PageHeader
+          title="Research Projects"
+          description="Browse all submitted projects first, then open the submission form only when needed."
+        />
+        <div className="panel">
+          <div className="panel-body space-y-3">
+            <p className="text-sm text-amber-700">
+              Please set your Organization (Research Center) and Department in
+              My Profile first before accessing Research Projects.
+            </p>
+            <Link className="btn btn-primary" to="/my-profile">
+              Go to My Profile
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="page-stack-lg">
