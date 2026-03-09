@@ -1,6 +1,7 @@
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import {
@@ -17,6 +18,11 @@ export default function ResearchOutputsPage() {
   const toast = useToast();
   const { profile } = useAuth();
   const { centers } = useReferenceData();
+  const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+  const missingAffiliation =
+    !isAdmin &&
+    (!String(profile?.ckan_org_id || "").trim() ||
+      !String(profile?.department || "").trim());
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,14 +45,17 @@ export default function ResearchOutputsPage() {
   const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState({});
   const pageSize = 10;
 
-  const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
-
   useEffect(() => {
     if (!error) return;
     toast.error("Research output load failed", error);
   }, [error, toast]);
 
   useEffect(() => {
+    if (missingAffiliation) {
+      setRows([]);
+      setLoading(false);
+      return () => {};
+    }
     let cancelled = false;
     const load = async () => {
       try {
@@ -70,7 +79,33 @@ export default function ResearchOutputsPage() {
     return () => {
       cancelled = true;
     };
-  }, [profile?.id]);
+  }, [missingAffiliation, profile?.id]);
+
+  if (missingAffiliation) {
+    return (
+      <section className="page-stack-lg">
+        <PageHeader
+          title="Research Outputs"
+          description={
+            isAdmin
+              ? "All linked resource files from submitted project datasets."
+              : "Your submitted resource files from project expected outputs."
+          }
+        />
+        <div className="panel">
+          <div className="panel-body space-y-3">
+            <p className="text-sm text-amber-700">
+              Please set your Organization (Research Center) and Department in
+              My Profile first before accessing Research Outputs.
+            </p>
+            <Link className="btn btn-primary" to="/my-profile">
+              Go to My Profile
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const sortedRows = useMemo(
     () =>
