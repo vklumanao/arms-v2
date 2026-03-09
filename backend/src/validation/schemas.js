@@ -49,6 +49,17 @@ export const resetPasswordSchema = z.object({
 });
 
 /**
+ * Authenticated change-password payload validator.
+ *
+ * Expected by `/api/auth/change-password` route.
+ */
+export const changePasswordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password: z.string().min(8),
+  confirm_password: z.string().min(1),
+});
+
+/**
  * Affiliate profile patch payload validator.
  *
  * Expected by `/api/affiliate-profile/me` PATCH route.
