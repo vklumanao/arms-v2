@@ -45,6 +45,16 @@ import { useToast } from "@/app/providers/ToastProvider";
 
 const MAX_MOA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
+  "Software Applications",
+  "Video Games",
+  "Websites and Web Systems",
+  "Digital Art and Generative Art",
+  "Interactive Media Projects",
+  "Data Visualization Projects",
+  "Artificial Intelligence Creations",
+  "Educational Technology Tools",
+];
 
 export default function SubmitAffiliationPage() {
   const EXPECTED_OUTPUTS_PAGE_SIZE = 10;
@@ -158,6 +168,7 @@ export default function SubmitAffiliationPage() {
           ...createLocalOutputRow(),
           ...row,
           target_count: Math.max(1, Number(row.target_count) || 1),
+          specific_output: String(row?.specific_output || "").trim(),
           file: null,
           needs_file_reselect: Boolean(
             !row.file_path && row.needs_file_reselect,
@@ -187,6 +198,7 @@ export default function SubmitAffiliationPage() {
           client_id: row.client_id,
           output_type: row.output_type,
           target_count: Math.max(1, Number(row.target_count) || 1),
+          specific_output: row.specific_output || "",
           notes: row.notes,
           file_path: row.file_path,
           file_name: row.file_name,
@@ -228,8 +240,7 @@ export default function SubmitAffiliationPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const orgId = String(profile?.ckan_org_id || "").trim();
-    fetchCkanUsers({ orgId })
+    fetchCkanUsers()
       .then((payload) => {
         if (cancelled) return;
         const rows = Array.isArray(payload?.data) ? payload.data : [];
@@ -242,7 +253,7 @@ export default function SubmitAffiliationPage() {
     return () => {
       cancelled = true;
     };
-  }, [profile?.ckan_org_id]);
+  }, [user?.id]);
 
   const effectiveAgendas = useMemo(() => {
     return orgAgendaOptions;
@@ -358,27 +369,29 @@ export default function SubmitAffiliationPage() {
   }, [ckanUsers]);
   const leadSuggestions = useMemo(() => {
     const keyword = leadSearch.trim().toLowerCase();
-    if (!keyword) return [];
     return ckanUserOptions
       .filter((ckanUser) =>
-        String(ckanUser.name || "")
-          .toLowerCase()
-          .includes(keyword),
+        keyword
+          ? String(ckanUser.name || "")
+              .toLowerCase()
+              .includes(keyword)
+          : true,
       )
       .filter((ckanUser) => !leadResearcherSelections.includes(ckanUser.name))
-      .slice(0, 8);
+      .slice(0, keyword ? 8 : 20);
   }, [leadSearch, ckanUserOptions, leadResearcherSelections]);
   const facultySuggestions = useMemo(() => {
     const keyword = facultySearch.trim().toLowerCase();
-    if (!keyword) return [];
     return ckanUserOptions
       .filter((ckanUser) =>
-        String(ckanUser.name || "")
-          .toLowerCase()
-          .includes(keyword),
+        keyword
+          ? String(ckanUser.name || "")
+              .toLowerCase()
+              .includes(keyword)
+          : true,
       )
       .filter((ckanUser) => !facultyTeamSelections.includes(ckanUser.name))
-      .slice(0, 8);
+      .slice(0, keyword ? 8 : 20);
   }, [facultySearch, ckanUserOptions, facultyTeamSelections]);
 
   useEffect(() => {
@@ -460,15 +473,6 @@ export default function SubmitAffiliationPage() {
   };
 
   const getSubmissionValidationError = () => {
-    const hasMissingOutputFile = expectedOutputRows.some((row) => {
-      const hasPendingFile = Boolean(row?.file);
-      const hasSavedPath = Boolean(String(row?.file_path || "").trim());
-      return !hasPendingFile && !hasSavedPath;
-    });
-    if (hasMissingOutputFile) {
-      return "Each expected output must have an attached file before submission.";
-    }
-
     return (
       validateSubmissionStep(form, 0, expectedOutputRows) ||
       validateSubmissionStep(form, 1, expectedOutputRows) ||
@@ -570,6 +574,15 @@ export default function SubmitAffiliationPage() {
       setError("Target count must be at least 1.");
       return;
     }
+    const normalizedSpecificOutput = String(
+      newOutputDraft.specific_output || "",
+    ).trim();
+    if (normalizedType === "product_software" && !normalizedSpecificOutput) {
+      setError(
+        "Specific output is required for Product/Software Application type.",
+      );
+      return;
+    }
     const selectedFile = newOutputDraft.file;
     const isEditMode = Boolean(editingOutputClientId);
     const existingRow = isEditMode
@@ -586,15 +599,12 @@ export default function SubmitAffiliationPage() {
         return;
       }
     }
-    if (!selectedFile && !String(newOutputDraft.file_path || "").trim()) {
-      setError("Expected output file is required.");
-      return;
-    }
-
     const nextRow = {
       ...newOutputDraft,
       output_type: normalizedType,
       target_count: normalizedTargetCount,
+      specific_output:
+        normalizedType === "product_software" ? normalizedSpecificOutput : "",
       notes: String(newOutputDraft.notes || "").trim(),
       file: selectedFile || null,
       file_path: selectedFile ? "" : newOutputDraft.file_path || "",
@@ -661,9 +671,12 @@ export default function SubmitAffiliationPage() {
         if (normalizedTargetCount < 1) {
           throw new Error("Target count must be at least 1.");
         }
-        if (!row.file && !String(row.file_path || "").trim()) {
+        if (
+          normalizedType === "product_software" &&
+          !String(row.specific_output || "").trim()
+        ) {
           throw new Error(
-            "Each expected output must have an attached file before submission.",
+            "Specific output is required for Product/Software Application type.",
           );
         }
 
@@ -1564,7 +1577,8 @@ export default function SubmitAffiliationPage() {
                 <div className="form-section-head">
                   <p className="form-section-title">Outputs and Resources</p>
                   <p className="form-section-note">
-                    Add expected outputs and link supporting evidence files.
+                    Optional step: add outputs now, or add them later in
+                    Research Outputs.
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -1614,6 +1628,11 @@ export default function SubmitAffiliationPage() {
                                 )?.label ||
                                   row.output_type ||
                                   "-"}
+                                {String(row.specific_output || "").trim() ? (
+                                  <p className="text-xs text-slate-500">
+                                    Specific: {row.specific_output}
+                                  </p>
+                                ) : null}
                               </td>
                               <td className="text-slate-600">
                                 {Math.max(1, Number(row.target_count) || 1)}
@@ -1948,6 +1967,11 @@ export default function SubmitAffiliationPage() {
                                   row.output_type ||
                                   "-"}
                               </p>
+                              {String(row.specific_output || "").trim() ? (
+                                <p className="text-slate-600">
+                                  Specific: {row.specific_output}
+                                </p>
+                              ) : null}
                               <p className="text-slate-600">
                                 Target:{" "}
                                 {Math.max(1, Number(row.target_count) || 1)} |
@@ -2101,6 +2125,10 @@ export default function SubmitAffiliationPage() {
                     setNewOutputDraft((prev) => ({
                       ...prev,
                       output_type: e.target.value,
+                      specific_output:
+                        e.target.value === "product_software"
+                          ? prev.specific_output || ""
+                          : "",
                     }))
                   }
                 >
@@ -2112,6 +2140,30 @@ export default function SubmitAffiliationPage() {
                   ))}
                 </select>
               </label>
+              {newOutputDraft.output_type === "product_software" ? (
+                <label className="block space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Specific output
+                  </span>
+                  <select
+                    className="control-select"
+                    value={newOutputDraft.specific_output || ""}
+                    onChange={(e) =>
+                      setNewOutputDraft((prev) => ({
+                        ...prev,
+                        specific_output: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select specific output</option>
+                    {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <label className="block space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Target count
