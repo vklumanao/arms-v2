@@ -28,7 +28,6 @@ import {
 } from "@/features/submissions";
 import {
   AdminAffiliatesModulePage,
-  AdminAffiliatesPage,
   AdminControlsPage,
   AdminResearchCenterPage,
   AdminUsersPage,
@@ -128,13 +127,6 @@ export default function AppRoutes() {
               element={withPermission(
                 PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
                 <AdminAffiliatesModulePage />,
-              )}
-            />
-            <Route
-              path="/admin/affiliates-registry"
-              element={withPermission(
-                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
-                <AdminAffiliatesPage />,
               )}
             />
             <Route
