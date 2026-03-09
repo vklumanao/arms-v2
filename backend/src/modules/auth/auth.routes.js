@@ -74,9 +74,7 @@ export function registerAuthRoutes(app, deps) {
       const role = normalizeRole(parsed.role);
       const department = String(parsed.department || "").trim();
       const ckan_org_id = String(parsed.ckan_org_id || "").trim();
-      const ckan_group_id = String(
-        parsed.ckan_group_id || department || "",
-      ).trim();
+      const ckan_group_id = String(parsed.ckan_group_id || "").trim();
 
       if (role === "admin") {
         // Admin accounts must be created through controlled admin channels.
@@ -92,13 +90,10 @@ export function registerAuthRoutes(app, deps) {
         return res.status(409).json({ error: "Email is already registered." });
       }
 
-      const [orgs, groups] = await Promise.all([
-        listOrganizations(),
-        listGroups(),
-      ]);
-      // Accept either CKAN id or name from client-provided selection.
-      const selectedOrg = byAnyId(orgs, ckan_org_id);
-      if (!selectedOrg) {
+      const [orgs, groups] = await Promise.all([listOrganizations(), listGroups()]);
+      // Organization is optional during registration.
+      const selectedOrg = ckan_org_id ? byAnyId(orgs, ckan_org_id) : null;
+      if (ckan_org_id && !selectedOrg) {
         return badRequest(res, "Selected CKAN organization was not found.");
       }
 
@@ -119,11 +114,13 @@ export function registerAuthRoutes(app, deps) {
         password,
       });
 
-      // Assign baseline org role required for creating/editing datasets.
-      await assignUserToOrganizationEditor({
-        orgId: selectedOrg.name || selectedOrg.id,
-        username: ckanUser.name,
-      });
+      if (selectedOrg) {
+        // Assign baseline org role only when user selected an organization.
+        await assignUserToOrganizationEditor({
+          orgId: selectedOrg.name || selectedOrg.id,
+          username: ckanUser.name,
+        });
+      }
 
       if (selectedGroup) {
         // Department/group membership is optional depending on registration input.
@@ -145,7 +142,7 @@ export function registerAuthRoutes(app, deps) {
           selectedGroup?.name ||
           department ||
           null,
-        ckan_org_id: selectedOrg.name || selectedOrg.id,
+        ckan_org_id: selectedOrg?.name || selectedOrg?.id || null,
         ckan_group_id: selectedGroup?.name || selectedGroup?.id || null,
         ckan_username: ckanUser.name,
         ckan_user_id: ckanUser.id || null,
