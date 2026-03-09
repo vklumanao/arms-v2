@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   GraduationCap,
   Search,
@@ -57,7 +57,7 @@ export default function AdminAffiliatesModulePage() {
     if (message) toast.success("Action completed", message);
   }, [message, toast]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setError("");
     setMessage("");
     try {
@@ -67,11 +67,18 @@ export default function AdminAffiliatesModulePage() {
     } catch (loadError) {
       setError(loadError.message || "Unable to load affiliate data.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadData();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [loadData]);
 
   const centerNameById = useMemo(() => buildCenterNameById(centers), [centers]);
 
@@ -234,6 +241,11 @@ export default function AdminAffiliatesModulePage() {
         "Research Center",
         "Status",
         "GS Faculty",
+        "Publications",
+        "Projects",
+        "Creative Works",
+        "Awards",
+        "IPs",
       ];
       const lines = buildExportRows().map((row) =>
         [
@@ -245,6 +257,11 @@ export default function AdminAffiliatesModulePage() {
           row.center,
           row.status,
           row.gs,
+          row.publications,
+          row.projects,
+          row.creativeWorks,
+          row.awards,
+          row.ips,
         ]
           .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
           .join(","),
@@ -277,6 +294,11 @@ export default function AdminAffiliatesModulePage() {
               <td>${row.center}</td>
               <td>${row.status}</td>
               <td>${row.gs}</td>
+              <td>${row.publications}</td>
+              <td>${row.projects}</td>
+              <td>${row.creativeWorks}</td>
+              <td>${row.awards}</td>
+              <td>${row.ips}</td>
             </tr>
           `,
         )
@@ -315,10 +337,15 @@ export default function AdminAffiliatesModulePage() {
                   <th>Research Center</th>
                   <th>Status</th>
                   <th>GS Faculty</th>
+                  <th>Publications</th>
+                  <th>Projects</th>
+                  <th>Creative Works</th>
+                  <th>Awards</th>
+                  <th>IPs</th>
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || '<tr><td colspan="8">No records found.</td></tr>'}
+                ${rowsHtml || '<tr><td colspan="13">No records found.</td></tr>'}
               </tbody>
             </table>
           </body>
@@ -516,6 +543,11 @@ export default function AdminAffiliatesModulePage() {
                     <th className="px-4 py-3 font-semibold">Research Center</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">GS Faculty</th>
+                    <th className="px-4 py-3 font-semibold">Publications</th>
+                    <th className="px-4 py-3 font-semibold">Projects</th>
+                    <th className="px-4 py-3 font-semibold">Creative Works</th>
+                    <th className="px-4 py-3 font-semibold">Awards</th>
+                    <th className="px-4 py-3 font-semibold">IPs</th>
                     <th className="px-4 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
@@ -560,6 +592,21 @@ export default function AdminAffiliatesModulePage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {Number(row.publication_count || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {Number(row.research_project_count || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {Number(row.creative_work_count || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {Number(row.awards_count || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {Number(row.ip_count || 0)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
