@@ -1,4 +1,4 @@
-import { ckanAction } from "./http/ckanAction.js";
+import { ckanAction, ckanMultipartAction } from "./http/ckanAction.js";
 import { toText } from "./utils/normalize.js";
 
 /**
@@ -108,6 +108,36 @@ export async function deleteDataset(datasetId) {
  */
 export async function createDatasetResource(payload) {
   return ckanAction("resource_create", payload || {});
+}
+
+/**
+ * Creates a CKAN dataset resource by uploading a binary file.
+ */
+export async function createDatasetResourceUpload({
+  fields = {},
+  fileBuffer,
+  fileName,
+  mimeType,
+}) {
+  const binary = Buffer.isBuffer(fileBuffer)
+    ? fileBuffer
+    : Buffer.from(fileBuffer || []);
+  const uploadName = toText(fileName) || "output-file.bin";
+  const uploadMime = toText(mimeType) || "application/octet-stream";
+
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields || {})) {
+    const text = value == null ? "" : String(value).trim();
+    if (!text) continue;
+    formData.append(key, text);
+  }
+  formData.append(
+    "upload",
+    new Blob([binary], { type: uploadMime }),
+    uploadName,
+  );
+
+  return ckanMultipartAction("resource_create", formData);
 }
 
 /**
