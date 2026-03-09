@@ -164,5 +164,10 @@ export function buildAffiliateExportRows(rows, centerNameById) {
     center: row.ckan_org_id ? centerNameById[row.ckan_org_id] || "-" : "-",
     status: row.is_active ? "Active" : "Inactive",
     gs: row.is_gs_faculty ? "Yes" : "No",
+    publications: Number(row.publication_count || 0),
+    projects: Number(row.research_project_count || 0),
+    creativeWorks: Number(row.creative_work_count || 0),
+    awards: Number(row.awards_count || 0),
+    ips: Number(row.ip_count || 0),
   }));
 }
