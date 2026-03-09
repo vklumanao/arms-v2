@@ -21,42 +21,28 @@ cd arms-v3
 
 ## 3) Prepare environment files
 
-### Backend env
+No manual copy/paste needed for first run.
 
-Create `backend/.env` (or copy from your working machine), then ensure these are set:
+`scripts/bootstrap-dev.ps1` will:
 
-- `CKAN_API_KEY=<your-ckan-sysadmin-api-key>`
-- `ARMS_JWT_SECRET=<your-secret>`
-- `ARMS_ENCRYPTION_KEY=<64-char-hex-key>`
+- create `backend/.env` from `backend/.env.example` when missing
+- create `ckan-docker/.env` from `ckan-docker/.env.example` when missing
+- auto-generate `ARMS_JWT_SECRET` and `ARMS_ENCRYPTION_KEY` if placeholders are present
+- create CKAN service/admin bootstrap users
+- generate `CKAN_API_KEY` and write it to `backend/.env`
+- create one ARMS admin account once
 
-You can start from:
+## 4) Bootstrap and start the full stack
 
-```bash
-cp backend/.env.example backend/.env
-```
-
-### CKAN env
-
-Create `ckan-docker/.env`:
-
-```bash
-cp ckan-docker/.env.example ckan-docker/.env
-```
-
-Update values as needed (ports, sysadmin defaults, etc.).
-
-## 4) Start the full stack
-
-```bash
-cd ckan-docker
-docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml up --build
+```powershell
+.\scripts\bootstrap-dev.ps1
 ```
 
 ## 5) Access services
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:4000/api`
-- CKAN (HTTPS): `https://localhost:8443` (or your configured SSL port)
+- Frontend: `http://127.0.0.1:5173`
+- Backend API: `http://127.0.0.1:4010/api`
+- CKAN (HTTPS): `https://127.0.0.1:9443` (or your configured SSL port)
 
 ## 6) Stop services
 
@@ -74,8 +60,8 @@ docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml down -v
 
 - `backend/.env` is loaded automatically by `backend` service via compose `env_file`.
 - Backend database for Docker runs in `arms-db` and is separate from CKAN DB.
-- If CKAN API auth fails, re-check `CKAN_API_KEY` in `backend/.env`, then restart backend:
+- Re-run bootstrap with token rotation:
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml restart backend
+```powershell
+.\scripts\bootstrap-dev.ps1 -RotateToken
 ```
