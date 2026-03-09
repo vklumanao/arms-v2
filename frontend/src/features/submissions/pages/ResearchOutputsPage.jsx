@@ -535,10 +535,9 @@ export default function ResearchOutputsPage() {
                 <tr>
                   <th>No.</th>
                   <th>Resource/File</th>
-                  <th>Dataset</th>
-                  <th>Organization</th>
+                  <th>Project</th>
+                  <th>Research Center</th>
                   <th>Visibility</th>
-                  <th>State</th>
                   <th>Updated</th>
                   <th>Action</th>
                 </tr>
@@ -583,7 +582,6 @@ export default function ResearchOutputsPage() {
                         </button>
                       </div>
                     </td>
-                    <td>{row.state || "-"}</td>
                     <td>
                       {row.metadataModified
                         ? new Date(row.metadataModified).toLocaleString()
