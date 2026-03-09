@@ -13,7 +13,7 @@ export const PERMISSIONS = {
 
 export const PERMISSION_LABELS = {
   [PERMISSIONS.DASHBOARD_VIEW]: "Dashboard: View",
-  [PERMISSIONS.AFFILIATE_PROFILE_VIEW]: "Affiliate Profile: View",
+  [PERMISSIONS.AFFILIATE_PROFILE_VIEW]: "My Profile: View",
   [PERMISSIONS.AFFILIATIONS_MANAGE]: "Affiliations: Manage",
   [PERMISSIONS.RESEARCH_OUTPUTS_VIEW]: "Research Outputs: View",
   [PERMISSIONS.AWARDS_RECOGNITION_VIEW]: "Awards and Recognition: View",
