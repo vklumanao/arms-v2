@@ -71,6 +71,13 @@ export default function AppRoutes() {
             element={<RoleRoute allow={["faculty", "student", "admin"]} />}
           >
             <Route
+              path="/my-profile"
+              element={withPermission(
+                PERMISSIONS.AFFILIATE_PROFILE_VIEW,
+                <AffiliateProfilePage />,
+              )}
+            />
+            <Route
               path="/affiliate-profile"
               element={withPermission(
                 PERMISSIONS.AFFILIATE_PROFILE_VIEW,
