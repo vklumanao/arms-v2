@@ -1,0 +1,73 @@
+services:
+  arms-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: arms_user
+      POSTGRES_PASSWORD: arms_password
+      POSTGRES_DB: arms_v3
+    volumes:
+      - arms_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arms_user -d arms_v3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - ../backend/.env
+    working_dir: /app
+    command: npm run dev
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://arms_user:arms_password@arms-db:5432/arms_v3
+      DB_SSL: "false"
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      CKAN_BASE_URL: http://ckan:5000
+      CKAN_VERIFY_TLS: "false"
+      ARMS_JWT_EXPIRES_IN: 12h
+    volumes:
+      - ../backend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      ckan:
+        condition: service_healthy
+      arms-db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    networks:
+      - ckannet
+      - default
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_BASE_URL: http://localhost:4000/api
+      VITE_UI_PREVIEW_MODE: "false"
+    volumes:
+      - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+volumes:
+  arms_pg_data:
+  backend_node_modules:
+  frontend_node_modules:
