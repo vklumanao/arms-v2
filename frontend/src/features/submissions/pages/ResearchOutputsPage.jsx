@@ -16,6 +16,13 @@ import {
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
+import {
+  Eye,
+  EyeOff,
+  FileText,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 
 const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
   "Software Applications",
@@ -321,6 +328,31 @@ export default function ResearchOutputsPage() {
       return matchesSearch && matchesState && matchesVisibility;
     });
   }, [searchTerm, stateFilter, tableRows, visibilityFilter]);
+
+  const analytics = useMemo(() => {
+    const linkedProjectIds = new Set();
+    const base = {
+      total: tableRows.length,
+      public: 0,
+      private: 0,
+      linkedProjects: 0,
+    };
+
+    tableRows.forEach((row) => {
+      if (row.private) {
+        base.private += 1;
+      } else {
+        base.public += 1;
+      }
+
+      const projectKey = String(row?.subtitle || row?.datasetId || "").trim();
+      if (!projectKey) return;
+      linkedProjectIds.add(projectKey);
+    });
+
+    base.linkedProjects = linkedProjectIds.size;
+    return base;
+  }, [tableRows]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -647,14 +679,44 @@ export default function ResearchOutputsPage() {
             : "Your submitted resource files from project expected outputs."
         }
       />
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={openAddOutputModal}
-        >
-          Add Output
-        </button>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <FileText size={14} />
+            Total Outputs
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.total}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <Eye size={14} />
+            Public Outputs
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.public}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <EyeOff size={14} />
+            Private Outputs
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.private}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <FileText size={14} />
+            Linked Projects
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.linkedProjects}
+          </p>
+        </article>
       </div>
 
       {loading ? (
@@ -676,177 +738,188 @@ export default function ResearchOutputsPage() {
         <div className="page-stack">
           <div className="panel">
             <div className="panel-header">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <SlidersHorizontal size={14} />
                 Filters
-              </h2>
+              </div>
             </div>
-            <div className="panel-body grid gap-3 md:grid-cols-4">
-              <label className="block space-y-1">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Search
-                </span>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="File, dataset, project, org..."
-                  className="control-input"
-                />
-              </label>
+            <div className="panel-body">
+              <div className="space-y-3">
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="relative">
+                    <Search
+                      size={14}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search file, dataset, project, org..."
+                      className="control-input pl-8"
+                    />
+                  </label>
 
-              <label className="block space-y-1">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  State
-                </span>
-                <select
-                  value={stateFilter}
-                  onChange={(event) => setStateFilter(event.target.value)}
-                  className="control-select"
-                >
-                  <option value="all">All states</option>
-                  {stateOptions.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <select
+                    value={stateFilter}
+                    onChange={(event) => setStateFilter(event.target.value)}
+                    className="control-select"
+                  >
+                    <option value="all">Filter by state</option>
+                    {stateOptions.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
 
-              <label className="block space-y-1">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Visibility
-                </span>
-                <select
-                  value={visibilityFilter}
-                  onChange={(event) => setVisibilityFilter(event.target.value)}
-                  className="control-select"
-                >
-                  <option value="all">All visibility</option>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </label>
+                  <select
+                    value={visibilityFilter}
+                    onChange={(event) => setVisibilityFilter(event.target.value)}
+                    className="control-select"
+                  >
+                    <option value="all">Filter by visibility</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
 
-              <div className="flex items-end gap-2">
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="btn btn-outline"
-                >
-                  Reset
-                </button>
-                <p className="text-xs text-slate-500">
-                  {filteredRows.length} result
-                  {filteredRows.length === 1 ? "" : "s"}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="btn btn-outline"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600">
+                  Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+                  output(s).
                 </p>
               </div>
             </div>
           </div>
 
           <div className="panel overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Resource/File</th>
-                    <th>Project</th>
-                    <th>Research Center</th>
-                    <th>Visibility</th>
-                    <th>Updated</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-700">
-                  {paginatedRows.map((row, index) => (
-                    <tr key={row.id}>
-                      <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                      <td>
-                        <div className="font-medium">{row.title}</div>
-                        {row.subtitle ? (
-                          <div className="text-xs text-slate-500">
-                            {row.subtitle}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td>{row.datasetName || "-"}</td>
-                      <td>{row.organization || "-"}</td>
-                      <td>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
-                          >
-                            {row.private ? "Private" : "Public"}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-outline"
-                            disabled={
-                              !row.datasetId ||
-                              Boolean(visibilitySavingByDataset[row.datasetId])
-                            }
-                            onClick={() => handleToggleVisibility(row)}
-                          >
-                            {visibilitySavingByDataset[row.datasetId]
-                              ? "Saving..."
-                              : row.private
-                                ? "Make Public"
-                                : "Make Private"}
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        {row.metadataModified
-                          ? new Date(row.metadataModified).toLocaleString()
-                          : "-"}
-                      </td>
-                      <td>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            className="btn btn-outline"
-                            onClick={() => setViewTarget(row)}
-                          >
-                            View Details
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline"
-                            disabled={Boolean(
-                              deletingByResource[row.resourceId],
-                            )}
-                            onClick={() => handleOpenEdit(row)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-danger"
-                            disabled={Boolean(
-                              deletingByResource[row.resourceId],
-                            )}
-                            onClick={() => setDeleteTarget(row)}
-                          >
-                            {deletingByResource[row.resourceId]
-                              ? "Deleting..."
-                              : "Delete"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {!filteredRows.length ? (
-            <div className="panel">
-              <div className="panel-body text-sm text-slate-600">
-                No matching results for the selected filters.
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Research Output Records ({filteredRows.length})
+              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={openAddOutputModal}
+                >
+                  Add Output
+                </button>
               </div>
             </div>
-          ) : null}
+            {filteredRows.length === 0 ? (
+              <div className="p-4">
+                <EmptyState
+                  title="No research outputs found"
+                  description="Try adjusting your filters or add a new research output."
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Resource/File</th>
+                      <th>Project</th>
+                      <th>Research Center</th>
+                      <th>Visibility</th>
+                      <th>Updated</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-700">
+                    {paginatedRows.map((row, index) => (
+                      <tr key={row.id}>
+                        <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                        <td>
+                          <div className="font-medium">{row.title}</div>
+                          {row.subtitle ? (
+                            <div className="text-xs text-slate-500">
+                              {row.subtitle}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td>{row.datasetName || "-"}</td>
+                        <td>{row.organization || "-"}</td>
+                        <td>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
+                            >
+                              {row.private ? "Private" : "Public"}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              disabled={
+                                !row.datasetId ||
+                                Boolean(visibilitySavingByDataset[row.datasetId])
+                              }
+                              onClick={() => handleToggleVisibility(row)}
+                            >
+                              {visibilitySavingByDataset[row.datasetId]
+                                ? "Saving..."
+                                : row.private
+                                  ? "Make Public"
+                                  : "Make Private"}
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          {row.metadataModified
+                            ? new Date(row.metadataModified).toLocaleString()
+                            : "-"}
+                        </td>
+                        <td>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              onClick={() => setViewTarget(row)}
+                            >
+                              View Details
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              disabled={Boolean(
+                                deletingByResource[row.resourceId],
+                              )}
+                              onClick={() => handleOpenEdit(row)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              disabled={Boolean(
+                                deletingByResource[row.resourceId],
+                              )}
+                              onClick={() => setDeleteTarget(row)}
+                            >
+                              {deletingByResource[row.resourceId]
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
           {filteredRows.length ? (
             <PaginationControls
