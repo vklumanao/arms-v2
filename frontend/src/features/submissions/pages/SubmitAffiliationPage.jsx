@@ -336,9 +336,21 @@ export default function SubmitAffiliationPage() {
     );
   }, [departments, form.department_id]);
   const defaultDepartmentId = useMemo(() => {
+    const profileDepartmentId = String(profile?.ckan_group_id || "").trim();
     const profileDepartment = String(profile?.department || "")
       .trim()
       .toLowerCase();
+    if (profileDepartmentId) {
+      const matchedDepartment = departments.find(
+        (item) =>
+          String(item?.id || "")
+            .trim()
+            .toLowerCase() === profileDepartmentId.toLowerCase(),
+      );
+      if (matchedDepartment?.id) {
+        return matchedDepartment.id;
+      }
+    }
     if (!profileDepartment) return "";
     return (
       departments.find(
@@ -348,7 +360,7 @@ export default function SubmitAffiliationPage() {
             .toLowerCase() === profileDepartment,
       )?.id || ""
     );
-  }, [departments, profile?.department]);
+  }, [departments, profile?.ckan_group_id, profile?.department]);
   const leadResearcherSelections = useMemo(
     () => splitCsvNames(form.lead_researcher),
     [form.lead_researcher],
