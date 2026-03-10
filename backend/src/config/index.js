@@ -46,6 +46,11 @@ function readCsv(value, fallback = []) {
   return raw.length > 0 ? raw : fallback;
 }
 
+function readString(value, fallback = "") {
+  const text = String(value || "").trim();
+  return text || fallback;
+}
+
 // Central runtime configuration consumed across DB, auth, CKAN integration, and startup.
 export const config = {
   port: Number(process.env.PORT || 4000),
@@ -86,6 +91,11 @@ export const config = {
   ckanApiKey: String(process.env.CKAN_API_KEY || ""),
   ckanVerifyTls: readBool(process.env.CKAN_VERIFY_TLS, false),
   ckanTokenNamePrefix: String(process.env.CKAN_TOKEN_NAME_PREFIX || "arms"),
+  authCookieName: readString(process.env.ARMS_AUTH_COOKIE_NAME, "arms_session"),
+  authCookieSecure: readBool(
+    process.env.ARMS_AUTH_COOKIE_SECURE,
+    String(process.env.NODE_ENV || "development").toLowerCase() === "production",
+  ),
 };
 
 /**
