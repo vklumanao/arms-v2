@@ -11,6 +11,7 @@ const SEGMENT_LABELS = {
   admin: "Admin",
   affiliates: "Affiliates",
   "research-center": "Research Center",
+  departments: "Department",
   controls: "Controls",
   login: "Login",
   register: "Register",
