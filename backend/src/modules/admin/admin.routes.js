@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { query } from "../../db/client.js";
 
 /**
  * Registers admin controls and reference-management routes.
@@ -23,9 +24,15 @@ export function registerAdminRoutes(app, deps) {
     listOrganizationAgendas,
     listDatasets,
     createOrganization,
+    createGroup,
+    deleteGroup,
     deleteOrganization,
+    removeUserFromGroup,
+    removeUserFromOrganization,
     assignUserToOrganizationAdmin,
+    getGroup,
     getOrganization,
+    updateGroupMetadata,
     updateOrganizationMetadata,
     setOrganizationMemberRole,
   } = deps;
@@ -158,6 +165,14 @@ export function registerAdminRoutes(app, deps) {
       awards_count: 0,
       ip_count: 0,
     };
+  }
+
+  function normalizeDepartmentCode(value) {
+    return String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 
   async function listAllDatasetsAcrossCkan() {
@@ -521,7 +536,7 @@ export function registerAdminRoutes(app, deps) {
           .trim()
           .toLowerCase();
         const id = String(req.query?.id || "").trim();
-        if (type !== "center" || !id) {
+        if (!id || !["center", "department"].includes(type)) {
           // Return empty usage payload for unsupported or missing reference target.
           return res.json({
             projectCount: 0,
@@ -535,10 +550,16 @@ export function registerAdminRoutes(app, deps) {
           });
         }
 
-        const [members, datasets] = await Promise.all([
-          listOrganizationMembers(id),
-          listDatasets({ orgId: id, page: 1, limit: 1 }),
-        ]);
+        const [members, datasets] =
+          type === "center"
+            ? await Promise.all([
+                listOrganizationMembers(id),
+                listDatasets({ orgId: id, page: 1, limit: 1 }),
+              ])
+            : await Promise.all([
+                listGroupMembers(id),
+                listAllDatasetsAcrossCkan(),
+              ]);
         const activeMembers = (members || []).filter(
           (member) =>
             String(member?.state || "active").toLowerCase() !== "deleted",
@@ -561,7 +582,13 @@ export function registerAdminRoutes(app, deps) {
         );
 
         return res.json({
-          projectCount: Number(datasets?.count || 0),
+          projectCount:
+            type === "center"
+              ? Number(datasets?.count || 0)
+              : (datasets || []).filter((dataset) => {
+                  const meta = extrasToMap(dataset?.extras);
+                  return String(meta.department_id || "").trim() === id;
+                }).length,
           profileCount: activeMembers.length,
           memberBreakdown: {
             adminCount,
@@ -679,6 +706,81 @@ export function registerAdminRoutes(app, deps) {
             })),
           });
         }
+        if (type === "department" && id) {
+          const [members, datasets, centers] = await Promise.all([
+            listGroupMembers(id),
+            listAllDatasetsAcrossCkan(),
+            listOrganizations(),
+          ]);
+          const centerNameById = (centers || []).reduce((acc, center) => {
+            const key = String(center?.name || center?.id || "").trim();
+            if (!key) return acc;
+            acc[key] =
+              String(
+                center?.title || center?.display_name || center?.name || "",
+              ).trim() || key;
+            return acc;
+          }, {});
+
+          const profiles = (members || [])
+            .filter(
+              (member) =>
+                String(member?.state || "active").toLowerCase() !== "deleted",
+            )
+            .map((member) => ({
+              id: member?.id || member?.name || null,
+              full_name:
+                member?.fullname ||
+                member?.display_name ||
+                member?.name ||
+                member?.email ||
+                "CKAN User",
+              email: member?.email || null,
+              role:
+                String(member?.capacity || "")
+                  .trim()
+                  .toLowerCase() === "admin"
+                  ? "admin"
+                  : String(member?.capacity || "")
+                        .trim()
+                        .toLowerCase() === "editor"
+                    ? "faculty"
+                    : "student",
+              department:
+                member?.display_name || member?.fullname || member?.name || null,
+              is_active: true,
+            }));
+
+          const projects = (datasets || [])
+            .filter((dataset) => {
+              const meta = extrasToMap(dataset?.extras);
+              return String(meta.department_id || "").trim() === id;
+            })
+            .map((dataset) => {
+              const meta = extrasToMap(dataset?.extras);
+              const centerId = String(
+                dataset?.organization?.name || dataset?.owner_org || "",
+              ).trim();
+              return {
+                id: dataset?.id || dataset?.name || crypto.randomUUID(),
+                title: dataset?.title || dataset?.name || "-",
+                status:
+                  meta.project_status ||
+                  dataset?.state ||
+                  (dataset?.private ? "private" : "public"),
+                year: meta.project_year || null,
+                lead_researcher: meta.lead_researcher || null,
+                department_name: id,
+                research_center_name: centerId
+                  ? centerNameById[centerId] || centerId
+                  : null,
+                start_date: meta.start_date || null,
+                end_date: meta.end_date || null,
+              };
+            });
+
+          return res.json({ profiles, projects, agendas: [] });
+        }
         // Default empty response preserves client contract for unsupported types.
         return res.json({ profiles: [], projects: [], agendas: [] });
       } catch (error) {
@@ -724,9 +826,37 @@ export function registerAdminRoutes(app, deps) {
         const type = String(req.params?.type || "")
           .trim()
           .toLowerCase();
-        if (type !== "center") {
+        if (!["center", "department"].includes(type)) {
           return res.status(501).json({
-            error: "Only center create is implemented in this backend.",
+            error: "Only center and department create are implemented in this backend.",
+          });
+        }
+
+        if (type === "department") {
+          const name = String(req.body?.name || "").trim();
+          const codeRaw = normalizeDepartmentCode(req.body?.code || name);
+          if (!name) return badRequest(res, "Department name is required.");
+          if (!codeRaw) return badRequest(res, "Department code is required.");
+
+          const groupName = codeRaw.toLowerCase().replace(/[^a-z0-9_\-]+/g, "-");
+          if (!groupName) return badRequest(res, "Department code is invalid.");
+
+          const created = await createGroup({
+            name: groupName,
+            title: name,
+            extras: [{ key: "code", value: codeRaw }],
+          });
+
+          return res.status(201).json({
+            data: {
+              id: created?.name || created?.id || groupName,
+              name:
+                created?.title ||
+                created?.display_name ||
+                created?.name ||
+                name,
+              code: normalizeDepartmentCode(created?.name || codeRaw),
+            },
           });
         }
 
@@ -830,9 +960,52 @@ export function registerAdminRoutes(app, deps) {
           .toLowerCase();
         const id = String(req.params?.id || "").trim();
         if (!id) return badRequest(res, "Reference id is required.");
-        if (type !== "center") {
+        if (!["center", "department"].includes(type)) {
           return res.status(501).json({
-            error: "Only center update is implemented in this backend.",
+            error: "Only center and department update are implemented in this backend.",
+          });
+        }
+
+        if (type === "department") {
+          const currentGroup = await getGroup(id);
+          if (!currentGroup) {
+            return res.status(404).json({ error: "Department was not found." });
+          }
+
+          const name = String(req.body?.name || "").trim();
+          const codeRaw = normalizeDepartmentCode(
+            req.body?.code || getExtraValue(currentGroup, "code") || id,
+          );
+          if (!name && !currentGroup?.title && !currentGroup?.display_name) {
+            return badRequest(res, "Department name is required.");
+          }
+          if (!codeRaw) return badRequest(res, "Department code is required.");
+
+          const existingExtras = Array.isArray(currentGroup?.extras)
+            ? currentGroup.extras
+            : [];
+          const nextExtras = existingExtras.filter(
+            (item) =>
+              String(item?.key || "")
+                .trim()
+                .toLowerCase() !== "code",
+          );
+          nextExtras.push({ key: "code", value: codeRaw });
+
+          const updated = await updateGroupMetadata({
+            groupId: id,
+            title:
+              name || currentGroup?.title || currentGroup?.display_name || id,
+            extras: nextExtras,
+          });
+
+          return res.json({
+            data: {
+              id: updated?.name || updated?.id || id,
+              name:
+                updated?.title || updated?.display_name || updated?.name || id,
+              code: codeRaw,
+            },
           });
         }
 
@@ -962,10 +1135,122 @@ export function registerAdminRoutes(app, deps) {
     "/api/admin/controls/reference/:type/:id",
     authMiddleware,
     async (req, res) => {
-      // Delete flow intentionally deferred until dependency safety rules are implemented.
-      return res.status(501).json({
-        error: "Reference delete is not implemented in this backend yet.",
-      });
+      try {
+        const type = String(req.params?.type || "")
+          .trim()
+          .toLowerCase();
+        const id = String(req.params?.id || "").trim();
+        if (!id) {
+          return badRequest(res, "Reference id is required.");
+        }
+
+        if (type === "department") {
+          const [members, datasets] = await Promise.all([
+            listGroupMembers(id),
+            listAllDatasetsAcrossCkan(),
+          ]);
+          const linkedProjects = (datasets || []).filter((dataset) => {
+            const meta = extrasToMap(dataset?.extras);
+            return String(meta.department_id || "").trim() === id;
+          });
+
+          if (linkedProjects.length) {
+            return res.status(409).json({
+              error:
+                "Department cannot be deleted while it still has linked projects.",
+              details: {
+                linkedProjects: linkedProjects.length,
+              },
+            });
+          }
+
+          const removableMembers = (members || []).filter(
+            (member) =>
+              String(member?.state || "active").toLowerCase() !== "deleted" &&
+              String(member?.name || "").trim(),
+          );
+
+          for (const member of removableMembers) {
+            await removeUserFromGroup({
+              groupId: id,
+              username: String(member.name || "").trim(),
+            });
+          }
+
+          await query(
+            `
+            UPDATE users
+            SET
+              ckan_group_id = NULL,
+              department = CASE
+                WHEN COALESCE(ckan_group_id, '') = $1 THEN NULL
+                ELSE department
+              END,
+              updated_at = NOW()
+            WHERE COALESCE(ckan_group_id, '') = $1
+            `,
+            [id],
+          );
+
+          await deleteGroup(id);
+          return res.json({ data: { id, deleted: true, type } });
+        }
+
+        if (type === "center") {
+          const [members, datasets] = await Promise.all([
+            listOrganizationMembers(id),
+            listDatasets({ orgId: id, page: 1, limit: 100 }),
+          ]);
+          const linkedProjects = Array.isArray(datasets?.datasets)
+            ? datasets.datasets
+            : [];
+
+          if (linkedProjects.length) {
+            return res.status(409).json({
+              error:
+                "Research center cannot be deleted while it still has linked projects.",
+              details: {
+                linkedProjects: linkedProjects.length,
+              },
+            });
+          }
+
+          const removableMembers = (members || []).filter(
+            (member) =>
+              String(member?.state || "active").toLowerCase() !== "deleted" &&
+              String(member?.name || "").trim(),
+          );
+
+          for (const member of removableMembers) {
+            await removeUserFromOrganization({
+              orgId: id,
+              username: String(member.name || "").trim(),
+            });
+          }
+
+          await query(
+            `
+            UPDATE users
+            SET
+              ckan_org_id = NULL,
+              updated_at = NOW()
+            WHERE COALESCE(ckan_org_id, '') = $1
+            `,
+            [id],
+          );
+
+          await deleteOrganization(id);
+          return res.json({ data: { id, deleted: true, type } });
+        }
+
+        return res.status(400).json({
+          error: "Unsupported reference delete type.",
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Reference delete failed."),
+        });
+      }
     },
   );
 }
