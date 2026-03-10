@@ -25,7 +25,7 @@ cd arms-v2
 
 No manual copy/paste needed for first run.
 
-`scripts/bootstrap-dev.ps1` will:
+`./scripts/bootstrap-dev.ps1` will:
 
 - create `backend/.env` from `backend/.env.example` when missing
 - create `ckan-docker/.env` from `ckan-docker/.env.example` when missing
