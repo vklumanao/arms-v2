@@ -155,8 +155,14 @@ export async function createApiTokenForUser(username) {
  * Updates CKAN user password.
  */
 export async function updateCkanUserPassword(username, password) {
+  const existing = await getUserByName(username);
+  if (!existing?.name) {
+    throw new Error("CKAN user was not found for password update.");
+  }
   await ckanAction("user_update", {
-    id: username,
+    id: existing.name,
+    email: existing.email,
+    fullname: existing.fullname || existing.display_name || existing.name,
     password,
   });
 }
