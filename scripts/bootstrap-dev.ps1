@@ -6,10 +6,12 @@ $ErrorActionPreference = "Continue"
 $PSNativeCommandUseErrorActionPreference = $false
 
 function Write-Step($message) {
+  # Emit a consistent prefix for bootstrap progress logs.
   Write-Host "[bootstrap-dev] $message"
 }
 
 function New-HexSecret([int]$bytes) {
+  # Generate a cryptographically secure hex string for env secrets.
   $buffer = New-Object byte[] $bytes
   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
   try {
@@ -21,6 +23,7 @@ function New-HexSecret([int]$bytes) {
 }
 
 function New-Password([int]$bytes = 24) {
+  # Generate a random base64 password and strip trailing padding.
   $buffer = New-Object byte[] $bytes
   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
   try {
@@ -32,6 +35,7 @@ function New-Password([int]$bytes = 24) {
 }
 
 function Ensure-FileFromExample($targetPath, $examplePath) {
+  # Seed a missing env file from its example template.
   if (-not (Test-Path $targetPath)) {
     Copy-Item $examplePath $targetPath
     Write-Step "Created $targetPath from example."
@@ -39,6 +43,7 @@ function Ensure-FileFromExample($targetPath, $examplePath) {
 }
 
 function Get-EnvValue($path, $key) {
+  # Read a single KEY=value entry from an env file.
   if (-not (Test-Path $path)) { return $null }
   $line = Get-Content $path | Where-Object { $_ -match "^$([regex]::Escape($key))=" } | Select-Object -First 1
   if (-not $line) { return $null }
@@ -46,6 +51,7 @@ function Get-EnvValue($path, $key) {
 }
 
 function Set-EnvValue($path, $key, $value) {
+  # Upsert a KEY=value entry while preserving the rest of the file.
   $safeValue = [string]$value
   $content = @()
   if (Test-Path $path) {
@@ -74,6 +80,7 @@ function Set-EnvValue($path, $key, $value) {
 }
 
 function Is-MissingOrPlaceholder($value, $placeholders) {
+  # Treat blank values and known placeholder tokens as missing config.
   if ([string]::IsNullOrWhiteSpace($value)) { return $true }
   $trimmed = $value.Trim()
   foreach ($candidate in $placeholders) {
@@ -83,6 +90,7 @@ function Is-MissingOrPlaceholder($value, $placeholders) {
 }
 
 function Compose-Args($repoRoot) {
+  # Reuse the same compose file set for every Docker operation.
   return @(
     "-f", (Join-Path $repoRoot "ckan-docker/docker-compose.yml"),
     "-f", (Join-Path $repoRoot "ckan-docker/docker-compose.arms.dev.yml")
@@ -90,6 +98,7 @@ function Compose-Args($repoRoot) {
 }
 
 function Invoke-Compose($repoRoot, [string[]]$composeCommandArgs) {
+  # Run docker compose and fail fast when the command fails.
   $composeArgs = Compose-Args $repoRoot
   & docker compose @composeArgs @composeCommandArgs
   if ($LASTEXITCODE -ne 0) {
@@ -98,6 +107,7 @@ function Invoke-Compose($repoRoot, [string[]]$composeCommandArgs) {
 }
 
 function Get-ServiceContainerId($repoRoot, $service) {
+  # Resolve the current container ID for a compose service.
   $composeArgs = Compose-Args $repoRoot
   $id = & docker compose @composeArgs ps -q $service
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($id)) {
@@ -107,6 +117,7 @@ function Get-ServiceContainerId($repoRoot, $service) {
 }
 
 function Wait-ForServiceHealthy($repoRoot, $service, [int]$timeoutSeconds = 600) {
+  # Poll Docker health state until the target service is ready.
   Write-Step "Waiting for '$service' to become healthy..."
   $start = Get-Date
   while (((Get-Date) - $start).TotalSeconds -lt $timeoutSeconds) {
@@ -124,6 +135,7 @@ function Wait-ForServiceHealthy($repoRoot, $service, [int]$timeoutSeconds = 600)
 }
 
 function Invoke-CkanCli($repoRoot, $arguments, [switch]$IgnoreFailure) {
+  # Run CKAN CLI commands inside the ckan container.
   $composeArgs = Compose-Args $repoRoot
   & docker compose @composeArgs exec -T ckan ckan -c /srv/app/ckan.ini @arguments
   if ($LASTEXITCODE -ne 0 -and -not $IgnoreFailure) {
@@ -133,6 +145,7 @@ function Invoke-CkanCli($repoRoot, $arguments, [switch]$IgnoreFailure) {
 }
 
 function Ensure-CkanUser($repoRoot, $username, $email, $password, $fullName) {
+  # Create the CKAN user if it does not already exist.
   $composeArgs = Compose-Args $repoRoot
   $showOutput = & docker compose @composeArgs exec -T ckan ckan -c /srv/app/ckan.ini user show $username 2>&1
   $showText = ($showOutput -join "`n")
@@ -172,6 +185,7 @@ function Ensure-CkanUser($repoRoot, $username, $email, $password, $fullName) {
 }
 
 function Ensure-CkanSysadmin($repoRoot, $username) {
+  # Ensure the target CKAN user has sysadmin privileges.
   $exitCode = Invoke-CkanCli $repoRoot @("sysadmin", "add", $username) -IgnoreFailure
   if ($exitCode -eq 0) {
     Write-Step "CKAN user '$username' ensured as sysadmin."
@@ -181,6 +195,7 @@ function Ensure-CkanSysadmin($repoRoot, $username) {
 }
 
 function Get-CkanUserId($repoRoot, $username) {
+  # Parse the CKAN user UUID from CLI output.
   $composeArgs = Compose-Args $repoRoot
   $output = & docker compose @composeArgs exec -T ckan ckan -c /srv/app/ckan.ini user show $username
   if ($LASTEXITCODE -ne 0) {
@@ -195,6 +210,7 @@ function Get-CkanUserId($repoRoot, $username) {
 }
 
 function Create-CkanUserToken($repoRoot, $username, $tokenName) {
+  # Generate a CKAN API token and validate the returned JWT format.
   $composeArgs = Compose-Args $repoRoot
   $command = "ckan -c /srv/app/ckan.ini user token add $username $tokenName 2>/dev/null | tail -n 1 | tr -d '\t\r\n'"
   $tokenOutput = & docker compose @composeArgs exec -T ckan sh -lc $command
