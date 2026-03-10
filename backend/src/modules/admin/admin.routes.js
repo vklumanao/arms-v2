@@ -254,12 +254,22 @@ export function registerAdminRoutes(app, deps) {
   app.get("/api/admin/affiliates", authMiddleware, async (req, res) => {
     try {
       // Build affiliate rows from CKAN users enriched with org/group membership lookups.
-      const [centers, groups, ckanUsers] = await Promise.all([
-        listOrganizations(),
-        listGroups(),
-        listUsers(),
-      ]);
-      const allDatasets = await listAllDatasetsAcrossCkan();
+      // Keep this endpoint available even when one CKAN read path is flaky.
+      const [centersResult, groupsResult, usersResult, datasetsResult] =
+        await Promise.allSettled([
+          listOrganizations(),
+          listGroups(),
+          listUsers(),
+          listAllDatasetsAcrossCkan(),
+        ]);
+      const centers =
+        centersResult.status === "fulfilled" ? centersResult.value : [];
+      const groups =
+        groupsResult.status === "fulfilled" ? groupsResult.value : [];
+      const ckanUsers =
+        usersResult.status === "fulfilled" ? usersResult.value : [];
+      const allDatasets =
+        datasetsResult.status === "fulfilled" ? datasetsResult.value : [];
       const liveMetricsByCkanUserId = buildLiveMetricsByCkanUserId(
         ckanUsers,
         allDatasets,
@@ -907,11 +917,12 @@ export function registerAdminRoutes(app, deps) {
             previousAdminUsername = "";
           }
 
-          if (
+          const isSameAdmin =
             previousAdminUsername &&
-            previousAdminUsername.toLowerCase() !==
-              centerChiefUsername.toLowerCase()
-          ) {
+            previousAdminUsername.toLowerCase() ===
+              centerChiefUsername.toLowerCase();
+
+          if (previousAdminUsername && !isSameAdmin) {
             await setOrganizationMemberRole({
               orgId: targetOrgId,
               username: previousAdminUsername,
@@ -919,11 +930,13 @@ export function registerAdminRoutes(app, deps) {
             });
           }
 
-          await setOrganizationMemberRole({
-            orgId: targetOrgId,
-            username: centerChiefUsername,
-            role: "admin",
-          });
+          if (!isSameAdmin) {
+            await setOrganizationMemberRole({
+              orgId: targetOrgId,
+              username: centerChiefUsername,
+              role: "admin",
+            });
+          }
         }
 
         return res.json({
