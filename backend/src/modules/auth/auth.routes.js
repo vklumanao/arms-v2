@@ -44,6 +44,8 @@ export function registerAuthRoutes(app, deps) {
     hashPassword,
     toAuthPayload,
     signSession,
+    setSessionCookie,
+    clearSessionCookie,
     createApiTokenForUser,
     updateCkanUserPassword,
     createPasswordResetToken,
@@ -90,21 +92,28 @@ export function registerAuthRoutes(app, deps) {
         return res.status(409).json({ error: "Email is already registered." });
       }
 
-      const [orgs, groups] = await Promise.all([listOrganizations(), listGroups()]);
-      // Organization is optional during registration.
-      const selectedOrg = ckan_org_id ? byAnyId(orgs, ckan_org_id) : null;
-      if (ckan_org_id && !selectedOrg) {
-        return badRequest(res, "Selected CKAN organization was not found.");
-      }
-
+      let selectedOrg = null;
       let selectedGroup = null;
-      if (ckan_group_id) {
-        selectedGroup = byAnyId(groups, ckan_group_id);
-        if (!selectedGroup) {
-          return badRequest(
-            res,
-            "Selected CKAN group/department was not found.",
-          );
+      if (ckan_org_id || ckan_group_id) {
+        const [orgs, groups] = await Promise.all([
+          ckan_org_id ? listOrganizations() : Promise.resolve([]),
+          ckan_group_id ? listGroups() : Promise.resolve([]),
+        ]);
+
+        // Organization is optional during registration.
+        selectedOrg = ckan_org_id ? byAnyId(orgs, ckan_org_id) : null;
+        if (ckan_org_id && !selectedOrg) {
+          return badRequest(res, "Selected CKAN organization was not found.");
+        }
+
+        if (ckan_group_id) {
+          selectedGroup = byAnyId(groups, ckan_group_id);
+          if (!selectedGroup) {
+            return badRequest(
+              res,
+              "Selected CKAN group/department was not found.",
+            );
+          }
         }
       }
 
@@ -248,7 +257,8 @@ export function registerAuthRoutes(app, deps) {
         details: { email: user.email },
       });
 
-      return res.json(toAuthPayload(latest, token));
+      setSessionCookie(res, token);
+      return res.json(toAuthPayload(latest, null));
     } catch (error) {
       return res
         .status(500)
@@ -267,6 +277,7 @@ export function registerAuthRoutes(app, deps) {
       eventType: "auth.logout",
       details: { email: req.user.email },
     });
+    clearSessionCookie(res);
     return res.json({ ok: true });
   });
 
@@ -381,8 +392,8 @@ export function registerAuthRoutes(app, deps) {
       });
 
       const payload = { ok: true };
-      // Non-production convenience mode exposes token for local/test workflows.
-      if (config.nodeEnv !== "production" && config.exposeResetTokenInResponse) {
+      // Only expose reset tokens in explicit local development debug mode.
+      if (config.nodeEnv === "development" && config.exposeResetTokenInResponse) {
         payload.reset_token = token;
       }
 
