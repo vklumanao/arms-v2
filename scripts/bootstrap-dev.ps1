@@ -354,4 +354,4 @@ Invoke-Compose $repoRoot @("up", "-d", "--force-recreate", "backend")
 
 Write-Step "Bootstrap complete."
 Write-Step "ARMS bootstrap admin email: $bootstrapAdminEmail"
-Write-Step "ARMS bootstrap admin password (stored in backend/.env): $bootstrapAdminPassword"
+Write-Step "ARMS bootstrap admin password stored in backend/.env"
