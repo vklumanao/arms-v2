@@ -134,10 +134,16 @@ function Invoke-CkanCli($repoRoot, $arguments, [switch]$IgnoreFailure) {
 
 function Ensure-CkanUser($repoRoot, $username, $email, $password, $fullName) {
   $composeArgs = Compose-Args $repoRoot
-  $null = & docker compose @composeArgs exec -T ckan ckan -c /srv/app/ckan.ini user show $username 2>&1
+  $showOutput = & docker compose @composeArgs exec -T ckan ckan -c /srv/app/ckan.ini user show $username 2>&1
+  $showText = ($showOutput -join "`n")
   if ($LASTEXITCODE -eq 0) {
-    Write-Step "CKAN user '$username' already exists."
-    return
+    if ($showText -match "(?i)User:\s*None" -or $showText -match "(?i)not found") {
+      # CKAN CLI can return exit code 0 with "User: None".
+      Write-Step "CKAN user '$username' not found (detected from output)."
+    } else {
+      Write-Step "CKAN user '$username' already exists."
+      return
+    }
   }
 
   Write-Step "Creating CKAN user '$username'."
@@ -191,11 +197,15 @@ function Get-CkanUserId($repoRoot, $username) {
 function Create-CkanUserToken($repoRoot, $username, $tokenName) {
   $composeArgs = Compose-Args $repoRoot
   $command = "ckan -c /srv/app/ckan.ini user token add $username $tokenName | tail -n 1 | tr -d '\t\r\n'"
-  $token = & docker compose @composeArgs exec -T ckan sh -lc $command
+  $tokenOutput = & docker compose @composeArgs exec -T ckan sh -lc $command 2>&1
+  $outputText = ($tokenOutput -join "`n")
   if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create CKAN token for '$username'."
+    throw "Failed to create CKAN token for '$username'.`n$outputText"
   }
-  $trimmedToken = ($token -join "").Trim()
+  if ($outputText -match "(?i)user not found|not authorized|aborted") {
+    throw "Failed to create CKAN token for '$username'.`n$outputText"
+  }
+  $trimmedToken = ($tokenOutput -join "").Trim()
   if ([string]::IsNullOrWhiteSpace($trimmedToken)) {
     throw "CKAN token generation returned empty token."
   }

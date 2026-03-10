@@ -9,14 +9,16 @@ This guide sets up the full dev stack on a new machine:
 
 ## 1) Prerequisites
 
-- Install Docker Desktop
+- Install Docker Desktop (Linux containers mode)
+- Enable hardware virtualization in BIOS/UEFI (Intel VT-x / AMD-V)
+- Windows features: WSL2 + Virtual Machine Platform
 - Install Git
 
 ## 2) Clone repository
 
 ```bash
 git clone <your-repo-url>
-cd arms-v3
+cd arms-v2
 ```
 
 ## 3) Prepare environment files
@@ -42,7 +44,7 @@ No manual copy/paste needed for first run.
 
 - Frontend: `http://127.0.0.1:5173`
 - Backend API: `http://127.0.0.1:4010/api`
-- CKAN (HTTPS): `https://127.0.0.1:9443` (or your configured SSL port)
+- CKAN (HTTPS): `https://127.0.0.1:8443` (or your configured SSL port)
 
 ## 6) Stop services
 
@@ -87,9 +89,21 @@ Use this URL for frontend live reload:
 ## Notes
 
 - `backend/.env` is loaded automatically by `backend` service via compose `env_file`.
+- If `backend/.env` changes, recreate the backend container to reload env:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml up -d --force-recreate backend
+```
 - Backend database for Docker runs in `arms-db` and is separate from CKAN DB.
 - Re-run bootstrap with token rotation:
 
 ```powershell
 .\scripts\bootstrap-dev.ps1 -RotateToken
 ```
+
+## Troubleshooting
+
+- Docker Desktop says virtualization not detected:
+  enable virtualization in BIOS/UEFI and ensure WSL2/Virtual Machine Platform are on.
+- CKAN token generation fails or `CKAN_API_KEY` stays `CHANGE_ME`:
+  check `ckan-docker/.env` for placeholder values, fix them, then rerun bootstrap.
