@@ -12,6 +12,23 @@ export async function listGroups() {
 }
 
 /**
+ * Loads a single CKAN group by id/name.
+ */
+export async function getGroup(groupId) {
+  const id = String(groupId || "").trim();
+  if (!id) return null;
+  return ckanAction("group_show", {
+    id,
+    include_users: false,
+    include_groups: false,
+    include_tags: false,
+    include_extras: true,
+    include_followers: false,
+    include_datasets: false,
+  });
+}
+
+/**
  * Lists users who are members of a CKAN group.
  *
  * Edge case:
@@ -54,4 +71,43 @@ export async function removeUserFromGroup({ groupId, username }) {
     id: groupId,
     username,
   });
+}
+
+/**
+ * Creates a CKAN group.
+ */
+export async function createGroup(payload) {
+  return ckanAction("group_create", payload || {});
+}
+
+/**
+ * Deletes a CKAN group by id/name.
+ *
+ * Edge case:
+ * - No-op when id is empty.
+ */
+export async function deleteGroup(groupId) {
+  const id = String(groupId || "").trim();
+  if (!id) return;
+  await ckanAction("group_delete", { id });
+}
+
+/**
+ * Updates group title/extras metadata.
+ */
+export async function updateGroupMetadata({ groupId, title, extras = [] }) {
+  const id = String(groupId || "").trim();
+  if (!id) throw new Error("Group id is required.");
+
+  const payload = {
+    id,
+    title: String(title || "").trim() || id,
+    extras: Array.isArray(extras) ? extras : [],
+  };
+
+  try {
+    return await ckanAction("group_patch", payload);
+  } catch {
+    return ckanAction("group_update", payload);
+  }
 }
