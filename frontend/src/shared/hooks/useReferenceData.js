@@ -1,6 +1,5 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchReferenceData as fetchReferenceDataApi } from "@/shared/api/referenceDataApi";
-import { getAuthToken } from "@/shared/api/httpClient";
 
 const referenceCache = new Map();
 const inflightPromise = new Map();
@@ -28,8 +27,7 @@ async function fetchReferenceData(options = {}) {
 
 export function useReferenceData(options = {}) {
   const orgId = String(options?.orgId || "").trim();
-  const authToken = getAuthToken();
-  const cacheKey = `${authToken ? `auth:${authToken}` : "anon"}|org:${orgId || "-"}`;
+  const cacheKey = `org:${orgId || "-"}`;
   const cached = referenceCache.get(cacheKey) || null;
 
   const [centers, setCenters] = useState(cached?.centers || []);
@@ -83,4 +81,3 @@ export function useReferenceData(options = {}) {
 
   return { centers, agendas, departments, proponents, loading, error };
 }
-
