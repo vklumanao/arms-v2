@@ -113,7 +113,7 @@ export async function ensureDefaultAdmin() {
   const password_hash = await bcrypt.hash(config.defaultAdminPassword, 10);
   await createUser({
     id: crypto.randomUUID(),
-    full_name: "ARMS Admin",
+    full_name: config.defaultAdminName || "ARMS Super Admin",
     email: config.defaultAdminEmail,
     password_hash,
     role: "admin",
