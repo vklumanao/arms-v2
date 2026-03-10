@@ -14,6 +14,7 @@ import {
   Building2,
   ChartNoAxesColumn,
   Database,
+  FolderTree,
   FolderOpen,
   Menu,
   Settings,
@@ -129,7 +130,7 @@ export default function AppShell() {
       links.push({
         to: "/admin/departments",
         label: "Departments",
-        icon: Building2,
+        icon: FolderTree,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
       links.push({
