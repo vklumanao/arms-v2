@@ -73,11 +73,6 @@ import { registerSubmissionsRoutes } from "./modules/submissions/submissions.rou
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
 
-if (!config.ckanVerifyTls) {
-  // Local/dev deployments may run CKAN behind self-signed certs.
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
-
 // Startup flow:
 // 1) Validate required environment configuration.
 // 2) Ensure schema is up to date.
@@ -143,8 +138,48 @@ function signSession(user) {
   );
 }
 
+function parseCookies(headerValue) {
+  const pairs = String(headerValue || "")
+    .split(";")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  const cookies = {};
+  for (const pair of pairs) {
+    const [rawName, ...rest] = pair.split("=");
+    const name = String(rawName || "").trim();
+    if (!name) continue;
+    cookies[name] = decodeURIComponent(rest.join("=") || "");
+  }
+  return cookies;
+}
+
+function buildSessionCookie(value, maxAgeSeconds = null) {
+  const parts = [
+    `${config.authCookieName}=${encodeURIComponent(String(value || ""))}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (config.authCookieSecure) {
+    parts.push("Secure");
+  }
+  if (Number.isFinite(maxAgeSeconds)) {
+    parts.push(`Max-Age=${Math.max(0, Math.trunc(maxAgeSeconds))}`);
+  }
+  return parts.join("; ");
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader("Set-Cookie", buildSessionCookie(token));
+}
+
+function clearSessionCookie(res) {
+  res.setHeader("Set-Cookie", buildSessionCookie("", 0));
+}
+
 /**
- * Authenticates requests using `Authorization: Bearer <jwt>`.
+ * Authenticates requests using either bearer tokens or the session cookie.
  *
  * System flow:
  * - Validate bearer token format.
@@ -157,9 +192,12 @@ function signSession(user) {
  */
 async function authMiddleware(req, res, next) {
   const header = String(req.headers.authorization || "");
-  if (!header.startsWith("Bearer ")) return unauthorized(res);
-
-  const token = header.slice("Bearer ".length).trim();
+  const bearerToken = header.startsWith("Bearer ")
+    ? header.slice("Bearer ".length).trim()
+    : "";
+  const cookieToken =
+    parseCookies(req.headers.cookie || "")[config.authCookieName] || "";
+  const token = bearerToken || cookieToken;
   if (!token) return unauthorized(res);
 
   try {
@@ -501,6 +539,8 @@ registerAuthRoutes(app, {
   hashPassword,
   toAuthPayload,
   signSession,
+  setSessionCookie,
+  clearSessionCookie,
   createApiTokenForUser,
   updateCkanUserPassword,
   createPasswordResetToken,
