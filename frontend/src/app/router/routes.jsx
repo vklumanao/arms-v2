@@ -29,6 +29,7 @@ import {
 import {
   AdminAffiliatesModulePage,
   AdminControlsPage,
+  AdminDepartmentPage,
   AdminResearchCenterPage,
   AdminUsersPage,
 } from "@/features/admin";
@@ -132,6 +133,10 @@ export default function AppRoutes() {
             <Route
               path="/admin/research-center"
               element={withBoundary(<AdminResearchCenterPage />)}
+            />
+            <Route
+              path="/admin/departments"
+              element={withBoundary(<AdminDepartmentPage />)}
             />
           </Route>
         </Route>
