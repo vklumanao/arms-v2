@@ -57,3 +57,10 @@ export function buildCenterPayload(name) {
   };
 }
 
+export function buildDepartmentPayload(name) {
+  return {
+    name,
+    code: name.toUpperCase().replace(/\s+/g, "_"),
+  };
+}
+
