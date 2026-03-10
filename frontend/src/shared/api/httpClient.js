@@ -1,28 +1,12 @@
-﻿const API_BASE_URL =
+const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
 const UI_PREVIEW_MODE =
   String(import.meta.env.VITE_UI_PREVIEW_MODE || "false").toLowerCase() ===
   "true";
 
-const TOKEN_KEY = "arms_auth_token";
-
-export function getAuthToken() {
-  return window.localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAuthToken(token) {
-  if (token) {
-    window.localStorage.setItem(TOKEN_KEY, token);
-  }
-}
-
-export function clearAuthToken() {
-  window.localStorage.removeItem(TOKEN_KEY);
-}
-
 function mockAuthPayload() {
   return {
-    token: "ui-preview-token",
+    token: null,
     user: {
       id: "demo-user-1",
       email: "demo@arms.local",
@@ -227,8 +211,9 @@ function mockApiPayload(path, options = {}) {
       ],
     };
   }
-  if (cleanPath.includes("/submissions/expected-outputs/"))
+  if (cleanPath.includes("/submissions/expected-outputs/")) {
     return { data: null };
+  }
   if (
     cleanPath.includes("/submissions/") &&
     cleanPath.endsWith("/owner-edit")
@@ -344,15 +329,10 @@ export async function apiFetch(path, options = {}) {
     return mockApiPayload(path, options);
   }
 
-  const token = getAuthToken();
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
   };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -373,4 +353,3 @@ export async function apiFetch(path, options = {}) {
 
   return payload;
 }
-
