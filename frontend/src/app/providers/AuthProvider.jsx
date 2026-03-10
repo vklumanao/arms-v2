@@ -1,9 +1,4 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-  clearAuthToken,
-  getAuthToken,
-  setAuthToken,
-} from "@/shared/api/httpClient";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   fetchCurrentSession,
   loginWithPassword,
@@ -25,11 +20,10 @@ export function AuthProvider({ children }) {
   const applyAuthPayload = (payload) => {
     const nextUser = payload?.user || null;
     const nextProfile = payload?.profile || null;
-    const persistedToken = getAuthToken();
     const nextSession = nextUser
       ? {
           user: nextUser,
-          access_token: payload?.token || persistedToken || "cookie_session",
+          access_token: "cookie_session",
         }
       : null;
     setSession(nextSession);
@@ -40,17 +34,6 @@ export function AuthProvider({ children }) {
     let active = true;
 
     const bootstrap = async () => {
-      const persistedToken = getAuthToken();
-      if (!persistedToken) {
-        if (active) {
-          setSession(null);
-          setProfile(null);
-          setProfileLoading(false);
-          setLoading(false);
-        }
-        return;
-      }
-
       setProfileLoading(true);
       try {
         const payload = await fetchCurrentSession();
@@ -59,7 +42,6 @@ export function AuthProvider({ children }) {
         await syncRolePermissionMapFromServer();
       } catch {
         if (!active) return;
-        clearAuthToken();
         setSession(null);
         setProfile(null);
       } finally {
@@ -80,7 +62,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (profile?.is_active === false) {
       sessionStorage.setItem("arms_deactivated_notice", "1");
-      clearAuthToken();
       setSession(null);
       setProfile(null);
     }
@@ -105,11 +86,6 @@ export function AuthProvider({ children }) {
       },
       signIn: async ({ email, password }) => {
         const payload = await loginWithPassword({ email, password });
-        if (payload?.token) {
-          setAuthToken(payload.token);
-        } else {
-          clearAuthToken();
-        }
         applyAuthPayload(payload);
         await syncRolePermissionMapFromServer();
         return payload;
@@ -123,7 +99,6 @@ export function AuthProvider({ children }) {
         } catch {
           // Ignore logout API errors and clear local state regardless.
         } finally {
-          clearAuthToken();
           setSession(null);
           setProfile(null);
         }
@@ -148,4 +123,3 @@ export function useAuth() {
   }
   return context;
 }
-
