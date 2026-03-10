@@ -196,18 +196,17 @@ function Get-CkanUserId($repoRoot, $username) {
 
 function Create-CkanUserToken($repoRoot, $username, $tokenName) {
   $composeArgs = Compose-Args $repoRoot
-  $command = "ckan -c /srv/app/ckan.ini user token add $username $tokenName | tail -n 1 | tr -d '\t\r\n'"
-  $tokenOutput = & docker compose @composeArgs exec -T ckan sh -lc $command 2>&1
-  $outputText = ($tokenOutput -join "`n")
+  $command = "ckan -c /srv/app/ckan.ini user token add $username $tokenName 2>/dev/null | tail -n 1 | tr -d '\t\r\n'"
+  $tokenOutput = & docker compose @composeArgs exec -T ckan sh -lc $command
   if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create CKAN token for '$username'.`n$outputText"
+    throw "Failed to create CKAN token for '$username'."
   }
-  if ($outputText -match "(?i)user not found|not authorized|aborted") {
-    throw "Failed to create CKAN token for '$username'.`n$outputText"
-  }
-  $trimmedToken = ($tokenOutput -join "").Trim()
+  $trimmedToken = ($tokenOutput -join "`n").Trim()
   if ([string]::IsNullOrWhiteSpace($trimmedToken)) {
     throw "CKAN token generation returned empty token."
+  }
+  if ($trimmedToken -notmatch "^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$") {
+    throw "CKAN token generation returned unexpected output."
   }
   return $trimmedToken
 }
@@ -334,8 +333,8 @@ if ($LASTEXITCODE -ne 0) {
   throw "Failed to run backend bootstrap admin script."
 }
 
-Write-Step "Restarting backend to apply latest env values..."
-Invoke-Compose $repoRoot @("restart", "backend")
+Write-Step "Recreating backend to apply latest env values..."
+Invoke-Compose $repoRoot @("up", "-d", "--force-recreate", "backend")
 
 Write-Step "Bootstrap complete."
 Write-Step "ARMS bootstrap admin email: $bootstrapAdminEmail"

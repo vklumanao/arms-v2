@@ -46,6 +46,16 @@ No manual copy/paste needed for first run.
 - Backend API: `http://127.0.0.1:4010/api`
 - CKAN (HTTPS): `https://127.0.0.1:8443` (or your configured SSL port)
 
+## 5.1) What to expect (developer checklist)
+
+- First bootstrap can take 5–15 minutes depending on network and image caches.
+- CKAN container health can take 1–3 minutes after `db/solr/redis` are healthy.
+- `backend/.env` and `ckan-docker/.env` are created automatically from examples on first run.
+- `CKAN_API_KEY` is generated during bootstrap and written to `backend/.env`.
+- If `backend/.env` changes while containers are running, you must recreate the backend container.
+- Warnings from CKAN about `pkg_resources` are expected and can be ignored in dev.
+- If Docker Desktop reports virtualization missing, you must enable it in BIOS/UEFI.
+
 ## 6) Stop services
 
 From `ckan-docker/`:
@@ -94,6 +104,7 @@ Use this URL for frontend live reload:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.arms.dev.yml up -d --force-recreate backend
 ```
+
 - Backend database for Docker runs in `arms-db` and is separate from CKAN DB.
 - Re-run bootstrap with token rotation:
 
