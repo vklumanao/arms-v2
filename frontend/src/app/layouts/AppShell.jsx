@@ -122,7 +122,13 @@ export default function AppShell() {
     if (profile?.role === "admin") {
       links.push({
         to: "/admin/research-center",
-        label: "Research Center",
+        label: "Research Centers",
+        icon: Building2,
+        permission: PERMISSIONS.DASHBOARD_VIEW,
+      });
+      links.push({
+        to: "/admin/departments",
+        label: "Departments",
         icon: Building2,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
@@ -153,7 +159,7 @@ export default function AppShell() {
       },
       {
         to: "/awards-recognition",
-        label: "Awards and Recognition",
+        label: "Awards and Recognitions",
         icon: Award,
         permission: PERMISSIONS.AWARDS_RECOGNITION_VIEW,
       },
@@ -179,11 +185,7 @@ export default function AppShell() {
       ...workspaceResearchLinks,
       ...workspaceProfileLinks,
     ],
-    [
-      workspaceCoreLinks,
-      workspaceResearchLinks,
-      workspaceProfileLinks,
-    ],
+    [workspaceCoreLinks, workspaceResearchLinks, workspaceProfileLinks],
   );
 
   const isAcademicRole = ["student", "faculty"].includes(profile?.role || "");
@@ -434,10 +436,7 @@ export default function AppShell() {
                 {profile.full_name}
               </p>
               <p className="text-xs text-slate-600">{profile.role}</p>
-              <button
-                className="btn btn-outline mt-3 w-full"
-                onClick={signOut}
-              >
+              <button className="btn btn-outline mt-3 w-full" onClick={signOut}>
                 Logout
               </button>
             </div>
