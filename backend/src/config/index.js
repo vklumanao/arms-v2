@@ -76,6 +76,9 @@ export const config = {
   defaultAdminEmail: String(
     process.env.ARMS_DEFAULT_ADMIN_EMAIL || "admin@arms.local",
   ).toLowerCase(),
+  defaultAdminName: String(
+    process.env.ARMS_BOOTSTRAP_ADMIN_NAME || "ARMS Super Admin",
+  ).trim(),
   defaultAdminPassword: String(
     process.env.ARMS_DEFAULT_ADMIN_PASSWORD || "admin123",
   ),
