@@ -1,5 +1,6 @@
 import {
   buildCenterPayload,
+  buildDepartmentPayload,
   getRefMeta,
 } from "@/features/admin/utils";
 import { apiFetch } from "@/shared/api/httpClient";
@@ -25,9 +26,20 @@ export async function createReference({
   const { table } = getRefMeta(type);
   void table;
   const centerPayload = type === "center" ? buildCenterPayload(name) : null;
-  const payload = type === "center" ? centerPayload?.name : name;
+  const departmentPayload =
+    type === "department" ? buildDepartmentPayload(name) : null;
+  const payload =
+    type === "center"
+      ? centerPayload?.name
+      : type === "department"
+        ? departmentPayload?.name
+        : name;
   const finalCode =
-    type === "center" ? String(code || centerPayload?.code || "").trim() : "";
+    type === "center"
+      ? String(code || centerPayload?.code || "").trim()
+      : type === "department"
+        ? String(code || departmentPayload?.code || "").trim()
+        : "";
   try {
     await apiFetch(`/admin/controls/reference/${type}`, {
       method: "POST",
@@ -41,7 +53,9 @@ export async function createReference({
                 ? research_agendas
                 : [],
             }
-          : { name: payload },
+          : type === "department"
+            ? { name: payload, code: finalCode || null }
+            : { name: payload },
       ),
     });
     return { error: null };
@@ -60,10 +74,19 @@ export async function updateReference({
 }) {
   const { table } = getRefMeta(type);
   void table;
-  const payload = type === "center" ? buildCenterPayload(name).name : name;
+  const payload =
+    type === "center"
+      ? buildCenterPayload(name).name
+      : type === "department"
+        ? buildDepartmentPayload(name).name
+        : name;
   const centerCode =
     type === "center"
       ? String(code || buildCenterPayload(name).code || "").trim()
+      : "";
+  const departmentCode =
+    type === "department"
+      ? String(code || buildDepartmentPayload(name).code || "").trim()
       : "";
   try {
     const result = await apiFetch(`/admin/controls/reference/${type}/${id}`, {
@@ -78,7 +101,12 @@ export async function updateReference({
                 ? research_agendas
                 : [],
             }
-          : { name: payload },
+          : type === "department"
+            ? {
+                name: payload,
+                code: departmentCode,
+              }
+            : { name: payload },
       ),
     });
     return { data: result?.data || null, error: null };
