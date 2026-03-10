@@ -1,4 +1,5 @@
 import { config } from "../../../config/index.js";
+import { ckanRequest } from "./ckanRequest.js";
 
 /**
  * Builds a readable error message from CKAN error payload structure.
@@ -28,6 +29,14 @@ function ckanErrorMessage(payload, fallback) {
   return fallback;
 }
 
+function parseJsonSafely(text) {
+  try {
+    return JSON.parse(text || "null");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Executes a CKAN action endpoint request.
  *
@@ -41,8 +50,7 @@ function ckanErrorMessage(payload, fallback) {
  * - Uses `config.ckanApiKey` for Authorization header.
  */
 export async function ckanAction(action, body = {}) {
-  const url = `${config.ckanBaseUrl}/api/3/action/${action}`;
-  const response = await fetch(url, {
+  const response = await ckanRequest(`/api/3/action/${action}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -51,8 +59,8 @@ export async function ckanAction(action, body = {}) {
     body: JSON.stringify(body),
   });
 
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || !payload?.success) {
+  const payload = parseJsonSafely(response.bodyText);
+  if (response.status < 200 || response.status >= 300 || !payload?.success) {
     const message = ckanErrorMessage(payload, `CKAN action failed: ${action}`);
     const error = new Error(message);
     error.status = response.status;
@@ -69,8 +77,7 @@ export async function ckanAction(action, body = {}) {
  * Used for APIs such as `resource_create` when uploading binary files.
  */
 export async function ckanMultipartAction(action, formData) {
-  const url = `${config.ckanBaseUrl}/api/3/action/${action}`;
-  const response = await fetch(url, {
+  const response = await ckanRequest(`/api/3/action/${action}`, {
     method: "POST",
     headers: {
       Authorization: config.ckanApiKey,
@@ -78,8 +85,8 @@ export async function ckanMultipartAction(action, formData) {
     body: formData,
   });
 
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || !payload?.success) {
+  const payload = parseJsonSafely(response.bodyText);
+  if (response.status < 200 || response.status >= 300 || !payload?.success) {
     const message = ckanErrorMessage(payload, `CKAN action failed: ${action}`);
     const error = new Error(message);
     error.status = response.status;
