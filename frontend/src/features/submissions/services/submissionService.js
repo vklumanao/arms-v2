@@ -1,4 +1,4 @@
-﻿import { apiFetch, getAuthToken } from "@/shared/api/httpClient";
+import { apiFetch } from "@/shared/api/httpClient";
 
 const localBlobUrlByPath = new Map();
 const API_BASE_URL =
@@ -192,17 +192,11 @@ export async function uploadExpectedOutputFileToStorage({ storagePath, file }) {
 
     const formData = new FormData();
     formData.append("file", file);
-    const token = getAuthToken();
     const response = await fetch(
       `${API_BASE_URL}/submissions/expected-outputs/${outputId}/upload`,
       {
         method: "POST",
         credentials: "include",
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : {},
         body: formData,
       },
     );
@@ -248,4 +242,3 @@ export async function copyExpectedOutputFileInStorage({ fromPath, toPath }) {
   localBlobUrlByPath.set(toPath, source);
   return { data: { path: toPath }, error: null };
 }
-
