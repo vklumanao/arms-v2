@@ -77,7 +77,7 @@ services:
       - dbnet
       - webnet
     ports:
-      - "${POSTGRES_PORT_HOST}:5432"
+      - "127.0.0.1:${POSTGRES_PORT_HOST}:5432"
     environment:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
