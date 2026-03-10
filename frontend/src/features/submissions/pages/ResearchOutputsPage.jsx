@@ -70,6 +70,7 @@ export default function ResearchOutputsPage() {
   const [showAddOutputModal, setShowAddOutputModal] = useState(false);
   const [projectOptions, setProjectOptions] = useState([]);
   const [addingOutput, setAddingOutput] = useState(false);
+  const [exportingType, setExportingType] = useState("");
   const [addOutputForm, setAddOutputForm] = useState({
     project_id: "",
     output_type: "",
@@ -387,6 +388,147 @@ export default function ResearchOutputsPage() {
       unitIndex += 1;
     }
     return `${size >= 10 ? size.toFixed(0) : size.toFixed(1)} ${units[unitIndex]}`;
+  };
+
+  const triggerDownload = (filename, content, mimeType) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildExportRows = () =>
+    filteredRows.map((row, index) => ({
+      no: index + 1,
+      resource: row.title || "-",
+      project: row.subtitle || "-",
+      dataset: row.datasetName || "-",
+      researchCenter: row.organization || "-",
+      visibility: row.private ? "Private" : "Public",
+      state: row.state || "-",
+      updated: row.metadataModified
+        ? new Date(row.metadataModified).toLocaleString()
+        : "-",
+    }));
+
+  const exportAsCsv = () => {
+    if (!filteredRows.length) return;
+    setExportingType("csv");
+    try {
+      const headers = [
+        "No.",
+        "Resource/File",
+        "Project",
+        "Dataset",
+        "Research Center",
+        "Visibility",
+        "State",
+        "Updated",
+      ];
+      const lines = buildExportRows().map((row) =>
+        [
+          row.no,
+          row.resource,
+          row.project,
+          row.dataset,
+          row.researchCenter,
+          row.visibility,
+          row.state,
+          row.updated,
+        ]
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
+      );
+      const csv = [headers.join(","), ...lines].join("\n");
+      triggerDownload(
+        `research-outputs-${new Date().toISOString().slice(0, 10)}.csv`,
+        csv,
+        "text/csv;charset=utf-8;",
+      );
+    } finally {
+      setExportingType("");
+    }
+  };
+
+  const exportAsPdf = () => {
+    if (!filteredRows.length) return;
+    setExportingType("pdf");
+    try {
+      const timestamp = new Date().toLocaleString();
+      const rowsForExport = buildExportRows();
+      const rowsHtml = rowsForExport
+        .map(
+          (row) => `
+            <tr>
+              <td>${row.no}</td>
+              <td>${row.resource}</td>
+              <td>${row.project}</td>
+              <td>${row.dataset}</td>
+              <td>${row.researchCenter}</td>
+              <td>${row.visibility}</td>
+              <td>${row.state}</td>
+              <td>${row.updated}</td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      const printWindow = window.open("", "_blank", "width=1200,height=800");
+      if (!printWindow) {
+        toast.error(
+          "Export failed",
+          "Unable to open print window for PDF export.",
+        );
+        return;
+      }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>research-output-records-filtered</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+              h1 { margin: 0 0 6px; font-size: 20px; }
+              p { margin: 0 0 16px; color: #475569; font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+              th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
+              th { background: #f8fafc; }
+            </style>
+          </head>
+          <body>
+            <h1>Research Output Records Report</h1>
+            <p>Generated: ${timestamp} | Scope: filtered | Rows: ${rowsForExport.length}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Resource/File</th>
+                  <th>Project</th>
+                  <th>Dataset</th>
+                  <th>Research Center</th>
+                  <th>Visibility</th>
+                  <th>State</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml || '<tr><td colspan="8">No records found.</td></tr>'}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    } finally {
+      setExportingType("");
+    }
   };
 
   const handleToggleVisibility = async (row) => {
@@ -813,6 +955,22 @@ export default function ResearchOutputsPage() {
                   onClick={openAddOutputModal}
                 >
                   Add Output
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsCsv}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsPdf}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                 </button>
               </div>
             </div>
