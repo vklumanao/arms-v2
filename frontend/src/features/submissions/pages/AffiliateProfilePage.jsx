@@ -276,6 +276,7 @@ export default function AffiliateProfilePage() {
                   <span className="font-semibold text-slate-700">Google Scholar Link</span>
                   <input
                     className="control-input"
+                    type="url"
                     placeholder="https://scholar.google.com/..."
                     value={form.google_scholar_link || ""}
                     onChange={(e) =>
