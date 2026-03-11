@@ -43,6 +43,7 @@ export function registerAuthRoutes(app, deps) {
     verifyPassword,
     hashPassword,
     toAuthPayload,
+    resolveCenterChiefContext,
     signSession,
     setSessionCookie,
     clearSessionCookie,
@@ -258,7 +259,8 @@ export function registerAuthRoutes(app, deps) {
       });
 
       setSessionCookie(res, token);
-      return res.json(toAuthPayload(latest, null));
+      const authUser = await resolveCenterChiefContext(latest);
+      return res.json(toAuthPayload(authUser, null));
     } catch (error) {
       return res
         .status(500)
