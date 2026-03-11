@@ -14,6 +14,7 @@ export function registerCkanIntegrationRoutes(app, deps) {
     listUsers,
     listDatasets,
     listOrganizationAgendas,
+    findUserByEmail,
   } = deps;
 
   app.get("/api/integrations/ckan/organizations", async (req, res) => {
@@ -47,25 +48,35 @@ export function registerCkanIntegrationRoutes(app, deps) {
       const rows = orgId
         ? await listOrganizationMembers(orgId)
         : await listUsers();
-      return res.json({
-        data: (rows || [])
+      const data = await Promise.all(
+        (rows || [])
           // Hide deleted users from selector/list contexts.
           .filter(
             (row) => String(row?.state || "active").toLowerCase() !== "deleted",
           )
-          .map((row) => ({
-            id: row?.id || null,
-            name:
-              row?.fullname ||
-              row?.display_name ||
-              row?.name ||
-              row?.email ||
-              "CKAN User",
-            username: row?.name || null,
-            email: row?.email || null,
-            state: row?.state || "active",
-            capacity: row?.capacity || null,
-          })),
+          .map(async (row) => {
+            const email = String(row?.email || "")
+              .trim()
+              .toLowerCase();
+            const armsUser = email ? await findUserByEmail(email) : null;
+            return {
+              id: row?.id || null,
+              name:
+                row?.fullname ||
+                row?.display_name ||
+                row?.name ||
+                row?.email ||
+                "CKAN User",
+              username: row?.name || null,
+              email: row?.email || null,
+              state: row?.state || "active",
+              capacity: row?.capacity || null,
+              role: armsUser?.role || null,
+            };
+          }),
+      );
+      return res.json({
+        data,
       });
     } catch (error) {
       return res.status(500).json({
