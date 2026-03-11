@@ -61,6 +61,17 @@ export async function assignUserToGroupEditor({ groupId, username }) {
 }
 
 /**
+ * Grants CKAN group `admin` role to a user.
+ */
+export async function assignUserToGroupAdmin({ groupId, username }) {
+  await addMember("group_member_create", {
+    id: groupId,
+    username,
+    role: "admin",
+  });
+}
+
+/**
  * Removes a user from a CKAN group.
  *
  * Idempotency:
@@ -70,6 +81,30 @@ export async function removeUserFromGroup({ groupId, username }) {
   await removeMember("group_member_delete", {
     id: groupId,
     username,
+  });
+}
+
+/**
+ * Reassigns CKAN group membership role.
+ *
+ * System flow:
+ * - Remove existing membership first.
+ * - Recreate membership with target role.
+ */
+export async function setGroupMemberRole({ groupId, username, role }) {
+  const id = String(groupId || "").trim();
+  const user = String(username || "").trim();
+  const targetRole = String(role || "").trim().toLowerCase();
+  if (!id || !user || !targetRole) return;
+
+  await removeMember("group_member_delete", {
+    id,
+    username: user,
+  });
+  await addMember("group_member_create", {
+    id,
+    username: user,
+    role: targetRole,
   });
 }
 
