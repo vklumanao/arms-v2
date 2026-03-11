@@ -661,6 +661,7 @@ registerAdminRoutes(app, {
   updateGroupMetadata,
   updateOrganizationMetadata,
   setOrganizationMemberRole,
+  findUserByEmail,
 });
 
 registerAdminUserRoutes(app, {
