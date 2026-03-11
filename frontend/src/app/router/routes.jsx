@@ -79,14 +79,14 @@ export default function AppRoutes() {
               )}
             />
             <Route
-              path="/submit-affiliation"
+              path="/submit-project"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <ResearchProjectsHubPage />,
               )}
             />
             <Route
-              path="/submit-affiliation/submit"
+              path="/submit-project/submit"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <SubmitAffiliationPage />,
@@ -100,7 +100,7 @@ export default function AppRoutes() {
               )}
             />
             <Route
-              path="/awards-recognition"
+              path="/awards-recognitions"
               element={withPermission(
                 PERMISSIONS.AWARDS_RECOGNITION_VIEW,
                 <AwardsRecognitionPage />,
