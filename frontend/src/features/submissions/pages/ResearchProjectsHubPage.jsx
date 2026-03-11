@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 
 const PROJECTS_PAGE_SIZE = 10;
+const sanitizeDigits = (value) => String(value || "").replace(/\D+/g, "");
 
 export default function ResearchProjectsHubPage() {
   const { user, profile } = useAuth();
@@ -645,7 +646,9 @@ export default function ResearchProjectsHubPage() {
                 className="control-input"
                 placeholder="Year"
                 value={filters.year}
-                onChange={(e) => updateFilter("year", e.target.value)}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                onChange={(e) => updateFilter("year", sanitizeDigits(e.target.value))}
               />
               <div className="flex gap-2">
                 <select
