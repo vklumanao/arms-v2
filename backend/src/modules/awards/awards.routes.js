@@ -18,6 +18,9 @@ export function registerAwardsRoutes(app, deps) {
     getExtraByKey,
     getGroup,
     byAnyId,
+    listUsers,
+    listOrganizationMembers,
+    findUserByEmail,
   } = deps;
 
   const PAGE_LIMIT = 100;
@@ -253,6 +256,41 @@ export function registerAwardsRoutes(app, deps) {
     });
   }
 
+  async function listEligibleRecipientUsers(orgId = "") {
+    const rows = orgId ? await listOrganizationMembers(orgId) : await listUsers();
+    const users = Array.isArray(rows) ? rows : [];
+    const resolved = await Promise.all(
+      users.map(async (row) => {
+        const email = asTrimmedString(row?.email).toLowerCase();
+        if (!email) return null;
+        const armsUser = await findUserByEmail(email);
+        const role = asTrimmedString(armsUser?.role).toLowerCase();
+        if (!["student", "faculty"].includes(role)) return null;
+        return {
+          id: row?.id || null,
+          name:
+            row?.fullname ||
+            row?.display_name ||
+            row?.name ||
+            row?.email ||
+            "CKAN User",
+          username: row?.name || null,
+          email: row?.email || null,
+          role,
+          state: row?.state || "active",
+        };
+      }),
+    );
+
+    return resolved
+      .filter(
+        (row) =>
+          row &&
+          String(row?.state || "active").toLowerCase() !== "deleted",
+      )
+      .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+  }
+
   app.get("/api/awards", authMiddleware, async (req, res) => {
     try {
       const q = asTrimmedString(req.query?.q);
@@ -261,6 +299,18 @@ export function registerAwardsRoutes(app, deps) {
     } catch (error) {
       return res.status(500).json({
         error: String(error?.message || "Failed to load award records."),
+      });
+    }
+  });
+
+  app.get("/api/awards/recipient-options", authMiddleware, async (req, res) => {
+    try {
+      const orgId = asTrimmedString(req.query?.org_id);
+      const rows = await listEligibleRecipientUsers(orgId);
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load award recipients."),
       });
     }
   });
