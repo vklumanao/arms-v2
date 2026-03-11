@@ -63,6 +63,28 @@ export function registerAwardsRoutes(app, deps) {
     return [...base, { key, value }];
   }
 
+  function normalizeRecipientUsers(value) {
+    const list = Array.isArray(value) ? value : [];
+    return list
+      .map((item) => ({
+        id: asTrimmedString(item?.id),
+        name: asTrimmedString(item?.name),
+        username: asTrimmedString(item?.username),
+        email: asTrimmedString(item?.email),
+      }))
+      .filter((item) => item.id && item.name);
+  }
+
+  function parseRecipientUsers(extras) {
+    const raw = getExtra(extras, "recipient_users");
+    if (!raw) return [];
+    try {
+      return normalizeRecipientUsers(JSON.parse(raw));
+    } catch {
+      return [];
+    }
+  }
+
   function buildAwardExtras(payload, user, existingExtras = []) {
     let extras = [];
     extras = upsertExtra(extras, "record_type", "award");
@@ -98,6 +120,11 @@ export function registerAwardsRoutes(app, deps) {
     extras = upsertExtra(extras, "year_received", asTrimmedString(payload.year_received));
     extras = upsertExtra(extras, "level", asTrimmedString(payload.level));
     extras = upsertExtra(extras, "recipients", asTrimmedString(payload.recipients));
+    extras = upsertExtra(
+      extras,
+      "recipient_users",
+      JSON.stringify(normalizeRecipientUsers(payload.recipient_users)),
+    );
     extras = upsertExtra(extras, "supporting_movs", asTrimmedString(payload.supporting_movs));
     extras = upsertExtra(
       extras,
@@ -118,6 +145,7 @@ export function registerAwardsRoutes(app, deps) {
     const groups = Array.isArray(dataset?.groups) ? dataset.groups : [];
     const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
     const movResource = resources[0] || null;
+    const recipientUsers = parseRecipientUsers(extras);
     const departmentTitle =
       groups[0]?.title || groups[0]?.display_name || getExtra(extras, "program_department");
 
@@ -132,6 +160,7 @@ export function registerAwardsRoutes(app, deps) {
       year_received: getExtra(extras, "year_received"),
       level: getExtra(extras, "level"),
       recipients: getExtra(extras, "recipients"),
+      recipient_users: recipientUsers,
       supporting_movs: getExtra(extras, "supporting_movs"),
       notes: getExtra(extras, "notes") || dataset?.notes || "",
       research_center_id:
