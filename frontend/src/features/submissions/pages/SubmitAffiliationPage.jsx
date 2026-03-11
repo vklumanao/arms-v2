@@ -388,34 +388,47 @@ export default function SubmitAffiliationPage() {
         String(
           row.name || row.fullname || row.display_name || row.username || "",
         ).trim() || "CKAN User",
+      role: String(row.role || "").trim().toLowerCase(),
     }));
   }, [ckanUsers]);
+  const leadEligibleUserOptions = useMemo(
+    () =>
+      ckanUserOptions.filter((row) =>
+        ["student", "faculty"].includes(String(row.role || "").toLowerCase()),
+      ),
+    [ckanUserOptions],
+  );
+  const facultyEligibleUserOptions = useMemo(
+    () =>
+      ckanUserOptions.filter(
+        (row) => String(row.role || "").toLowerCase() === "faculty",
+      ),
+    [ckanUserOptions],
+  );
   const leadSuggestions = useMemo(() => {
     const keyword = leadSearch.trim().toLowerCase();
-    return ckanUserOptions
+    if (!keyword) return [];
+    return leadEligibleUserOptions
       .filter((ckanUser) =>
-        keyword
-          ? String(ckanUser.name || "")
-              .toLowerCase()
-              .includes(keyword)
-          : true,
+        String(ckanUser.name || "")
+          .toLowerCase()
+          .includes(keyword),
       )
       .filter((ckanUser) => !leadResearcherSelections.includes(ckanUser.name))
-      .slice(0, keyword ? 8 : 20);
-  }, [leadSearch, ckanUserOptions, leadResearcherSelections]);
+      .slice(0, 8);
+  }, [leadSearch, leadEligibleUserOptions, leadResearcherSelections]);
   const facultySuggestions = useMemo(() => {
     const keyword = facultySearch.trim().toLowerCase();
-    return ckanUserOptions
+    if (!keyword) return [];
+    return facultyEligibleUserOptions
       .filter((ckanUser) =>
-        keyword
-          ? String(ckanUser.name || "")
-              .toLowerCase()
-              .includes(keyword)
-          : true,
+        String(ckanUser.name || "")
+          .toLowerCase()
+          .includes(keyword),
       )
       .filter((ckanUser) => !facultyTeamSelections.includes(ckanUser.name))
-      .slice(0, keyword ? 8 : 20);
-  }, [facultySearch, ckanUserOptions, facultyTeamSelections]);
+      .slice(0, 8);
+  }, [facultySearch, facultyEligibleUserOptions, facultyTeamSelections]);
 
   useEffect(() => {
     if (step > highestUnlockedStep) {
@@ -1088,10 +1101,20 @@ export default function SubmitAffiliationPage() {
                         className="control-input"
                         placeholder="Type a CKAN user name"
                         value={leadSearch}
-                        onFocus={() => setLeadDropdownOpen(true)}
+                        onFocus={() =>
+                          setLeadDropdownOpen(Boolean(leadSearch.trim()))
+                        }
                         onChange={(e) => {
                           setLeadSearch(e.target.value);
-                          setLeadDropdownOpen(true);
+                          setLeadDropdownOpen(Boolean(e.target.value.trim()));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && leadSuggestions[0]) {
+                            e.preventDefault();
+                            setLeadResearcherSelection(leadSuggestions[0].name);
+                            setLeadSearch("");
+                            setLeadDropdownOpen(false);
+                          }
                         }}
                       />
                       {leadDropdownOpen && leadSuggestions.length > 0 ? (
@@ -1150,10 +1173,23 @@ export default function SubmitAffiliationPage() {
                         className="control-input"
                         placeholder="Type a CKAN user name"
                         value={facultySearch}
-                        onFocus={() => setFacultyDropdownOpen(true)}
+                        onFocus={() =>
+                          setFacultyDropdownOpen(Boolean(facultySearch.trim()))
+                        }
                         onChange={(e) => {
                           setFacultySearch(e.target.value);
-                          setFacultyDropdownOpen(true);
+                          setFacultyDropdownOpen(Boolean(e.target.value.trim()));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && facultySuggestions[0]) {
+                            e.preventDefault();
+                            addProponentSelection(
+                              "faculty_team",
+                              facultySuggestions[0].name,
+                            );
+                            setFacultySearch("");
+                            setFacultyDropdownOpen(false);
+                          }
                         }}
                       />
                       {facultyDropdownOpen && facultySuggestions.length > 0 ? (
