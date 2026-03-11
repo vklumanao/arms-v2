@@ -35,6 +35,7 @@ export function registerAdminRoutes(app, deps) {
     updateGroupMetadata,
     updateOrganizationMetadata,
     setOrganizationMemberRole,
+    findUserByEmail,
   } = deps;
 
   /**
@@ -522,22 +523,35 @@ export function registerAdminRoutes(app, deps) {
             name: row?.title || row?.display_name || row?.name || "-",
           })),
           proponents: [],
-          ckan_users: (ckanUsers || [])
-            .filter(
-              (row) => String(row?.state || "").toLowerCase() !== "deleted",
-            )
-            .map((row) => ({
-              id: row?.id || null,
-              name:
-                row?.name ||
-                row?.display_name ||
-                row?.fullname ||
-                row?.email ||
-                "CKAN User",
-              username: row?.name || null,
-              email: row?.email || null,
-              state: row?.state || "active",
-            })),
+          ckan_users: await Promise.all(
+            (ckanUsers || [])
+              .filter(
+                (row) => String(row?.state || "").toLowerCase() !== "deleted",
+              )
+              .map(async (row) => {
+                const email = String(row?.email || "")
+                  .trim()
+                  .toLowerCase();
+                const armsUser = email ? await findUserByEmail(email) : null;
+                const role = String(armsUser?.role || "")
+                  .trim()
+                  .toLowerCase();
+                if (role !== "faculty") return null;
+                return {
+                  id: row?.id || null,
+                  name:
+                    row?.fullname ||
+                    row?.display_name ||
+                    row?.name ||
+                    row?.email ||
+                    "CKAN User",
+                  username: row?.name || null,
+                  email: row?.email || null,
+                  state: row?.state || "active",
+                  role,
+                };
+              }),
+          ).then((rows) => rows.filter(Boolean)),
         });
       } catch (error) {
         return res.status(500).json({
@@ -572,27 +586,39 @@ export function registerAdminRoutes(app, deps) {
           });
         }
 
-        const [members, datasets] =
+        const [members, datasets, centerOrg] =
           type === "center"
             ? await Promise.all([
                 listOrganizationMembers(id),
                 listDatasets({ orgId: id, page: 1, limit: 1 }),
+                getOrganization(id),
               ])
             : await Promise.all([
                 listGroupMembers(id),
                 listAllDatasetsAcrossCkan(),
+                Promise.resolve(null),
               ]);
         const activeMembers = (members || []).filter(
           (member) =>
             String(member?.state || "active").toLowerCase() !== "deleted",
         );
-        const adminCount = activeMembers.filter(
+        const nonAdminMembers = activeMembers.filter(
           (member) =>
             String(member?.capacity || "")
               .trim()
-              .toLowerCase() === "admin",
-        ).length;
-        const editorCount = activeMembers.filter(
+              .toLowerCase() !== "admin",
+        );
+        const savedCenterChiefId =
+          type === "center" ? String(getExtraValue(centerOrg, "center_chief_id") || "").trim() : "";
+        const countedChief =
+          type === "center" && savedCenterChiefId
+            ? activeMembers.find(
+                (member) =>
+                  String(member?.id || "").trim() === savedCenterChiefId,
+              ) || null
+            : null;
+        const adminCount = countedChief ? 1 : 0;
+        const editorCount = nonAdminMembers.filter(
           (member) =>
             String(member?.capacity || "")
               .trim()
@@ -600,7 +626,7 @@ export function registerAdminRoutes(app, deps) {
         ).length;
         const memberCount = Math.max(
           0,
-          activeMembers.length - adminCount - editorCount,
+          nonAdminMembers.length - editorCount,
         );
 
         return res.json({
@@ -611,12 +637,12 @@ export function registerAdminRoutes(app, deps) {
                   const meta = extrasToMap(dataset?.extras);
                   return String(meta.department_id || "").trim() === id;
                 }).length,
-          profileCount: activeMembers.length,
+          profileCount: nonAdminMembers.length + adminCount,
           memberBreakdown: {
             adminCount,
             editorCount,
             memberCount,
-            totalCount: activeMembers.length,
+            totalCount: nonAdminMembers.length + adminCount,
           },
         });
       } catch (error) {
