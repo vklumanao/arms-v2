@@ -89,6 +89,18 @@ function Is-MissingOrPlaceholder($value, $placeholders) {
   return $false
 }
 
+function Get-ValidCkanUsername($value, $fallback) {
+  # CKAN usernames must be lowercase-safe identifiers.
+  $candidate = [string]$value
+  if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+    $candidate = $candidate.Trim().ToLower()
+    if ($candidate -match "^[a-z0-9_-]+$") {
+      return $candidate
+    }
+  }
+  return $fallback
+}
+
 function Compose-Args($repoRoot) {
   # Reuse the same compose file set for every Docker operation.
   return @(
@@ -276,9 +288,15 @@ if (Is-MissingOrPlaceholder $bootstrapAdminPassword @("CHANGE_ME")) {
 Set-EnvValue $backendEnvPath "ARMS_DEFAULT_ADMIN_EMAIL" $bootstrapAdminEmail
 Set-EnvValue $backendEnvPath "ARMS_DEFAULT_ADMIN_PASSWORD" $bootstrapAdminPassword
 
+$ckanSysadminUsername = Get-ValidCkanUsername (Get-EnvValue $ckanEnvPath "CKAN_SYSADMIN_NAME") "ckan_admin"
+Set-EnvValue $ckanEnvPath "CKAN_SYSADMIN_NAME" $ckanSysadminUsername
+
 $serviceUsername = Get-EnvValue $ckanEnvPath "CKAN_SERVICE_USERNAME"
 if ([string]::IsNullOrWhiteSpace($serviceUsername)) {
   $serviceUsername = "arms_service_bot"
+}
+$serviceUsername = Get-ValidCkanUsername $serviceUsername "arms_service_bot"
+if ((Get-EnvValue $ckanEnvPath "CKAN_SERVICE_USERNAME") -ne $serviceUsername) {
   Set-EnvValue $ckanEnvPath "CKAN_SERVICE_USERNAME" $serviceUsername
 }
 $serviceEmail = Get-EnvValue $ckanEnvPath "CKAN_SERVICE_EMAIL"
@@ -296,6 +314,9 @@ if (Is-MissingOrPlaceholder $servicePassword @("CHANGE_ME", "CHANGE_ME_STRONG"))
 $ckanAdminUsername = Get-EnvValue $ckanEnvPath "CKAN_BOOTSTRAP_ADMIN_USERNAME"
 if ([string]::IsNullOrWhiteSpace($ckanAdminUsername)) {
   $ckanAdminUsername = "arms_super_admin"
+}
+$ckanAdminUsername = Get-ValidCkanUsername $ckanAdminUsername "arms_super_admin"
+if ((Get-EnvValue $ckanEnvPath "CKAN_BOOTSTRAP_ADMIN_USERNAME") -ne $ckanAdminUsername) {
   Set-EnvValue $ckanEnvPath "CKAN_BOOTSTRAP_ADMIN_USERNAME" $ckanAdminUsername
 }
 $ckanAdminEmail = Get-EnvValue $ckanEnvPath "CKAN_BOOTSTRAP_ADMIN_EMAIL"
