@@ -406,7 +406,8 @@ export function registerAdminRoutes(app, deps) {
             created_at: user?.created || null,
             updated_at: user?.activity_streams_email_notifications || null,
           };
-        });
+        })
+        .filter((row) => row.role !== "admin");
 
       return res.json({
         rows,
