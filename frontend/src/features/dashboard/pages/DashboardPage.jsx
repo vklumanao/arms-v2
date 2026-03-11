@@ -418,7 +418,7 @@ export default function DashboardPage() {
           title="Quick Actions"
           bodyClassName="panel-body flex flex-wrap gap-2"
         >
-          <Link className="btn btn-primary" to="/submit-affiliation">
+          <Link className="btn btn-primary" to="/submit-project">
             Open Research Projects
           </Link>
           <Link className="btn btn-outline" to="/public-records">
