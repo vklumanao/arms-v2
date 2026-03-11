@@ -16,13 +16,7 @@ import {
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
-import {
-  Eye,
-  EyeOff,
-  FileText,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Eye, EyeOff, FileText, Search, SlidersHorizontal } from "lucide-react";
 
 const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
   "Software Applications",
@@ -918,7 +912,9 @@ export default function ResearchOutputsPage() {
 
                   <select
                     value={visibilityFilter}
-                    onChange={(event) => setVisibilityFilter(event.target.value)}
+                    onChange={(event) =>
+                      setVisibilityFilter(event.target.value)
+                    }
                     className="control-select"
                   >
                     <option value="all">Filter by visibility</option>
@@ -937,7 +933,8 @@ export default function ResearchOutputsPage() {
                   </div>
                 </div>
                 <p className="text-sm text-slate-600">
-                  Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+                  Showing{" "}
+                  <span className="font-semibold">{filteredRows.length}</span>{" "}
                   output(s).
                 </p>
               </div>
@@ -957,22 +954,26 @@ export default function ResearchOutputsPage() {
                 >
                   Add Output
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsCsv}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsPdf}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                </button>
+                {isAdmin ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={exportAsCsv}
+                      disabled={!filteredRows.length || Boolean(exportingType)}
+                    >
+                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={exportAsPdf}
+                      disabled={!filteredRows.length || Boolean(exportingType)}
+                    >
+                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                    </button>
+                  </>
+                ) : null}
               </div>
             </div>
             {filteredRows.length === 0 ? (
@@ -1017,21 +1018,25 @@ export default function ResearchOutputsPage() {
                             >
                               {row.private ? "Private" : "Public"}
                             </span>
-                            <button
-                              type="button"
-                              className="btn btn-outline"
-                              disabled={
-                                !row.datasetId ||
-                                Boolean(visibilitySavingByDataset[row.datasetId])
-                              }
-                              onClick={() => handleToggleVisibility(row)}
-                            >
-                              {visibilitySavingByDataset[row.datasetId]
-                                ? "Saving..."
-                                : row.private
-                                  ? "Make Public"
-                                  : "Make Private"}
-                            </button>
+                            {isAdmin ? (
+                              <button
+                                type="button"
+                                className="btn btn-outline"
+                                disabled={
+                                  !row.datasetId ||
+                                  Boolean(
+                                    visibilitySavingByDataset[row.datasetId],
+                                  )
+                                }
+                                onClick={() => handleToggleVisibility(row)}
+                              >
+                                {visibilitySavingByDataset[row.datasetId]
+                                  ? "Saving..."
+                                  : row.private
+                                    ? "Make Public"
+                                    : "Make Private"}
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                         <td>
@@ -1048,28 +1053,32 @@ export default function ResearchOutputsPage() {
                             >
                               View Details
                             </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline"
-                              disabled={Boolean(
-                                deletingByResource[row.resourceId],
-                              )}
-                              onClick={() => handleOpenEdit(row)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-danger"
-                              disabled={Boolean(
-                                deletingByResource[row.resourceId],
-                              )}
-                              onClick={() => setDeleteTarget(row)}
-                            >
-                              {deletingByResource[row.resourceId]
-                                ? "Deleting..."
-                                : "Delete"}
-                            </button>
+                            {isAdmin ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline"
+                                  disabled={Boolean(
+                                    deletingByResource[row.resourceId],
+                                  )}
+                                  onClick={() => handleOpenEdit(row)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-danger"
+                                  disabled={Boolean(
+                                    deletingByResource[row.resourceId],
+                                  )}
+                                  onClick={() => setDeleteTarget(row)}
+                                >
+                                  {deletingByResource[row.resourceId]
+                                    ? "Deleting..."
+                                    : "Delete"}
+                                </button>
+                              </>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
