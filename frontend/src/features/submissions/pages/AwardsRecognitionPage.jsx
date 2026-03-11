@@ -1,21 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
+import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
+  deleteAwardRecognitionRecord,
+  listAwardRecognitionRecords,
+} from "@/features/submissions/services";
+import {
   Award,
   Building2,
+  PencilLine,
   Search,
   SlidersHorizontal,
+  Trash2,
   Users,
 } from "lucide-react";
 
 const AWARDS_PAGE_SIZE = 10;
 
 export default function AwardsRecognitionPage() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const toast = useToast();
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
@@ -23,12 +31,16 @@ export default function AwardsRecognitionPage() {
     !isAdmin &&
     (!String(profile?.ckan_org_id || "").trim() ||
       !String(profile?.department || "").trim());
-  const rows = [];
+  const [rows, setRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [exportingType, setExportingType] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const levelOptions = useMemo(
     () =>
@@ -39,6 +51,36 @@ export default function AwardsRecognitionPage() {
       ).sort((a, b) => a.localeCompare(b)),
     [rows],
   );
+
+  const loadAwards = useCallback(() => {
+    setLoading(true);
+    setLoadError("");
+
+    return listAwardRecognitionRecords().then(({ data, error }) => {
+      if (error) {
+        setRows([]);
+        setLoadError(error.message || "Unable to load award records.");
+        toast.error(
+          "Unable to load award records",
+          error.message || "Please refresh the page.",
+        );
+      } else {
+        setRows(Array.isArray(data) ? data : []);
+      }
+      setLoading(false);
+    });
+  }, [toast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAwards().then(() => {
+      if (cancelled) return;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAwards]);
 
   const yearOptions = useMemo(
     () =>
@@ -128,6 +170,43 @@ export default function AwardsRecognitionPage() {
     setSearchTerm("");
     setLevelFilter("all");
     setYearFilter("all");
+  };
+
+  const openEdit = (row) => {
+    const recordId = String(row?.id || row?.ckan_dataset_id || "").trim();
+    if (!recordId) return;
+    navigate(`/awards-recognitions/add?edit=${encodeURIComponent(recordId)}`);
+  };
+
+  const confirmDelete = async () => {
+    const recordId = String(
+      deleteTarget?.id || deleteTarget?.ckan_dataset_id || "",
+    ).trim();
+    if (!recordId) return;
+
+    setDeleting(true);
+    const { error } = await deleteAwardRecognitionRecord(recordId);
+    if (error) {
+      toast.error(
+        "Unable to delete award record",
+        error.message || "Please try again.",
+      );
+      setDeleting(false);
+      return;
+    }
+
+    setRows((prev) =>
+      prev.filter(
+        (row) =>
+          String(row?.id || row?.ckan_dataset_id || "").trim() !== recordId,
+      ),
+    );
+    setDeleteTarget(null);
+    setDeleting(false);
+    toast.success(
+      "Award record deleted",
+      "The CKAN-backed award record was removed.",
+    );
   };
 
   const triggerDownload = (filename, content, mimeType) => {
@@ -417,9 +496,9 @@ export default function AwardsRecognitionPage() {
             Awards and Recognition Records ({filteredRows.length})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="btn btn-primary">
+            <Link to="/awards-recognitions/add" className="btn btn-primary">
               Add Awards/Recognitions
-            </button>
+            </Link>
             <button
               type="button"
               className="btn btn-outline"
@@ -441,8 +520,17 @@ export default function AwardsRecognitionPage() {
         {filteredRows.length === 0 ? (
           <div className="p-4">
             <EmptyState
-              title="No awards and recognition records found"
-              description="Try adjusting your filters once award records are available."
+              title={
+                loading
+                  ? "Loading award records..."
+                  : "No awards and recognition records found"
+              }
+              description={
+                loadError ||
+                (loading
+                  ? "Fetching CKAN-backed award records for this workspace."
+                  : "Try adjusting your filters once award records are available.")
+              }
             />
           </div>
         ) : (
@@ -459,6 +547,7 @@ export default function AwardsRecognitionPage() {
                   <th>Level</th>
                   <th>Recipient(s)</th>
                   <th>Supporting MOVs</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody className="text-slate-700">
@@ -472,7 +561,53 @@ export default function AwardsRecognitionPage() {
                     <td>{row.year_received || "-"}</td>
                     <td>{row.level || "-"}</td>
                     <td>{row.recipients || "-"}</td>
-                    <td>{row.supporting_movs || "-"}</td>
+                    <td>
+                      <div className="space-y-1">
+                        {row.supporting_movs ? (
+                          <a
+                            href={row.supporting_movs}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex text-sm font-medium text-sky-700 hover:text-sky-900"
+                          >
+                            Link / Reference
+                          </a>
+                        ) : null}
+                        {row.supporting_mov_file_path ? (
+                          <a
+                            href={row.supporting_mov_file_path}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
+                          >
+                            {row.supporting_mov_file_name || "Attached MOV file"}
+                          </a>
+                        ) : null}
+                        {!row.supporting_movs && !row.supporting_mov_file_path
+                          ? "-"
+                          : null}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={() => openEdit(row)}
+                        >
+                          <PencilLine size={14} />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={() => setDeleteTarget(row)}
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -485,6 +620,16 @@ export default function AwardsRecognitionPage() {
         page={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+      />
+
+      <ConfirmActionModal
+        open={Boolean(deleteTarget)}
+        title="Delete Award Record"
+        message={`Delete "${deleteTarget?.award_recognition || deleteTarget?.work_title || "this award record"}"? This will remove the CKAN dataset for this record.`}
+        confirmLabel="Delete Record"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => (deleting ? null : setDeleteTarget(null))}
       />
     </section>
   );
