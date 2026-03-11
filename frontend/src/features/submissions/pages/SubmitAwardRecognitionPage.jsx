@@ -7,12 +7,18 @@ import { useToast } from "@/app/providers/ToastProvider";
 import {
   createAwardRecognitionRecord,
   fetchAwardRecognitionRecord,
+  listAwardRecipientOptions,
   updateAwardRecognitionRecord,
   uploadAwardRecognitionMovFile,
 } from "@/features/submissions/services";
 
 const LEVEL_OPTIONS = ["Local", "Regional", "National", "International"];
 const MAX_MOV_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const normalizeNameList = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 export default function SubmitAwardRecognitionPage() {
   const navigate = useNavigate();
@@ -33,13 +39,17 @@ export default function SubmitAwardRecognitionPage() {
   const [error, setError] = useState("");
   const [movFile, setMovFile] = useState(null);
   const [existingMov, setExistingMov] = useState(null);
+  const [recipientOptions, setRecipientOptions] = useState([]);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
+  const [recipientSearch, setRecipientSearch] = useState("");
   const [form, setForm] = useState({
     work_title: "",
     award_recognition: "",
     awarding_body: "",
     year_received: String(new Date().getFullYear()),
     level: "",
-    recipients: String(profile?.full_name || user?.email || "").trim(),
+    recipients: "",
+    recipient_users: [],
     supporting_movs: "",
     notes: "",
     research_center_id: String(profile?.ckan_org_id || "").trim(),
@@ -76,15 +86,112 @@ export default function SubmitAwardRecognitionPage() {
     centers.find((item) => item.id === form.research_center_id)?.name || "";
   const departmentName =
     departments.find((item) => item.id === effectiveDepartmentId)?.name || "";
+  const filteredRecipientOptions = useMemo(() => {
+    const query = String(recipientSearch || "").trim().toLowerCase();
+    if (!query) return recipientOptions;
+    return recipientOptions.filter((item) => {
+      const haystack = [
+        item?.name,
+        item?.username,
+        item?.email,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return haystack.includes(query);
+    });
+  }, [recipientOptions, recipientSearch]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+  const updateRecipientUsers = (updater) => {
+    setForm((prev) => {
+      const nextRecipientUsers =
+        typeof updater === "function" ? updater(prev.recipient_users || []) : updater;
+      return {
+        ...prev,
+        recipient_users: nextRecipientUsers,
+        recipients: nextRecipientUsers.map((item) => item.name).join(", "),
+      };
+    });
   };
   const sanitizeDigits = (value, maxLength = null) => {
     const digitsOnly = String(value || "").replace(/\D+/g, "");
     if (maxLength == null) return digitsOnly;
     return digitsOnly.slice(0, maxLength);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadRecipients = async () => {
+      setLoadingRecipients(true);
+      const { data, error: loadError } = await listAwardRecipientOptions({
+        orgId: form.research_center_id,
+      });
+      if (cancelled) return;
+      if (loadError) {
+        setRecipientOptions([]);
+        setLoadingRecipients(false);
+        return;
+      }
+
+      const normalized = (Array.isArray(data) ? data : [])
+        .map((item) => ({
+          id: String(item?.id || "").trim(),
+          name: String(item?.name || "").trim(),
+          username: String(item?.username || "").trim(),
+          email: String(item?.email || "").trim(),
+        }))
+        .filter((item) => item.id && item.name)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setRecipientOptions(normalized);
+      setLoadingRecipients(false);
+
+      setForm((prev) => {
+        const selectedById = new Map(
+          normalized.map((item) => [String(item.id).toLowerCase(), item]),
+        );
+        const selectedByName = new Map(
+          normalized.map((item) => [String(item.name).toLowerCase(), item]),
+        );
+        const selectedByEmail = new Map(
+          normalized
+            .filter((item) => item.email)
+            .map((item) => [String(item.email).toLowerCase(), item]),
+        );
+        let nextRecipientUsers = (prev.recipient_users || [])
+          .map((item) => selectedById.get(String(item?.id || "").toLowerCase()) || null)
+          .filter(Boolean);
+
+        if (!nextRecipientUsers.length) {
+          nextRecipientUsers = normalizeNameList(prev.recipients)
+            .map((item) => selectedByName.get(item.toLowerCase()) || selectedByEmail.get(item.toLowerCase()) || null)
+            .filter(Boolean);
+        }
+
+        if (!nextRecipientUsers.length && !editId) {
+          const currentUserMatch =
+            selectedByEmail.get(String(profile?.email || user?.email || "").toLowerCase()) ||
+            selectedByName.get(String(profile?.full_name || user?.full_name || "").toLowerCase()) ||
+            null;
+          if (currentUserMatch) nextRecipientUsers = [currentUserMatch];
+        }
+
+        return {
+          ...prev,
+          recipient_users: nextRecipientUsers,
+          recipients: nextRecipientUsers.length
+            ? nextRecipientUsers.map((item) => item.name).join(", ")
+            : prev.recipients,
+        };
+      });
+    };
+
+    loadRecipients();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, form.research_center_id, profile?.email, profile?.full_name, user?.email, user?.full_name]);
 
   useEffect(() => {
     if (!editId) return;
@@ -109,6 +216,14 @@ export default function SubmitAwardRecognitionPage() {
           String(new Date().getFullYear()),
         level: String(data.level || "").trim(),
         recipients: String(data.recipients || "").trim(),
+        recipient_users: Array.isArray(data.recipient_users)
+          ? data.recipient_users.map((item) => ({
+              id: String(item?.id || "").trim(),
+              name: String(item?.name || "").trim(),
+              username: String(item?.username || "").trim(),
+              email: String(item?.email || "").trim(),
+            }))
+          : [],
         supporting_movs: String(data.supporting_movs || "").trim(),
         notes: String(data.notes || "").trim(),
         research_center_id: String(data.research_center_id || "").trim(),
@@ -163,7 +278,7 @@ export default function SubmitAwardRecognitionPage() {
     if (!String(form.level || "").trim()) {
       return "Level is required.";
     }
-    if (!String(form.recipients || "").trim()) {
+    if (!Array.isArray(form.recipient_users) || !form.recipient_users.length) {
       return "At least one recipient is required.";
     }
     if (movFile && Number(movFile.size || 0) > MAX_MOV_FILE_SIZE_BYTES) {
@@ -193,7 +308,13 @@ export default function SubmitAwardRecognitionPage() {
       awarding_body: String(form.awarding_body || "").trim(),
       year_received: String(form.year_received || "").trim(),
       level: String(form.level || "").trim(),
-      recipients: String(form.recipients || "").trim(),
+      recipients: (form.recipient_users || []).map((item) => item.name).join(", "),
+      recipient_users: (form.recipient_users || []).map((item) => ({
+        id: String(item?.id || "").trim(),
+        name: String(item?.name || "").trim(),
+        username: String(item?.username || "").trim(),
+        email: String(item?.email || "").trim(),
+      })),
       supporting_movs: String(form.supporting_movs || "").trim(),
       notes: String(form.notes || "").trim(),
       research_center_id: String(form.research_center_id || "").trim(),
@@ -365,16 +486,83 @@ export default function SubmitAwardRecognitionPage() {
             </select>
           </label>
 
-          <label className="space-y-2">
+          <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-700">
               Recipient(s)
             </span>
-            <input
-              className="control-input"
-              value={form.recipients}
-              onChange={(event) => updateField("recipients", event.target.value)}
-              placeholder="Comma-separated names"
-            />
+            <div className="space-y-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3">
+              <input
+                className="control-input"
+                value={recipientSearch}
+                onChange={(event) => setRecipientSearch(event.target.value)}
+                placeholder="Search CKAN users by name, username, or email"
+              />
+              <div className="flex flex-wrap gap-2">
+                {(form.recipient_users || []).length ? (
+                  form.recipient_users.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="status-chip status-ongoing"
+                      onClick={() =>
+                        updateRecipientUsers((prev) =>
+                          prev.filter((entry) => entry.id !== item.id),
+                        )
+                      }
+                      title="Remove recipient"
+                    >
+                      {item.name}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-sm text-slate-500">
+                    No recipients selected yet.
+                  </span>
+                )}
+              </div>
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] p-2">
+                {loadingRecipients ? (
+                  <p className="text-sm text-slate-500">Loading CKAN users...</p>
+                ) : filteredRecipientOptions.length ? (
+                  filteredRecipientOptions.map((option) => {
+                    const checked = (form.recipient_users || []).some(
+                      (item) => item.id === option.id,
+                    );
+                    return (
+                      <label
+                        key={option.id}
+                        className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 hover:bg-white"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            updateRecipientUsers((prev) => {
+                              if (prev.some((item) => item.id === option.id)) {
+                                return prev.filter((item) => item.id !== option.id);
+                              }
+                              return [...prev, option];
+                            })
+                          }
+                        />
+                        <span className="min-w-0 text-sm">
+                          <span className="block font-medium text-slate-800">
+                            {option.name}
+                          </span>
+                          <span className="block truncate text-slate-500">
+                            {[option.username, option.email].filter(Boolean).join(" | ")}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    No CKAN users found for the selected research center.
+                  </p>
+                )}
+              </div>
+            </div>
           </label>
 
           <label className="space-y-2">
