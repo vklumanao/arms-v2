@@ -9,11 +9,13 @@ import {
 } from "./db/migrations.js";
 import {
   assignUserToGroupEditor,
+  assignUserToGroupAdmin,
   createGroup,
   deleteGroup,
   assignUserToOrganizationAdmin,
   assignUserToOrganizationEditor,
   removeUserFromGroup,
+  setGroupMemberRole,
   removeUserFromOrganization,
   createOrganization,
   createDataset,
@@ -184,6 +186,49 @@ function clearSessionCookie(res) {
   res.setHeader("Set-Cookie", buildSessionCookie("", 0));
 }
 
+async function resolveCenterChiefContext(user) {
+  const base = {
+    ...(user || {}),
+    is_center_chief: false,
+    managed_center_id: null,
+    managed_center_name: null,
+  };
+  if (!user || String(user?.role || "").trim().toLowerCase() !== "faculty") {
+    return base;
+  }
+
+  const candidateIds = new Set(
+    [user?.ckan_user_id, user?.id]
+      .map((value) => asTrimmedString(value))
+      .filter(Boolean),
+  );
+  if (candidateIds.size === 0) return base;
+
+  try {
+    const organizations = await listOrganizations();
+    const managedCenter = (organizations || []).find((organization) => {
+      const chiefId = asTrimmedString(
+        getExtraByKey(organization?.extras, "center_chief_id"),
+      );
+      return chiefId && candidateIds.has(chiefId);
+    });
+    if (!managedCenter) return base;
+
+    return {
+      ...base,
+      is_center_chief: true,
+      managed_center_id: managedCenter?.name || managedCenter?.id || null,
+      managed_center_name:
+        managedCenter?.title ||
+        managedCenter?.display_name ||
+        managedCenter?.name ||
+        null,
+    };
+  } catch {
+    return base;
+  }
+}
+
 /**
  * Authenticates requests using either bearer tokens or the session cookie.
  *
@@ -210,7 +255,7 @@ async function authMiddleware(req, res, next) {
     const payload = jwt.verify(token, config.jwtSecret);
     const user = await findUserById(payload.sub);
     if (!user || user.is_active === false) return unauthorized(res);
-    req.user = user;
+    req.user = await resolveCenterChiefContext(user);
     req.auth = payload;
     return next();
   } catch {
@@ -544,6 +589,7 @@ registerAuthRoutes(app, {
   verifyPassword,
   hashPassword,
   toAuthPayload,
+  resolveCenterChiefContext,
   signSession,
   setSessionCookie,
   clearSessionCookie,
@@ -567,8 +613,10 @@ registerProfileRoutes(app, {
   byAnyId,
   assignUserToOrganizationEditor,
   assignUserToGroupEditor,
+  assignUserToGroupAdmin,
   removeUserFromOrganization,
   removeUserFromGroup,
+  setGroupMemberRole,
   logAuditEvent,
 });
 
@@ -655,13 +703,17 @@ registerAdminRoutes(app, {
   deleteOrganization,
   removeUserFromGroup,
   removeUserFromOrganization,
+  assignUserToGroupAdmin,
   assignUserToOrganizationAdmin,
   getGroup,
   getOrganization,
   updateGroupMetadata,
   updateOrganizationMetadata,
+  setGroupMemberRole,
   setOrganizationMemberRole,
   findUserByEmail,
+  findUserById,
+  updateUser,
 });
 
 registerAdminUserRoutes(app, {
