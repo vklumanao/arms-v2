@@ -82,7 +82,7 @@ export default function ResearchProjectsHubPage() {
     const editId = searchParams.get("edit");
     if (editId) {
       navigate(
-        `/submit-affiliation/submit?edit=${encodeURIComponent(editId)}`,
+        `/submit-project/submit?edit=${encodeURIComponent(editId)}`,
         {
           replace: true,
         },
@@ -317,7 +317,7 @@ export default function ResearchProjectsHubPage() {
       return;
     }
     navigate(
-      `/submit-affiliation/submit?edit=${encodeURIComponent(datasetId)}`,
+      `/submit-project/submit?edit=${encodeURIComponent(datasetId)}`,
     );
   };
 
@@ -682,7 +682,7 @@ export default function ResearchProjectsHubPage() {
             Research Project Records ({filteredProjects.length})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <Link className="btn btn-primary" to="/submit-affiliation/submit">
+            <Link className="btn btn-primary" to="/submit-project/submit">
               Submit Research Project
             </Link>
             <button
