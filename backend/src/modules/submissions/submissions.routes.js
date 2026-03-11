@@ -331,9 +331,7 @@ export function registerSubmissionsRoutes(app, deps) {
       const name = asTrimmedString(resource?.name);
       const targetMatch = name.match(/\(target:\s*(\d+)\)/i);
       const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
-      const rawType = name
-        .replace(/\s*\(target:[^)]+\)\s*$/i, "")
-        .trim();
+      const rawType = name.replace(/\s*\(target:[^)]+\)\s*$/i, "").trim();
       const normalizedType = normalizeOutputType(rawType);
 
       return {
@@ -349,6 +347,80 @@ export function registerSubmissionsRoutes(app, deps) {
         file_size: Number(resource?.size || 0) || null,
       };
     });
+  }
+
+  function mapDatasetToProjectListRecord(dataset) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const metadataCreated = asTrimmedString(dataset?.metadata_created);
+    const createdYear = metadataCreated
+      ? new Date(metadataCreated).getFullYear()
+      : null;
+    const yearFromExtra = asTrimmedString(
+      getExtraByKey(extras, "project_year") || getExtraByKey(extras, "year"),
+    );
+
+    return {
+      id: dataset?.id || dataset?.name || null,
+      source: "ckan",
+      ckan_dataset_id: dataset?.id || dataset?.name || null,
+      title: dataset?.title || dataset?.name || "Untitled project",
+      abstract: asTrimmedString(dataset?.notes),
+      lead_researcher: asTrimmedString(
+        getExtraByKey(extras, "lead_researcher"),
+      ),
+      faculty_team: asTrimmedString(getExtraByKey(extras, "faculty_team")),
+      student_team: asTrimmedString(getExtraByKey(extras, "student_team")),
+      industry_partner: asTrimmedString(
+        getExtraByKey(extras, "industry_partner"),
+      ),
+      funding_source: asTrimmedString(getExtraByKey(extras, "funding_source")),
+      funding_amount: asTrimmedString(getExtraByKey(extras, "funding_amount")),
+      start_date: asTrimmedString(getExtraByKey(extras, "start_date")),
+      end_date: asTrimmedString(getExtraByKey(extras, "end_date")),
+      year:
+        yearFromExtra ||
+        (Number.isFinite(createdYear) && createdYear > 0
+          ? String(createdYear)
+          : "-"),
+      status:
+        asTrimmedString(getExtraByKey(extras, "project_status")) ||
+        asTrimmedString(getExtraByKey(extras, "status")) ||
+        asTrimmedString(dataset?.state) ||
+        "ongoing",
+      submitted_by_name:
+        asTrimmedString(getExtraByKey(extras, "submitted_by_name")) ||
+        asTrimmedString(dataset?.maintainer) ||
+        asTrimmedString(dataset?.author) ||
+        "CKAN Dataset Owner",
+      submitted_by_email:
+        asTrimmedString(getExtraByKey(extras, "submitted_by_email")) ||
+        asTrimmedString(dataset?.maintainer_email) ||
+        asTrimmedString(dataset?.author_email) ||
+        "-",
+      submitted_by:
+        asTrimmedString(getExtraByKey(extras, "submitted_by_user_id")) ||
+        asTrimmedString(dataset?.creator_user_id) ||
+        null,
+      project_author_email: asTrimmedString(dataset?.author_email) || null,
+      submitted_at:
+        metadataCreated || asTrimmedString(dataset?.metadata_modified) || null,
+      submitted_by_org_name:
+        asTrimmedString(dataset?.organization?.title) ||
+        asTrimmedString(dataset?.organization?.display_name) ||
+        asTrimmedString(dataset?.organization?.name) ||
+        "-",
+      project_public_visible: !Boolean(dataset?.private),
+      private: Boolean(dataset?.private),
+      project_ckan_org_id:
+        asTrimmedString(dataset?.organization?.name) ||
+        asTrimmedString(dataset?.owner_org) ||
+        null,
+      research_center_id:
+        asTrimmedString(dataset?.organization?.name) ||
+        asTrimmedString(dataset?.owner_org) ||
+        null,
+      resources: Array.isArray(dataset?.resources) ? dataset.resources : [],
+    };
   }
 
   /**
@@ -415,6 +487,7 @@ export function registerSubmissionsRoutes(app, deps) {
         const rows = [];
 
         for (const dataset of datasets) {
+          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
           const resources = Array.isArray(dataset?.resources)
             ? dataset.resources
             : [];
@@ -432,7 +505,9 @@ export function registerSubmissionsRoutes(app, deps) {
               "",
             );
             const normalizedOutputType = normalizeOutputType(
-              asTrimmedString(resource?.format) || resourceNameBase || "resource",
+              asTrimmedString(resource?.format) ||
+                resourceNameBase ||
+                "resource",
             );
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
@@ -482,49 +557,45 @@ export function registerSubmissionsRoutes(app, deps) {
     },
   );
 
-  app.get("/api/submissions/mine/projects", authMiddleware, async (req, res) => {
-    try {
-      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-      const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
-      if (!isAdmin && !orgId) return res.json({ data: [] });
+  app.get(
+    "/api/submissions/mine/projects",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
+        if (!isAdmin && !orgId) return res.json({ data: [] });
 
-      const rows = [];
-      const limit = 100;
-      let page = 1;
-      while (page <= 20) {
-        const result = await listDatasets({ orgId, page, limit });
-        const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
-        if (!datasets.length) break;
+        const rows = [];
+        const limit = 100;
+        let page = 1;
+        while (page <= 20) {
+          const result = await listDatasets({ orgId, page, limit });
+          const datasets = Array.isArray(result?.datasets)
+            ? result.datasets
+            : [];
+          if (!datasets.length) break;
 
-        for (const dataset of datasets) {
-          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
-          rows.push({
-            id: dataset?.id || dataset?.name || null,
-            title: dataset?.title || dataset?.name || "Untitled project",
-            ckan_org_id:
-              dataset?.organization?.name || dataset?.owner_org || null,
-            project_status:
-              getExtraByKey(dataset?.extras, "project_status") ||
-              getExtraByKey(dataset?.extras, "status") ||
-              dataset?.state ||
-              null,
-          });
+          for (const dataset of datasets) {
+            if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
+            rows.push(mapDatasetToProjectListRecord(dataset));
+          }
+
+          const total = Number(result?.count || 0);
+          if (datasets.length < limit || (total > 0 && page * limit >= total)) {
+            break;
+          }
+          page += 1;
         }
 
-        const total = Number(result?.count || 0);
-        if (datasets.length < limit || (total > 0 && page * limit >= total)) {
-          break;
-        }
-        page += 1;
+        return res.json({ data: rows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load user projects."),
+        });
       }
-
-      return res.json({ data: rows });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(error?.message || "Failed to load user projects."),
-      });
-    }
-  });
+    },
+  );
 
   app.get(
     "/api/submissions/:projectId/editable",
@@ -1089,7 +1160,10 @@ export function registerSubmissionsRoutes(app, deps) {
         }
 
         const outputType = normalizeOutputType(req.body?.output_type);
-        const targetCount = Math.max(1, Number(req.body?.target_count || 1) || 1);
+        const targetCount = Math.max(
+          1,
+          Number(req.body?.target_count || 1) || 1,
+        );
         const notes = asTrimmedString(req.body?.notes);
         const filePath = asTrimmedString(req.body?.file_path);
         const fileName = asTrimmedString(req.body?.file_name);
@@ -1100,8 +1174,9 @@ export function registerSubmissionsRoutes(app, deps) {
         }
 
         const fallbackResourceUrl =
-          asTrimmedString(getExtraByKey(dataset?.extras, "supporting_mov_link")) ||
-          `${config.ckanBaseUrl}/dataset`;
+          asTrimmedString(
+            getExtraByKey(dataset?.extras, "supporting_mov_link"),
+          ) || `${config.ckanBaseUrl}/dataset`;
         const url =
           /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
             ? filePath
@@ -1165,7 +1240,10 @@ export function registerSubmissionsRoutes(app, deps) {
         }
 
         const outputType = normalizeOutputType(req.body?.output_type);
-        const targetCount = Math.max(1, Number(req.body?.target_count || 1) || 1);
+        const targetCount = Math.max(
+          1,
+          Number(req.body?.target_count || 1) || 1,
+        );
         const notes = asTrimmedString(req.body?.notes);
         const fileName =
           asTrimmedString(req.body?.file_name) || "research-output.bin";
