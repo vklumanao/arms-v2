@@ -85,6 +85,17 @@ export const awardRecognitionSchema = z.object({
     .refine((value) => /^\d{4}$/.test(value), "Year received must be a 4-digit year."),
   level: z.string().trim().min(1),
   recipients: z.string().trim().min(1),
+  recipient_users: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1),
+        name: z.string().trim().min(1),
+        username: z.string().trim().optional().nullable(),
+        email: z.string().trim().email().optional().nullable(),
+      }),
+    )
+    .optional()
+    .nullable(),
   supporting_movs: z.string().trim().optional().nullable(),
   notes: z.string().trim().optional().nullable(),
   research_center_id: z.string().trim().min(1),
