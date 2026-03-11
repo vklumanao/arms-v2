@@ -54,6 +54,9 @@ function sanitizeProfile(user) {
     creative_work_count: Number(user.creative_work_count || 0),
     awards_count: Number(user.awards_count || 0),
     ip_count: Number(user.ip_count || 0),
+    is_center_chief: Boolean(user.is_center_chief),
+    managed_center_id: user.managed_center_id || null,
+    managed_center_name: user.managed_center_name || null,
   };
 }
 
