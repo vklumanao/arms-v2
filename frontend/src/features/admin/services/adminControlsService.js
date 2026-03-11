@@ -21,6 +21,7 @@ export async function createReference({
   name,
   code,
   center_chief_id,
+  chairperson_id,
   research_agendas,
 }) {
   const { table } = getRefMeta(type);
@@ -54,7 +55,11 @@ export async function createReference({
                 : [],
             }
           : type === "department"
-            ? { name: payload, code: finalCode || null }
+            ? {
+                name: payload,
+                code: finalCode || null,
+                chairperson_id: chairperson_id || null,
+              }
             : { name: payload },
       ),
     });
@@ -70,6 +75,7 @@ export async function updateReference({
   name,
   code,
   center_chief_id,
+  chairperson_id,
   research_agendas,
 }) {
   const { table } = getRefMeta(type);
@@ -105,6 +111,7 @@ export async function updateReference({
             ? {
                 name: payload,
                 code: departmentCode,
+                chairperson_id: chairperson_id || null,
               }
             : { name: payload },
       ),
