@@ -16,6 +16,7 @@ import { useToast } from "@/app/providers/ToastProvider";
 import {
   deleteReference,
   createReference,
+  fetchReferenceData,
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
   updateReference,
@@ -34,9 +35,10 @@ const EMPTY_EDITING = {
   id: null,
   name: "",
   code: "",
+  chairpersonId: "",
 };
 
-function validateDepartmentForm({ name, code }) {
+function validateDepartmentForm({ name, code, chairpersonId }) {
   const errors = {};
   const trimmedName = String(name || "").trim();
   const trimmedCode = String(code || "").trim();
@@ -52,6 +54,10 @@ function validateDepartmentForm({ name, code }) {
   } else if (!/^[A-Za-z0-9_]{2,24}$/.test(trimmedCode)) {
     errors.code =
       "Department code must be 2-24 chars (letters, numbers, underscore).";
+  }
+
+  if (!String(chairpersonId || "").trim()) {
+    errors.chairpersonId = "Chairperson is required.";
   }
 
   return errors;
@@ -85,6 +91,8 @@ export default function AdminDepartmentPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [newDepartmentCode, setNewDepartmentCode] = useState("");
+  const [newChairpersonId, setNewChairpersonId] = useState("");
+  const [chairpersonUsers, setChairpersonUsers] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
@@ -103,10 +111,14 @@ export default function AdminDepartmentPage() {
     setDataLoading(true);
     setDataError("");
     try {
-      const ckanGroupsPayload = await fetchCkanGroups();
+      const [ckanGroupsPayload, referencePayload] = await Promise.all([
+        fetchCkanGroups(),
+        fetchReferenceData(),
+      ]);
       const centersData = Array.isArray(ckanGroupsPayload?.data)
         ? ckanGroupsPayload.data
         : [];
+      const ckanUsersData = referencePayload?.ckanUsersRes?.data || [];
 
       const usageByCenter = await Promise.all(
         centersData.map(async (center) => {
@@ -150,6 +162,13 @@ export default function AdminDepartmentPage() {
       const mapped = centersData
         .map((item) => {
           const orgId = item.name || item.id;
+          const chairpersonId = String(getOrgExtra(item, "chairperson_id") || "").trim();
+          const chairpersonName =
+            String(getOrgExtra(item, "chairperson_name") || "").trim() ||
+            ckanUsersData.find(
+              (user) => String(user?.id || "").trim() === chairpersonId,
+            )?.name ||
+            "";
           return {
             id: orgId,
             code:
@@ -160,8 +179,8 @@ export default function AdminDepartmentPage() {
             name: item.title || item.display_name || item.name || "-",
             type: "Department",
             tag: "research-center",
-            centerChiefId: "",
-            centerChiefName: orgId || "-",
+            chairpersonId,
+            chairpersonName: chairpersonName || "-",
             projectCount: usageMap[orgId]?.projectCount || 0,
             profileCount: usageMap[orgId]?.profileCount || 0,
             memberBreakdown: usageMap[orgId]?.memberBreakdown || {
@@ -178,8 +197,28 @@ export default function AdminDepartmentPage() {
         .sort((a, b) => a.name.localeCompare(b.name));
 
       setRows(mapped);
+      setChairpersonUsers(
+        (ckanUsersData || [])
+          .filter(
+            (item) =>
+              String(item?.state || "").toLowerCase() !== "deleted" &&
+              String(item?.role || "").toLowerCase() === "faculty",
+          )
+          .map((item) => ({
+            id: item.id,
+            name:
+              item.name ||
+              item.fullname ||
+              item.display_name ||
+              item.username ||
+              item.email ||
+              "Unnamed Faculty User",
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
     } catch (loadError) {
       setRows([]);
+      setChairpersonUsers([]);
       setDataError(loadError.message || "Unable to load department data.");
     } finally {
       setDataLoading(false);
@@ -433,6 +472,7 @@ export default function AdminDepartmentPage() {
       validateDepartmentForm({
         name: editing.name,
         code: editing.code,
+        chairpersonId: editing.chairpersonId,
       }),
     [editing],
   );
@@ -442,8 +482,9 @@ export default function AdminDepartmentPage() {
       validateDepartmentForm({
         name: newDepartmentName,
         code: newDepartmentCode,
+        chairpersonId: newChairpersonId,
       }),
-    [newDepartmentCode, newDepartmentName],
+    [newChairpersonId, newDepartmentCode, newDepartmentName],
   );
 
   const isEditFormValid = Object.keys(editValidationErrors).length === 0;
@@ -459,6 +500,7 @@ export default function AdminDepartmentPage() {
       id: row.id,
       name: row.name === "-" ? "" : row.name,
       code: row.code === "-" ? "" : row.code,
+      chairpersonId: row.chairpersonId || "",
     });
     setEditLoading(false);
   };
@@ -476,6 +518,7 @@ export default function AdminDepartmentPage() {
     const errors = validateDepartmentForm({
       name: nextName,
       code: nextCode,
+      chairpersonId: editing.chairpersonId,
     });
     setEditErrors(errors);
     if (!editing.id || Object.keys(errors).length > 0) {
@@ -490,6 +533,7 @@ export default function AdminDepartmentPage() {
       id: editing.id,
       name: nextName,
       code: nextCode,
+      chairperson_id: editing.chairpersonId,
     });
 
     if (updateError) {
@@ -575,6 +619,7 @@ export default function AdminDepartmentPage() {
     const errors = validateDepartmentForm({
       name,
       code,
+      chairpersonId: newChairpersonId,
     });
     setCreateErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -588,6 +633,7 @@ export default function AdminDepartmentPage() {
       type: "department",
       name,
       code,
+      chairperson_id: newChairpersonId,
     });
 
     if (createError) {
@@ -602,6 +648,7 @@ export default function AdminDepartmentPage() {
     setCreateErrors({});
     setNewDepartmentName("");
     setNewDepartmentCode("");
+    setNewChairpersonId("");
     await loadDepartmentRows();
   };
 
@@ -926,7 +973,7 @@ export default function AdminDepartmentPage() {
 
                   <div className="mb-2 flex flex-wrap gap-2 text-xs text-slate-600">
                     <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1">
-                      Group ID: {row.centerChiefName || "-"}
+                      Chairperson: {row.chairpersonName || "-"}
                     </span>
                   </div>
 
@@ -1007,11 +1054,11 @@ export default function AdminDepartmentPage() {
                       <th>
                         <button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "centerChiefName" ? "active" : ""}`}
-                          onClick={() => toggleSort("centerChiefName")}
+                          className={`table-sort-btn ${sortConfig.key === "chairpersonName" ? "active" : ""}`}
+                          onClick={() => toggleSort("chairpersonName")}
                         >
-                          Group ID{" "}
-                          <span>{getSortIndicator("centerChiefName")}</span>
+                          Chairperson{" "}
+                          <span>{getSortIndicator("chairpersonName")}</span>
                         </button>
                       </th>
                       <th>
@@ -1043,7 +1090,7 @@ export default function AdminDepartmentPage() {
                         <td>{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
                         <td>{row.code}</td>
                         <td>{row.name}</td>
-                        <td>{row.centerChiefName || "-"}</td>
+                        <td>{row.chairpersonName || "-"}</td>
                         <td>
                           <button
                             type="button"
@@ -1145,10 +1192,10 @@ export default function AdminDepartmentPage() {
               </div>
               <div className="app-card-muted app-card-compact">
                 <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Group ID
+                  Chairperson
                 </dt>
                 <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.centerChiefName || "-"}
+                  {viewRow.chairpersonName || "-"}
                 </dd>
               </div>
               <div className="app-card-muted app-card-compact">
@@ -1409,6 +1456,32 @@ export default function AdminDepartmentPage() {
                       <p className="field-error">{editErrors.code}</p>
                     ) : null}
                   </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Chairperson *
+                    </label>
+                    <select
+                      className={`control-select ${editErrors.chairpersonId ? "input-error" : ""}`}
+                      value={editing.chairpersonId}
+                      onChange={(event) => {
+                        setEditing((prev) => ({
+                          ...prev,
+                          chairpersonId: event.target.value,
+                        }));
+                        setEditErrors((prev) => ({ ...prev, chairpersonId: "" }));
+                      }}
+                    >
+                      <option value="">Select Chairperson</option>
+                      {chairpersonUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                    {editErrors.chairpersonId ? (
+                      <p className="field-error">{editErrors.chairpersonId}</p>
+                    ) : null}
+                  </div>
                 </div>
               </>
             )}
@@ -1496,6 +1569,29 @@ export default function AdminDepartmentPage() {
               />
               {createErrors.code ? (
                 <p className="field-error">{createErrors.code}</p>
+              ) : null}
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Chairperson *
+              </label>
+              <select
+                className={`control-select ${createErrors.chairpersonId ? "input-error" : ""}`}
+                value={newChairpersonId}
+                onChange={(event) => {
+                  setNewChairpersonId(event.target.value);
+                  setCreateErrors((prev) => ({ ...prev, chairpersonId: "" }));
+                }}
+              >
+                <option value="">Select Chairperson</option>
+                {chairpersonUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+              {createErrors.chairpersonId ? (
+                <p className="field-error">{createErrors.chairpersonId}</p>
               ) : null}
             </div>
             <div className="modal-actions mt-5 flex justify-end gap-2">
