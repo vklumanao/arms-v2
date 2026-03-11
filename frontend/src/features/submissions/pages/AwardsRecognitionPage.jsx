@@ -1,10 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageHeader from "@/shared/components/layout/PageHeader";
+import EmptyState from "@/shared/components/feedback/EmptyState";
+import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useToast } from "@/app/providers/ToastProvider";
+import {
+  Award,
+  Building2,
+  Search,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
+
+const AWARDS_PAGE_SIZE = 10;
 
 export default function AwardsRecognitionPage() {
   const { profile } = useAuth();
+  const toast = useToast();
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
   const missingAffiliation =
     !isAdmin &&
@@ -14,6 +27,8 @@ export default function AwardsRecognitionPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [exportingType, setExportingType] = useState("");
 
   const levelOptions = useMemo(
     () =>
@@ -61,10 +76,202 @@ export default function AwardsRecognitionPage() {
     });
   }, [levelFilter, rows, searchTerm, yearFilter]);
 
+  const analytics = useMemo(() => {
+    const uniqueRecipients = new Set();
+    const base = {
+      total: rows.length,
+      national: 0,
+      international: 0,
+      recipients: 0,
+    };
+
+    rows.forEach((row) => {
+      const level = String(row?.level || "")
+        .trim()
+        .toLowerCase();
+      if (level.includes("international")) {
+        base.international += 1;
+      } else if (level) {
+        base.national += 1;
+      }
+
+      String(row?.recipients || "")
+        .split(/[,;]+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((recipient) => uniqueRecipients.add(recipient));
+    });
+
+    base.recipients = uniqueRecipients.size;
+    return base;
+  }, [rows]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, levelFilter, yearFilter]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredRows.length / AWARDS_PAGE_SIZE)),
+    [filteredRows.length],
+  );
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * AWARDS_PAGE_SIZE;
+    return filteredRows.slice(start, start + AWARDS_PAGE_SIZE);
+  }, [currentPage, filteredRows]);
+
   const resetFilters = () => {
     setSearchTerm("");
     setLevelFilter("all");
     setYearFilter("all");
+  };
+
+  const triggerDownload = (filename, content, mimeType) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildExportRows = () =>
+    filteredRows.map((row, index) => ({
+      no: index + 1,
+      department: row.program_department || "-",
+      title: row.work_title || "-",
+      award: row.award_recognition || "-",
+      body: row.awarding_body || "-",
+      year: row.year_received || "-",
+      level: row.level || "-",
+      recipients: row.recipients || "-",
+      movs: row.supporting_movs || "-",
+    }));
+
+  const exportAsCsv = () => {
+    if (!filteredRows.length) return;
+    setExportingType("csv");
+    try {
+      const headers = [
+        "No.",
+        "Department",
+        "Title of Research",
+        "Award/Recognition",
+        "Awarding Body",
+        "Year Received",
+        "Level",
+        "Recipient(s)",
+        "Supporting MOVs",
+      ];
+      const lines = buildExportRows().map((row) =>
+        [
+          row.no,
+          row.department,
+          row.title,
+          row.award,
+          row.body,
+          row.year,
+          row.level,
+          row.recipients,
+          row.movs,
+        ]
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
+      );
+      const csv = [headers.join(","), ...lines].join("\n");
+      triggerDownload(
+        `awards-recognition-${new Date().toISOString().slice(0, 10)}.csv`,
+        csv,
+        "text/csv;charset=utf-8;",
+      );
+    } finally {
+      setExportingType("");
+    }
+  };
+
+  const exportAsPdf = () => {
+    if (!filteredRows.length) return;
+    setExportingType("pdf");
+    try {
+      const timestamp = new Date().toLocaleString();
+      const rowsForExport = buildExportRows();
+      const rowsHtml = rowsForExport
+        .map(
+          (row) => `
+            <tr>
+              <td>${row.no}</td>
+              <td>${row.department}</td>
+              <td>${row.title}</td>
+              <td>${row.award}</td>
+              <td>${row.body}</td>
+              <td>${row.year}</td>
+              <td>${row.level}</td>
+              <td>${row.recipients}</td>
+              <td>${row.movs}</td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      const printWindow = window.open("", "_blank", "width=1200,height=800");
+      if (!printWindow) {
+        toast.error(
+          "Export failed",
+          "Unable to open print window for PDF export.",
+        );
+        return;
+      }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>awards-recognition-records-filtered</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+              h1 { margin: 0 0 6px; font-size: 20px; }
+              p { margin: 0 0 16px; color: #475569; font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+              th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
+              th { background: #f8fafc; }
+            </style>
+          </head>
+          <body>
+            <h1>Awards and Recognition Report</h1>
+            <p>Generated: ${timestamp} | Scope: filtered | Rows: ${rowsForExport.length}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Department</th>
+                  <th>Title of Research</th>
+                  <th>Award/Recognition</th>
+                  <th>Awarding Body</th>
+                  <th>Year Received</th>
+                  <th>Level</th>
+                  <th>Recipient(s)</th>
+                  <th>Supporting MOVs</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml || '<tr><td colspan="9">No records found.</td></tr>'}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    } finally {
+      setExportingType("");
+    }
   };
 
   if (missingAffiliation) {
@@ -72,7 +279,7 @@ export default function AwardsRecognitionPage() {
       <section className="page-stack-lg">
         <PageHeader
           title="Awards and Recognition"
-          description="Track and manage awards and recognitions related to your research work."
+          description="Browse awards and recognition records using the same project-style workspace."
         />
         <div className="panel">
           <div className="panel-body space-y-3">
@@ -93,99 +300,171 @@ export default function AwardsRecognitionPage() {
     <section className="page-stack-lg">
       <PageHeader
         title="Awards and Recognition"
-        description="Track and manage awards and recognitions related to your research work."
+        description="Browse awards and recognition records using the same project-style workspace."
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <Award size={14} />
+            Total Awards
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.total}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <Building2 size={14} />
+            National / Local
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.national}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <Award size={14} />
+            International
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.international}
+          </p>
+        </article>
+        <article className="metric-card">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <Users size={14} />
+            Recognized Recipients
+          </p>
+          <p className="mt-2 text-3xl font-black text-slate-900">
+            {analytics.recipients}
+          </p>
+        </article>
+      </div>
 
       <div className="panel">
         <div className="panel-header">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+            <SlidersHorizontal size={14} />
             Filters
-          </h2>
+          </div>
         </div>
-        <div className="panel-body grid gap-3 md:grid-cols-4">
-          <label className="block space-y-1">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Search
-            </span>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Title, award, body, recipient..."
-              className="control-input"
-            />
-          </label>
+        <div className="panel-body">
+          <div className="space-y-3">
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              <label className="relative">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search title, award, body, recipient..."
+                  className="control-input pl-8"
+                />
+              </label>
 
-          <label className="block space-y-1">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Level
-            </span>
-            <select
-              value={levelFilter}
-              onChange={(event) => setLevelFilter(event.target.value)}
-              className="control-select"
-            >
-              <option value="all">All levels</option>
-              {levelOptions.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+              <select
+                value={levelFilter}
+                onChange={(event) => setLevelFilter(event.target.value)}
+                className="control-select"
+              >
+                <option value="all">Filter by level</option>
+                {levelOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
 
-          <label className="block space-y-1">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Year Received
-            </span>
-            <select
-              value={yearFilter}
-              onChange={(event) => setYearFilter(event.target.value)}
-              className="control-select"
-            >
-              <option value="all">All years</option>
-              {yearOptions.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+              <select
+                value={yearFilter}
+                onChange={(event) => setYearFilter(event.target.value)}
+                className="control-select"
+              >
+                <option value="all">Filter by year</option>
+                {yearOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
 
-          <div className="flex items-end gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={resetFilters}
-            >
-              Reset
-            </button>
-            <p className="text-xs text-slate-500">
-              {filteredRows.length} result{filteredRows.length === 1 ? "" : "s"}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={resetFilters}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600">
+              Showing{" "}
+              <span className="font-semibold">{filteredRows.length}</span> award
+              record(s).
             </p>
           </div>
         </div>
       </div>
 
       <div className="panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Department</th>
-                <th>Title of Research</th>
-                <th>Award/Recognition</th>
-                <th>Awarding Body</th>
-                <th>Year Received</th>
-                <th>Level</th>
-                <th>Recipient(s)</th>
-                <th>Supporting MOVs</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-700">
-              {filteredRows.length ? (
-                filteredRows.map((row, index) => (
+        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+            Awards and Recognition Records ({filteredRows.length})
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="btn btn-primary">
+              Add Awards/Recognitions
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={exportAsCsv}
+              disabled={!filteredRows.length || Boolean(exportingType)}
+            >
+              {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={exportAsPdf}
+              disabled={!filteredRows.length || Boolean(exportingType)}
+            >
+              {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+            </button>
+          </div>
+        </div>
+        {filteredRows.length === 0 ? (
+          <div className="p-4">
+            <EmptyState
+              title="No awards and recognition records found"
+              description="Try adjusting your filters once award records are available."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Department</th>
+                  <th>Title of Research</th>
+                  <th>Award/Recognition</th>
+                  <th>Awarding Body</th>
+                  <th>Year Received</th>
+                  <th>Level</th>
+                  <th>Recipient(s)</th>
+                  <th>Supporting MOVs</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-700">
+                {paginatedRows.map((row, index) => (
                   <tr key={row.id || index}>
+                    <td>{(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}</td>
                     <td>{row.program_department || "-"}</td>
                     <td>{row.work_title || "-"}</td>
                     <td>{row.award_recognition || "-"}</td>
@@ -195,21 +474,18 @@ export default function AwardsRecognitionPage() {
                     <td>{row.recipients || "-"}</td>
                     <td>{row.supporting_movs || "-"}</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="text-center text-sm text-slate-500"
-                  >
-                    No matching awards and recognition records.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      <PaginationControls
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </section>
   );
 }
