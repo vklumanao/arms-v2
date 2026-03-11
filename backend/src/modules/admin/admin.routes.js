@@ -29,13 +29,17 @@ export function registerAdminRoutes(app, deps) {
     deleteOrganization,
     removeUserFromGroup,
     removeUserFromOrganization,
+    assignUserToGroupAdmin,
     assignUserToOrganizationAdmin,
     getGroup,
     getOrganization,
     updateGroupMetadata,
     updateOrganizationMetadata,
+    setGroupMemberRole,
     setOrganizationMemberRole,
     findUserByEmail,
+    findUserById,
+    updateUser,
   } = deps;
 
   /**
@@ -267,6 +271,43 @@ export function registerAdminRoutes(app, deps) {
     }, {});
   }
 
+  function getManagedCenterId(user) {
+    if (String(user?.role || "").trim().toLowerCase() === "admin") return "";
+    const managedCenterId = String(user?.managed_center_id || "").trim();
+    return Boolean(user?.is_center_chief) && managedCenterId
+      ? managedCenterId
+      : "";
+  }
+
+  function isCenterChiefScopedUser(user) {
+    return Boolean(getManagedCenterId(user));
+  }
+
+  function ensureCenterScope(res, user, centerId) {
+    if (String(user?.role || "").trim().toLowerCase() === "admin") return true;
+    const managedCenterId = getManagedCenterId(user);
+    if (managedCenterId && managedCenterId === String(centerId || "").trim()) {
+      return true;
+    }
+    res.status(403).json({
+      error: "You can only access the Research Center assigned to you.",
+    });
+    return false;
+  }
+
+  function ensureAdminOrCenterChief(res, user) {
+    const role = String(user?.role || "").trim().toLowerCase();
+    if (role === "admin" || isCenterChiefScopedUser(user)) return true;
+    res.status(403).json({ error: "Admin or Center Chief access is required." });
+    return false;
+  }
+
+  function ensureAdminOnly(res, user) {
+    if (String(user?.role || "").trim().toLowerCase() === "admin") return true;
+    res.status(403).json({ error: "Admin access is required." });
+    return false;
+  }
+
   app.get("/api/admin/affiliates", authMiddleware, async (req, res) => {
     try {
       // Build affiliate rows from CKAN users enriched with org/group membership lookups.
@@ -286,6 +327,20 @@ export function registerAdminRoutes(app, deps) {
         usersResult.status === "fulfilled" ? usersResult.value : [];
       const allDatasets =
         datasetsResult.status === "fulfilled" ? datasetsResult.value : [];
+      const localUsersResult = await query(`SELECT * FROM users`);
+      const localUsers = Array.isArray(localUsersResult?.rows)
+        ? localUsersResult.rows
+        : [];
+      const localUserByEmail = new Map(
+        localUsers
+          .filter((row) => row?.email)
+          .map((row) => [String(row.email || "").trim().toLowerCase(), row]),
+      );
+      const localUserByCkanUserId = new Map(
+        localUsers
+          .filter((row) => row?.ckan_user_id)
+          .map((row) => [String(row.ckan_user_id || "").trim(), row]),
+      );
       const liveMetricsByCkanUserId = buildLiveMetricsByCkanUserId(
         ckanUsers,
         allDatasets,
@@ -338,21 +393,35 @@ export function registerAdminRoutes(app, deps) {
       const rows = (ckanUsers || [])
         .filter((user) => String(user?.state || "").toLowerCase() !== "deleted")
         .map((user) => {
+          const ckanUserId = String(user?.id || "").trim();
+          const email = String(user?.email || "")
+            .trim()
+            .toLowerCase();
+          const localUser =
+            localUserByCkanUserId.get(ckanUserId) ||
+            localUserByEmail.get(email) ||
+            null;
           const fullName =
+            localUser?.full_name ||
             user?.fullname ||
             user?.display_name ||
             user?.name ||
             user?.email ||
             "CKAN User";
-          const ckanOrgId = userOrgMap[String(user?.id || "").trim()] || null;
+          const ckanOrgId =
+            localUser?.ckan_org_id ||
+            userOrgMap[String(user?.id || "").trim()] ||
+            null;
           const departmentFromMembership =
             userDepartmentMap[String(user?.id || "").trim()] || null;
           const departmentFromExtras =
             getUserExtraValue(user, "department") ||
             getUserExtraValue(user, "dept") ||
             null;
-          const department = departmentFromMembership || departmentFromExtras;
+          const department =
+            localUser?.department || departmentFromMembership || departmentFromExtras;
           const gsLink =
+            localUser?.google_scholar_link ||
             getUserExtraValue(user, "google_scholar_link") ||
             getUserExtraValue(user, "scholar_link") ||
             getUserExtraValue(user, "google_scholar") ||
@@ -363,6 +432,8 @@ export function registerAdminRoutes(app, deps) {
               .toLowerCase() || "";
           const role = user?.sysadmin
             ? "admin"
+            : localUser?.role
+              ? String(localUser.role || "").trim().toLowerCase()
             : roleExtra === "admin"
               ? "admin"
               : roleExtra === "student"
@@ -370,8 +441,9 @@ export function registerAdminRoutes(app, deps) {
                 : roleExtra === "faculty"
                   ? "faculty"
                   : "faculty";
-          const isActive =
-            String(user?.state || "active").toLowerCase() !== "deleted";
+          const isActive = localUser
+            ? localUser.is_active !== false
+            : String(user?.state || "active").toLowerCase() !== "deleted";
           const liveMetrics =
             liveMetricsByCkanUserId[
               String(user?.id || "")
@@ -380,32 +452,45 @@ export function registerAdminRoutes(app, deps) {
             ] || createZeroMetrics();
 
           return {
-            id: user?.id || user?.name || crypto.randomUUID(),
+            id: localUser?.id || user?.id || user?.name || crypto.randomUUID(),
             full_name: String(fullName).trim(),
-            email: user?.email || null,
+            email: localUser?.email || user?.email || null,
             role,
             department,
             ckan_org_id: ckanOrgId,
-            ckan_username: user?.name || null,
-            ckan_user_id: user?.id || null,
-            source: "ckan_only",
-            link_status: "ckan_only",
+            ckan_username: localUser?.ckan_username || user?.name || null,
+            ckan_user_id: localUser?.ckan_user_id || user?.id || null,
+            source: localUser ? "arms_linked" : "ckan_only",
+            link_status: localUser ? "linked" : "ckan_only",
             is_active: isActive,
             google_scholar_link: gsLink,
             employment_status:
-              getUserExtraValue(user, "employment_status") || null,
-            designation: getUserExtraValue(user, "designation") || null,
-            is_gs_faculty: toBool(
-              getUserExtraValue(user, "is_gs_faculty"),
-              false,
+              localUser?.employment_status ||
+              getUserExtraValue(user, "employment_status") ||
+              null,
+            designation:
+              localUser?.designation || getUserExtraValue(user, "designation") || null,
+            is_gs_faculty: localUser
+              ? Boolean(localUser.is_gs_faculty)
+              : toBool(getUserExtraValue(user, "is_gs_faculty"), false),
+            publication_count: Number(
+              localUser?.publication_count ?? liveMetrics.publication_count ?? 0,
             ),
-            publication_count: liveMetrics.publication_count,
-            research_project_count: liveMetrics.research_project_count,
-            creative_work_count: liveMetrics.creative_work_count,
-            awards_count: liveMetrics.awards_count,
-            ip_count: liveMetrics.ip_count,
-            created_at: user?.created || null,
-            updated_at: user?.activity_streams_email_notifications || null,
+            research_project_count: Number(
+              localUser?.research_project_count ??
+                liveMetrics.research_project_count ??
+                0,
+            ),
+            creative_work_count: Number(
+              localUser?.creative_work_count ?? liveMetrics.creative_work_count ?? 0,
+            ),
+            awards_count: Number(
+              localUser?.awards_count ?? liveMetrics.awards_count ?? 0,
+            ),
+            ip_count: Number(localUser?.ip_count ?? liveMetrics.ip_count ?? 0),
+            created_at: localUser?.created_at || user?.created || null,
+            updated_at:
+              localUser?.updated_at || user?.activity_streams_email_notifications || null,
           };
         })
         .filter((row) => row.role !== "admin");
@@ -429,11 +514,76 @@ export function registerAdminRoutes(app, deps) {
     "/api/admin/affiliates/:userId",
     authMiddleware,
     async (req, res) => {
-      // Local edit is intentionally disabled because source-of-truth is CKAN.
-      return res.status(501).json({
-        error:
-          "CKAN-sourced affiliate records are read-only in this page. Update user details directly in CKAN.",
-      });
+      try {
+        const userId = String(req.params?.userId || "").trim();
+        if (!userId) return badRequest(res, "Affiliate id is required.");
+
+        const existing = await findUserById(userId);
+        if (!existing) {
+          return res.status(404).json({ error: "Affiliate was not found." });
+        }
+
+        const patch = {
+          department:
+            String(req.body?.department || "").trim() || null,
+          ckan_org_id:
+            String(req.body?.ckan_org_id || "").trim() || null,
+          designation:
+            String(req.body?.designation || "").trim() || null,
+          employment_status:
+            String(req.body?.employment_status || "").trim() || null,
+          google_scholar_link:
+            String(req.body?.google_scholar_link || "").trim() || null,
+          is_gs_faculty: req.body?.is_gs_faculty === true,
+          publication_count: Math.max(
+            0,
+            Number(req.body?.publication_count || 0) || 0,
+          ),
+          research_project_count: Math.max(
+            0,
+            Number(req.body?.research_project_count || 0) || 0,
+          ),
+          creative_work_count: Math.max(
+            0,
+            Number(req.body?.creative_work_count || 0) || 0,
+          ),
+          awards_count: Math.max(0, Number(req.body?.awards_count || 0) || 0),
+          ip_count: Math.max(0, Number(req.body?.ip_count || 0) || 0),
+        };
+
+        const updated = await updateUser(userId, patch);
+        if (!updated) {
+          return res.status(404).json({ error: "Affiliate was not found." });
+        }
+
+        return res.json({
+          data: {
+            id: updated.id,
+            full_name: updated.full_name,
+            email: updated.email,
+            role: updated.role,
+            department: updated.department,
+            ckan_org_id: updated.ckan_org_id,
+            ckan_username: updated.ckan_username,
+            ckan_user_id: updated.ckan_user_id,
+            is_active: updated.is_active,
+            google_scholar_link: updated.google_scholar_link,
+            employment_status: updated.employment_status,
+            designation: updated.designation,
+            is_gs_faculty: Boolean(updated.is_gs_faculty),
+            publication_count: Number(updated.publication_count || 0),
+            research_project_count: Number(updated.research_project_count || 0),
+            creative_work_count: Number(updated.creative_work_count || 0),
+            awards_count: Number(updated.awards_count || 0),
+            ip_count: Number(updated.ip_count || 0),
+            updated_at: updated.updated_at,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to update affiliate."),
+        });
+      }
     },
   );
 
@@ -442,15 +592,22 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        if (!ensureAdminOrCenterChief(res, req.user)) return;
         // Aggregate center/department/user references for admin control forms.
         const [centers, departments, ckanUsers] = await Promise.all([
           listOrganizations(),
           listGroups(),
           listUsers(),
         ]);
+        const managedCenterId = getManagedCenterId(req.user);
+        const visibleCenters = managedCenterId
+          ? (centers || []).filter(
+              (row) => String(row?.name || row?.id || "").trim() === managedCenterId,
+            )
+          : centers || [];
         const centerChiefByOrg = {};
         await Promise.all(
-          (centers || []).map(async (row) => {
+          (visibleCenters || []).map(async (row) => {
             const orgId = row?.name || row?.id;
             if (!orgId) return;
             try {
@@ -481,7 +638,7 @@ export function registerAdminRoutes(app, deps) {
         );
 
         return res.json({
-          centers: (centers || []).map((row) => {
+          centers: (visibleCenters || []).map((row) => {
             const orgId = row?.name || row?.id;
             const savedChiefId = getExtraValue(row, "center_chief_id");
             const savedChiefName = getExtraValue(row, "center_chief_name");
@@ -521,6 +678,8 @@ export function registerAdminRoutes(app, deps) {
           departments: (departments || []).map((row) => ({
             id: row?.name || row?.id,
             name: row?.title || row?.display_name || row?.name || "-",
+            chairperson_id: getExtraValue(row, "chairperson_id"),
+            chairperson_name: getExtraValue(row, "chairperson_name"),
           })),
           proponents: [],
           ckan_users: await Promise.all(
@@ -585,6 +744,8 @@ export function registerAdminRoutes(app, deps) {
             },
           });
         }
+        if (type === "center" && !ensureCenterScope(res, req.user, id)) return;
+        if (type === "department" && !ensureAdminOnly(res, req.user)) return;
 
         const [members, datasets, centerOrg] =
           type === "center"
@@ -663,6 +824,7 @@ export function registerAdminRoutes(app, deps) {
           .toLowerCase();
         const id = String(req.query?.id || "").trim();
         if (type === "center" && id) {
+          if (!ensureCenterScope(res, req.user, id)) return;
           // Resolve linked members/projects/agendas for a single research center.
           const [agendas, members, datasets, groups] = await Promise.all([
             listOrganizationAgendas(id),
@@ -755,6 +917,7 @@ export function registerAdminRoutes(app, deps) {
           });
         }
         if (type === "department" && id) {
+          if (!ensureAdminOnly(res, req.user)) return;
           const [members, datasets, centers] = await Promise.all([
             listGroupMembers(id),
             listAllDatasetsAcrossCkan(),
@@ -871,6 +1034,7 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        if (!ensureAdminOnly(res, req.user)) return;
         const type = String(req.params?.type || "")
           .trim()
           .toLowerCase();
@@ -883,16 +1047,42 @@ export function registerAdminRoutes(app, deps) {
         if (type === "department") {
           const name = String(req.body?.name || "").trim();
           const codeRaw = normalizeDepartmentCode(req.body?.code || name);
+          const chairpersonId = String(req.body?.chairperson_id || "").trim();
           if (!name) return badRequest(res, "Department name is required.");
           if (!codeRaw) return badRequest(res, "Department code is required.");
+          if (!chairpersonId) return badRequest(res, "Chairperson is required.");
 
           const groupName = codeRaw.toLowerCase().replace(/[^a-z0-9_\-]+/g, "-");
           if (!groupName) return badRequest(res, "Department code is invalid.");
 
+          const users = await listUsers();
+          const selected = (users || []).find(
+            (row) => String(row?.id || "") === chairpersonId,
+          );
+          if (!selected) {
+            return badRequest(res, "Selected chairperson CKAN user was not found.");
+          }
+          const chairpersonName =
+            String(
+              selected?.fullname ||
+                selected?.display_name ||
+                selected?.name ||
+                selected?.email ||
+                "",
+            ).trim() || null;
+
           const created = await createGroup({
             name: groupName,
             title: name,
-            extras: [{ key: "code", value: codeRaw }],
+            extras: [
+              { key: "code", value: codeRaw },
+              { key: "chairperson_id", value: chairpersonId },
+              { key: "chairperson_name", value: chairpersonName },
+            ],
+          });
+          await assignUserToGroupAdmin({
+            groupId: created?.name || created?.id || groupName,
+            username: String(selected?.name || "").trim(),
           });
 
           return res.status(201).json({
@@ -904,6 +1094,8 @@ export function registerAdminRoutes(app, deps) {
                 created?.name ||
                 name,
               code: normalizeDepartmentCode(created?.name || codeRaw),
+              chairperson_id: chairpersonId,
+              chairperson_name: chairpersonName,
             },
           });
         }
@@ -1028,6 +1220,8 @@ export function registerAdminRoutes(app, deps) {
             error: "Only center and department update are implemented in this backend.",
           });
         }
+        if (type === "department" && !ensureAdminOnly(res, req.user)) return;
+        if (type === "center" && !ensureCenterScope(res, req.user, id)) return;
 
         if (type === "department") {
           const currentGroup = await getGroup(id);
@@ -1039,21 +1233,45 @@ export function registerAdminRoutes(app, deps) {
           const codeRaw = normalizeDepartmentCode(
             req.body?.code || getExtraValue(currentGroup, "code") || id,
           );
+          const chairpersonId = String(req.body?.chairperson_id || "").trim();
           if (!name && !currentGroup?.title && !currentGroup?.display_name) {
             return badRequest(res, "Department name is required.");
           }
           if (!codeRaw) return badRequest(res, "Department code is required.");
+          if (!chairpersonId) {
+            return badRequest(res, "Chairperson is required.");
+          }
+
+          const users = await listUsers();
+          const selected = (users || []).find(
+            (row) => String(row?.id || "") === chairpersonId,
+          );
+          if (!selected) {
+            return badRequest(res, "Selected chairperson CKAN user was not found.");
+          }
+          const chairpersonName =
+            String(
+              selected?.fullname ||
+                selected?.display_name ||
+                selected?.name ||
+                selected?.email ||
+                "",
+            ).trim() || null;
 
           const existingExtras = Array.isArray(currentGroup?.extras)
             ? currentGroup.extras
             : [];
           const nextExtras = existingExtras.filter(
-            (item) =>
-              String(item?.key || "")
+            (item) => {
+              const key = String(item?.key || "")
                 .trim()
-                .toLowerCase() !== "code",
+                .toLowerCase();
+              return key !== "code" && key !== "chairperson_id" && key !== "chairperson_name";
+            },
           );
           nextExtras.push({ key: "code", value: codeRaw });
+          nextExtras.push({ key: "chairperson_id", value: chairpersonId });
+          nextExtras.push({ key: "chairperson_name", value: chairpersonName });
 
           const updated = await updateGroupMetadata({
             groupId: id,
@@ -1062,12 +1280,51 @@ export function registerAdminRoutes(app, deps) {
             extras: nextExtras,
           });
 
+          const targetGroupId = updated?.name || updated?.id || id;
+          let previousAdminUsername = "";
+          try {
+            const members = await listGroupMembers(targetGroupId);
+            const currentAdmin = (members || []).find(
+              (member) =>
+                String(member?.capacity || "")
+                  .trim()
+                  .toLowerCase() === "admin",
+            );
+            previousAdminUsername = String(currentAdmin?.name || "").trim();
+          } catch {
+            previousAdminUsername = "";
+          }
+
+          const nextChairpersonUsername = String(selected?.name || "").trim();
+          const isSameAdmin =
+            previousAdminUsername &&
+            previousAdminUsername.toLowerCase() ===
+              nextChairpersonUsername.toLowerCase();
+
+          if (previousAdminUsername && !isSameAdmin) {
+            await setGroupMemberRole({
+              groupId: targetGroupId,
+              username: previousAdminUsername,
+              role: "editor",
+            });
+          }
+
+          if (!isSameAdmin) {
+            await setGroupMemberRole({
+              groupId: targetGroupId,
+              username: nextChairpersonUsername,
+              role: "admin",
+            });
+          }
+
           return res.json({
             data: {
               id: updated?.name || updated?.id || id,
               name:
                 updated?.title || updated?.display_name || updated?.name || id,
               code: codeRaw,
+              chairperson_id: chairpersonId,
+              chairperson_name: chairpersonName,
             },
           });
         }
@@ -1078,16 +1335,32 @@ export function registerAdminRoutes(app, deps) {
             .status(404)
             .json({ error: "Research center was not found." });
         }
+        const isScopedChief =
+          String(req.user?.role || "").trim().toLowerCase() !== "admin";
 
         const name = String(req.body?.name || "").trim();
         const codeRaw = String(req.body?.code || "").trim();
-        const centerChiefId = String(req.body?.center_chief_id || "").trim();
+        const savedCenterChiefId = String(
+          getExtraValue(currentOrg, "center_chief_id") || "",
+        ).trim();
+        const centerChiefId = isScopedChief
+          ? savedCenterChiefId
+          : String(req.body?.center_chief_id || "").trim();
         const agendaNames = normalizeAgendaNames(req.body?.research_agendas);
         const joinedAgenda = agendaNames.join("; ");
         if (!codeRaw)
           return badRequest(res, "Research center code is required.");
         if (!centerChiefId) {
           return badRequest(res, "Center chief is required.");
+        }
+        if (
+          isScopedChief &&
+          String(req.body?.center_chief_id || "").trim() &&
+          String(req.body?.center_chief_id || "").trim() !== savedCenterChiefId
+        ) {
+          return res.status(403).json({
+            error: "Center Chiefs cannot reassign Research Center leadership.",
+          });
         }
 
         let centerChiefName = "";
@@ -1209,6 +1482,7 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        if (!ensureAdminOnly(res, req.user)) return;
         const type = String(req.params?.type || "")
           .trim()
           .toLowerCase();
