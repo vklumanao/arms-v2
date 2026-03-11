@@ -858,7 +858,7 @@ export default function SubmitAffiliationPage() {
       );
       setShowSubmitConfirm(false);
       setSubmitting(false);
-      navigate("/submit-affiliation");
+      navigate("/submit-project");
       return;
     }
 
@@ -896,7 +896,7 @@ export default function SubmitAffiliationPage() {
           <button
             type="button"
             className="btn btn-outline"
-            onClick={() => navigate("/submit-affiliation")}
+            onClick={() => navigate("/submit-project")}
           >
             Go back
           </button>
