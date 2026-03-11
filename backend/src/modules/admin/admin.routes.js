@@ -480,21 +480,42 @@ export function registerAdminRoutes(app, deps) {
         );
 
         return res.json({
-          centers: (centers || []).map((row) => ({
-            id: row?.name || row?.id,
-            name: row?.title || row?.display_name || row?.name || "-",
-            code: String(row?.name || row?.id || "")
-              .toUpperCase()
-              .replace(/[^A-Z0-9_]/g, "_"),
-            center_chief_id:
-              centerChiefByOrg[row?.name || row?.id]?.id ||
-              getExtraValue(row, "center_chief_id"),
-            center_chief_name:
-              centerChiefByOrg[row?.name || row?.id]?.name ||
-              getExtraValue(row, "center_chief_name"),
-            agenda_count: 0,
-            extras_count: Array.isArray(row?.extras) ? row.extras.length : 0,
-          })),
+          centers: (centers || []).map((row) => {
+            const orgId = row?.name || row?.id;
+            const savedChiefId = getExtraValue(row, "center_chief_id");
+            const savedChiefName = getExtraValue(row, "center_chief_name");
+            const chiefNameFromSavedId =
+              (ckanUsers || []).find(
+                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+              )?.fullname ||
+              (ckanUsers || []).find(
+                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+              )?.display_name ||
+              (ckanUsers || []).find(
+                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+              )?.name ||
+              (ckanUsers || []).find(
+                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+              )?.email ||
+              "";
+
+            return {
+              id: orgId,
+              name: row?.title || row?.display_name || row?.name || "-",
+              code: String(row?.name || row?.id || "")
+                .toUpperCase()
+                .replace(/[^A-Z0-9_]/g, "_"),
+              center_chief_id:
+                savedChiefId || centerChiefByOrg[orgId]?.id || null,
+              center_chief_name:
+                savedChiefName ||
+                chiefNameFromSavedId ||
+                centerChiefByOrg[orgId]?.name ||
+                null,
+              agenda_count: 0,
+              extras_count: Array.isArray(row?.extras) ? row.extras.length : 0,
+            };
+          }),
           agendas: [],
           departments: (departments || []).map((row) => ({
             id: row?.name || row?.id,
@@ -893,6 +914,21 @@ export function registerAdminRoutes(app, deps) {
           key: "code",
           value: codeRaw,
         });
+        extras.push({
+          key: "center_chief_id",
+          value: centerChiefId,
+        });
+        extras.push({
+          key: "center_chief_name",
+          value:
+            String(
+              selected?.fullname ||
+                selected?.display_name ||
+                selected?.name ||
+                selected?.email ||
+                "",
+            ).trim() || centerChiefUsername,
+        });
         if (agendaNames.length > 0) {
           extras.push({
             key: "research_agendas",
@@ -1024,10 +1060,13 @@ export function registerAdminRoutes(app, deps) {
         const joinedAgenda = agendaNames.join("; ");
         if (!codeRaw)
           return badRequest(res, "Research center code is required.");
+        if (!centerChiefId) {
+          return badRequest(res, "Center chief is required.");
+        }
 
         let centerChiefName = "";
         let centerChiefUsername = "";
-        if (centerChiefId) {
+        {
           const users = await listUsers();
           const selected = (users || []).find(
             (row) => String(row?.id || "") === centerChiefId,
@@ -1058,12 +1097,19 @@ export function registerAdminRoutes(app, deps) {
             .toLowerCase();
           return (
             key !== "code" &&
+            key !== "center_chief_id" &&
+            key !== "center_chief_name" &&
             key !== "research_agendas" &&
             key !== "research_agenda"
           );
         });
 
         nextExtras.push({ key: "code", value: codeRaw });
+        nextExtras.push({ key: "center_chief_id", value: centerChiefId });
+        nextExtras.push({
+          key: "center_chief_name",
+          value: centerChiefName || centerChiefUsername,
+        });
         if (joinedAgenda) {
           nextExtras.push({ key: "research_agendas", value: joinedAgenda });
         }
