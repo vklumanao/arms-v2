@@ -31,6 +31,11 @@ import {
 
 export default function AdminAffiliatesModulePage() {
   const PAGE_SIZE = 10;
+  const sanitizeDigits = (value, maxLength = null) => {
+    const digitsOnly = String(value || "").replace(/\D+/g, "");
+    if (maxLength == null) return digitsOnly;
+    return digitsOnly.slice(0, maxLength);
+  };
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [rows, setRows] = useState([]);
@@ -934,6 +939,7 @@ export default function AdminAffiliatesModulePage() {
                   Google Scholar Link
                 </span>
                 <input
+                  type="url"
                   className="control-input"
                   value={editForm.google_scholar_link}
                   onChange={(event) =>
@@ -964,12 +970,13 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   className="control-input"
                   value={editForm.publication_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      publication_count: event.target.value,
+                      publication_count: sanitizeDigits(event.target.value, 6),
                     }))
                   }
                 />
@@ -979,12 +986,16 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   className="control-input"
                   value={editForm.research_project_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      research_project_count: event.target.value,
+                      research_project_count: sanitizeDigits(
+                        event.target.value,
+                        6,
+                      ),
                     }))
                   }
                 />
@@ -996,12 +1007,16 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   className="control-input"
                   value={editForm.creative_work_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      creative_work_count: event.target.value,
+                      creative_work_count: sanitizeDigits(
+                        event.target.value,
+                        6,
+                      ),
                     }))
                   }
                 />
@@ -1011,12 +1026,13 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   className="control-input"
                   value={editForm.awards_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      awards_count: event.target.value,
+                      awards_count: sanitizeDigits(event.target.value, 6),
                     }))
                   }
                 />
@@ -1026,12 +1042,13 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   className="control-input"
                   value={editForm.ip_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      ip_count: event.target.value,
+                      ip_count: sanitizeDigits(event.target.value, 6),
                     }))
                   }
                 />
