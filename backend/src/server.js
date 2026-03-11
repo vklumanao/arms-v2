@@ -580,6 +580,7 @@ registerCkanIntegrationRoutes(app, {
   listUsers,
   listDatasets,
   listOrganizationAgendas,
+  findUserByEmail,
 });
 
 registerReferenceRoutes(app, {
@@ -633,6 +634,9 @@ registerAwardsRoutes(app, {
   getExtraByKey,
   getGroup,
   byAnyId,
+  listUsers,
+  listOrganizationMembers,
+  findUserByEmail,
 });
 
 registerAdminRoutes(app, {
