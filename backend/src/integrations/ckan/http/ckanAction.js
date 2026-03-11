@@ -17,7 +17,14 @@ function ckanErrorMessage(payload, fallback) {
   if (typeof err === "object") {
     const entries = Object.entries(err)
       .map(([key, value]) => {
-        if (Array.isArray(value)) return `${key}: ${value.join(", ")}`;
+        if (Array.isArray(value)) {
+          const rendered = value
+            .map((item) =>
+              item && typeof item === "object" ? JSON.stringify(item) : String(item),
+            )
+            .join(", ");
+          return `${key}: ${rendered}`;
+        }
         if (value && typeof value === "object") {
           return `${key}: ${JSON.stringify(value)}`;
         }
