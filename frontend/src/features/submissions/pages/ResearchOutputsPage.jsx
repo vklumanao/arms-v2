@@ -35,6 +35,7 @@ const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
   "Educational Technology Tools",
 ];
 const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const sanitizeDigits = (value) => String(value || "").replace(/\D+/g, "");
 
 export default function ResearchOutputsPage() {
   const toast = useToast();
@@ -1188,11 +1189,13 @@ export default function ResearchOutputsPage() {
                     type="number"
                     min={1}
                     step={1}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={addOutputForm.target_count}
                     onChange={(event) =>
                       setAddOutputForm((prev) => ({
                         ...prev,
-                        target_count: event.target.value,
+                        target_count: sanitizeDigits(event.target.value),
                       }))
                     }
                   />
