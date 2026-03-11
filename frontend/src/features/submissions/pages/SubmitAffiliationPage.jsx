@@ -98,6 +98,17 @@ export default function SubmitAffiliationPage() {
     "disabled:!border-[var(--border-strong)] disabled:!bg-[var(--surface-strong)] disabled:!text-[var(--text-muted)] disabled:cursor-not-allowed";
   const disabledOutlineButtonClass =
     "disabled:!border-[var(--border-strong)] disabled:!bg-[var(--surface-muted)] disabled:!text-[var(--text-muted)] disabled:cursor-not-allowed";
+  const sanitizeDigits = (value, maxLength = null) => {
+    const digitsOnly = String(value || "").replace(/\D+/g, "");
+    if (maxLength == null) return digitsOnly;
+    return digitsOnly.slice(0, maxLength);
+  };
+  const sanitizeDecimal = (value) => {
+    const text = String(value || "").replace(/[^\d.]/g, "");
+    const [whole = "", ...rest] = text.split(".");
+    const decimal = rest.join("");
+    return decimal ? `${whole}.${decimal}` : whole;
+  };
 
   const formatFileSize = (bytes) => {
     const size = Number(bytes);
@@ -1232,11 +1243,15 @@ export default function SubmitAffiliationPage() {
                       type="number"
                       min="2000"
                       max="2100"
+                      inputMode="numeric"
                       placeholder="e.g. 2026"
                       required
                       value={form.year}
                       onChange={(e) =>
-                        setForm((p) => ({ ...p, year: e.target.value }))
+                        setForm((p) => ({
+                          ...p,
+                          year: sanitizeDigits(e.target.value, 4),
+                        }))
                       }
                     />
                   </label>
@@ -1441,11 +1456,13 @@ export default function SubmitAffiliationPage() {
                       placeholder="e.g. 50000"
                       type="number"
                       min="0"
+                      inputMode="decimal"
+                      step="0.01"
                       value={form.funding_amount}
                       onChange={(e) =>
                         setForm((p) => ({
                           ...p,
-                          funding_amount: e.target.value,
+                          funding_amount: sanitizeDecimal(e.target.value),
                         }))
                       }
                     />
@@ -2185,11 +2202,12 @@ export default function SubmitAffiliationPage() {
                   type="number"
                   min={1}
                   step={1}
+                  inputMode="numeric"
                   value={newOutputDraft.target_count}
                   onChange={(e) =>
                     setNewOutputDraft((prev) => ({
                       ...prev,
-                      target_count: e.target.value,
+                      target_count: sanitizeDigits(e.target.value, 3),
                     }))
                   }
                 />
