@@ -55,6 +55,7 @@ import {
 } from "./stores/user.store.js";
 import {
   affiliateProfileUpdateSchema,
+  awardRecognitionSchema,
   forgotPasswordSchema,
   loginSchema,
   parseOrThrow,
@@ -76,6 +77,7 @@ import { registerDashboardRoutes } from "./modules/dashboard/dashboard.routes.js
 import { registerSubmissionsRoutes } from "./modules/submissions/submissions.routes.js";
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
+import { registerAwardsRoutes } from "./modules/awards/awards.routes.js";
 
 // Startup flow:
 // 1) Validate required environment configuration.
@@ -612,6 +614,25 @@ registerSubmissionsRoutes(app, {
   updateDatasetResource,
   deleteDatasetResource,
   getExtraByKey,
+});
+
+registerAwardsRoutes(app, {
+  authMiddleware,
+  badRequest,
+  parseOrThrow,
+  awardRecognitionSchema,
+  asTrimmedString,
+  listDatasets,
+  listOrganizations,
+  getDataset,
+  createDataset,
+  updateDataset,
+  deleteDataset,
+  createDatasetResourceUpload,
+  deleteDatasetResource,
+  getExtraByKey,
+  getGroup,
+  byAnyId,
 });
 
 registerAdminRoutes(app, {
