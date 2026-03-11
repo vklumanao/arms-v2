@@ -85,6 +85,26 @@ function mockApiPayload(path, options = {}) {
       data: [{ id: "group-1", name: "group-1", title: "Computer Science" }],
     };
   }
+  if (cleanPath === "/integrations/ckan/users") {
+    return {
+      data: [
+        {
+          id: "ckan-user-1",
+          name: "Demo Admin",
+          username: "demo-admin",
+          email: "demo@arms.local",
+          state: "active",
+        },
+        {
+          id: "ckan-user-2",
+          name: "Demo Faculty",
+          username: "demo-faculty",
+          email: "faculty@arms.local",
+          state: "active",
+        },
+      ],
+    };
+  }
   if (cleanPath.includes("/integrations/ckan/organizations/")) {
     return { data: [] };
   }
@@ -156,6 +176,20 @@ function mockApiPayload(path, options = {}) {
           year_received: "2026",
           level: "National",
           recipients: "Demo Admin, Demo Faculty",
+          recipient_users: [
+            {
+              id: "ckan-user-1",
+              name: "Demo Admin",
+              username: "demo-admin",
+              email: "demo@arms.local",
+            },
+            {
+              id: "ckan-user-2",
+              name: "Demo Faculty",
+              username: "demo-faculty",
+              email: "faculty@arms.local",
+            },
+          ],
           supporting_movs: "https://example.com/award-mov",
           supporting_mov_resource_id: "mock-award-resource-id",
           supporting_mov_file_name: "Supporting MOV - award-proof.pdf",
@@ -247,6 +281,20 @@ function mockApiPayload(path, options = {}) {
         year_received: "2026",
         level: "National",
         recipients: "Demo Admin, Demo Faculty",
+        recipient_users: [
+          {
+            id: "ckan-user-1",
+            name: "Demo Admin",
+            username: "demo-admin",
+            email: "demo@arms.local",
+          },
+          {
+            id: "ckan-user-2",
+            name: "Demo Faculty",
+            username: "demo-faculty",
+            email: "faculty@arms.local",
+          },
+        ],
         supporting_movs: "https://example.com/award-mov",
         supporting_mov_resource_id: "mock-award-resource-id",
         supporting_mov_file_name: "Supporting MOV - award-proof.pdf",
