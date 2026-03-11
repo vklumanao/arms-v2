@@ -144,6 +144,124 @@ function mockApiPayload(path, options = {}) {
   if (cleanPath.includes("/admin/affiliates/")) return { data: null };
 
   if (cleanPath === "/affiliate-profile/me") return { data: null };
+  if (cleanPath === "/awards" && method === "GET") {
+    return {
+      data: [
+        {
+          id: "mock-award-1",
+          ckan_dataset_id: "mock-award-1",
+          work_title: "AI-Assisted Crop Monitoring",
+          award_recognition: "Best Innovation Paper",
+          awarding_body: "National Research Congress",
+          year_received: "2026",
+          level: "National",
+          recipients: "Demo Admin, Demo Faculty",
+          supporting_movs: "https://example.com/award-mov",
+          supporting_mov_resource_id: "mock-award-resource-id",
+          supporting_mov_file_name: "Supporting MOV - award-proof.pdf",
+          supporting_mov_file_path: "https://example.com/award-proof.pdf",
+          supporting_mov_file_mime_type: "application/pdf",
+          supporting_mov_file_size: 204800,
+          notes: "Mock award record for preview mode.",
+          research_center_id: "org-1",
+          research_center_name: "Research Center A",
+          department_id: "dept-1",
+          program_department: "Computer Science",
+          submitted_by_user_id: "demo-user-1",
+          submitted_by_email: "demo@arms.local",
+          submitted_by_name: "Demo Admin",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          private: true,
+        },
+      ],
+    };
+  }
+  if (cleanPath === "/awards" && method === "POST") {
+    let parsed = {};
+    try {
+      parsed = JSON.parse(String(options.body || "{}"));
+    } catch {
+      parsed = {};
+    }
+    return {
+      data: {
+        id: "mock-award-created",
+        ckan_dataset_id: "mock-award-created",
+        ...parsed,
+        research_center_name: "Research Center A",
+        program_department: parsed?.program_department || "Computer Science",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        private: true,
+      },
+    };
+  }
+  if (cleanPath.startsWith("/awards/") && method === "PATCH") {
+    let parsed = {};
+    try {
+      parsed = JSON.parse(String(options.body || "{}"));
+    } catch {
+      parsed = {};
+    }
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-award-id",
+        ckan_dataset_id: cleanPath.split("/")[2] || "mock-award-id",
+        ...parsed,
+        research_center_name: "Research Center A",
+        updated_at: new Date().toISOString(),
+        private: true,
+      },
+    };
+  }
+  if (cleanPath.startsWith("/awards/") && cleanPath.endsWith("/mov-upload")) {
+    return {
+      data: {
+        resource_id: "mock-award-resource-id",
+        dataset_id: cleanPath.split("/")[2] || "mock-award-id",
+        file_name: "Supporting MOV - award-proof.pdf",
+        file_path: "https://example.com/award-proof.pdf",
+        mime_type: "application/pdf",
+        file_size: 204800,
+        updated_at: new Date().toISOString(),
+      },
+    };
+  }
+  if (cleanPath.startsWith("/awards/") && method === "DELETE") {
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-award-id",
+        deleted: true,
+      },
+    };
+  }
+  if (cleanPath.startsWith("/awards/") && method === "GET") {
+    return {
+      data: {
+        id: cleanPath.split("/")[2] || "mock-award-id",
+        ckan_dataset_id: cleanPath.split("/")[2] || "mock-award-id",
+        work_title: "AI-Assisted Crop Monitoring",
+        award_recognition: "Best Innovation Paper",
+        awarding_body: "National Research Congress",
+        year_received: "2026",
+        level: "National",
+        recipients: "Demo Admin, Demo Faculty",
+        supporting_movs: "https://example.com/award-mov",
+        supporting_mov_resource_id: "mock-award-resource-id",
+        supporting_mov_file_name: "Supporting MOV - award-proof.pdf",
+        supporting_mov_file_path: "https://example.com/award-proof.pdf",
+        supporting_mov_file_mime_type: "application/pdf",
+        supporting_mov_file_size: 204800,
+        notes: "Mock award record for preview mode.",
+        research_center_id: "org-1",
+        research_center_name: "Research Center A",
+        department_id: "dept-1",
+        program_department: "Computer Science",
+        private: true,
+      },
+    };
+  }
   if (cleanPath === "/submissions/mine/projects") return { data: [] };
   if (cleanPath === "/submissions/projects") return { data: [] };
   if (cleanPath === "/submissions/mine/research-outputs") return { data: [] };
