@@ -3,10 +3,11 @@
 const SEGMENT_LABELS = {
   dashboard: "Dashboard",
   "public-records": "Public Records",
+  "submit-project": "Research Projects",
   "submit-affiliation": "Research Projects",
   submit: "Submit Research Project",
   "research-outputs": "Research Outputs",
-  "awards-recognition": "Awards and Recognition",
+  "awards-recognitions": "Awards and Recognitions",
   "my-profile": "My Profile",
   admin: "Admin",
   affiliates: "Affiliates",
