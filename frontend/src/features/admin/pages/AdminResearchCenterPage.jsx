@@ -12,6 +12,7 @@ import {
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   deleteReference,
@@ -21,8 +22,7 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/features/admin/services";
-import { getOrgExtra, validateCenterForm } from "@/features/admin/utils";
-import { fetchCkanOrganizations } from "@/shared/api/ckanApi";
+import { validateCenterForm } from "@/features/admin/utils";
 
 const INITIAL_FILTERS = {
   search: "",
@@ -30,6 +30,17 @@ const INITIAL_FILTERS = {
   linkedAffiliates: "all",
   linkedProjects: "all",
   linkageState: "all",
+};
+const INITIAL_MEMBER_FILTERS = {
+  search: "",
+  role: "all",
+  department: "all",
+  status: "all",
+};
+const INITIAL_PROJECT_FILTERS = {
+  search: "",
+  status: "all",
+  department: "all",
 };
 const EMPTY_EDITING = {
   id: null,
@@ -40,6 +51,7 @@ const EMPTY_EDITING = {
   researchAgendas: [],
 };
 export default function AdminResearchCenterPage() {
+  const { profile } = useAuth();
   const toast = useToast();
   const PAGE_SIZE = 10;
   const AGENDA_PAGE_SIZE = 6;
@@ -84,25 +96,41 @@ export default function AdminResearchCenterPage() {
   });
   const [editErrors, setEditErrors] = useState({});
   const [createErrors, setCreateErrors] = useState({});
+  const [scopedMembers, setScopedMembers] = useState([]);
+  const [scopedProjects, setScopedProjects] = useState([]);
+  const [scopedLinksLoading, setScopedLinksLoading] = useState(false);
+  const [scopedLinksError, setScopedLinksError] = useState("");
+  const [memberFilters, setMemberFilters] = useState(INITIAL_MEMBER_FILTERS);
+  const [projectFilters, setProjectFilters] = useState(INITIAL_PROJECT_FILTERS);
+  const [memberPage, setMemberPage] = useState(1);
+  const [projectPage, setProjectPage] = useState(1);
   const viewModalRef = useRef(null);
   const projectModalRef = useRef(null);
   const editModalRef = useRef(null);
   const createModalRef = useRef(null);
   const lastFocusedElementRef = useRef(null);
   const modalLockScrollYRef = useRef(0);
+  const isScopedCenterChief =
+    profile?.role === "faculty" &&
+    profile?.is_center_chief === true &&
+    Boolean(profile?.managed_center_id);
+  const managedCenterId = String(profile?.managed_center_id || "").trim();
+  const scopedCenterRow = useMemo(
+    () =>
+      isScopedCenterChief
+        ? rows.find((row) => String(row?.id || "").trim() === managedCenterId) ||
+          null
+        : null,
+    [isScopedCenterChief, managedCenterId, rows],
+  );
 
   const loadResearchCenterRows = async () => {
     setDataLoading(true);
     setAgendaMatrixLoading(true);
     setDataError("");
     try {
-      const [ckanOrgsPayload, referencePayload] = await Promise.all([
-        fetchCkanOrganizations(),
-        fetchReferenceData(),
-      ]);
-      const centersData = Array.isArray(ckanOrgsPayload?.data)
-        ? ckanOrgsPayload.data
-        : [];
+      const referencePayload = await fetchReferenceData();
+      const centersData = referencePayload?.centersRes?.data || [];
       const { ckanUsersRes, centersRes } = referencePayload || {};
       const ckanUsersData = ckanUsersRes?.data || [];
       const referenceCentersData = centersRes?.data || [];
@@ -189,7 +217,7 @@ export default function AdminResearchCenterPage() {
 
       const mapped = centersData
         .map((item) => {
-          const orgId = item.name || item.id;
+          const orgId = item.id;
           const centerMeta =
             centerMetaById[
               String(orgId || "")
@@ -198,7 +226,6 @@ export default function AdminResearchCenterPage() {
             ] || null;
           const centerChiefId =
             String(centerMeta?.center_chief_id || "").trim() ||
-            getOrgExtra(item, "center_chief_id") ||
             "";
           const centerChiefNameFromMeta = String(
             centerMeta?.center_chief_name || "",
@@ -206,23 +233,14 @@ export default function AdminResearchCenterPage() {
           const centerChiefNameFromId = ckanUsersData.find(
             (ckanUser) => String(ckanUser?.id || "").trim() === centerChiefId,
           )?.name;
-          const centerChiefNameFromOrgExtras = getOrgExtra(
-            item,
-            "center_chief_name",
-          );
           const centerChiefName =
             centerChiefNameFromMeta ||
             centerChiefNameFromId ||
-            centerChiefNameFromOrgExtras ||
             "";
           return {
             id: orgId,
-            code:
-              String(getOrgExtra(item, "code") || "").trim() ||
-              String(orgId || "-")
-                .toUpperCase()
-                .replace(/[^A-Z0-9_]/g, "_"),
-            name: item.title || item.display_name || item.name || "-",
+            code: String(item?.code || "").trim() || String(orgId || "-"),
+            name: item.name || "-",
             type: "Research Center",
             tag: "research-center",
             centerChiefId,
@@ -241,6 +259,9 @@ export default function AdminResearchCenterPage() {
               (usageMap[orgId]?.profileCount || 0),
           };
         })
+        .filter((row) =>
+          isScopedCenterChief ? row.id === managedCenterId : true,
+        )
         .sort((a, b) => a.name.localeCompare(b.name));
 
       setRows(mapped);
@@ -263,9 +284,47 @@ export default function AdminResearchCenterPage() {
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
+
+      if (isScopedCenterChief && mapped.length > 0) {
+        const managedRow = mapped.find(
+          (row) => String(row?.id || "").trim() === managedCenterId,
+        );
+        if (managedRow) {
+          setScopedLinksLoading(true);
+          setScopedLinksError("");
+          try {
+            const linked = await fetchReferenceLinks({
+              type: "center",
+              id: managedRow.id,
+            });
+            setScopedMembers(Array.isArray(linked?.profiles) ? linked.profiles : []);
+            setScopedProjects(Array.isArray(linked?.projects) ? linked.projects : []);
+          } catch (linksError) {
+            setScopedMembers([]);
+            setScopedProjects([]);
+            setScopedLinksError(
+              linksError.message || "Unable to load Research Center members.",
+            );
+          } finally {
+            setScopedLinksLoading(false);
+          }
+        } else {
+          setScopedMembers([]);
+          setScopedProjects([]);
+          setScopedLinksError("Assigned Research Center could not be resolved.");
+        }
+      } else {
+        setScopedMembers([]);
+        setScopedProjects([]);
+        setScopedLinksError("");
+        setScopedLinksLoading(false);
+      }
     } catch (loadError) {
       setRows([]);
       setAgendaNamesByCenterId({});
+      setScopedMembers([]);
+      setScopedProjects([]);
+      setScopedLinksError("");
       setDataError(loadError.message || "Unable to load research center data.");
     } finally {
       setDataLoading(false);
@@ -275,7 +334,7 @@ export default function AdminResearchCenterPage() {
 
   useEffect(() => {
     loadResearchCenterRows();
-  }, []);
+  }, [isScopedCenterChief, managedCenterId]);
 
   useEffect(() => {
     if (!dataError) return;
@@ -411,6 +470,161 @@ export default function AdminResearchCenterPage() {
     }),
     [rows],
   );
+
+  const scopedDepartmentOptions = useMemo(
+    () =>
+      [...new Set(scopedMembers.map((member) => String(member?.department || "").trim()).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [scopedMembers],
+  );
+
+  const scopedProjectDepartmentOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          scopedProjects
+            .map((project) => String(project?.department_name || "").trim())
+            .filter(Boolean),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [scopedProjects],
+  );
+
+  const scopedProjectStatusOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          scopedProjects
+            .map((project) => String(project?.status || "").trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [scopedProjects],
+  );
+
+  const filteredScopedMembers = useMemo(() => {
+    const keyword = memberFilters.search.trim().toLowerCase();
+    return scopedMembers.filter((member) => {
+      const fullName = String(member?.full_name || "").toLowerCase();
+      const email = String(member?.email || "").toLowerCase();
+      const role = String(member?.role || "").toLowerCase();
+      const department = String(member?.department || "").trim();
+      const isActive = member?.is_active !== false;
+
+      if (keyword && !(fullName.includes(keyword) || email.includes(keyword))) {
+        return false;
+      }
+      if (memberFilters.role !== "all" && role !== memberFilters.role) {
+        return false;
+      }
+      if (
+        memberFilters.department !== "all" &&
+        department !== memberFilters.department
+      ) {
+        return false;
+      }
+      if (memberFilters.status === "active" && !isActive) {
+        return false;
+      }
+      if (memberFilters.status === "inactive" && isActive) {
+        return false;
+      }
+      return true;
+    });
+  }, [memberFilters, scopedMembers]);
+
+  const filteredScopedProjects = useMemo(() => {
+    const keyword = projectFilters.search.trim().toLowerCase();
+    return scopedProjects.filter((project) => {
+      const title = String(project?.title || "").toLowerCase();
+      const leadResearcher = String(project?.lead_researcher || "").toLowerCase();
+      const status = String(project?.status || "").trim().toLowerCase();
+      const department = String(project?.department_name || "").trim();
+
+      if (keyword && !(title.includes(keyword) || leadResearcher.includes(keyword))) {
+        return false;
+      }
+      if (projectFilters.status !== "all" && status !== projectFilters.status) {
+        return false;
+      }
+      if (
+        projectFilters.department !== "all" &&
+        department !== projectFilters.department
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [projectFilters, scopedProjects]);
+
+  const MEMBER_PAGE_SIZE = 8;
+  const PROJECT_PAGE_SIZE = 6;
+  const memberTotalPages = Math.max(
+    1,
+    Math.ceil(filteredScopedMembers.length / MEMBER_PAGE_SIZE),
+  );
+  const projectTotalPages = Math.max(
+    1,
+    Math.ceil(filteredScopedProjects.length / PROJECT_PAGE_SIZE),
+  );
+
+  const paginatedScopedMembers = useMemo(() => {
+    const start = (memberPage - 1) * MEMBER_PAGE_SIZE;
+    return filteredScopedMembers.slice(start, start + MEMBER_PAGE_SIZE);
+  }, [filteredScopedMembers, memberPage]);
+
+  const paginatedScopedProjects = useMemo(() => {
+    const start = (projectPage - 1) * PROJECT_PAGE_SIZE;
+    return filteredScopedProjects.slice(start, start + PROJECT_PAGE_SIZE);
+  }, [filteredScopedProjects, projectPage]);
+
+  const memberDepartmentBreakdown = useMemo(
+    () =>
+      [...new Map(
+        scopedMembers
+          .map((member) => String(member?.department || "").trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b))
+          .map((department) => [
+            department,
+            scopedMembers.filter(
+              (member) => String(member?.department || "").trim() === department,
+            ).length,
+          ]),
+      ).entries()].map(([department, count]) => ({ department, count })),
+    [scopedMembers],
+  );
+
+  const scopedSummary = useMemo(() => {
+    const activeMembers = scopedMembers.filter((member) => member?.is_active !== false);
+    return {
+      totalMembers: scopedMembers.length,
+      activeMembers: activeMembers.length,
+      linkedProjects: scopedProjects.length,
+      agendas: scopedCenterRow?.agendaCount || 0,
+    };
+  }, [scopedCenterRow?.agendaCount, scopedMembers, scopedProjects.length]);
+
+  useEffect(() => {
+    setMemberPage(1);
+  }, [memberFilters, scopedMembers.length]);
+
+  useEffect(() => {
+    setProjectPage(1);
+  }, [projectFilters, scopedProjects.length]);
+
+  useEffect(() => {
+    if (memberPage > memberTotalPages) {
+      setMemberPage(memberTotalPages);
+    }
+  }, [memberPage, memberTotalPages]);
+
+  useEffect(() => {
+    if (projectPage > projectTotalPages) {
+      setProjectPage(projectTotalPages);
+    }
+  }, [projectPage, projectTotalPages]);
 
   const activeModalRef = createModalOpen
     ? createModalRef
@@ -909,11 +1123,376 @@ export default function AdminResearchCenterPage() {
     }
   };
 
+  if (isScopedCenterChief) {
+    return (
+      <section className="page-stack-lg">
+        <PageHeader
+          title="My Research Center"
+          description="Review your research center summary, search affiliated members, and inspect linked projects."
+        />
+
+        {dataLoading ? (
+          <div className="panel p-6 text-sm text-slate-600">
+            Loading your Research Center...
+          </div>
+        ) : !scopedCenterRow ? (
+          <div className="panel p-6 text-sm text-red-700">
+            Your assigned Research Center could not be loaded.
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <article className="metric-card">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Research Center
+                </p>
+                <p className="mt-2 text-xl font-black text-slate-900">
+                  {scopedCenterRow.name}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Code: {scopedCenterRow.code}
+                </p>
+              </article>
+              <article className="metric-card">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Center Chief
+                </p>
+                <p className="mt-2 text-xl font-black text-slate-900">
+                  {scopedCenterRow.centerChiefName || profile?.full_name || "-"}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Active Members: {scopedSummary.activeMembers}
+                </p>
+              </article>
+              <article className="metric-card">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Linked Affiliates
+                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">
+                  {scopedSummary.totalMembers}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0} Editor:{" "}
+                  {scopedCenterRow.memberBreakdown?.editorCount || 0} Member:{" "}
+                  {scopedCenterRow.memberBreakdown?.memberCount || 0}
+                </p>
+              </article>
+              <article className="metric-card">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Linked Projects
+                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">
+                  {scopedSummary.linkedProjects}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Agendas: {scopedSummary.agendas}
+                </p>
+              </article>
+            </div>
+
+            <div className="panel">
+              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <Users size={14} />
+                Member Breakdown
+              </div>
+              <div className="panel-body">
+                {memberDepartmentBreakdown.length === 0 ? (
+                  <p className="text-sm text-slate-600">
+                    No department breakdown available yet.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {memberDepartmentBreakdown.map((item) => (
+                      <span
+                        key={item.department}
+                        className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-sm text-slate-700"
+                      >
+                        {item.department}: {item.count}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <SlidersHorizontal size={14} />
+                Member Filters
+              </div>
+              <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                <label className="relative">
+                  <Search
+                    size={14}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    className="control-input pl-8"
+                    placeholder="Search name or email"
+                    value={memberFilters.search}
+                    onChange={(event) =>
+                      setMemberFilters((prev) => ({
+                        ...prev,
+                        search: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <select
+                  className="control-select"
+                  value={memberFilters.role}
+                  onChange={(event) =>
+                    setMemberFilters((prev) => ({
+                      ...prev,
+                      role: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="all">All roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="faculty">Faculty</option>
+                  <option value="student">Student</option>
+                </select>
+                <select
+                  className="control-select"
+                  value={memberFilters.department}
+                  onChange={(event) =>
+                    setMemberFilters((prev) => ({
+                      ...prev,
+                      department: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="all">All departments</option>
+                  {scopedDepartmentOptions.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <select
+                    className="control-select"
+                    value={memberFilters.status}
+                    onChange={(event) =>
+                      setMemberFilters((prev) => ({
+                        ...prev,
+                        status: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => setMemberFilters(INITIAL_MEMBER_FILTERS)}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Research Center Members ({filteredScopedMembers.length})
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                {scopedLinksLoading ? (
+                  <p className="p-4 text-sm text-slate-600">
+                    Loading affiliated members...
+                  </p>
+                ) : scopedLinksError ? (
+                  <p className="p-4 text-sm text-red-700">{scopedLinksError}</p>
+                ) : filteredScopedMembers.length === 0 ? (
+                  <p className="p-4 text-sm text-slate-600">
+                    No members matched the current filters.
+                  </p>
+                ) : (
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>User ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedScopedMembers.map((member, index) => (
+                        <tr key={member.id || `${member.email}-${index}`}>
+                          <td>{(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}</td>
+                          <td>{member.full_name || "Unnamed user"}</td>
+                          <td>{member.email || "-"}</td>
+                          <td className="capitalize">{member.role || "-"}</td>
+                          <td>{member.department || "-"}</td>
+                          <td>
+                            <span
+                              className={`status-chip ${
+                                member.is_active !== false
+                                  ? "status-completed"
+                                  : "status-rejected"
+                              }`}
+                            >
+                              {member.is_active !== false ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td>
+                            <code>{member.id || "-"}</code>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <PaginationControls
+                page={memberPage}
+                totalPages={memberTotalPages}
+                onPageChange={setMemberPage}
+                className="rounded-none border-0 border-t border-[var(--border)]"
+              />
+            </div>
+
+            <div className="panel">
+              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <FolderKanban size={14} />
+                Project Filters
+              </div>
+              <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                <label className="relative">
+                  <Search
+                    size={14}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    className="control-input pl-8"
+                    placeholder="Search title or lead researcher"
+                    value={projectFilters.search}
+                    onChange={(event) =>
+                      setProjectFilters((prev) => ({
+                        ...prev,
+                        search: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <select
+                  className="control-select"
+                  value={projectFilters.status}
+                  onChange={(event) =>
+                    setProjectFilters((prev) => ({
+                      ...prev,
+                      status: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="all">All statuses</option>
+                  {scopedProjectStatusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="control-select"
+                  value={projectFilters.department}
+                  onChange={(event) =>
+                    setProjectFilters((prev) => ({
+                      ...prev,
+                      department: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="all">All departments</option>
+                  {scopedProjectDepartmentOptions.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => setProjectFilters(INITIAL_PROJECT_FILTERS)}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="panel overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Linked Projects ({filteredScopedProjects.length})
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                {scopedLinksLoading ? (
+                  <p className="p-4 text-sm text-slate-600">
+                    Loading linked projects...
+                  </p>
+                ) : filteredScopedProjects.length === 0 ? (
+                  <p className="p-4 text-sm text-slate-600">
+                    No linked projects matched the current filters.
+                  </p>
+                ) : (
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Project Title</th>
+                        <th>Status</th>
+                        <th>Year</th>
+                        <th>Lead Researcher</th>
+                        <th>Department</th>
+                        <th>Agendum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedScopedProjects.map((project, index) => (
+                        <tr key={project.id || `${project.title}-${index}`}>
+                          <td>{(projectPage - 1) * PROJECT_PAGE_SIZE + index + 1}</td>
+                          <td>{project.title || "-"}</td>
+                          <td className="capitalize">{project.status || "-"}</td>
+                          <td>{project.year || "-"}</td>
+                          <td>{project.lead_researcher || "-"}</td>
+                          <td>{project.department_name || "-"}</td>
+                          <td>{project.agenda_name || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <PaginationControls
+                page={projectPage}
+                totalPages={projectTotalPages}
+                onPageChange={setProjectPage}
+                className="rounded-none border-0 border-t border-[var(--border)]"
+              />
+            </div>
+          </>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="page-stack-lg">
       <PageHeader
         title="Research Center"
-        description="Manage research center records and inspect linked affiliates and projects in one view."
+        description={
+          isScopedCenterChief
+            ? "Inspect the research center you manage, including linked affiliates and projects."
+            : "Manage research center records and inspect linked affiliates and projects in one view."
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -1060,15 +1639,17 @@ export default function AdminResearchCenterPage() {
                 List
               </button>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setCreateErrors({});
-                setCreateModalOpen(true);
-              }}
-            >
-              Create Research Center
-            </button>
+            {!isScopedCenterChief ? (
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setCreateErrors({});
+                  setCreateModalOpen(true);
+                }}
+              >
+                Create Research Center
+              </button>
+            ) : null}
             <button
               className="btn btn-outline"
               onClick={() => exportRowsAsCsv(sortedFilteredRows, "filtered")}
@@ -1155,18 +1736,22 @@ export default function AdminResearchCenterPage() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      className="btn btn-outline"
-                      onClick={() => startEdit(row)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
-                      onClick={() => setDeletingRow(row)}
-                    >
-                      Delete
-                    </button>
+                    {!isScopedCenterChief ? (
+                      <>
+                        <button
+                          className="btn btn-outline"
+                          onClick={() => startEdit(row)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
+                          onClick={() => setDeletingRow(row)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </article>
               ))}
@@ -1266,20 +1851,26 @@ export default function AdminResearchCenterPage() {
                           </button>
                         </td>
                         <td>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              className="btn btn-outline"
-                              onClick={() => startEdit(row)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
-                              onClick={() => setDeletingRow(row)}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          {!isScopedCenterChief ? (
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                className="btn btn-outline"
+                                onClick={() => startEdit(row)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
+                                onClick={() => setDeletingRow(row)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-500">
+                              Scoped access
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
