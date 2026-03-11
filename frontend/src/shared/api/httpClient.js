@@ -94,6 +94,7 @@ function mockApiPayload(path, options = {}) {
           username: "demo-admin",
           email: "demo@arms.local",
           state: "active",
+          role: "admin",
         },
         {
           id: "ckan-user-2",
@@ -101,6 +102,15 @@ function mockApiPayload(path, options = {}) {
           username: "demo-faculty",
           email: "faculty@arms.local",
           state: "active",
+          role: "faculty",
+        },
+        {
+          id: "ckan-user-3",
+          name: "Demo Student",
+          username: "demo-student",
+          email: "student@arms.local",
+          state: "active",
+          role: "student",
         },
       ],
     };
@@ -207,6 +217,28 @@ function mockApiPayload(path, options = {}) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           private: true,
+        },
+      ],
+    };
+  }
+  if (cleanPath === "/awards/recipient-options" && method === "GET") {
+    return {
+      data: [
+        {
+          id: "ckan-user-2",
+          name: "Demo Faculty",
+          username: "demo-faculty",
+          email: "faculty@arms.local",
+          role: "faculty",
+          state: "active",
+        },
+        {
+          id: "ckan-user-3",
+          name: "Demo Student",
+          username: "demo-student",
+          email: "student@arms.local",
+          role: "student",
+          state: "active",
         },
       ],
     };
