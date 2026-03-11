@@ -147,7 +147,7 @@ export default function AppShell() {
   const workspaceResearchLinks = useMemo(
     () => [
       {
-        to: "/submit-affiliation",
+        to: "/submit-project",
         label: "Research Projects",
         icon: FolderOpen,
         permission: PERMISSIONS.AFFILIATIONS_MANAGE,
@@ -159,7 +159,7 @@ export default function AppShell() {
         permission: PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
       },
       {
-        to: "/awards-recognition",
+        to: "/awards-recognitions",
         label: "Awards and Recognitions",
         icon: Award,
         permission: PERMISSIONS.AWARDS_RECOGNITION_VIEW,
