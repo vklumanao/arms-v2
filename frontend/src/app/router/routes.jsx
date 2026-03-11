@@ -1,4 +1,4 @@
-﻿import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/app/layouts/AppShell";
 import ProtectedRoute from "@/app/router/guards/ProtectedRoute";
 import RoleRoute from "@/app/router/guards/RoleRoute";
@@ -91,6 +91,14 @@ export default function AppRoutes() {
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <SubmitAffiliationPage />,
               )}
+            />
+            <Route
+              path="/submit-affiliation"
+              element={<Navigate to="/submit-project" replace />}
+            />
+            <Route
+              path="/submit-affiliation/submit"
+              element={<Navigate to="/submit-project/submit" replace />}
             />
             <Route
               path="/research-outputs"
