@@ -74,7 +74,7 @@ export function HeroSection() {
             <div className="flex flex-wrap gap-3">
               <Link
                 className="rounded-lg bg-sky-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-900"
-                to="/submit-affiliation"
+                to="/submit-project"
               >
                 Start Submission
               </Link>
@@ -193,7 +193,7 @@ export function WorkflowSection() {
           eyebrow="Academic Workflow"
           title="Standardized Process from Submission to Public Output"
         />
-        <Link to="/submit-affiliation" className="btn btn-primary">
+        <Link to="/submit-project" className="btn btn-primary">
           Open Research Projects
         </Link>
       </div>
@@ -462,7 +462,7 @@ export function FinalCtaSection() {
         </div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
           <Link
-            to="/submit-affiliation"
+            to="/submit-project"
             className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-sky-900 transition hover:bg-sky-50"
           >
             Research Projects
