@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { fetchCkanDatasets } from "@/shared/api/ckanApi";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
@@ -10,16 +9,12 @@ import PaginationControls from "@/shared/components/navigation/PaginationControl
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   deleteOwnedProject,
+  fetchUserProjects,
   fetchProjectResources,
   updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
-import {
-  formatBytes,
-  formatDate,
-  mapDatasetToProjectRecord,
-  STATUS_OPTIONS,
-} from "@/features/submissions/utils";
+import { formatBytes, formatDate, STATUS_OPTIONS } from "@/features/submissions/utils";
 import {
   CheckCircle2,
   Clock3,
@@ -99,26 +94,24 @@ export default function ResearchProjectsHubPage() {
     }
 
     let isMounted = true;
-    const orgId = String(profile?.ckan_org_id || "").trim();
-
-    fetchCkanDatasets({
-      orgId: isAdmin ? "" : orgId,
-      limit: 100,
-    })
-      .then((payload) => {
+    fetchUserProjects({ userId: profile?.id })
+      .then(({ data, error: loadError }) => {
         if (!isMounted) return;
-        const datasets = Array.isArray(payload?.data) ? payload.data : [];
-        setProjects(datasets.map(mapDatasetToProjectRecord));
+        if (loadError) {
+          setError(loadError.message || "Unable to load your projects.");
+          return;
+        }
+        setProjects(Array.isArray(data) ? data : []);
       })
       .catch((queryError) => {
         if (!isMounted) return;
-        setError(queryError.message || "Unable to load CKAN datasets.");
+        setError(queryError.message || "Unable to load your projects.");
       });
 
     return () => {
       isMounted = false;
     };
-  }, [isAdmin, missingAffiliation, profile?.ckan_org_id, user?.id]);
+  }, [missingAffiliation, profile?.id, user?.id]);
 
   const centerById = useMemo(
     () =>
@@ -688,22 +681,26 @@ export default function ResearchProjectsHubPage() {
             <Link className="btn btn-primary" to="/submit-project/submit">
               Submit Research Project
             </Link>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsCsv}
-              disabled={!filteredProjects.length || Boolean(exportingType)}
-            >
-              {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsPdf}
-              disabled={!filteredProjects.length || Boolean(exportingType)}
-            >
-              {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-            </button>
+            {isAdmin ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsCsv}
+                  disabled={!filteredProjects.length || Boolean(exportingType)}
+                >
+                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsPdf}
+                  disabled={!filteredProjects.length || Boolean(exportingType)}
+                >
+                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                </button>
+              </>
+            ) : null}
           </div>
         </div>
         {filteredProjects.length === 0 ? (
@@ -734,33 +731,8 @@ export default function ResearchProjectsHubPage() {
                   {paginatedProjects.map((project, index) => {
                     const status = normalizeStatus(project.status);
                     const canToggleVisibility =
-                      Boolean(project?.ckan_dataset_id) &&
-                      (isAdmin ||
-                        String(project?.submitted_by || "") ===
-                          String(user?.id || "") ||
-                        String(project?.submitted_by_email || "")
-                          .trim()
-                          .toLowerCase() ===
-                          String(user?.email || "")
-                            .trim()
-                            .toLowerCase());
-                    const canEdit =
-                      Boolean(project?.ckan_dataset_id) &&
-                      (isAdmin ||
-                        String(project?.submitted_by || "") ===
-                          String(user?.id || "") ||
-                        String(project?.submitted_by_email || "")
-                          .trim()
-                          .toLowerCase() ===
-                          String(user?.email || "")
-                            .trim()
-                            .toLowerCase() ||
-                        String(project?.project_author_email || "")
-                          .trim()
-                          .toLowerCase() ===
-                          String(user?.email || "")
-                            .trim()
-                            .toLowerCase());
+                      isAdmin && Boolean(project?.ckan_dataset_id);
+                    const canEdit = isAdmin && Boolean(project?.ckan_dataset_id);
                     return (
                       <tr key={project.id} className="align-top">
                         <td>
@@ -794,27 +766,26 @@ export default function ResearchProjectsHubPage() {
                             >
                               {project.private ? "Private" : "Public"}
                             </span>
-                            <button
-                              type="button"
-                              className="btn btn-outline"
-                              disabled={
-                                !canToggleVisibility ||
-                                Boolean(
+                            {canToggleVisibility ? (
+                              <button
+                                type="button"
+                                className="btn btn-outline"
+                                disabled={Boolean(
                                   visibilitySavingByDataset[
                                     project.ckan_dataset_id
                                   ],
-                                )
-                              }
-                              onClick={() => handleToggleVisibility(project)}
-                            >
-                              {visibilitySavingByDataset[
-                                project.ckan_dataset_id
-                              ]
-                                ? "Saving..."
-                                : project.private
-                                  ? "Make Public"
-                                  : "Make Private"}
-                            </button>
+                                )}
+                                onClick={() => handleToggleVisibility(project)}
+                              >
+                                {visibilitySavingByDataset[
+                                  project.ckan_dataset_id
+                                ]
+                                  ? "Saving..."
+                                  : project.private
+                                    ? "Make Public"
+                                    : "Make Private"}
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                         <td className="text-slate-600">
