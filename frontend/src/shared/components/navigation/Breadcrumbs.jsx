@@ -6,6 +6,7 @@ const SEGMENT_LABELS = {
   "submit-project": "Research Projects",
   "submit-affiliation": "Research Projects",
   submit: "Submit Research Project",
+  add: "Add Award Record",
   "research-outputs": "Research Outputs",
   "awards-recognitions": "Awards and Recognitions",
   "my-profile": "My Profile",
