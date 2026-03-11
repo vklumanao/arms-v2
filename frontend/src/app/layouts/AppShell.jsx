@@ -120,13 +120,22 @@ export default function AppShell() {
       },
     ];
 
-    if (profile?.role === "admin") {
+    const canAccessResearchCenters =
+      profile?.role === "admin" ||
+      (profile?.role === "faculty" &&
+        profile?.is_center_chief === true &&
+        Boolean(profile?.managed_center_id));
+
+    if (canAccessResearchCenters) {
       links.push({
         to: "/admin/research-center",
         label: "Research Centers",
         icon: Building2,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
+    }
+
+    if (profile?.role === "admin") {
       links.push({
         to: "/admin/departments",
         label: "Departments",
@@ -142,7 +151,7 @@ export default function AppShell() {
     }
 
     return links;
-  }, [profile?.role]);
+  }, [profile?.is_center_chief, profile?.managed_center_id, profile?.role]);
 
   const workspaceResearchLinks = useMemo(
     () => [
