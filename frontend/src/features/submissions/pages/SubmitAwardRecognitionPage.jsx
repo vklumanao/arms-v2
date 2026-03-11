@@ -88,8 +88,11 @@ export default function SubmitAwardRecognitionPage() {
     departments.find((item) => item.id === effectiveDepartmentId)?.name || "";
   const filteredRecipientOptions = useMemo(() => {
     const query = String(recipientSearch || "").trim().toLowerCase();
-    if (!query) return recipientOptions;
     return recipientOptions.filter((item) => {
+      const alreadySelected = (form.recipient_users || []).some(
+        (selected) => selected.id === item.id,
+      );
+      if (alreadySelected) return false;
       const haystack = [
         item?.name,
         item?.username,
@@ -97,9 +100,10 @@ export default function SubmitAwardRecognitionPage() {
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ");
+      if (!query) return false;
       return haystack.includes(query);
     });
-  }, [recipientOptions, recipientSearch]);
+  }, [form.recipient_users, recipientOptions, recipientSearch]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -114,6 +118,14 @@ export default function SubmitAwardRecognitionPage() {
         recipients: nextRecipientUsers.map((item) => item.name).join(", "),
       };
     });
+  };
+  const addRecipientUser = (option) => {
+    if (!option?.id) return;
+    updateRecipientUsers((prev) => {
+      if (prev.some((item) => item.id === option.id)) return prev;
+      return [...prev, option];
+    });
+    setRecipientSearch("");
   };
   const sanitizeDigits = (value, maxLength = null) => {
     const digitsOnly = String(value || "").replace(/\D+/g, "");
@@ -140,7 +152,7 @@ export default function SubmitAwardRecognitionPage() {
           id: String(item?.id || "").trim(),
           name: String(item?.name || "").trim(),
           username: String(item?.username || "").trim(),
-          email: String(item?.email || "").trim(),
+          email: String(item?.email || "").trim() || null,
         }))
         .filter((item) => item.id && item.name)
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -221,7 +233,7 @@ export default function SubmitAwardRecognitionPage() {
               id: String(item?.id || "").trim(),
               name: String(item?.name || "").trim(),
               username: String(item?.username || "").trim(),
-              email: String(item?.email || "").trim(),
+              email: String(item?.email || "").trim() || null,
             }))
           : [],
         supporting_movs: String(data.supporting_movs || "").trim(),
@@ -313,7 +325,7 @@ export default function SubmitAwardRecognitionPage() {
         id: String(item?.id || "").trim(),
         name: String(item?.name || "").trim(),
         username: String(item?.username || "").trim(),
-        email: String(item?.email || "").trim(),
+        email: String(item?.email || "").trim() || null,
       })),
       supporting_movs: String(form.supporting_movs || "").trim(),
       notes: String(form.notes || "").trim(),
@@ -495,7 +507,13 @@ export default function SubmitAwardRecognitionPage() {
                 className="control-input"
                 value={recipientSearch}
                 onChange={(event) => setRecipientSearch(event.target.value)}
-                placeholder="Search CKAN users by name, username, or email"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && filteredRecipientOptions[0]) {
+                    event.preventDefault();
+                    addRecipientUser(filteredRecipientOptions[0]);
+                  }
+                }}
+                placeholder="Type a name to search CKAN users"
               />
               <div className="flex flex-wrap gap-2">
                 {(form.recipient_users || []).length ? (
@@ -520,31 +538,18 @@ export default function SubmitAwardRecognitionPage() {
                   </span>
                 )}
               </div>
-              <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] p-2">
-                {loadingRecipients ? (
-                  <p className="text-sm text-slate-500">Loading CKAN users...</p>
-                ) : filteredRecipientOptions.length ? (
-                  filteredRecipientOptions.map((option) => {
-                    const checked = (form.recipient_users || []).some(
-                      (item) => item.id === option.id,
-                    );
-                    return (
-                      <label
+              {loadingRecipients ? (
+                <p className="text-sm text-slate-500">Loading CKAN users...</p>
+              ) : recipientSearch.trim() ? (
+                <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] p-2">
+                  {filteredRecipientOptions.length ? (
+                    filteredRecipientOptions.map((option) => (
+                      <button
                         key={option.id}
-                        className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 hover:bg-white"
+                        type="button"
+                        className="flex w-full items-start gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-white"
+                        onClick={() => addRecipientUser(option)}
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            updateRecipientUsers((prev) => {
-                              if (prev.some((item) => item.id === option.id)) {
-                                return prev.filter((item) => item.id !== option.id);
-                              }
-                              return [...prev, option];
-                            })
-                          }
-                        />
                         <span className="min-w-0 text-sm">
                           <span className="block font-medium text-slate-800">
                             {option.name}
@@ -553,15 +558,19 @@ export default function SubmitAwardRecognitionPage() {
                             {[option.username, option.email].filter(Boolean).join(" | ")}
                           </span>
                         </span>
-                      </label>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    No CKAN users found for the selected research center.
-                  </p>
-                )}
-              </div>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      No matching CKAN users found.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  Start typing a recipient name to search CKAN users.
+                </p>
+              )}
             </div>
           </label>
 
