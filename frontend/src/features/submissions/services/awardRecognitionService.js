@@ -91,7 +91,7 @@ export async function listAwardRecipientOptions(options = {}) {
     const query = new URLSearchParams();
     if (options?.orgId) query.set("org_id", String(options.orgId).trim());
     const payload = await apiFetch(
-      `/integrations/ckan/users${query.toString() ? `?${query}` : ""}`,
+      `/awards/recipient-options${query.toString() ? `?${query}` : ""}`,
     );
     return {
       data: Array.isArray(payload?.data) ? payload.data : [],
