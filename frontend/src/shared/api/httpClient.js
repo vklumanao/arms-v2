@@ -18,6 +18,9 @@ function mockAuthPayload() {
       full_name: "Demo Admin",
       role: "admin",
       is_active: true,
+      is_center_chief: false,
+      managed_center_id: null,
+      managed_center_name: null,
     },
   };
 }
@@ -142,11 +145,28 @@ function mockApiPayload(path, options = {}) {
 
   if (cleanPath === "/admin/controls/reference-data") {
     return {
-      centers: [],
+      centers: [
+        {
+          id: "org-1",
+          name: "Research Center A",
+          code: "ORG_1",
+          center_chief_id: "ckan-user-2",
+          center_chief_name: "Demo Faculty",
+        },
+      ],
       agendas: [],
       departments: [],
       proponents: [],
-      ckan_users: [],
+      ckan_users: [
+        {
+          id: "ckan-user-2",
+          name: "Demo Faculty",
+          username: "demo-faculty",
+          email: "faculty@arms.local",
+          state: "active",
+          role: "faculty",
+        },
+      ],
     };
   }
   if (cleanPath === "/admin/controls/reference-usage") {
