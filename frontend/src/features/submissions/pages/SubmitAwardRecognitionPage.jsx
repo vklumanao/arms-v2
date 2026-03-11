@@ -80,6 +80,11 @@ export default function SubmitAwardRecognitionPage() {
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+  const sanitizeDigits = (value, maxLength = null) => {
+    const digitsOnly = String(value || "").replace(/\D+/g, "");
+    if (maxLength == null) return digitsOnly;
+    return digitsOnly.slice(0, maxLength);
+  };
 
   useEffect(() => {
     if (!editId) return;
@@ -334,9 +339,12 @@ export default function SubmitAwardRecognitionPage() {
             <input
               className="control-input"
               inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={4}
               value={form.year_received}
-              onChange={(event) => updateField("year_received", event.target.value)}
+              onChange={(event) =>
+                updateField("year_received", sanitizeDigits(event.target.value, 4))
+              }
               placeholder="2026"
             />
           </label>
