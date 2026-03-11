@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/app/layouts/AppShell";
 import ProtectedRoute from "@/app/router/guards/ProtectedRoute";
 import RoleRoute from "@/app/router/guards/RoleRoute";
+import AdminOrCenterChiefRoute from "@/app/router/guards/AdminOrCenterChiefRoute";
 import PermissionRoute from "@/app/router/guards/PermissionRoute";
 import RouteErrorBoundary from "@/shared/components/feedback/RouteErrorBoundary";
 import { PERMISSIONS } from "@/shared/auth/permissions";
@@ -124,6 +125,13 @@ export default function AppRoutes() {
             />
           </Route>
 
+          <Route element={<AdminOrCenterChiefRoute />}>
+            <Route
+              path="/admin/research-center"
+              element={withBoundary(<AdminResearchCenterPage />)}
+            />
+          </Route>
+
           <Route element={<RoleRoute allow={["admin"]} />}>
             <Route
               path="/admin/controls"
@@ -145,10 +153,6 @@ export default function AppRoutes() {
                 PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
                 <AdminAffiliatesModulePage />,
               )}
-            />
-            <Route
-              path="/admin/research-center"
-              element={withBoundary(<AdminResearchCenterPage />)}
             />
             <Route
               path="/admin/departments"
