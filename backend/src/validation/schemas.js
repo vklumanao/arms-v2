@@ -3,6 +3,11 @@ import { z } from "zod";
 // Reusable primitives keep validation consistent across auth/profile handlers.
 const email = z.string().trim().email();
 const role = z.enum(["student", "faculty", "admin"]);
+const optionalEmail = z.preprocess((value) => {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized : null;
+}, z.string().email().nullable().optional());
 
 /**
  * Registration payload validator.
@@ -91,7 +96,7 @@ export const awardRecognitionSchema = z.object({
         id: z.string().trim().min(1),
         name: z.string().trim().min(1),
         username: z.string().trim().optional().nullable(),
-        email: z.string().trim().email().optional().nullable(),
+        email: optionalEmail,
       }),
     )
     .optional()
