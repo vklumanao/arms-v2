@@ -499,22 +499,26 @@ export default function AwardsRecognitionPage() {
             <Link to="/awards-recognitions/add" className="btn btn-primary">
               Add Awards/Recognitions
             </Link>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsCsv}
-              disabled={!filteredRows.length || Boolean(exportingType)}
-            >
-              {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsPdf}
-              disabled={!filteredRows.length || Boolean(exportingType)}
-            >
-              {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-            </button>
+            {isAdmin ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsCsv}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={exportAsPdf}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                </button>
+              </>
+            ) : null}
           </div>
         </div>
         {filteredRows.length === 0 ? (
@@ -580,7 +584,8 @@ export default function AwardsRecognitionPage() {
                             rel="noreferrer"
                             className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
                           >
-                            {row.supporting_mov_file_name || "Attached MOV file"}
+                            {row.supporting_mov_file_name ||
+                              "Attached MOV file"}
                           </a>
                         ) : null}
                         {!row.supporting_movs && !row.supporting_mov_file_path
@@ -590,22 +595,26 @@ export default function AwardsRecognitionPage() {
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          onClick={() => openEdit(row)}
-                        >
-                          <PencilLine size={14} />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          onClick={() => setDeleteTarget(row)}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
+                        {isAdmin ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              onClick={() => openEdit(row)}
+                            >
+                              <PencilLine size={14} />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline"
+                              onClick={() => setDeleteTarget(row)}
+                            >
+                              <Trash2 size={14} />
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
