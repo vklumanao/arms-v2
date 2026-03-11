@@ -247,12 +247,19 @@ export default function AdminResearchCenterPage() {
       setCenterChiefUsers(
         ckanUsersData
           .filter(
-            (item) => String(item?.state || "").toLowerCase() !== "deleted",
+            (item) =>
+              String(item?.state || "").toLowerCase() !== "deleted" &&
+              String(item?.role || "").toLowerCase() === "faculty",
           )
           .map((item) => ({
             id: item.id,
             name:
-              item.name || item.username || item.email || "Unnamed CKAN User",
+              item.fullname ||
+              item.display_name ||
+              item.name ||
+              item.username ||
+              item.email ||
+              "Unnamed CKAN User",
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
