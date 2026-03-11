@@ -75,6 +75,23 @@ export const affiliateProfileUpdateSchema = z.object({
   is_gs_faculty: z.boolean().optional(),
 });
 
+export const awardRecognitionSchema = z.object({
+  work_title: z.string().trim().min(1),
+  award_recognition: z.string().trim().min(1),
+  awarding_body: z.string().trim().min(1),
+  year_received: z
+    .union([z.string().trim(), z.number().int()])
+    .transform((value) => String(value).trim())
+    .refine((value) => /^\d{4}$/.test(value), "Year received must be a 4-digit year."),
+  level: z.string().trim().min(1),
+  recipients: z.string().trim().min(1),
+  supporting_movs: z.string().trim().optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  research_center_id: z.string().trim().min(1),
+  department_id: z.string().trim().optional().nullable(),
+  program_department: z.string().trim().optional().nullable(),
+});
+
 /**
  * Parses input with a given Zod schema or throws a user-facing error.
  *
