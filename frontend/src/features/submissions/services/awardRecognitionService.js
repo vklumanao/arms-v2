@@ -85,3 +85,19 @@ export async function uploadAwardRecognitionMovFile({ recordId, file }) {
     return { data: null, error };
   }
 }
+
+export async function listAwardRecipientOptions(options = {}) {
+  try {
+    const query = new URLSearchParams();
+    if (options?.orgId) query.set("org_id", String(options.orgId).trim());
+    const payload = await apiFetch(
+      `/integrations/ckan/users${query.toString() ? `?${query}` : ""}`,
+    );
+    return {
+      data: Array.isArray(payload?.data) ? payload.data : [],
+      error: null,
+    };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
