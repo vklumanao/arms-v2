@@ -25,6 +25,7 @@ import {
   ResearchOutputsPage,
   ResearchProjectsHubPage,
   SubmitAffiliationPage,
+  SubmitAwardRecognitionPage,
 } from "@/features/submissions";
 import {
   AdminAffiliatesModulePage,
@@ -112,6 +113,13 @@ export default function AppRoutes() {
               element={withPermission(
                 PERMISSIONS.AWARDS_RECOGNITION_VIEW,
                 <AwardsRecognitionPage />,
+              )}
+            />
+            <Route
+              path="/awards-recognitions/add"
+              element={withPermission(
+                PERMISSIONS.AWARDS_RECOGNITION_VIEW,
+                <SubmitAwardRecognitionPage />,
               )}
             />
           </Route>
