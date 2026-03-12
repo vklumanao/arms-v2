@@ -21,8 +21,6 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/features/admin/services";
-import { getOrgExtra } from "@/features/admin/utils";
-import { fetchCkanGroups } from "@/shared/api/ckanApi";
 
 const INITIAL_FILTERS = {
   search: "",
@@ -111,18 +109,13 @@ export default function AdminDepartmentPage() {
     setDataLoading(true);
     setDataError("");
     try {
-      const [ckanGroupsPayload, referencePayload] = await Promise.all([
-        fetchCkanGroups(),
-        fetchReferenceData(),
-      ]);
-      const centersData = Array.isArray(ckanGroupsPayload?.data)
-        ? ckanGroupsPayload.data
-        : [];
+      const referencePayload = await fetchReferenceData();
+      const centersData = referencePayload?.departmentsRes?.data || [];
       const ckanUsersData = referencePayload?.ckanUsersRes?.data || [];
 
       const usageByCenter = await Promise.all(
         centersData.map(async (center) => {
-          const centerId = center?.name || center?.id;
+          const centerId = center?.id;
           try {
             const usage = await fetchReferenceUsageCounts({
               type: "department",
@@ -161,24 +154,20 @@ export default function AdminDepartmentPage() {
 
       const mapped = centersData
         .map((item) => {
-          const orgId = item.name || item.id;
-          const chairpersonId = String(getOrgExtra(item, "chairperson_id") || "").trim();
+          const orgId = item.id;
+          const chairpersonId = String(item?.chairperson_id || "").trim();
           const chairpersonName =
-            String(getOrgExtra(item, "chairperson_name") || "").trim() ||
+            String(item?.chairperson_name || "").trim() ||
             ckanUsersData.find(
               (user) => String(user?.id || "").trim() === chairpersonId,
             )?.name ||
             "";
           return {
             id: orgId,
-            code:
-              String(getOrgExtra(item, "code") || "").trim() ||
-              String(orgId || "-")
-                .toUpperCase()
-                .replace(/[^A-Z0-9_]/g, "_"),
+            code: String(item?.code || "").trim() || String(orgId || "-"),
             name: item.title || item.display_name || item.name || "-",
             type: "Department",
-            tag: "research-center",
+            tag: "department",
             chairpersonId,
             chairpersonName: chairpersonName || "-",
             projectCount: usageMap[orgId]?.projectCount || 0,
