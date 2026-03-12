@@ -5,6 +5,7 @@ import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
+  createAdminUser,
   fetchAdminUserDetail,
   fetchAdminUsers,
   sendAdminPasswordReset,
@@ -15,17 +16,26 @@ import {
   BadgeCheck,
   Briefcase,
   Mail,
+  Plus,
   Search,
   ShieldCheck,
   UserCheck,
   UserCog,
   Users,
+  X,
 } from "lucide-react";
 
 const ROLE_OPTIONS = ["student", "faculty", "admin"];
 
 export default function AdminUsersPage() {
-  const { centers } = useReferenceData();
+  const { centers, departments } = useReferenceData();
+  const EMPTY_CREATE_FORM = {
+    full_name: "",
+    email: "",
+    role: "faculty",
+    ckan_org_id: "",
+    ckan_group_id: "",
+  };
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [savingUserById, setSavingUserById] = useState({});
@@ -36,6 +46,10 @@ export default function AdminUsersPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [pendingResetByUserId, setPendingResetByUserId] = useState({});
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
+  const [createSaving, setCreateSaving] = useState(false);
+  const [createResult, setCreateResult] = useState(null);
   const toast = useToast();
   const [detailData, setDetailData] = useState({
     submissionsCount: 0,
@@ -303,6 +317,61 @@ export default function AdminUsersPage() {
     return () => clearInterval(interval);
   }, [detailUser?.id]);
 
+  const openCreateModal = () => {
+    setError("");
+    setMessage("");
+    setCreateResult(null);
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    if (createSaving) return;
+    setCreateModalOpen(false);
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateResult(null);
+  };
+
+  const submitCreateUser = async () => {
+    const full_name = String(createForm.full_name || "").trim();
+    const email = String(createForm.email || "")
+      .trim()
+      .toLowerCase();
+
+    setError("");
+    setMessage("");
+
+    if (full_name.length < 3) {
+      setError("Full name must be at least 3 characters.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError("A valid email is required.");
+      return;
+    }
+
+    setCreateSaving(true);
+    try {
+      const created = await createAdminUser({
+        full_name,
+        email,
+        role: createForm.role,
+        ckan_org_id: createForm.ckan_org_id || null,
+        ckan_group_id: createForm.ckan_group_id || null,
+        department:
+          departments.find((row) => row.id === createForm.ckan_group_id)?.name ||
+          null,
+      });
+      setUsers((prev) => [created, ...prev]);
+      setCreateResult(created || null);
+      setMessage("User account created.");
+    } catch (createError) {
+      setError(createError.message || "Failed to create user account.");
+    } finally {
+      setCreateSaving(false);
+    }
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -353,18 +422,24 @@ export default function AdminUsersPage() {
           <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500 flex items-center gap-2">
             <UserCog size={15} /> Accounts Directory
           </h2>
-          <label className="relative w-full lg:max-w-md">
-            <Search
-              size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              className="control-input pl-8"
-              placeholder="Search user by name, email, or role"
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-            />
-          </label>
+          <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
+            <label className="relative w-full lg:min-w-[22rem]">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                className="control-input pl-8"
+                placeholder="Search user by name, email, or role"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+            </label>
+            <button className="btn btn-primary" onClick={openCreateModal}>
+              <Plus size={14} />
+              Create User
+            </button>
+          </div>
         </div>
         <div className="panel-body pt-0">
           <div className="max-h-[70vh] overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)]">
@@ -792,6 +867,152 @@ export default function AdminUsersPage() {
               </div>
             )}
           </aside>
+        </div>
+      ) : null}
+
+      {createModalOpen ? (
+        <div className="modal-overlay modal-overlay-centered" onClick={closeCreateModal}>
+          <div
+            className="modal-dialog modal-dialog-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="panel">
+              <div className="panel-header flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Create User Account
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    Add a faculty or student account with optional center and department assignment.
+                  </p>
+                </div>
+                <button className="btn btn-outline px-2" onClick={closeCreateModal}>
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="panel-body space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Full Name</span>
+                    <input
+                      className="control-input"
+                      value={createForm.full_name}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          full_name: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. DELA CRUZ, JUAN A."
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Email</span>
+                    <input
+                      className="control-input"
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      placeholder="juan.delacruz@carsu.edu.ph"
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Role</span>
+                    <select
+                      className="control-select"
+                      value={createForm.role}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          role: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="faculty">Faculty</option>
+                      <option value="student">Student</option>
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Research Center</span>
+                    <select
+                      className="control-select"
+                      value={createForm.ckan_org_id}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          ckan_org_id: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">None</option>
+                      {(centers || []).map((center) => (
+                        <option key={center.id} value={center.id}>
+                          {center.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-sm md:col-span-2">
+                    <span className="font-medium text-slate-700">Department</span>
+                    <select
+                      className="control-select"
+                      value={createForm.ckan_group_id}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          ckan_group_id: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">None</option>
+                      {(departments || []).map((department) => (
+                        <option key={department.id} value={department.id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                {createResult?.temporary_password ? (
+                  <div className="app-card-muted app-card-compact text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">Account created</p>
+                    <p className="mt-1">
+                      Temporary password:{" "}
+                      <span className="font-mono font-semibold">
+                        {createResult.temporary_password}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Share this once, then require the user to change it after first login.
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="btn btn-outline"
+                    onClick={closeCreateModal}
+                    disabled={createSaving}
+                  >
+                    Close
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={submitCreateUser}
+                    disabled={createSaving}
+                  >
+                    {createSaving ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 
