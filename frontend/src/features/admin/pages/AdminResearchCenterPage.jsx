@@ -149,7 +149,7 @@ export default function AdminResearchCenterPage() {
       const [usageByCenter, linkedAgendasByCenter] = await Promise.all([
         Promise.all(
           centersData.map(async (center) => {
-            const centerId = center?.name || center?.id;
+            const centerId = center?.id;
             try {
               const usage = await fetchReferenceUsageCounts({
                 type: "center",
@@ -183,7 +183,7 @@ export default function AdminResearchCenterPage() {
         ),
         Promise.all(
           centersData.map(async (center) => {
-            const centerId = center?.name || center?.id;
+            const centerId = center?.id;
             try {
               const linked = await fetchReferenceLinks({
                 type: "center",
