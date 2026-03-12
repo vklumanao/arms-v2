@@ -423,7 +423,68 @@ function mockApiPayload(path, options = {}) {
       },
     };
   }
-  if (cleanPath === "/submissions/mine/projects") return { data: [] };
+  if (cleanPath === "/submissions/mine/projects") {
+    return {
+      data: [
+        {
+          id: "mock-project-owned-1",
+          ckan_dataset_id: "mock-project-owned-1",
+          title: "Owned Research Project",
+          lead_researcher: "Demo Faculty",
+          faculty_team: "Demo Faculty",
+          faculty_team_users: [
+            {
+              id: "ckan-user-2",
+              name: "Demo Faculty",
+              username: "demo-faculty",
+              email: "faculty@arms.local",
+              role: "faculty",
+            },
+          ],
+          submitted_by_name: "Demo Faculty",
+          submitted_by_email: "faculty@arms.local",
+          submitted_at: new Date().toISOString(),
+          year: "2026",
+          status: "ongoing",
+          expected_outputs: "Publication (Target: 1)",
+          private: true,
+          organization: { name: "org-1", title: "Research Center A" },
+          resources: [],
+        },
+      ],
+    };
+  }
+  if (cleanPath === "/submissions/mine/linked-projects") {
+    return {
+      data: [
+        {
+          id: "mock-project-linked-1",
+          ckan_dataset_id: "mock-project-linked-1",
+          title: "Linked Collaborative Project",
+          lead_researcher: "Another Faculty",
+          faculty_team: "Demo Faculty; Another Faculty",
+          faculty_team_users: [
+            {
+              id: "ckan-user-2",
+              name: "Demo Faculty",
+              username: "demo-faculty",
+              email: "faculty@arms.local",
+              role: "faculty",
+            },
+          ],
+          submitted_by_name: "Another Faculty",
+          submitted_by_email: "another@arms.local",
+          submitted_at: new Date().toISOString(),
+          year: "2026",
+          status: "proposal",
+          expected_outputs: "Patent / Intellectual Property (Target: 1)",
+          private: true,
+          organization: { name: "org-1", title: "Research Center A" },
+          resources: [],
+        },
+      ],
+    };
+  }
   if (cleanPath === "/submissions/projects") return { data: [] };
   if (cleanPath === "/submissions/mine/research-outputs") return { data: [] };
   if (cleanPath === "/submissions/mov-summary") return { data: [] };
@@ -447,7 +508,30 @@ function mockApiPayload(path, options = {}) {
         id: cleanPath.split("/")[2] || "mock-project-id",
         title: "Mock Research Project",
         lead_researcher: "Demo Lead",
+        lead_researcher_user: {
+          id: "ckan-user-2",
+          name: "Demo Faculty",
+          username: "demo-faculty",
+          email: "faculty@arms.local",
+          role: "faculty",
+        },
         faculty_team: "Demo Faculty 1; Demo Faculty 2",
+        faculty_team_users: [
+          {
+            id: "ckan-user-2",
+            name: "Demo Faculty",
+            username: "demo-faculty",
+            email: "faculty@arms.local",
+            role: "faculty",
+          },
+          {
+            id: "ckan-user-4",
+            name: "Demo Faculty 2",
+            username: "demo-faculty-2",
+            email: "faculty2@arms.local",
+            role: "faculty",
+          },
+        ],
         student_team: "Demo Student 1",
         abstract: "Mock abstract",
         year: "2026",
