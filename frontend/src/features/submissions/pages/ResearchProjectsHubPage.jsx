@@ -21,7 +21,6 @@ import {
   Clock3,
   FileText,
   Search,
-  SlidersHorizontal,
   XCircle,
 } from "lucide-react";
 
@@ -637,17 +636,14 @@ export default function ResearchProjectsHubPage() {
         </article>
       </div>
 
-      <div className="panel">
-        <div className="panel-header">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-            <SlidersHorizontal size={14} />
-            Filters
-          </div>
-        </div>
-        <div className="panel-body">
-          <div className="space-y-3">
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-              <label className="relative">
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Research Project Records ({filteredProjects.length})
+              </h2>
+              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
                 <Search
                   size={14}
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -659,84 +655,78 @@ export default function ResearchProjectsHubPage() {
                   onChange={(e) => updateFilter("search", e.target.value)}
                 />
               </label>
-              <select
-                className="control-select"
-                value={filters.status}
-                onChange={(e) => updateFilter("status", e.target.value)}
-              >
-                <option value="">Filter by status</option>
-                {STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status[0].toUpperCase() + status.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="control-input"
-                placeholder="Year"
-                value={filters.year}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                onChange={(e) => updateFilter("year", sanitizeDigits(e.target.value))}
-              />
-              <div className="flex gap-2">
-                <select
-                  className="control-select"
-                  value={filters.sortBy}
-                  onChange={(e) => updateFilter("sortBy", e.target.value)}
-                >
-                  <option value="submitted_desc">Sort: Newest submitted</option>
-                  <option value="submitted_asc">Sort: Oldest submitted</option>
-                  <option value="title_asc">Sort: Title A-Z</option>
-                  <option value="title_desc">Sort: Title Z-A</option>
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={clearFilters}
-                >
-                  Reset
-                </button>
-              </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={exportAsCsv}
+                    disabled={!filteredProjects.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={exportAsPdf}
+                    disabled={!filteredProjects.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </button>
+                </>
+              ) : null}
+              <Link className="btn btn-primary" to="/submit-project/submit">
+                Submit Research Project
+              </Link>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[11rem_8rem_minmax(0,14rem)]">
+            <select
+              className="control-select"
+              value={filters.status}
+              onChange={(e) => updateFilter("status", e.target.value)}
+            >
+              <option value="">Filter by status</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status[0].toUpperCase() + status.slice(1)}
+                </option>
+              ))}
+            </select>
+            <input
+              className="control-input"
+              placeholder="Year"
+              value={filters.year}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              onChange={(e) => updateFilter("year", sanitizeDigits(e.target.value))}
+            />
+            <select
+              className="control-select"
+              value={filters.sortBy}
+              onChange={(e) => updateFilter("sortBy", e.target.value)}
+            >
+              <option value="submitted_desc">Sort: Newest submitted</option>
+              <option value="submitted_asc">Sort: Oldest submitted</option>
+              <option value="title_asc">Sort: Title A-Z</option>
+              <option value="title_desc">Sort: Title Z-A</option>
+            </select>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={clearFilters}
+            >
+              Reset
+            </button>
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-semibold">{filteredProjects.length}</span>{" "}
               project(s).
             </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            Research Project Records ({filteredProjects.length})
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link className="btn btn-primary" to="/submit-project/submit">
-              Submit Research Project
-            </Link>
-            {isAdmin ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsCsv}
-                  disabled={!filteredProjects.length || Boolean(exportingType)}
-                >
-                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsPdf}
-                  disabled={!filteredProjects.length || Boolean(exportingType)}
-                >
-                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                </button>
-              </>
-            ) : null}
           </div>
         </div>
         {filteredProjects.length === 0 ? (
