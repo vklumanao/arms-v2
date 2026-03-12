@@ -6,6 +6,7 @@
 
   if (key === "for_approval" || key === "pending") return "proposal";
   if (key === "on_going") return "ongoing";
+  if (key === "active") return "ongoing";
   return key;
 }
 
