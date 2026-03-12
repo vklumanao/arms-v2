@@ -9,6 +9,7 @@ import PaginationControls from "@/shared/components/navigation/PaginationControl
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   deleteOwnedProject,
+  fetchLinkedProjects,
   fetchUserProjects,
   fetchProjectResources,
   updateResearchOutputVisibility,
@@ -41,6 +42,7 @@ export default function ResearchProjectsHubPage() {
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
   const [projects, setProjects] = useState([]);
+  const [linkedProjects, setLinkedProjects] = useState([]);
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -90,6 +92,7 @@ export default function ResearchProjectsHubPage() {
     if (!user?.id) return;
     if (missingAffiliation) {
       setProjects([]);
+      setLinkedProjects([]);
       return;
     }
 
@@ -106,6 +109,20 @@ export default function ResearchProjectsHubPage() {
       .catch((queryError) => {
         if (!isMounted) return;
         setError(queryError.message || "Unable to load your projects.");
+      });
+
+    fetchLinkedProjects()
+      .then(({ data, error: loadError }) => {
+        if (!isMounted) return;
+        if (loadError) {
+          setError(loadError.message || "Unable to load linked projects.");
+          return;
+        }
+        setLinkedProjects(Array.isArray(data) ? data : []);
+      })
+      .catch((queryError) => {
+        if (!isMounted) return;
+        setError(queryError.message || "Unable to load linked projects.");
       });
 
     return () => {
@@ -217,11 +234,30 @@ export default function ResearchProjectsHubPage() {
     return filteredProjects.slice(start, start + PROJECTS_PAGE_SIZE);
   }, [currentPage, filteredProjects]);
 
+  const linkedProjectRows = useMemo(
+    () =>
+      linkedProjects.map((project) => ({
+        id: project.id,
+        title: project.title || "-",
+        submitted_by_name: project.submitted_by_name || "Unknown user",
+        lead_researcher: project.lead_researcher || "-",
+        research_center: getProjectOrganization(project),
+        expected_outputs: project.expected_outputs || "-",
+        linked_resources_count: Array.isArray(project.resources)
+          ? project.resources.length
+          : 0,
+        submitted_at: project.submitted_at || null,
+        status: normalizeStatus(project.status),
+      })),
+    [getProjectOrganization, linkedProjects],
+  );
+
   const selectedProject = useMemo(
     () =>
       filteredProjects.find((project) => project.id === selectedProjectId) ||
+      linkedProjects.find((project) => project.id === selectedProjectId) ||
       null,
-    [filteredProjects, selectedProjectId],
+    [filteredProjects, linkedProjects, selectedProjectId],
   );
 
   useEffect(() => {
@@ -840,6 +876,84 @@ export default function ResearchProjectsHubPage() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
+
+      <div className="panel overflow-hidden">
+        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+            Linked Projects ({linkedProjectRows.length})
+          </h2>
+          <p className="text-sm text-slate-500">
+            Linked content summary for your submitted research projects.
+          </p>
+        </div>
+        {linkedProjectRows.length === 0 ? (
+          <div className="p-4">
+            <EmptyState
+              title="No linked projects found"
+              description="Submit a research project first to populate linked project summaries."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Project</th>
+                  <th>Submitted By</th>
+                  <th>Lead Researcher</th>
+                  <th>Research Center</th>
+                  <th>Expected Outputs</th>
+                  <th>Linked Files</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {linkedProjectRows.map((project, index) => (
+                  <tr key={`linked-${project.id}`}>
+                    <td>{index + 1}</td>
+                    <td className="font-medium text-slate-900">
+                      {project.title}
+                    </td>
+                    <td className="text-slate-600">
+                      {project.submitted_by_name}
+                    </td>
+                    <td className="text-slate-600">{project.lead_researcher}</td>
+                    <td className="text-slate-600">{project.research_center}</td>
+                    <td className="max-w-xs text-slate-600">
+                      <span className="line-clamp-2">
+                        {project.expected_outputs}
+                      </span>
+                    </td>
+                    <td className="text-slate-600">
+                      {project.linked_resources_count}
+                    </td>
+                    <td>
+                      <span className={`status-chip status-${project.status}`}>
+                        {project.status}
+                      </span>
+                    </td>
+                    <td className="text-slate-600">
+                      {formatDate(project.submitted_at)}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setSelectedProjectId(project.id)}
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {selectedProject ? (
         <div
