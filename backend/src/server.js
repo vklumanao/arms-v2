@@ -57,6 +57,7 @@ import {
 } from "./stores/user.store.js";
 import {
   affiliateProfileUpdateSchema,
+  adminCreateProponentSchema,
   awardRecognitionSchema,
   forgotPasswordSchema,
   loginSchema,
@@ -690,6 +691,8 @@ registerAwardsRoutes(app, {
 registerAdminRoutes(app, {
   authMiddleware,
   badRequest,
+  parseOrThrow,
+  adminCreateProponentSchema,
   listOrganizations,
   listGroups,
   listUsers,
@@ -711,6 +714,11 @@ registerAdminRoutes(app, {
   updateOrganizationMetadata,
   setGroupMemberRole,
   setOrganizationMemberRole,
+  createOrGetUser,
+  createUser,
+  hashPassword,
+  assignUserToOrganizationEditor,
+  assignUserToGroupEditor,
   findUserByEmail,
   findUserById,
   updateUser,
