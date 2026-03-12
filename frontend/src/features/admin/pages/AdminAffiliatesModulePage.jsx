@@ -12,6 +12,7 @@ import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
+import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { fetchCkanDatasets } from "@/shared/api/ckanApi";
 import {
   buildAffiliateAnalytics,
@@ -53,6 +54,7 @@ export default function AdminAffiliatesModulePage() {
     rows: [],
   });
   const toast = useToast();
+  const { departments: referenceDepartments } = useReferenceData();
 
   useEffect(() => {
     if (error) toast.error("Load failed", error);
@@ -90,6 +92,16 @@ export default function AdminAffiliatesModulePage() {
   const analytics = useMemo(() => buildAffiliateAnalytics(rows), [rows]);
 
   const departments = useMemo(() => listAffiliateDepartments(rows), [rows]);
+  const departmentOptions = useMemo(() => {
+    const systemDepartments = Array.isArray(referenceDepartments)
+      ? referenceDepartments
+          .map((row) => String(row?.name || "").trim())
+          .filter(Boolean)
+      : [];
+    return [...new Set([...systemDepartments, ...departments])].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }, [departments, referenceDepartments]);
 
   const filteredRows = useMemo(
     () => filterAndSortAffiliates(rows, filters),
@@ -871,8 +883,8 @@ export default function AdminAffiliatesModulePage() {
             <div className="panel-body grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Department</span>
-                <input
-                  className="control-input"
+                <select
+                  className="control-select"
                   value={editForm.department}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -880,7 +892,14 @@ export default function AdminAffiliatesModulePage() {
                       department: event.target.value,
                     }))
                   }
-                />
+                >
+                  <option value="">None</option>
+                  {departmentOptions.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
@@ -910,6 +929,7 @@ export default function AdminAffiliatesModulePage() {
                 </span>
                 <input
                   className="control-input"
+                  placeholder="e.g. Associate Professor"
                   value={editForm.designation}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -923,8 +943,8 @@ export default function AdminAffiliatesModulePage() {
                 <span className="font-semibold text-slate-700">
                   Employment Status
                 </span>
-                <input
-                  className="control-input"
+                <select
+                  className="control-select"
                   value={editForm.employment_status}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -932,7 +952,11 @@ export default function AdminAffiliatesModulePage() {
                       employment_status: event.target.value,
                     }))
                   }
-                />
+                >
+                  <option value="">None</option>
+                  <option value="Permanent">Permanent</option>
+                  <option value="Lecturer">Lecturer</option>
+                </select>
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">
                 <span className="font-semibold text-slate-700">
@@ -941,6 +965,7 @@ export default function AdminAffiliatesModulePage() {
                 <input
                   type="url"
                   className="control-input"
+                  placeholder="https://scholar.google.com/..."
                   value={editForm.google_scholar_link}
                   onChange={(event) =>
                     setEditForm((prev) => ({
