@@ -388,6 +388,8 @@ export default function SubmitAffiliationPage() {
         String(
           row.name || row.fullname || row.display_name || row.username || "",
         ).trim() || "CKAN User",
+      username: String(row.username || row.name || "").trim(),
+      email: String(row.email || "").trim().toLowerCase(),
       role: String(row.role || "").trim().toLowerCase(),
     }));
   }, [ckanUsers]);
@@ -405,6 +407,38 @@ export default function SubmitAffiliationPage() {
       ),
     [ckanUserOptions],
   );
+  const selectedLeadResearcherUser = useMemo(() => {
+    const selected = form.lead_researcher_user;
+    if (selected && typeof selected === "object") return selected;
+    if (!selectedLeadResearcher) return null;
+    return (
+      leadEligibleUserOptions.find(
+        (row) => String(row.name || "").trim() === selectedLeadResearcher,
+      ) || null
+    );
+  }, [
+    form.lead_researcher_user,
+    leadEligibleUserOptions,
+    selectedLeadResearcher,
+  ]);
+  const selectedFacultyTeamUsers = useMemo(() => {
+    const structured = Array.isArray(form.faculty_team_users)
+      ? form.faculty_team_users
+      : [];
+    if (structured.length > 0) return structured;
+    return facultyTeamSelections
+      .map(
+        (name) =>
+          facultyEligibleUserOptions.find(
+            (row) => String(row.name || "").trim() === String(name || "").trim(),
+          ) || { id: "", name, username: "", email: "", role: "faculty" },
+      )
+      .filter(Boolean);
+  }, [
+    facultyEligibleUserOptions,
+    facultyTeamSelections,
+    form.faculty_team_users,
+  ]);
   const leadSuggestions = useMemo(() => {
     const keyword = leadSearch.trim().toLowerCase();
     if (!keyword) return [];
@@ -549,24 +583,63 @@ export default function SubmitAffiliationPage() {
     });
   };
 
-  const addProponentSelection = (field, name) => {
+  const addProponentSelection = (field, userOption) => {
+    const name = String(userOption?.name || "").trim();
+    if (!name) return;
     const current = splitCsvNames(form[field]);
     if (current.includes(name)) return;
-    updateProponentMultiSelect(field, [...current, name]);
+    setForm((prev) => ({
+      ...prev,
+      [field]: toCsvNames([...current, name]),
+      faculty_team_users:
+        field === "faculty_team"
+          ? [
+              ...(Array.isArray(prev.faculty_team_users)
+                ? prev.faculty_team_users.filter(
+                    (item) => String(item?.name || "").trim() !== name,
+                  )
+                : []),
+              {
+                id: userOption?.id || "",
+                name,
+                username: userOption?.username || "",
+                email: userOption?.email || "",
+                role: userOption?.role || "faculty",
+              },
+            ]
+          : prev.faculty_team_users,
+    }));
   };
 
   const removeProponentSelection = (field, name) => {
     const current = splitCsvNames(form[field]);
-    updateProponentMultiSelect(
-      field,
-      current.filter((item) => item !== name),
-    );
-  };
-
-  const setLeadResearcherSelection = (name) => {
     setForm((prev) => ({
       ...prev,
-      lead_researcher: String(name || "").trim(),
+      [field]: toCsvNames(current.filter((item) => item !== name)),
+      faculty_team_users:
+        field === "faculty_team"
+          ? (Array.isArray(prev.faculty_team_users)
+              ? prev.faculty_team_users
+              : []
+            ).filter((item) => String(item?.name || "").trim() !== name)
+          : prev.faculty_team_users,
+    }));
+  };
+
+  const setLeadResearcherSelection = (userOption) => {
+    const name = String(userOption?.name || "").trim();
+    setForm((prev) => ({
+      ...prev,
+      lead_researcher: name,
+      lead_researcher_user: name
+        ? {
+            id: userOption?.id || "",
+            name,
+            username: userOption?.username || "",
+            email: userOption?.email || "",
+            role: userOption?.role || "",
+          }
+        : null,
     }));
   };
 
@@ -1111,7 +1184,7 @@ export default function SubmitAffiliationPage() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && leadSuggestions[0]) {
                             e.preventDefault();
-                            setLeadResearcherSelection(leadSuggestions[0].name);
+                            setLeadResearcherSelection(leadSuggestions[0]);
                             setLeadSearch("");
                             setLeadDropdownOpen(false);
                           }
@@ -1125,7 +1198,7 @@ export default function SubmitAffiliationPage() {
                               type="button"
                               className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
                               onClick={() => {
-                                setLeadResearcherSelection(ckanUser.name);
+                                setLeadResearcherSelection(ckanUser);
                                 setLeadSearch("");
                                 setLeadDropdownOpen(false);
                               }}
@@ -1151,7 +1224,7 @@ export default function SubmitAffiliationPage() {
                             <button
                               type="button"
                               className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
-                              onClick={() => setLeadResearcherSelection("")}
+                              onClick={() => setLeadResearcherSelection(null)}
                               aria-label={`Remove ${selectedLeadResearcher}`}
                             >
                               x
@@ -1185,7 +1258,7 @@ export default function SubmitAffiliationPage() {
                             e.preventDefault();
                             addProponentSelection(
                               "faculty_team",
-                              facultySuggestions[0].name,
+                              facultySuggestions[0],
                             );
                             setFacultySearch("");
                             setFacultyDropdownOpen(false);
@@ -1202,7 +1275,7 @@ export default function SubmitAffiliationPage() {
                               onClick={() => {
                                 addProponentSelection(
                                   "faculty_team",
-                                  ckanUser.name,
+                                  ckanUser,
                                 );
                                 setFacultySearch("");
                                 setFacultyDropdownOpen(false);
