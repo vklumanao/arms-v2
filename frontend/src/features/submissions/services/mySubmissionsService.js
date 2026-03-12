@@ -16,6 +16,15 @@ export async function fetchUserProjects({ userId }) {
   }
 }
 
+export async function fetchLinkedProjects() {
+  try {
+    const payload = await apiFetch("/submissions/mine/linked-projects");
+    return { data: payload?.data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
 export async function fetchAllProjects() {
   try {
     const payload = await apiFetch("/submissions/projects");
