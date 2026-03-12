@@ -156,7 +156,21 @@ function mockApiPayload(path, options = {}) {
       ],
       agendas: [],
       departments: [],
-      proponents: [],
+      proponents: [
+        {
+          id: "demo-proponent-1",
+          name: "Demo Faculty",
+          full_name: "Demo Faculty",
+          email: "faculty@arms.local",
+          role: "faculty",
+          department: "Computer Science",
+          ckan_org_id: "org-1",
+          ckan_group_id: "group-1",
+          ckan_username: "demo-faculty",
+          ckan_user_id: "ckan-user-2",
+          is_active: true,
+        },
+      ],
       ckan_users: [
         {
           id: "ckan-user-2",
@@ -184,6 +198,28 @@ function mockApiPayload(path, options = {}) {
   }
   if (cleanPath === "/admin/controls/sync-ckan-orgs") {
     return { summary: { synced: 0 } };
+  }
+  if (cleanPath === "/admin/controls/proponents/accounts" && method === "POST") {
+    const rawBody =
+      typeof options.body === "string"
+        ? JSON.parse(options.body || "{}")
+        : options.body || {};
+    return {
+      data: {
+        id: "demo-proponent-created",
+        name: rawBody.full_name || "Created Proponent",
+        full_name: rawBody.full_name || "Created Proponent",
+        email: rawBody.email || "created@arms.local",
+        role: rawBody.role || "faculty",
+        department: rawBody.department || null,
+        ckan_org_id: rawBody.ckan_org_id || null,
+        ckan_group_id: rawBody.ckan_group_id || null,
+        ckan_username: "created-proponent",
+        ckan_user_id: "ckan-created-user",
+        is_active: true,
+        temporary_password: "Arms!demo1234",
+      },
+    };
   }
   if (cleanPath.includes("/admin/controls/reference/")) {
     if (method === "PATCH") return { data: null };
