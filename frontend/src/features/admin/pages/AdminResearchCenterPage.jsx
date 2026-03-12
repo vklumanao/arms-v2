@@ -579,25 +579,10 @@ export default function AdminResearchCenterPage() {
     return filteredScopedProjects.slice(start, start + PROJECT_PAGE_SIZE);
   }, [filteredScopedProjects, projectPage]);
 
-  const memberDepartmentBreakdown = useMemo(
-    () =>
-      [...new Map(
-        scopedMembers
-          .map((member) => String(member?.department || "").trim())
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b))
-          .map((department) => [
-            department,
-            scopedMembers.filter(
-              (member) => String(member?.department || "").trim() === department,
-            ).length,
-          ]),
-      ).entries()].map(([department, count]) => ({ department, count })),
-    [scopedMembers],
-  );
-
   const scopedSummary = useMemo(() => {
-    const activeMembers = scopedMembers.filter((member) => member?.is_active !== false);
+    const activeMembers = scopedMembers.filter(
+      (member) => member?.is_active !== false,
+    );
     return {
       totalMembers: scopedMembers.length,
       activeMembers: activeMembers.length,
@@ -1188,31 +1173,6 @@ export default function AdminResearchCenterPage() {
                   Agendas: {scopedSummary.agendas}
                 </p>
               </article>
-            </div>
-
-            <div className="panel">
-              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                <Users size={14} />
-                Member Breakdown
-              </div>
-              <div className="panel-body">
-                {memberDepartmentBreakdown.length === 0 ? (
-                  <p className="text-sm text-slate-600">
-                    No department breakdown available yet.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {memberDepartmentBreakdown.map((item) => (
-                      <span
-                        key={item.department}
-                        className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-sm text-slate-700"
-                      >
-                        {item.department}: {item.count}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="panel">
