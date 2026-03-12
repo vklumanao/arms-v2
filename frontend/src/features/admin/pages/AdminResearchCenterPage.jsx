@@ -1438,6 +1438,10 @@ export default function AdminResearchCenterPage() {
                   <p className="p-4 text-sm text-slate-600">
                     Loading linked projects...
                   </p>
+                ) : scopedLinksError ? (
+                  <p className="p-4 text-sm text-red-700">
+                    {scopedLinksError}
+                  </p>
                 ) : filteredScopedProjects.length === 0 ? (
                   <p className="p-4 text-sm text-slate-600">
                     No linked projects matched the current filters.
