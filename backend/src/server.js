@@ -727,8 +727,18 @@ registerAdminRoutes(app, {
 registerAdminUserRoutes(app, {
   authMiddleware,
   ROLE_PERMISSIONS,
+  parseOrThrow,
+  adminCreateProponentSchema,
   listDatasets,
   updateUser,
+  listOrganizations,
+  listGroups,
+  createOrGetUser,
+  createUser,
+  hashPassword,
+  findUserByEmail,
+  assignUserToOrganizationEditor,
+  assignUserToGroupEditor,
   setOrganizationMemberRole,
   logAuditEvent,
 });
