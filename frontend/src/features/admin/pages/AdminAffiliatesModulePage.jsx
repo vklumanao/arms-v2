@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   GraduationCap,
   Search,
-  SlidersHorizontal,
   UserCheck,
   UserRound,
   UserX,
@@ -431,112 +430,115 @@ export default function AdminAffiliatesModulePage() {
         </article>
       </div>
 
-      <div className="panel">
-        <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-          <SlidersHorizontal size={14} />
-          Filters
-        </div>
-        <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-          <label className="relative">
-            <Search
-              size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              className="control-input pl-8"
-              placeholder="Search name/email/id"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, search: event.target.value }))
-              }
-            />
-          </label>
-          <select
-            className="control-select"
-            value={filters.role}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, role: event.target.value }))
-            }
-          >
-            <option value="all">All roles</option>
-            <option value="faculty">Faculty</option>
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-          <select
-            className="control-select"
-            value={filters.status}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, status: event.target.value }))
-            }
-          >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <select
-            className="control-select"
-            value={filters.department}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                department: event.target.value,
-              }))
-            }
-          >
-            <option value="">All departments</option>
-            {departments.map((department) => (
-              <option key={department} value={department}>
-                {department}
-              </option>
-            ))}
-          </select>
-          <div className="flex gap-2">
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Affiliate Records ({filteredRows.length})
+              </h2>
+              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  className="control-input pl-8"
+                  placeholder="Search name/email/id"
+                  value={filters.search}
+                  onChange={(event) =>
+                    setFilters((prev) => ({ ...prev, search: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={exportAsCsv}
+                disabled={!filteredRows.length || Boolean(exportingType)}
+              >
+                {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={exportAsPdf}
+                disabled={!filteredRows.length || Boolean(exportingType)}
+              >
+                {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_10rem_minmax(0,14rem)]">
             <select
               className="control-select"
-              value={filters.sortBy}
+              value={filters.role}
               onChange={(event) =>
-                setFilters((prev) => ({ ...prev, sortBy: event.target.value }))
+                setFilters((prev) => ({ ...prev, role: event.target.value }))
               }
             >
-              <option value="name_asc">Sort: Name A-Z</option>
-              <option value="name_desc">Sort: Name Z-A</option>
-              <option value="recent_desc">Sort: Recently updated</option>
-              <option value="recent_asc">Sort: Least recently updated</option>
+              <option value="all">All roles</option>
+              <option value="faculty">Faculty</option>
+              <option value="student">Student</option>
+              <option value="admin">Admin</option>
             </select>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={clearFilters}
+            <select
+              className="control-select"
+              value={filters.status}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, status: event.target.value }))
+              }
             >
-              Reset
-            </button>
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <select
+              className="control-select"
+              value={filters.department}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  department: event.target.value,
+                }))
+              }
+            >
+              <option value="">All departments</option>
+              {departments.map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      </div>
-
-      <div className="panel overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            Affiliate Records ({filteredRows.length})
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsCsv}
-              disabled={!filteredRows.length || Boolean(exportingType)}
-            >
-              {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={exportAsPdf}
-              disabled={!filteredRows.length || Boolean(exportingType)}
-            >
-              {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-            </button>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex w-full flex-wrap gap-2 md:w-auto">
+              <select
+                className="control-select w-full md:w-[14rem]"
+                value={filters.sortBy}
+                onChange={(event) =>
+                  setFilters((prev) => ({ ...prev, sortBy: event.target.value }))
+                }
+              >
+                <option value="name_asc">Sort: Name A-Z</option>
+                <option value="name_desc">Sort: Name Z-A</option>
+                <option value="recent_desc">Sort: Recently updated</option>
+                <option value="recent_asc">Sort: Least recently updated</option>
+              </select>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={clearFilters}
+              >
+                Reset
+              </button>
+            </div>
+            <p className="text-sm text-slate-600">
+              Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+              affiliate record(s).
+            </p>
           </div>
         </div>
 
