@@ -116,6 +116,63 @@ export function registerAdminRoutes(app, deps) {
     return String(value).trim();
   }
 
+  function uniqueTrimmed(values, { lower = false } = {}) {
+    const seen = new Set();
+    return (Array.isArray(values) ? values : [])
+      .map((value) => asTrimmedString(value))
+      .filter(Boolean)
+      .map((value) => (lower ? value.toLowerCase() : value))
+      .filter((value) => {
+        if (seen.has(value)) return false;
+        seen.add(value);
+        return true;
+      });
+  }
+
+  function getDepartmentReferenceKeys(group) {
+    return {
+      idKeys: uniqueTrimmed([group?.id, group?.name]),
+      labelKeys: uniqueTrimmed(
+        [group?.title, group?.display_name, group?.name],
+        { lower: true },
+      ),
+    };
+  }
+
+  async function listAssignedDepartmentUsers(group) {
+    const { idKeys, labelKeys } = getDepartmentReferenceKeys(group);
+    if (idKeys.length === 0 && labelKeys.length === 0) return [];
+
+    const clauses = [];
+    const values = [];
+
+    if (idKeys.length > 0) {
+      values.push(idKeys);
+      clauses.push(`ckan_group_id = ANY($${values.length}::text[])`);
+    }
+
+    if (labelKeys.length > 0) {
+      values.push(labelKeys);
+      clauses.push(`LOWER(COALESCE(department, '')) = ANY($${values.length}::text[])`);
+    }
+
+    if (clauses.length === 0) return [];
+
+    const result = await query(
+      `
+      SELECT *
+      FROM users
+      WHERE is_active = true
+        AND role IN ('faculty', 'student')
+        AND (${clauses.join(" OR ")})
+      ORDER BY full_name ASC, email ASC
+      `,
+      values,
+    );
+
+    return Array.isArray(result.rows) ? result.rows : [];
+  }
+
   function getDatasetExtraByKey(extras, key) {
     const rows = Array.isArray(extras) ? extras : [];
     const match = rows.find(
@@ -282,7 +339,9 @@ export function registerAdminRoutes(app, deps) {
       const metrics = metricsByUserId[ownerUserId] || createZeroMetrics();
       metrics.research_project_count += 1;
 
-      const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
       resources.forEach((resource) => {
         const outputType = inferOutputTypeFromResource(resource);
         if (outputType === "publication") metrics.publication_count += 1;
@@ -313,7 +372,12 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function getManagedCenterId(user) {
-    if (String(user?.role || "").trim().toLowerCase() === "admin") return "";
+    if (
+      String(user?.role || "")
+        .trim()
+        .toLowerCase() === "admin"
+    )
+      return "";
     const managedCenterId = String(user?.managed_center_id || "").trim();
     return Boolean(user?.is_center_chief) && managedCenterId
       ? managedCenterId
@@ -325,7 +389,12 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function ensureCenterScope(res, user, centerId) {
-    if (String(user?.role || "").trim().toLowerCase() === "admin") return true;
+    if (
+      String(user?.role || "")
+        .trim()
+        .toLowerCase() === "admin"
+    )
+      return true;
     const managedCenterId = getManagedCenterId(user);
     if (managedCenterId && managedCenterId === String(centerId || "").trim()) {
       return true;
@@ -337,14 +406,23 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function ensureAdminOrCenterChief(res, user) {
-    const role = String(user?.role || "").trim().toLowerCase();
+    const role = String(user?.role || "")
+      .trim()
+      .toLowerCase();
     if (role === "admin" || isCenterChiefScopedUser(user)) return true;
-    res.status(403).json({ error: "Admin or Center Chief access is required." });
+    res
+      .status(403)
+      .json({ error: "Admin or Center Chief access is required." });
     return false;
   }
 
   function ensureAdminOnly(res, user) {
-    if (String(user?.role || "").trim().toLowerCase() === "admin") return true;
+    if (
+      String(user?.role || "")
+        .trim()
+        .toLowerCase() === "admin"
+    )
+      return true;
     res.status(403).json({ error: "Admin access is required." });
     return false;
   }
@@ -375,7 +453,12 @@ export function registerAdminRoutes(app, deps) {
       const localUserByEmail = new Map(
         localUsers
           .filter((row) => row?.email)
-          .map((row) => [String(row.email || "").trim().toLowerCase(), row]),
+          .map((row) => [
+            String(row.email || "")
+              .trim()
+              .toLowerCase(),
+            row,
+          ]),
       );
       const localUserByCkanUserId = new Map(
         localUsers
@@ -460,7 +543,9 @@ export function registerAdminRoutes(app, deps) {
             getUserExtraValue(user, "dept") ||
             null;
           const department =
-            localUser?.department || departmentFromMembership || departmentFromExtras;
+            localUser?.department ||
+            departmentFromMembership ||
+            departmentFromExtras;
           const gsLink =
             localUser?.google_scholar_link ||
             getUserExtraValue(user, "google_scholar_link") ||
@@ -474,14 +559,16 @@ export function registerAdminRoutes(app, deps) {
           const role = user?.sysadmin
             ? "admin"
             : localUser?.role
-              ? String(localUser.role || "").trim().toLowerCase()
-            : roleExtra === "admin"
-              ? "admin"
-              : roleExtra === "student"
-                ? "student"
-                : roleExtra === "faculty"
-                  ? "faculty"
-                  : "faculty";
+              ? String(localUser.role || "")
+                  .trim()
+                  .toLowerCase()
+              : roleExtra === "admin"
+                ? "admin"
+                : roleExtra === "student"
+                  ? "student"
+                  : roleExtra === "faculty"
+                    ? "faculty"
+                    : "faculty";
           const isActive = localUser
             ? localUser.is_active !== false
             : String(user?.state || "active").toLowerCase() !== "deleted";
@@ -510,12 +597,16 @@ export function registerAdminRoutes(app, deps) {
               getUserExtraValue(user, "employment_status") ||
               null,
             designation:
-              localUser?.designation || getUserExtraValue(user, "designation") || null,
+              localUser?.designation ||
+              getUserExtraValue(user, "designation") ||
+              null,
             is_gs_faculty: localUser
               ? Boolean(localUser.is_gs_faculty)
               : toBool(getUserExtraValue(user, "is_gs_faculty"), false),
             publication_count: Number(
-              localUser?.publication_count ?? liveMetrics.publication_count ?? 0,
+              localUser?.publication_count ??
+                liveMetrics.publication_count ??
+                0,
             ),
             research_project_count: Number(
               localUser?.research_project_count ??
@@ -523,7 +614,9 @@ export function registerAdminRoutes(app, deps) {
                 0,
             ),
             creative_work_count: Number(
-              localUser?.creative_work_count ?? liveMetrics.creative_work_count ?? 0,
+              localUser?.creative_work_count ??
+                liveMetrics.creative_work_count ??
+                0,
             ),
             awards_count: Number(
               localUser?.awards_count ?? liveMetrics.awards_count ?? 0,
@@ -531,7 +624,9 @@ export function registerAdminRoutes(app, deps) {
             ip_count: Number(localUser?.ip_count ?? liveMetrics.ip_count ?? 0),
             created_at: localUser?.created_at || user?.created || null,
             updated_at:
-              localUser?.updated_at || user?.activity_streams_email_notifications || null,
+              localUser?.updated_at ||
+              user?.activity_streams_email_notifications ||
+              null,
           };
         })
         .filter((row) => row.role !== "admin");
@@ -565,12 +660,9 @@ export function registerAdminRoutes(app, deps) {
         }
 
         const patch = {
-          department:
-            String(req.body?.department || "").trim() || null,
-          ckan_org_id:
-            String(req.body?.ckan_org_id || "").trim() || null,
-          designation:
-            String(req.body?.designation || "").trim() || null,
+          department: String(req.body?.department || "").trim() || null,
+          ckan_org_id: String(req.body?.ckan_org_id || "").trim() || null,
+          designation: String(req.body?.designation || "").trim() || null,
           employment_status:
             String(req.body?.employment_status || "").trim() || null,
           google_scholar_link:
@@ -644,16 +736,21 @@ export function registerAdminRoutes(app, deps) {
         const managedCenterId = getManagedCenterId(req.user);
         const visibleCenters = managedCenterId
           ? (centers || []).filter(
-              (row) => String(row?.name || row?.id || "").trim() === managedCenterId,
+              (row) =>
+                String(row?.name || row?.id || "").trim() === managedCenterId,
             )
           : centers || [];
         const centerChiefByOrg = {};
+        const agendaCountByOrg = {};
         await Promise.all(
           (visibleCenters || []).map(async (row) => {
             const orgId = row?.name || row?.id;
             if (!orgId) return;
             try {
-              const members = await listOrganizationMembers(orgId);
+              const [members, agendas] = await Promise.all([
+                listOrganizationMembers(orgId),
+                listOrganizationAgendas(orgId),
+              ]);
               const adminMember =
                 (members || []).find(
                   (member) =>
@@ -672,9 +769,13 @@ export function registerAdminRoutes(app, deps) {
                     null,
                 };
               }
+              agendaCountByOrg[orgId] = Array.isArray(agendas)
+                ? agendas.length
+                : 0;
             } catch {
               // Ignore failed org-member lookups so endpoint remains available.
               // Best-effort only.
+              agendaCountByOrg[orgId] = 0;
             }
           }),
         );
@@ -686,16 +787,24 @@ export function registerAdminRoutes(app, deps) {
             const savedChiefName = getExtraValue(row, "center_chief_name");
             const chiefNameFromSavedId =
               (ckanUsers || []).find(
-                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+                (user) =>
+                  String(user?.id || "").trim() ===
+                  String(savedChiefId || "").trim(),
               )?.fullname ||
               (ckanUsers || []).find(
-                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+                (user) =>
+                  String(user?.id || "").trim() ===
+                  String(savedChiefId || "").trim(),
               )?.display_name ||
               (ckanUsers || []).find(
-                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+                (user) =>
+                  String(user?.id || "").trim() ===
+                  String(savedChiefId || "").trim(),
               )?.name ||
               (ckanUsers || []).find(
-                (user) => String(user?.id || "").trim() === String(savedChiefId || "").trim(),
+                (user) =>
+                  String(user?.id || "").trim() ===
+                  String(savedChiefId || "").trim(),
               )?.email ||
               "";
 
@@ -712,7 +821,7 @@ export function registerAdminRoutes(app, deps) {
                 chiefNameFromSavedId ||
                 centerChiefByOrg[orgId]?.name ||
                 null,
-              agenda_count: 0,
+              agenda_count: Number(agendaCountByOrg[orgId] || 0),
               extras_count: Array.isArray(row?.extras) ? row.extras.length : 0,
             };
           }),
@@ -799,8 +908,12 @@ export function registerAdminRoutes(app, deps) {
             : await Promise.all([
                 listGroupMembers(id),
                 listAllDatasetsAcrossCkan(),
-                Promise.resolve(null),
+                getGroup(id),
               ]);
+        const departmentUsers =
+          type === "department"
+            ? await listAssignedDepartmentUsers(centerOrg)
+            : [];
         const activeMembers = (members || []).filter(
           (member) =>
             String(member?.state || "active").toLowerCase() !== "deleted",
@@ -812,7 +925,13 @@ export function registerAdminRoutes(app, deps) {
               .toLowerCase() !== "admin",
         );
         const savedCenterChiefId =
-          type === "center" ? String(getExtraValue(centerOrg, "center_chief_id") || "").trim() : "";
+          type === "center"
+            ? String(getExtraValue(centerOrg, "center_chief_id") || "").trim()
+            : "";
+        const savedChairpersonId =
+          type === "department"
+            ? String(getExtraValue(centerOrg, "chairperson_id") || "").trim()
+            : "";
         const countedChief =
           type === "center" && savedCenterChiefId
             ? activeMembers.find(
@@ -820,17 +939,72 @@ export function registerAdminRoutes(app, deps) {
                   String(member?.id || "").trim() === savedCenterChiefId,
               ) || null
             : null;
-        const adminCount = countedChief ? 1 : 0;
-        const editorCount = nonAdminMembers.filter(
+        const countedChairperson =
+          type === "department" && savedChairpersonId
+            ? activeMembers.find(
+                (member) =>
+                  String(member?.id || "").trim() === savedChairpersonId,
+              ) || null
+            : null;
+        const departmentUserRows =
+          type === "department" && departmentUsers.length > 0
+            ? departmentUsers
+            : [];
+        const departmentChairperson =
+          type === "department" && savedChairpersonId
+            ? departmentUserRows.find(
+                (user) =>
+                  asTrimmedString(user?.ckan_user_id) === savedChairpersonId,
+              ) || null
+            : null;
+        const adminCount =
+          type === "department"
+            ? departmentChairperson || countedChairperson
+              ? 1
+              : 0
+            : countedChief
+              ? 1
+              : 0;
+        const memberCapacityByKey =
+          type === "department"
+            ? activeMembers.reduce((acc, member) => {
+                const capacity = String(member?.capacity || "")
+                  .trim()
+                  .toLowerCase();
+                const keys = uniqueTrimmed([
+                  member?.id,
+                  member?.name,
+                  member?.email,
+                ]);
+                keys.forEach((key) => {
+                  acc[key] = capacity;
+                });
+                return acc;
+              }, {})
+            : {};
+        let editorCount = nonAdminMembers.filter(
           (member) =>
             String(member?.capacity || "")
               .trim()
               .toLowerCase() === "editor",
         ).length;
-        const memberCount = Math.max(
-          0,
-          nonAdminMembers.length - editorCount,
-        );
+        let memberCount = Math.max(0, nonAdminMembers.length - editorCount);
+
+        if (type === "department" && departmentUserRows.length > 0) {
+          const nonChiefUsers = departmentUserRows.filter(
+            (user) =>
+              asTrimmedString(user?.ckan_user_id) !== savedChairpersonId,
+          );
+          editorCount = nonChiefUsers.filter((user) => {
+            const keys = uniqueTrimmed([
+              user?.ckan_user_id,
+              user?.ckan_username,
+              user?.email,
+            ]);
+            return keys.some((key) => memberCapacityByKey[key] === "editor");
+          }).length;
+          memberCount = Math.max(0, nonChiefUsers.length - editorCount);
+        }
 
         return res.json({
           projectCount:
@@ -840,12 +1014,18 @@ export function registerAdminRoutes(app, deps) {
                   const meta = extrasToMap(dataset?.extras);
                   return String(meta.department_id || "").trim() === id;
                 }).length,
-          profileCount: nonAdminMembers.length + adminCount,
+          profileCount:
+            type === "department" && departmentUserRows.length > 0
+              ? memberCount + editorCount + adminCount
+              : nonAdminMembers.length + adminCount,
           memberBreakdown: {
             adminCount,
             editorCount,
             memberCount,
-            totalCount: nonAdminMembers.length + adminCount,
+            totalCount:
+              type === "department" && departmentUserRows.length > 0
+                ? memberCount + editorCount + adminCount
+                : nonAdminMembers.length + adminCount,
           },
         });
       } catch (error) {
@@ -931,6 +1111,13 @@ export function registerAdminRoutes(app, deps) {
             const meta = extrasToMap(dataset?.extras);
             const deptId = String(meta.department_id || "").trim();
             const agendaId = String(meta.research_agenda_id || "").trim();
+            const agendaNameFromMeta = String(
+              meta.research_agenda ||
+                meta.research_agendas ||
+                meta.agenda_name ||
+                meta.agenda ||
+                "",
+            ).trim();
             return {
               id: dataset?.id || dataset?.name || crypto.randomUUID(),
               title: dataset?.title || dataset?.name || "-",
@@ -943,7 +1130,7 @@ export function registerAdminRoutes(app, deps) {
               department_name: deptId ? groupNameById[deptId] || deptId : null,
               agenda_name: agendaId
                 ? agendaNameById[agendaId] || agendaId
-                : null,
+                : agendaNameFromMeta || null,
               start_date: meta.start_date || null,
               end_date: meta.end_date || null,
             };
@@ -960,11 +1147,16 @@ export function registerAdminRoutes(app, deps) {
         }
         if (type === "department" && id) {
           if (!ensureAdminOnly(res, req.user)) return;
-          const [members, datasets, centers] = await Promise.all([
-            listGroupMembers(id),
-            listAllDatasetsAcrossCkan(),
-            listOrganizations(),
-          ]);
+          const [members, datasets, centers, departmentGroup] =
+            await Promise.all([
+              listGroupMembers(id),
+              listAllDatasetsAcrossCkan(),
+              listOrganizations(),
+              getGroup(id),
+            ]);
+          const departmentUsers = await listAssignedDepartmentUsers(
+            departmentGroup,
+          );
           const centerNameById = (centers || []).reduce((acc, center) => {
             const key = String(center?.name || center?.id || "").trim();
             if (!key) return acc;
@@ -974,35 +1166,59 @@ export function registerAdminRoutes(app, deps) {
               ).trim() || key;
             return acc;
           }, {});
+          const savedChairpersonId = String(
+            getExtraValue(departmentGroup, "chairperson_id") || "",
+          ).trim();
 
-          const profiles = (members || [])
-            .filter(
-              (member) =>
-                String(member?.state || "active").toLowerCase() !== "deleted",
-            )
-            .map((member) => ({
-              id: member?.id || member?.name || null,
-              full_name:
-                member?.fullname ||
-                member?.display_name ||
-                member?.name ||
-                member?.email ||
-                "CKAN User",
-              email: member?.email || null,
-              role:
-                String(member?.capacity || "")
-                  .trim()
-                  .toLowerCase() === "admin"
-                  ? "admin"
-                  : String(member?.capacity || "")
+          const profiles =
+            departmentUsers.length > 0
+              ? departmentUsers.map((user) => ({
+                  id: user?.id || user?.ckan_user_id || user?.email || null,
+                  full_name: user?.full_name || user?.email || "ARMS User",
+                  email: user?.email || null,
+                  role:
+                    asTrimmedString(user?.ckan_user_id) === savedChairpersonId
+                      ? "admin"
+                      : String(user?.role || "student").trim().toLowerCase(),
+                  department:
+                    departmentGroup?.title ||
+                    departmentGroup?.display_name ||
+                    departmentGroup?.name ||
+                    id,
+                  is_active: user?.is_active !== false,
+                }))
+              : (members || [])
+                  .filter(
+                    (member) =>
+                      String(member?.state || "active").toLowerCase() !==
+                      "deleted",
+                  )
+                  .map((member) => ({
+                    id: member?.id || member?.name || null,
+                    full_name:
+                      member?.fullname ||
+                      member?.display_name ||
+                      member?.name ||
+                      member?.email ||
+                      "CKAN User",
+                    email: member?.email || null,
+                    role:
+                      String(member?.capacity || "")
                         .trim()
-                        .toLowerCase() === "editor"
-                    ? "faculty"
-                    : "student",
-              department:
-                member?.display_name || member?.fullname || member?.name || null,
-              is_active: true,
-            }));
+                        .toLowerCase() === "admin"
+                        ? "admin"
+                        : String(member?.capacity || "")
+                              .trim()
+                              .toLowerCase() === "editor"
+                          ? "faculty"
+                          : "student",
+                    department:
+                      departmentGroup?.title ||
+                      departmentGroup?.display_name ||
+                      departmentGroup?.name ||
+                      id,
+                    is_active: true,
+                  }));
 
           const projects = (datasets || [])
             .filter((dataset) => {
@@ -1023,7 +1239,11 @@ export function registerAdminRoutes(app, deps) {
                   (dataset?.private ? "private" : "public"),
                 year: meta.project_year || null,
                 lead_researcher: meta.lead_researcher || null,
-                department_name: id,
+                department_name:
+                  departmentGroup?.title ||
+                  departmentGroup?.display_name ||
+                  departmentGroup?.name ||
+                  id,
                 research_center_name: centerId
                   ? centerNameById[centerId] || centerId
                   : null,
@@ -1212,7 +1432,8 @@ export function registerAdminRoutes(app, deps) {
         }
         if (!["center", "department"].includes(type)) {
           return res.status(501).json({
-            error: "Only center and department create are implemented in this backend.",
+            error:
+              "Only center and department create are implemented in this backend.",
           });
         }
 
@@ -1222,9 +1443,12 @@ export function registerAdminRoutes(app, deps) {
           const chairpersonId = String(req.body?.chairperson_id || "").trim();
           if (!name) return badRequest(res, "Department name is required.");
           if (!codeRaw) return badRequest(res, "Department code is required.");
-          if (!chairpersonId) return badRequest(res, "Chairperson is required.");
+          if (!chairpersonId)
+            return badRequest(res, "Chairperson is required.");
 
-          const groupName = codeRaw.toLowerCase().replace(/[^a-z0-9_\-]+/g, "-");
+          const groupName = codeRaw
+            .toLowerCase()
+            .replace(/[^a-z0-9_\-]+/g, "-");
           if (!groupName) return badRequest(res, "Department code is invalid.");
 
           const users = await listUsers();
@@ -1232,7 +1456,10 @@ export function registerAdminRoutes(app, deps) {
             (row) => String(row?.id || "") === chairpersonId,
           );
           if (!selected) {
-            return badRequest(res, "Selected chairperson CKAN user was not found.");
+            return badRequest(
+              res,
+              "Selected chairperson CKAN user was not found.",
+            );
           }
           const chairpersonName =
             String(
@@ -1413,7 +1640,8 @@ export function registerAdminRoutes(app, deps) {
         }
         if (!["center", "department"].includes(type)) {
           return res.status(501).json({
-            error: "Only center and department update are implemented in this backend.",
+            error:
+              "Only center and department update are implemented in this backend.",
           });
         }
         if (type === "department" && !ensureAdminOnly(res, req.user)) return;
@@ -1443,7 +1671,10 @@ export function registerAdminRoutes(app, deps) {
             (row) => String(row?.id || "") === chairpersonId,
           );
           if (!selected) {
-            return badRequest(res, "Selected chairperson CKAN user was not found.");
+            return badRequest(
+              res,
+              "Selected chairperson CKAN user was not found.",
+            );
           }
           const chairpersonName =
             String(
@@ -1457,14 +1688,16 @@ export function registerAdminRoutes(app, deps) {
           const existingExtras = Array.isArray(currentGroup?.extras)
             ? currentGroup.extras
             : [];
-          const nextExtras = existingExtras.filter(
-            (item) => {
-              const key = String(item?.key || "")
-                .trim()
-                .toLowerCase();
-              return key !== "code" && key !== "chairperson_id" && key !== "chairperson_name";
-            },
-          );
+          const nextExtras = existingExtras.filter((item) => {
+            const key = String(item?.key || "")
+              .trim()
+              .toLowerCase();
+            return (
+              key !== "code" &&
+              key !== "chairperson_id" &&
+              key !== "chairperson_name"
+            );
+          });
           nextExtras.push({ key: "code", value: codeRaw });
           nextExtras.push({ key: "chairperson_id", value: chairpersonId });
           nextExtras.push({ key: "chairperson_name", value: chairpersonName });
@@ -1532,7 +1765,9 @@ export function registerAdminRoutes(app, deps) {
             .json({ error: "Research center was not found." });
         }
         const isScopedChief =
-          String(req.user?.role || "").trim().toLowerCase() !== "admin";
+          String(req.user?.role || "")
+            .trim()
+            .toLowerCase() !== "admin";
 
         const name = String(req.body?.name || "").trim();
         const codeRaw = String(req.body?.code || "").trim();
