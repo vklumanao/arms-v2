@@ -292,9 +292,8 @@ export default function AffiliateProfilePage() {
               <div className="grid gap-2 sm:grid-cols-3">
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">Employment Status</span>
-                  <input
-                    className="control-input"
-                    placeholder="e.g. Permanent, Lecturer"
+                  <select
+                    className="control-select"
                     value={form.employment_status || ""}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -302,7 +301,11 @@ export default function AffiliateProfilePage() {
                         employment_status: e.target.value,
                       }))
                     }
-                  />
+                  >
+                    <option value="">None</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Lecturer">Lecturer</option>
+                  </select>
                 </label>
                 <label className="space-y-1 text-sm sm:col-span-2">
                   <span className="font-semibold text-slate-700">Designation</span>
