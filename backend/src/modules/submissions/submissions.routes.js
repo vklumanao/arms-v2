@@ -385,7 +385,6 @@ export function registerSubmissionsRoutes(app, deps) {
       status:
         asTrimmedString(getExtraByKey(extras, "project_status")) ||
         asTrimmedString(getExtraByKey(extras, "status")) ||
-        asTrimmedString(dataset?.state) ||
         "ongoing",
       submitted_by_name:
         asTrimmedString(getExtraByKey(extras, "submitted_by_name")) ||
