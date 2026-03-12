@@ -131,6 +131,31 @@ function mockApiPayload(path, options = {}) {
   }
   if (cleanPath.includes("/public-records/")) return { timeline: [] };
 
+  if (cleanPath === "/admin/users" && method === "POST") {
+    const rawBody =
+      typeof options.body === "string"
+        ? JSON.parse(options.body || "{}")
+        : options.body || {};
+    return {
+      data: {
+        id: "demo-user-created",
+        full_name: rawBody.full_name || "Created User",
+        email: rawBody.email || "created@arms.local",
+        role: rawBody.role || "faculty",
+        department: rawBody.department || null,
+        ckan_org_id: rawBody.ckan_org_id || null,
+        ckan_group_id: rawBody.ckan_group_id || null,
+        ckan_username: "created-user",
+        ckan_user_id: "ckan-created-user",
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_sign_in_at: null,
+        email_confirmed_at: null,
+        temporary_password: "Arms!demo1234",
+      },
+    };
+  }
   if (cleanPath === "/admin/users") return { data: [] };
   if (cleanPath.includes("/admin/users/") && cleanPath.endsWith("/detail")) {
     return {
