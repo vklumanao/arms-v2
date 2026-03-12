@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   getAdminUserDetail,
   listAdminUsers,
@@ -14,6 +15,24 @@ function hasPermission(user, permission, ROLE_PERMISSIONS) {
   return permissions.includes(permission);
 }
 
+function matchesReferenceValue(row, rawValue) {
+  const value = String(rawValue || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return false;
+  return [
+    row?.id,
+    row?.name,
+    row?.title,
+    row?.display_name,
+  ].some(
+    (candidate) =>
+      String(candidate || "")
+        .trim()
+        .toLowerCase() === value,
+  );
+}
+
 /**
  * Registers admin user-management routes.
  *
@@ -28,8 +47,18 @@ export function registerAdminUserRoutes(app, deps) {
   const {
     authMiddleware,
     ROLE_PERMISSIONS,
+    parseOrThrow,
+    adminCreateProponentSchema,
     listDatasets,
     updateUser,
+    listOrganizations,
+    listGroups,
+    createOrGetUser,
+    createUser,
+    hashPassword,
+    findUserByEmail,
+    assignUserToOrganizationEditor,
+    assignUserToGroupEditor,
     setOrganizationMemberRole,
     logAuditEvent,
   } = deps;
@@ -58,6 +87,130 @@ export function registerAdminUserRoutes(app, deps) {
         return res
           .status(500)
           .json({ error: String(error?.message || "Failed to load users.") });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/users",
+    authMiddleware,
+    requireAdminUsersManage,
+    async (req, res) => {
+      try {
+        const parsed = parseOrThrow(
+          adminCreateProponentSchema,
+          req.body || {},
+          "Invalid user payload.",
+        );
+
+        const full_name = String(parsed.full_name || "").trim();
+        const email = String(parsed.email || "")
+          .trim()
+          .toLowerCase();
+        const role = String(parsed.role || "faculty")
+          .trim()
+          .toLowerCase();
+        const requestedOrgId = String(parsed.ckan_org_id || "").trim();
+        const requestedGroupId = String(parsed.ckan_group_id || "").trim();
+        const requestedDepartment = String(parsed.department || "").trim();
+
+        const existing = await findUserByEmail(email);
+        if (existing) {
+          return res
+            .status(409)
+            .json({ error: "An account with that email already exists." });
+        }
+
+        let selectedOrg = null;
+        let selectedGroup = null;
+
+        if (requestedOrgId) {
+          const organizations = await listOrganizations();
+          selectedOrg = (organizations || []).find(
+            (row) => matchesReferenceValue(row, requestedOrgId),
+          );
+          if (!selectedOrg) {
+            return res.status(400).json({
+              error: "Selected research center was not found.",
+            });
+          }
+        }
+
+        if (requestedGroupId) {
+          const groups = await listGroups();
+          selectedGroup = (groups || []).find(
+            (row) => matchesReferenceValue(row, requestedGroupId),
+          );
+          if (!selectedGroup) {
+            return res.status(400).json({
+              error: "Selected department was not found.",
+            });
+          }
+        }
+
+        const temporaryPassword = `Arms!${crypto.randomUUID().slice(0, 8)}`;
+        const ckanUser = await createOrGetUser({
+          email,
+          fullName: full_name,
+          password: temporaryPassword,
+        });
+
+        if (selectedOrg) {
+          await assignUserToOrganizationEditor({
+            orgId: selectedOrg.name || selectedOrg.id,
+            username: ckanUser.name,
+          });
+        }
+
+        if (selectedGroup) {
+          await assignUserToGroupEditor({
+            groupId: selectedGroup.name || selectedGroup.id,
+            username: ckanUser.name,
+          });
+        }
+
+        const password_hash = await hashPassword(temporaryPassword);
+        const created = await createUser({
+          full_name,
+          email,
+          password_hash,
+          role,
+          department:
+            selectedGroup?.title ||
+            selectedGroup?.display_name ||
+            selectedGroup?.name ||
+            requestedDepartment ||
+            null,
+          ckan_org_id: selectedOrg?.name || selectedOrg?.id || null,
+          ckan_group_id: selectedGroup?.name || selectedGroup?.id || null,
+          ckan_username: ckanUser.name,
+          ckan_user_id: ckanUser.id || null,
+          is_active: true,
+        });
+
+        return res.status(201).json({
+          data: {
+            id: created.id,
+            full_name: created.full_name || null,
+            email: created.email || null,
+            role: created.role || null,
+            department: created.department || null,
+            ckan_org_id: created.ckan_org_id || null,
+            ckan_group_id: created.ckan_group_id || null,
+            ckan_username: created.ckan_username || null,
+            ckan_user_id: created.ckan_user_id || null,
+            is_active: created.is_active !== false,
+            created_at: created.created_at || null,
+            updated_at: created.updated_at || null,
+            last_sign_in_at: null,
+            email_confirmed_at: null,
+            temporary_password: temporaryPassword,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to create user."),
+        });
       }
     },
   );
