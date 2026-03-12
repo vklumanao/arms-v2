@@ -13,7 +13,11 @@ export function buildProjectPayload(form, userId) {
     submitted_by: userId,
     title: form.title.trim(),
     lead_researcher: form.lead_researcher || null,
+    lead_researcher_user: form.lead_researcher_user || null,
     faculty_team: form.faculty_team || null,
+    faculty_team_users: Array.isArray(form.faculty_team_users)
+      ? form.faculty_team_users
+      : [],
     student_team: form.student_team || null,
     abstract: form.abstract || null,
     year: Number(form.year),
