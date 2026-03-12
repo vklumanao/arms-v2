@@ -41,6 +41,63 @@ export function registerSubmissionsRoutes(app, deps) {
   ]);
   const MAX_OUTPUT_UPLOAD_BYTES = 25 * 1024 * 1024;
 
+  function serializeSelectedUsers(items = []) {
+    return JSON.stringify(
+      (Array.isArray(items) ? items : [])
+        .map((row) => ({
+          id: asTrimmedString(row?.id),
+          name: asTrimmedString(row?.name),
+          username: asTrimmedString(row?.username),
+          email: asTrimmedString(row?.email).toLowerCase(),
+          role: asTrimmedString(row?.role).toLowerCase(),
+        }))
+        .filter(
+          (row) => row.id || row.name || row.username || row.email || row.role,
+        ),
+    );
+  }
+
+  function parseSelectedUsers(rawValue) {
+    try {
+      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((row) => ({
+          id: asTrimmedString(row?.id),
+          name: asTrimmedString(row?.name),
+          username: asTrimmedString(row?.username),
+          email: asTrimmedString(row?.email).toLowerCase(),
+          role: asTrimmedString(row?.role).toLowerCase(),
+        }))
+        .filter(
+          (row) => row.id || row.name || row.username || row.email || row.role,
+        );
+    } catch {
+      return [];
+    }
+  }
+
+  function isDatasetLinkedToFacultyUser(dataset, user) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const selectedUsers = parseSelectedUsers(
+      getExtraByKey(extras, "faculty_team_users"),
+    );
+    if (!selectedUsers.length) return false;
+
+    const userId = asTrimmedString(user?.ckan_user_id || user?.id);
+    const username = asTrimmedString(user?.ckan_username);
+    const email = asTrimmedString(user?.email).toLowerCase();
+
+    return selectedUsers.some(
+      (row) =>
+        (userId && asTrimmedString(row?.id) === userId) ||
+        (username &&
+          asTrimmedString(row?.username).toLowerCase() ===
+            username.toLowerCase()) ||
+        (email && asTrimmedString(row?.email).toLowerCase() === email),
+    );
+  }
+
   /**
    * Converts free-text title into CKAN-compatible dataset name slug.
    *
@@ -137,8 +194,18 @@ export function registerSubmissionsRoutes(app, deps) {
         value: asTrimmedString(form.lead_researcher) || null,
       },
       {
+        key: "lead_researcher_user",
+        value: serializeSelectedUsers(
+          form.lead_researcher_user ? [form.lead_researcher_user] : [],
+        ),
+      },
+      {
         key: "faculty_team",
         value: asTrimmedString(form.faculty_team) || null,
+      },
+      {
+        key: "faculty_team_users",
+        value: serializeSelectedUsers(form.faculty_team_users),
       },
       {
         key: "student_team",
@@ -262,7 +329,13 @@ export function registerSubmissionsRoutes(app, deps) {
       lead_researcher: asTrimmedString(
         getExtraByKey(extras, "lead_researcher"),
       ),
+      lead_researcher_user:
+        parseSelectedUsers(getExtraByKey(extras, "lead_researcher_user"))[0] ||
+        null,
       faculty_team: asTrimmedString(getExtraByKey(extras, "faculty_team")),
+      faculty_team_users: parseSelectedUsers(
+        getExtraByKey(extras, "faculty_team_users"),
+      ),
       student_team: asTrimmedString(getExtraByKey(extras, "student_team")),
       abstract: asTrimmedString(dataset?.notes),
       year:
@@ -369,6 +442,9 @@ export function registerSubmissionsRoutes(app, deps) {
         getExtraByKey(extras, "lead_researcher"),
       ),
       faculty_team: asTrimmedString(getExtraByKey(extras, "faculty_team")),
+      faculty_team_users: parseSelectedUsers(
+        getExtraByKey(extras, "faculty_team_users"),
+      ),
       student_team: asTrimmedString(getExtraByKey(extras, "student_team")),
       industry_partner: asTrimmedString(
         getExtraByKey(extras, "industry_partner"),
@@ -386,6 +462,9 @@ export function registerSubmissionsRoutes(app, deps) {
         asTrimmedString(getExtraByKey(extras, "project_status")) ||
         asTrimmedString(getExtraByKey(extras, "status")) ||
         "ongoing",
+      expected_outputs: asTrimmedString(
+        getExtraByKey(extras, "expected_outputs_summary"),
+      ),
       submitted_by_name:
         asTrimmedString(getExtraByKey(extras, "submitted_by_name")) ||
         asTrimmedString(dataset?.maintainer) ||
@@ -591,6 +670,50 @@ export function registerSubmissionsRoutes(app, deps) {
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to load user projects."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/submissions/mine/linked-projects",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const rows = [];
+        const limit = 100;
+        let page = 1;
+
+        while (page <= 20) {
+          const result = await listDatasets({
+            orgId: "",
+            page,
+            limit,
+          });
+          const datasets = Array.isArray(result?.datasets)
+            ? result.datasets
+            : [];
+          if (!datasets.length) break;
+
+          for (const dataset of datasets) {
+            if (isDatasetOwnedByUser(dataset, req.user)) continue;
+            if (!isDatasetLinkedToFacultyUser(dataset, req.user)) {
+              continue;
+            }
+            rows.push(mapDatasetToProjectListRecord(dataset));
+          }
+
+          const total = Number(result?.count || 0);
+          if (datasets.length < limit || (total > 0 && page * limit >= total)) {
+            break;
+          }
+          page += 1;
+        }
+
+        return res.json({ data: rows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load linked projects."),
         });
       }
     },
