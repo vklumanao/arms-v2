@@ -6,7 +6,6 @@ import {
   Link2,
   List,
   Search,
-  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import PageHeader from "@/shared/components/layout/PageHeader";
@@ -1175,62 +1174,65 @@ export default function AdminResearchCenterPage() {
               </article>
             </div>
 
-            <div className="panel">
-              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                <SlidersHorizontal size={14} />
-                Member Filters
-              </div>
-              <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                <label className="relative">
-                  <Search
-                    size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    className="control-input pl-8"
-                    placeholder="Search name or email"
-                    value={memberFilters.search}
+            <div className="panel overflow-hidden">
+              <div className="border-b border-[var(--border)] px-4 py-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                      Research Center Members ({filteredScopedMembers.length})
+                    </h2>
+                    <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
+                      <Search
+                        size={14}
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        className="control-input pl-8"
+                        placeholder="Search name or email"
+                        value={memberFilters.search}
+                        onChange={(event) =>
+                          setMemberFilters((prev) => ({
+                            ...prev,
+                            search: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_minmax(0,14rem)_10rem]">
+                  <select
+                    className="control-select"
+                    value={memberFilters.role}
                     onChange={(event) =>
                       setMemberFilters((prev) => ({
                         ...prev,
-                        search: event.target.value,
+                        role: event.target.value,
                       }))
                     }
-                  />
-                </label>
-                <select
-                  className="control-select"
-                  value={memberFilters.role}
-                  onChange={(event) =>
-                    setMemberFilters((prev) => ({
-                      ...prev,
-                      role: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="all">All roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="faculty">Faculty</option>
-                  <option value="student">Student</option>
-                </select>
-                <select
-                  className="control-select"
-                  value={memberFilters.department}
-                  onChange={(event) =>
-                    setMemberFilters((prev) => ({
-                      ...prev,
-                      department: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="all">All departments</option>
-                  {scopedDepartmentOptions.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex gap-2">
+                  >
+                    <option value="all">All roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="student">Student</option>
+                  </select>
+                  <select
+                    className="control-select"
+                    value={memberFilters.department}
+                    onChange={(event) =>
+                      setMemberFilters((prev) => ({
+                        ...prev,
+                        department: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="all">All departments</option>
+                    {scopedDepartmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                   <select
                     className="control-select"
                     value={memberFilters.status}
@@ -1245,21 +1247,22 @@ export default function AdminResearchCenterPage() {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <button
                     className="btn btn-outline"
                     onClick={() => setMemberFilters(INITIAL_MEMBER_FILTERS)}
                   >
                     Reset
                   </button>
+                  <p className="text-sm text-slate-600">
+                    Showing{" "}
+                    <span className="font-semibold">
+                      {filteredScopedMembers.length}
+                    </span>{" "}
+                    member(s).
+                  </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="panel overflow-hidden">
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Research Center Members ({filteredScopedMembers.length})
-                </h2>
               </div>
               <div className="overflow-x-auto">
                 {scopedLinksLoading ? (
@@ -1321,77 +1324,83 @@ export default function AdminResearchCenterPage() {
               />
             </div>
 
-            <div className="panel">
-              <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                <FolderKanban size={14} />
-                Project Filters
-              </div>
-              <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                <label className="relative">
-                  <Search
-                    size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    className="control-input pl-8"
-                    placeholder="Search title or lead researcher"
-                    value={projectFilters.search}
+            <div className="panel overflow-hidden">
+              <div className="border-b border-[var(--border)] px-4 py-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                      Linked Projects ({filteredScopedProjects.length})
+                    </h2>
+                    <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
+                      <Search
+                        size={14}
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        className="control-input pl-8"
+                        placeholder="Search title or lead researcher"
+                        value={projectFilters.search}
+                        onChange={(event) =>
+                          setProjectFilters((prev) => ({
+                            ...prev,
+                            search: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[12rem_minmax(0,14rem)]">
+                  <select
+                    className="control-select"
+                    value={projectFilters.status}
                     onChange={(event) =>
                       setProjectFilters((prev) => ({
                         ...prev,
-                        search: event.target.value,
+                        status: event.target.value,
                       }))
                     }
-                  />
-                </label>
-                <select
-                  className="control-select"
-                  value={projectFilters.status}
-                  onChange={(event) =>
-                    setProjectFilters((prev) => ({
-                      ...prev,
-                      status: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="all">All statuses</option>
-                  {scopedProjectStatusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="control-select"
-                  value={projectFilters.department}
-                  onChange={(event) =>
-                    setProjectFilters((prev) => ({
-                      ...prev,
-                      department: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="all">All departments</option>
-                  {scopedProjectDepartmentOptions.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="btn btn-outline"
-                  onClick={() => setProjectFilters(INITIAL_PROJECT_FILTERS)}
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            <div className="panel overflow-hidden">
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Linked Projects ({filteredScopedProjects.length})
-                </h2>
+                  >
+                    <option value="all">All statuses</option>
+                    {scopedProjectStatusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="control-select"
+                    value={projectFilters.department}
+                    onChange={(event) =>
+                      setProjectFilters((prev) => ({
+                        ...prev,
+                        department: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="all">All departments</option>
+                    {scopedProjectDepartmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => setProjectFilters(INITIAL_PROJECT_FILTERS)}
+                  >
+                    Reset
+                  </button>
+                  <p className="text-sm text-slate-600">
+                    Showing{" "}
+                    <span className="font-semibold">
+                      {filteredScopedProjects.length}
+                    </span>{" "}
+                    linked project(s).
+                  </p>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 {scopedLinksLoading ? (
@@ -1498,136 +1507,139 @@ export default function AdminResearchCenterPage() {
         </article>
       </div>
 
-      <div className="panel">
-        <div className="panel-header flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-          <SlidersHorizontal size={14} />
-          Filters
-        </div>
-        <div className="panel-body grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-          <label className="relative">
-            <Search
-              size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Research Center Records ({filteredRows.length})
+              </h2>
+              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  className="control-input pl-8"
+                  placeholder="Search name, code, or id"
+                  value={filters.search}
+                  onChange={(event) =>
+                    setFilters((prev) => ({ ...prev, search: event.target.value }))
+                  }
+                />
+              </label>
+              <div className="inline-flex items-center gap-1 rounded-lg bg-[var(--surface-muted)] p-1">
+                <button
+                  className={`btn ${viewMode === "grid" ? "btn-primary" : "btn-outline"}`}
+                  onClick={() => setViewMode("grid")}
+                  type="button"
+                >
+                  <LayoutGrid size={14} />
+                  Grid
+                </button>
+                <button
+                  className={`btn ${viewMode === "list" ? "btn-primary" : "btn-outline"}`}
+                  onClick={() => setViewMode("list")}
+                  type="button"
+                >
+                  <List size={14} />
+                  List
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className="btn btn-outline"
+                onClick={() => exportRowsAsCsv(sortedFilteredRows, "filtered")}
+                disabled={exporting || filteredRows.length === 0}
+              >
+                Export CSV
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={() => exportRowsAsPdf(sortedFilteredRows, "filtered")}
+                disabled={exporting || filteredRows.length === 0}
+              >
+                Export PDF
+              </button>
+              {!isScopedCenterChief ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setCreateErrors({});
+                    setCreateModalOpen(true);
+                  }}
+                >
+                  Create Research Center
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_11rem_11rem]">
             <input
-              className="control-input pl-8"
-              placeholder="Search name, code, or id"
-              value={filters.search}
+              className="control-input"
+              placeholder="Center code"
+              value={filters.code}
               onChange={(event) =>
-                setFilters((prev) => ({ ...prev, search: event.target.value }))
+                setFilters((prev) => ({ ...prev, code: event.target.value }))
               }
             />
-          </label>
-          <input
-            className="control-input"
-            placeholder="Center code"
-            value={filters.code}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, code: event.target.value }))
-            }
-          />
-          <select
-            className="control-select"
-            value={filters.linkedAffiliates}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                linkedAffiliates: event.target.value,
-              }))
-            }
-          >
-            <option value="all">All affiliate linkage</option>
-            <option value="with">With affiliates</option>
-            <option value="without">Without affiliates</option>
-          </select>
-          <select
-            className="control-select"
-            value={filters.linkedProjects}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                linkedProjects: event.target.value,
-              }))
-            }
-          >
-            <option value="all">All project linkage</option>
-            <option value="with">With projects</option>
-            <option value="without">Without projects</option>
-          </select>
-          <div className="flex gap-2">
             <select
               className="control-select"
-              value={filters.linkageState}
+              value={filters.linkedAffiliates}
               onChange={(event) =>
                 setFilters((prev) => ({
                   ...prev,
-                  linkageState: event.target.value,
+                  linkedAffiliates: event.target.value,
                 }))
               }
             >
-              <option value="all">All center states</option>
-              <option value="active">Active links</option>
-              <option value="idle">No links</option>
+              <option value="all">All affiliate linkage</option>
+              <option value="with">With affiliates</option>
+              <option value="without">Without affiliates</option>
             </select>
-            <button
-              className="btn btn-outline"
-              onClick={() => setFilters(INITIAL_FILTERS)}
+            <select
+              className="control-select"
+              value={filters.linkedProjects}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  linkedProjects: event.target.value,
+                }))
+              }
             >
-              Reset
-            </button>
+              <option value="all">All project linkage</option>
+              <option value="with">With projects</option>
+              <option value="without">Without projects</option>
+            </select>
           </div>
-        </div>
-      </div>
-
-      <div className="panel overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            Research Center Records ({filteredRows.length})
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-lg bg-[var(--surface-muted)] p-1">
-              <button
-                className={`btn ${viewMode === "grid" ? "btn-primary" : "btn-outline"}`}
-                onClick={() => setViewMode("grid")}
-                type="button"
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex w-full flex-wrap gap-2 md:w-auto">
+              <select
+                className="control-select w-full md:w-[10rem]"
+                value={filters.linkageState}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    linkageState: event.target.value,
+                  }))
+                }
               >
-                <LayoutGrid size={14} />
-                Grid
-              </button>
+                <option value="all">All center states</option>
+                <option value="active">Active links</option>
+                <option value="idle">No links</option>
+              </select>
               <button
-                className={`btn ${viewMode === "list" ? "btn-primary" : "btn-outline"}`}
-                onClick={() => setViewMode("list")}
-                type="button"
+                className="btn btn-outline"
+                onClick={() => setFilters(INITIAL_FILTERS)}
               >
-                <List size={14} />
-                List
+                Reset
               </button>
             </div>
-            {!isScopedCenterChief ? (
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setCreateErrors({});
-                  setCreateModalOpen(true);
-                }}
-              >
-                Create Research Center
-              </button>
-            ) : null}
-            <button
-              className="btn btn-outline"
-              onClick={() => exportRowsAsCsv(sortedFilteredRows, "filtered")}
-              disabled={exporting || filteredRows.length === 0}
-            >
-              Export CSV
-            </button>
-            <button
-              className="btn btn-outline"
-              onClick={() => exportRowsAsPdf(sortedFilteredRows, "filtered")}
-              disabled={exporting || filteredRows.length === 0}
-            >
-              Export PDF
-            </button>
+            <p className="text-sm text-slate-600">
+              Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+              research center record(s).
+            </p>
           </div>
         </div>
         <div className="p-2">
