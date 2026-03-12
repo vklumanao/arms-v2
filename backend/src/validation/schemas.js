@@ -108,6 +108,15 @@ export const awardRecognitionSchema = z.object({
   program_department: z.string().trim().optional().nullable(),
 });
 
+export const adminCreateProponentSchema = z.object({
+  full_name: z.string().trim().min(3),
+  email,
+  role: z.enum(["student", "faculty"]),
+  ckan_org_id: z.string().trim().optional().nullable(),
+  ckan_group_id: z.string().trim().optional().nullable(),
+  department: z.string().trim().optional().nullable(),
+});
+
 /**
  * Parses input with a given Zod schema or throws a user-facing error.
  *
