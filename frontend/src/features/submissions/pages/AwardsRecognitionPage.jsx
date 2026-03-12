@@ -15,7 +15,6 @@ import {
   Building2,
   PencilLine,
   Search,
-  SlidersHorizontal,
   Trash2,
   Users,
 } from "lucide-react";
@@ -421,17 +420,14 @@ export default function AwardsRecognitionPage() {
         </article>
       </div>
 
-      <div className="panel">
-        <div className="panel-header">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-            <SlidersHorizontal size={14} />
-            Filters
-          </div>
-        </div>
-        <div className="panel-body">
-          <div className="space-y-3">
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-              <label className="relative">
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Awards and Recognition Records ({filteredRows.length})
+              </h2>
+              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
                 <Search
                   size={14}
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -444,81 +440,73 @@ export default function AwardsRecognitionPage() {
                   className="control-input pl-8"
                 />
               </label>
-
-              <select
-                value={levelFilter}
-                onChange={(event) => setLevelFilter(event.target.value)}
-                className="control-select"
-              >
-                <option value="all">Filter by level</option>
-                {levelOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={yearFilter}
-                onChange={(event) => setYearFilter(event.target.value)}
-                className="control-select"
-              >
-                <option value="all">Filter by year</option>
-                {yearOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={resetFilters}
-                >
-                  Reset
-                </button>
-              </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={exportAsCsv}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={exportAsPdf}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </button>
+                </>
+              ) : null}
+              <Link to="/awards-recognitions/add" className="btn btn-primary">
+                Add Awards/Recognitions
+              </Link>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[12rem_10rem]">
+            <select
+              value={levelFilter}
+              onChange={(event) => setLevelFilter(event.target.value)}
+              className="control-select"
+            >
+              <option value="all">Filter by level</option>
+              {levelOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={yearFilter}
+              onChange={(event) => setYearFilter(event.target.value)}
+              className="control-select"
+            >
+              <option value="all">Filter by year</option>
+              {yearOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={resetFilters}
+            >
+              Reset
+            </button>
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-semibold">{filteredRows.length}</span> award
               record(s).
             </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            Awards and Recognition Records ({filteredRows.length})
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link to="/awards-recognitions/add" className="btn btn-primary">
-              Add Awards/Recognitions
-            </Link>
-            {isAdmin ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsCsv}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={exportAsPdf}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                </button>
-              </>
-            ) : null}
           </div>
         </div>
         {filteredRows.length === 0 ? (
