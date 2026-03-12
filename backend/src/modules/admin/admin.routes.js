@@ -16,6 +16,8 @@ export function registerAdminRoutes(app, deps) {
   const {
     authMiddleware,
     badRequest,
+    parseOrThrow,
+    adminCreateProponentSchema,
     listOrganizations,
     listGroups,
     listUsers,
@@ -37,6 +39,11 @@ export function registerAdminRoutes(app, deps) {
     updateOrganizationMetadata,
     setGroupMemberRole,
     setOrganizationMemberRole,
+    createOrGetUser,
+    createUser,
+    hashPassword,
+    assignUserToOrganizationEditor,
+    assignUserToGroupEditor,
     findUserByEmail,
     findUserById,
     updateUser,
@@ -178,6 +185,40 @@ export function registerAdminRoutes(app, deps) {
       .toUpperCase()
       .replace(/[^A-Z0-9_]+/g, "_")
       .replace(/^_+|_+$/g, "");
+  }
+
+  async function listProponentAccounts() {
+    const result = await query(`
+        SELECT
+          id,
+        full_name,
+        email,
+        role,
+        department,
+        ckan_org_id,
+        ckan_group_id,
+        ckan_username,
+        ckan_user_id,
+        is_active
+        FROM users
+        WHERE role IN ('faculty', 'student')
+          AND is_active = TRUE
+        ORDER BY full_name ASC, email ASC
+      `);
+    const rows = Array.isArray(result?.rows) ? result.rows : [];
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.full_name || row.email || row.id,
+      full_name: row.full_name || row.email || row.id,
+      email: row.email || null,
+      role: row.role || null,
+      department: row.department || null,
+      ckan_org_id: row.ckan_org_id || null,
+      ckan_group_id: row.ckan_group_id || null,
+      ckan_username: row.ckan_username || null,
+      ckan_user_id: row.ckan_user_id || null,
+      is_active: row.is_active !== false,
+    }));
   }
 
   async function listAllDatasetsAcrossCkan() {
@@ -599,6 +640,7 @@ export function registerAdminRoutes(app, deps) {
           listGroups(),
           listUsers(),
         ]);
+        const proponents = await listProponentAccounts();
         const managedCenterId = getManagedCenterId(req.user);
         const visibleCenters = managedCenterId
           ? (centers || []).filter(
@@ -681,7 +723,7 @@ export function registerAdminRoutes(app, deps) {
             chairperson_id: getExtraValue(row, "chairperson_id"),
             chairperson_name: getExtraValue(row, "chairperson_name"),
           })),
-          proponents: [],
+          proponents,
           ckan_users: await Promise.all(
             (ckanUsers || [])
               .filter(
@@ -1030,6 +1072,130 @@ export function registerAdminRoutes(app, deps) {
   );
 
   app.post(
+    "/api/admin/controls/proponents/accounts",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        if (!ensureAdminOnly(res, req.user)) return;
+
+        const parsed = parseOrThrow(
+          adminCreateProponentSchema,
+          req.body || {},
+          "Invalid proponent account payload.",
+        );
+
+        const full_name = String(parsed.full_name || "").trim();
+        const email = String(parsed.email || "")
+          .trim()
+          .toLowerCase();
+        const role = String(parsed.role || "faculty")
+          .trim()
+          .toLowerCase();
+        const requestedOrgId = String(parsed.ckan_org_id || "").trim();
+        const requestedGroupId = String(parsed.ckan_group_id || "").trim();
+        const requestedDepartment = String(parsed.department || "").trim();
+
+        const existing = await findUserByEmail(email);
+        if (existing) {
+          return res
+            .status(409)
+            .json({ error: "An account with that email already exists." });
+        }
+
+        let selectedOrg = null;
+        let selectedGroup = null;
+
+        if (requestedOrgId) {
+          const organizations = await listOrganizations();
+          selectedOrg = (organizations || []).find(
+            (row) =>
+              String(row?.id || row?.name || "")
+                .trim()
+                .toLowerCase() === requestedOrgId.toLowerCase(),
+          );
+          if (!selectedOrg) {
+            return badRequest(res, "Selected research center was not found.");
+          }
+        }
+
+        if (requestedGroupId) {
+          const groups = await listGroups();
+          selectedGroup = (groups || []).find(
+            (row) =>
+              String(row?.id || row?.name || "")
+                .trim()
+                .toLowerCase() === requestedGroupId.toLowerCase(),
+          );
+          if (!selectedGroup) {
+            return badRequest(res, "Selected department was not found.");
+          }
+        }
+
+        const temporaryPassword = `Arms!${crypto.randomUUID().slice(0, 8)}`;
+        const ckanUser = await createOrGetUser({
+          email,
+          fullName: full_name,
+          password: temporaryPassword,
+        });
+
+        if (selectedOrg) {
+          await assignUserToOrganizationEditor({
+            orgId: selectedOrg.name || selectedOrg.id,
+            username: ckanUser.name,
+          });
+        }
+
+        if (selectedGroup) {
+          await assignUserToGroupEditor({
+            groupId: selectedGroup.name || selectedGroup.id,
+            username: ckanUser.name,
+          });
+        }
+
+        const password_hash = await hashPassword(temporaryPassword);
+        const created = await createUser({
+          full_name,
+          email,
+          password_hash,
+          role,
+          department:
+            selectedGroup?.title ||
+            selectedGroup?.display_name ||
+            selectedGroup?.name ||
+            requestedDepartment ||
+            null,
+          ckan_org_id: selectedOrg?.name || selectedOrg?.id || null,
+          ckan_group_id: selectedGroup?.name || selectedGroup?.id || null,
+          ckan_username: ckanUser.name,
+          ckan_user_id: ckanUser.id || null,
+          is_active: true,
+        });
+
+        return res.status(201).json({
+          data: {
+            id: created.id,
+            name: created.full_name || created.email || created.id,
+            full_name: created.full_name || null,
+            email: created.email || null,
+            role: created.role || null,
+            department: created.department || null,
+            ckan_org_id: created.ckan_org_id || null,
+            ckan_group_id: created.ckan_group_id || null,
+            ckan_username: created.ckan_username || null,
+            ckan_user_id: created.ckan_user_id || null,
+            is_active: created.is_active !== false,
+            temporary_password: temporaryPassword,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Proponent account create failed."),
+        });
+      }
+    },
+  );
+
+  app.post(
     "/api/admin/controls/reference/:type",
     authMiddleware,
     async (req, res) => {
@@ -1038,6 +1204,12 @@ export function registerAdminRoutes(app, deps) {
         const type = String(req.params?.type || "")
           .trim()
           .toLowerCase();
+        if (type === "proponent") {
+          return res.status(501).json({
+            error:
+              "Use the proponent account creation endpoint for this workflow.",
+          });
+        }
         if (!["center", "department"].includes(type)) {
           return res.status(501).json({
             error: "Only center and department create are implemented in this backend.",
@@ -1215,6 +1387,30 @@ export function registerAdminRoutes(app, deps) {
           .toLowerCase();
         const id = String(req.params?.id || "").trim();
         if (!id) return badRequest(res, "Reference id is required.");
+        if (type === "proponent") {
+          if (!ensureAdminOnly(res, req.user)) return;
+          const nextName = String(req.body?.name || "").trim();
+          if (!nextName) return badRequest(res, "Proponent name is required.");
+          const updated = await updateUser(id, { full_name: nextName });
+          if (!updated) {
+            return res.status(404).json({ error: "Proponent was not found." });
+          }
+          return res.json({
+            data: {
+              id: updated.id,
+              name: updated.full_name || updated.email || updated.id,
+              full_name: updated.full_name || updated.email || updated.id,
+              email: updated.email || null,
+              role: updated.role || null,
+              department: updated.department || null,
+              ckan_org_id: updated.ckan_org_id || null,
+              ckan_group_id: updated.ckan_group_id || null,
+              ckan_username: updated.ckan_username || null,
+              ckan_user_id: updated.ckan_user_id || null,
+              is_active: updated.is_active !== false,
+            },
+          });
+        }
         if (!["center", "department"].includes(type)) {
           return res.status(501).json({
             error: "Only center and department update are implemented in this backend.",
@@ -1489,6 +1685,13 @@ export function registerAdminRoutes(app, deps) {
         const id = String(req.params?.id || "").trim();
         if (!id) {
           return badRequest(res, "Reference id is required.");
+        }
+        if (type === "proponent") {
+          const updated = await updateUser(id, { is_active: false });
+          if (!updated) {
+            return res.status(404).json({ error: "Proponent was not found." });
+          }
+          return res.json({ data: { id, deleted: true, type } });
         }
 
         if (type === "department") {
