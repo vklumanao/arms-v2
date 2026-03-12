@@ -6,6 +6,14 @@ export async function fetchAdminUsers() {
   return payload?.data || [];
 }
 
+export async function createAdminUser(payload) {
+  const result = await apiFetch("/admin/users", {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
+  });
+  return result?.data || null;
+}
+
 export async function updateAdminUserRole(userId, role) {
   const payload = await apiFetch(`/admin/users/${userId}/role`, {
     method: "PATCH",
