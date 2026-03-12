@@ -8,9 +8,11 @@ export default function ReferenceCard({
   onAdd,
   items,
   renderItem,
+  className = "",
+  listClassName = "",
 }) {
   return (
-    <article className="panel">
+    <article className={`panel ${className}`.trim()}>
       <header className="panel-header flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -38,7 +40,9 @@ export default function ReferenceCard({
           </button>
         </div>
 
-        <div className="max-h-64 overflow-auto app-card-muted app-card-micro">
+        <div
+          className={`max-h-64 overflow-auto app-card-muted app-card-micro ${listClassName}`.trim()}
+        >
           {items.length === 0 ? (
             <p className="px-2 py-3 text-sm text-slate-500">
               No records yet. Add your first entry.
