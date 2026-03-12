@@ -172,6 +172,7 @@ export async function listAdminUsers() {
       created_at,
       updated_at
     FROM users
+    WHERE role IN ('faculty', 'student')
     ORDER BY created_at DESC, email ASC
     `,
   );
