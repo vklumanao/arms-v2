@@ -69,6 +69,18 @@ export async function createReference({
   }
 }
 
+export async function createProponentAccount(payload) {
+  try {
+    const result = await apiFetch("/admin/controls/proponents/accounts", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    });
+    return { data: result?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export async function updateReference({
   type,
   id,
