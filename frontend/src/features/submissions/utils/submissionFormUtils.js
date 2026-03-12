@@ -19,7 +19,9 @@ export const EXPECTED_OUTPUT_TYPE_OPTIONS = [
 export const INITIAL_SUBMISSION_FORM = {
   title: "",
   lead_researcher: "",
+  lead_researcher_user: null,
   faculty_team: "",
+  faculty_team_users: [],
   student_team: "",
   abstract: "",
   year: new Date().getFullYear(),
@@ -51,7 +53,11 @@ export function mapProjectToSubmissionForm(project) {
   return {
     title: project?.title || "",
     lead_researcher: project?.lead_researcher || "",
+    lead_researcher_user: project?.lead_researcher_user || null,
     faculty_team: project?.faculty_team || "",
+    faculty_team_users: Array.isArray(project?.faculty_team_users)
+      ? project.faculty_team_users
+      : [],
     student_team: project?.student_team || "",
     abstract: project?.abstract || "",
     year: project?.year || new Date().getFullYear(),
