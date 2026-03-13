@@ -11,15 +11,13 @@ import { isLikelyUrl } from "@/shared/utils/validation";
 import {
   fetchEditableSubmission,
   fetchProjectExpectedOutputs,
-  insertProjectExpectedOutput,
-  updateProjectExpectedOutputFile,
-  deleteProjectExpectedOutputs,
-  uploadExpectedOutputFileToStorage,
-  copyExpectedOutputFileInStorage,
   removeExpectedOutputFilesFromStorage,
   saveSubmission,
 } from "@/features/submissions/services";
-import { uploadMovFileToStorage } from "@/features/submissions/services";
+import {
+  removeMovFilesFromStorage,
+  uploadMovFileToStorage,
+} from "@/features/submissions/services";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import {
   canAccessSubmissionStep,
@@ -752,157 +750,11 @@ export default function SubmitAffiliationPage() {
     }
   };
 
-  const synchronizeExpectedOutputs = async (projectId) => {
-    if (!projectId) {
-      return { error: new Error("Missing project ID for expected outputs.") };
-    }
-
-    const { data: oldRows, error: oldRowsError } =
-      await fetchProjectExpectedOutputs({
-        projectId,
-      });
-    if (oldRowsError) return { error: oldRowsError };
-
-    const newlyCreatedOutputIds = [];
-    const newlyUploadedPaths = [];
-    const savedRows = [];
-
-    try {
-      for (const row of expectedOutputRows) {
-        const normalizedType = String(row.output_type || "").trim();
-        const normalizedTargetCount = Math.max(
-          1,
-          Number(row.target_count) || 0,
-        );
-        if (!normalizedType) {
-          throw new Error("Expected output type is required.");
-        }
-        if (normalizedTargetCount < 1) {
-          throw new Error("Target count must be at least 1.");
-        }
-        if (
-          normalizedType === "product_software" &&
-          !String(row.specific_output || "").trim()
-        ) {
-          throw new Error(
-            "Specific output is required for Product/Software Application type.",
-          );
-        }
-
-        const { data: insertedRow, error: insertError } =
-          await insertProjectExpectedOutput({
-            projectId,
-            outputType: normalizedType,
-            targetCount: normalizedTargetCount,
-            notes: row.notes,
-          });
-        if (insertError) throw insertError;
-        newlyCreatedOutputIds.push(insertedRow.id);
-
-        let dbRow = insertedRow;
-        if (row.file) {
-          const storagePath = `${projectId}/expected-outputs/${dbRow.id}/${Date.now()}-${sanitizeFileName(row.file.name)}`;
-          const { data: uploadedOutputFile, error: uploadError } =
-            await uploadExpectedOutputFileToStorage({
-              storagePath,
-              file: row.file,
-              contentType: row.file.type || "application/octet-stream",
-            });
-          if (uploadError) throw uploadError;
-          if (!String(uploadedOutputFile?.path || "").trim()) {
-            throw new Error(
-              "CKAN resource URL was not returned after file upload.",
-            );
-          }
-          newlyUploadedPaths.push(storagePath);
-
-          const { data: fileUpdated, error: fileUpdateError } =
-            await updateProjectExpectedOutputFile({
-              outputId: dbRow.id,
-              filePath: uploadedOutputFile?.path || null,
-              fileName: row.file.name,
-              mimeType: row.file.type || null,
-              fileSize: row.file.size || null,
-            });
-          if (fileUpdateError) throw fileUpdateError;
-          dbRow = fileUpdated;
-        } else if (row.file_path) {
-          const { data: fileMetaCopied, error: fileMetaCopyError } =
-            await updateProjectExpectedOutputFile({
-              outputId: dbRow.id,
-              filePath: row.file_path,
-              fileName: row.file_name || null,
-              mimeType: row.mime_type || null,
-              fileSize: row.file_size || null,
-            });
-          if (fileMetaCopyError) throw fileMetaCopyError;
-          dbRow = fileMetaCopied;
-          if (String(row.file_path).startsWith("draft/")) {
-            const finalPath = `${projectId}/expected-outputs/${dbRow.id}/${Date.now()}-${sanitizeFileName(row.file_name || "output-file")}`;
-            const { error: copyError } = await copyExpectedOutputFileInStorage({
-              fromPath: row.file_path,
-              toPath: finalPath,
-            });
-            if (copyError) throw copyError;
-
-            const { data: movedFileMeta, error: movedMetaError } =
-              await updateProjectExpectedOutputFile({
-                outputId: dbRow.id,
-                filePath: finalPath,
-                fileName: row.file_name || null,
-                mimeType: row.mime_type || null,
-                fileSize: row.file_size || null,
-              });
-            if (movedMetaError) throw movedMetaError;
-            dbRow = movedFileMeta;
-            newlyUploadedPaths.push(row.file_path);
-          }
-        }
-
-        savedRows.push(mapDbOutputToLocalRow(dbRow));
-      }
-
-      const oldOutputIds = (oldRows || []).map((row) => row.id);
-      const { error: deleteOldRowsError } = await deleteProjectExpectedOutputs({
-        outputIds: oldOutputIds,
-      });
-      if (deleteOldRowsError) throw deleteOldRowsError;
-
-      const oldPaths = new Set(
-        (oldRows || []).map((row) => row.file_path).filter(Boolean),
-      );
-      const newPaths = new Set(
-        savedRows.map((row) => row.file_path).filter(Boolean),
-      );
-      const orphanPaths = [...oldPaths].filter((path) => !newPaths.has(path));
-      if (orphanPaths.length > 0) {
-        const { error: removeOldFilesError } =
-          await removeExpectedOutputFilesFromStorage({
-            filePaths: orphanPaths,
-          });
-        if (removeOldFilesError) throw removeOldFilesError;
-      }
-
-      return { error: null, rows: savedRows };
-    } catch (runtimeError) {
-      if (newlyCreatedOutputIds.length > 0) {
-        await deleteProjectExpectedOutputs({
-          outputIds: newlyCreatedOutputIds,
-        });
-      }
-      if (newlyUploadedPaths.length > 0) {
-        await removeExpectedOutputFilesFromStorage({
-          filePaths: newlyUploadedPaths,
-        });
-      }
-      return { error: runtimeError };
-    }
-  };
-
   const submit = async () => {
     setSubmitting(true);
     const summaryText = buildExpectedOutputsSummary(expectedOutputRows);
     let moaReference = form.signed_moa_reference || null;
+    let uploadedMoaPath = "";
     if (moaFile) {
       const baseProjectRef = editId || "draft";
       const storagePath = `${baseProjectRef}/moa/${Date.now()}-${sanitizeFileName(moaFile.name)}`;
@@ -920,11 +772,17 @@ export default function SubmitAffiliationPage() {
         return;
       }
       moaReference = uploadedMoa?.path || storagePath;
+      uploadedMoaPath = moaReference;
     }
 
     const formForSave = {
       ...form,
       expected_outputs: summaryText,
+      expected_outputs_items: expectedOutputRows.map((row) => ({
+        output_type: row.output_type || "",
+        target_count: Math.max(1, Number(row.target_count) || 1),
+        specific_output: row.specific_output || "",
+      })),
       signed_moa_reference: moaReference,
     };
     const {
@@ -940,6 +798,9 @@ export default function SubmitAffiliationPage() {
 
     if (mode === "revise") {
       if (saveError || !data) {
+        if (uploadedMoaPath) {
+          await removeMovFilesFromStorage({ filePaths: [uploadedMoaPath] });
+        }
         setError(saveError?.message || "Unable to save revision.");
         setSubmitting(false);
         return;
@@ -960,6 +821,9 @@ export default function SubmitAffiliationPage() {
     }
 
     if (saveError) {
+      if (uploadedMoaPath) {
+        await removeMovFilesFromStorage({ filePaths: [uploadedMoaPath] });
+      }
       setError(saveError.message);
       setSubmitting(false);
       return;
@@ -1837,7 +1701,29 @@ export default function SubmitAffiliationPage() {
                         supporting_mov_link: e.target.value,
                       }))
                     }
+                    />
+                </label>
+                <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3 text-sm sm:max-w-2xl">
+                  <input
+                    className="mt-1 h-4 w-4"
+                    type="checkbox"
+                    checked={Boolean(form.public_visible)}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        public_visible: e.target.checked,
+                      }))
+                    }
                   />
+                  <span className="space-y-1">
+                    <span className="block font-semibold text-slate-700">
+                      Make project publicly visible after submission
+                    </span>
+                    <span className="block text-xs text-slate-500">
+                      Turn this on if the dataset can be visible outside your
+                      private workspace.
+                    </span>
+                  </span>
                 </label>
               </div>
             </div>
@@ -2134,6 +2020,18 @@ export default function SubmitAffiliationPage() {
                       <input
                         className="control-input"
                         value={form.supporting_mov_link || "-"}
+                        readOnly
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm sm:col-span-2">
+                      <span className="font-semibold text-slate-700">
+                        Visibility
+                      </span>
+                      <input
+                        className="control-input"
+                        value={
+                          form.public_visible ? "Publicly visible" : "Private"
+                        }
                         readOnly
                       />
                     </label>
