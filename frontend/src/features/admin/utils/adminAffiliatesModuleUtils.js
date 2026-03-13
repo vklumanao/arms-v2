@@ -1,9 +1,6 @@
 export function createAffiliateModuleFilters() {
   return {
     search: "",
-    role: "all",
-    status: "all",
-    department: "",
     sortBy: "name_asc",
   };
 }
@@ -13,15 +10,6 @@ export function buildCenterNameById(centers) {
     acc[center.id] = center.name;
     return acc;
   }, {});
-}
-
-export function buildAffiliateAnalytics(rows) {
-  const total = (rows || []).length;
-  const active = (rows || []).filter((row) => row.is_active).length;
-  const inactive = total - active;
-  const faculty = (rows || []).filter((row) => row.role === "faculty").length;
-  const student = (rows || []).filter((row) => row.role === "student").length;
-  return { total, active, inactive, faculty, student };
 }
 
 export function listAffiliateDepartments(rows) {
@@ -38,17 +26,9 @@ export function filterAndSortAffiliates(rows, filters) {
     .toLowerCase();
 
   const filtered = (rows || []).filter((row) => {
-    if (filters.role !== "all" && row.role !== filters.role) return false;
-    if (filters.status !== "all") {
-      const expectedActive = filters.status === "active";
-      if (row.is_active !== expectedActive) return false;
-    }
-    if (filters.department && row.department !== filters.department) {
-      return false;
-    }
     if (keyword) {
       const target =
-        `${row.full_name || ""} ${row.email || ""} ${row.department || ""} ${row.id || ""}`.toLowerCase();
+        `${row.full_name || ""} ${row.email || ""} ${row.role || ""} ${row.department || ""} ${row.id || ""} ${row.ckan_org_id || ""} ${row.is_active ? "active" : "inactive"}`.toLowerCase();
       if (!target.includes(keyword)) return false;
     }
     return true;
