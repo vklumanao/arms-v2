@@ -92,14 +92,30 @@ export default function AdminAffiliatesModulePage() {
 
   const departments = useMemo(() => listAffiliateDepartments(rows), [rows]);
   const departmentOptions = useMemo(() => {
-    const systemDepartments = Array.isArray(referenceDepartments)
-      ? referenceDepartments
-          .map((row) => String(row?.name || "").trim())
-          .filter(Boolean)
-      : [];
-    return [...new Set([...systemDepartments, ...departments])].sort((a, b) =>
-      a.localeCompare(b),
+    const seen = new Set();
+    const options = [];
+
+    (Array.isArray(referenceDepartments) ? referenceDepartments : []).forEach(
+      (row) => {
+        const id = String(row?.id || "").trim();
+        const name = String(row?.name || "").trim();
+        if (!id || !name || seen.has(id)) return;
+        seen.add(id);
+        options.push({ id, name });
+      },
     );
+
+    departments.forEach((name) => {
+      const label = String(name || "").trim();
+      if (!label) return;
+      const existing = options.find(
+        (option) => option.name.toLowerCase() === label.toLowerCase(),
+      );
+      if (existing) return;
+      options.push({ id: label, name: label });
+    });
+
+    return options.sort((a, b) => a.name.localeCompare(b.name));
   }, [departments, referenceDepartments]);
 
   const filteredRows = useMemo(
@@ -190,8 +206,20 @@ export default function AdminAffiliatesModulePage() {
       );
       return;
     }
+    const matchedDepartment =
+      departmentOptions.find((option) => option.id === row.ckan_group_id) ||
+      departmentOptions.find(
+        (option) =>
+          option.name.toLowerCase() ===
+          String(row.department || "").trim().toLowerCase(),
+      ) ||
+      null;
     setEditingAffiliate(row);
-    setEditForm(createAffiliateEditForm(row));
+    setEditForm({
+      ...createAffiliateEditForm(row),
+      ckan_group_id: matchedDepartment?.id || row.ckan_group_id || "",
+      department: matchedDepartment?.name || row.department || "",
+    });
   };
 
   const updateRowById = (rowId, patch) => {
@@ -207,6 +235,7 @@ export default function AdminAffiliatesModulePage() {
     setMessage("");
     const payload = {
       ...editForm,
+      ckan_group_id: editForm.ckan_group_id || null,
       ckan_org_id: editForm.ckan_org_id || null,
       publication_count: Number(editForm.publication_count || 0),
       research_project_count: Number(editForm.research_project_count || 0),
@@ -890,18 +919,23 @@ export default function AdminAffiliatesModulePage() {
                 <span className="font-semibold text-slate-700">Department</span>
                 <select
                   className="control-select"
-                  value={editForm.department}
-                  onChange={(event) =>
+                  value={editForm.ckan_group_id}
+                  onChange={(event) => {
+                    const nextGroupId = event.target.value;
+                    const selectedDepartment = departmentOptions.find(
+                      (option) => option.id === nextGroupId,
+                    );
                     setEditForm((prev) => ({
                       ...prev,
-                      department: event.target.value,
-                    }))
-                  }
+                      ckan_group_id: nextGroupId,
+                      department: selectedDepartment?.name || "",
+                    }));
+                  }}
                 >
                   <option value="">None</option>
                   {departmentOptions.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
+                    <option key={department.id} value={department.id}>
+                      {department.name}
                     </option>
                   ))}
                 </select>
