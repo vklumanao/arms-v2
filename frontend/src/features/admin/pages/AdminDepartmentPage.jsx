@@ -810,16 +810,15 @@ export default function AdminDepartmentPage() {
                 Department Records ({filteredRows.length})
               </h2>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Search
-                  size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
                 <input
                   className="control-input pl-8"
                   placeholder="Search name, code, or id"
                   value={filters.search}
                   onChange={(event) =>
-                    setFilters((prev) => ({ ...prev, search: event.target.value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: event.target.value,
+                    }))
                   }
                 />
               </label>
@@ -930,7 +929,8 @@ export default function AdminDepartmentPage() {
               </button>
             </div>
             <p className="text-sm text-slate-600">
-              Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+              Showing{" "}
+              <span className="font-semibold">{filteredRows.length}</span>{" "}
               department record(s).
             </p>
           </div>
@@ -1460,7 +1460,10 @@ export default function AdminDepartmentPage() {
                           ...prev,
                           chairpersonId: event.target.value,
                         }));
-                        setEditErrors((prev) => ({ ...prev, chairpersonId: "" }));
+                        setEditErrors((prev) => ({
+                          ...prev,
+                          chairpersonId: "",
+                        }));
                       }}
                     >
                       <option value="">Select Chairperson</option>
