@@ -79,6 +79,44 @@ export function registerSubmissionsRoutes(app, deps) {
     }
   }
 
+  function serializeExpectedOutputMetadata(items = []) {
+    return JSON.stringify(
+      (Array.isArray(items) ? items : [])
+        .map((row) => ({
+          output_type: normalizeOutputType(row?.output_type || row?.outputType),
+          target_count: Math.max(
+            1,
+            Number(row?.target_count || row?.targetCount || 1) || 1,
+          ),
+          specific_output: asTrimmedString(
+            row?.specific_output || row?.specificOutput,
+          ),
+        }))
+        .filter((row) => row.output_type),
+    );
+  }
+
+  function parseExpectedOutputMetadata(rawValue) {
+    try {
+      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((row) => ({
+          output_type: normalizeOutputType(row?.output_type || row?.outputType),
+          target_count: Math.max(
+            1,
+            Number(row?.target_count || row?.targetCount || 1) || 1,
+          ),
+          specific_output: asTrimmedString(
+            row?.specific_output || row?.specificOutput,
+          ),
+        }))
+        .filter((row) => row.output_type);
+    } catch {
+      return [];
+    }
+  }
+
   function isDatasetLinkedToFacultyUser(dataset, user) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const selectedUsers = parseSelectedUsers(
@@ -256,6 +294,10 @@ export function registerSubmissionsRoutes(app, deps) {
         value: asTrimmedString(form.expected_outputs) || null,
       },
       {
+        key: "expected_outputs_meta",
+        value: serializeExpectedOutputMetadata(form.expected_outputs_items),
+      },
+      {
         key: "supporting_mov_link",
         value: asTrimmedString(form.supporting_mov_link) || null,
       },
@@ -399,6 +441,10 @@ export function registerSubmissionsRoutes(app, deps) {
       "product_software",
       "others",
     ]);
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const metadataRows = parseExpectedOutputMetadata(
+      getExtraByKey(extras, "expected_outputs_meta"),
+    );
     const resources = Array.isArray(dataset?.resources)
       ? dataset.resources
       : [];
@@ -408,13 +454,16 @@ export function registerSubmissionsRoutes(app, deps) {
       const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
       const rawType = name.replace(/\s*\(target:[^)]+\)\s*$/i, "").trim();
       const normalizedType = normalizeOutputType(rawType);
+      const metadata = metadataRows[index] || null;
+      const outputType = metadata?.output_type || normalizedType;
 
       return {
         id: resource?.id || `resource-${index + 1}`,
-        output_type: allowedOutputTypes.has(normalizedType)
-          ? normalizedType
+        output_type: allowedOutputTypes.has(outputType)
+          ? outputType
           : "publication",
-        target_count: targetCount,
+        target_count: metadata?.target_count || targetCount,
+        specific_output: asTrimmedString(metadata?.specific_output),
         notes: asTrimmedString(resource?.description),
         file_path: asTrimmedString(resource?.url),
         file_name: asTrimmedString(resource?.name),
@@ -881,7 +930,12 @@ export function registerSubmissionsRoutes(app, deps) {
           asTrimmedString(existingDataset?.maintainer_email) ||
           asTrimmedString(req.user?.email) ||
           null,
-        private: existingDataset ? Boolean(existingDataset?.private) : true,
+        private:
+          typeof form.public_visible === "boolean"
+            ? !form.public_visible
+            : existingDataset
+              ? Boolean(existingDataset?.private)
+              : true,
         // Preserve searchable categorical tags from key form fields.
         tags: [
           asTrimmedString(form.classification),
