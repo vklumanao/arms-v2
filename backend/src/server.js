@@ -62,6 +62,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   parseOrThrow,
+  projectSubmissionPublishSchema,
   registerSchema,
   changePasswordSchema,
   resetPasswordSchema,
@@ -650,6 +651,8 @@ registerDashboardRoutes(app, {
 registerSubmissionsRoutes(app, {
   authMiddleware,
   badRequest,
+  parseOrThrow,
+  projectSubmissionPublishSchema,
   config,
   asTrimmedString,
   asNumber,
