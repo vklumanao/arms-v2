@@ -881,10 +881,6 @@ export default function ResearchOutputsPage() {
                     Research Output Records ({filteredRows.length})
                   </h2>
                   <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                    <Search
-                      size={14}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
                     <input
                       type="text"
                       value={searchTerm}
@@ -901,17 +897,25 @@ export default function ResearchOutputsPage() {
                         type="button"
                         className="btn btn-outline"
                         onClick={exportAsCsv}
-                        disabled={!filteredRows.length || Boolean(exportingType)}
+                        disabled={
+                          !filteredRows.length || Boolean(exportingType)
+                        }
                       >
-                        {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                        {exportingType === "csv"
+                          ? "Exporting..."
+                          : "Export CSV"}
                       </button>
                       <button
                         type="button"
                         className="btn btn-outline"
                         onClick={exportAsPdf}
-                        disabled={!filteredRows.length || Boolean(exportingType)}
+                        disabled={
+                          !filteredRows.length || Boolean(exportingType)
+                        }
                       >
-                        {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                        {exportingType === "pdf"
+                          ? "Exporting..."
+                          : "Export PDF"}
                       </button>
                     </>
                   ) : null}
