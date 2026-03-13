@@ -29,7 +29,6 @@ const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
   "Educational Technology Tools",
 ];
 const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
-const sanitizeDigits = (value) => String(value || "").replace(/\D+/g, "");
 
 export default function ResearchOutputsPage() {
   const toast = useToast();
@@ -44,8 +43,6 @@ export default function ResearchOutputsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [stateFilter, setStateFilter] = useState("all");
-  const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewTarget, setViewTarget] = useState(null);
   const [editingTarget, setEditingTarget] = useState(null);
@@ -286,44 +283,24 @@ export default function ResearchOutputsPage() {
     return Array.from(byId.values());
   }, [projectOptions, projectOptionsFromRows]);
 
-  const stateOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          tableRows
-            .map((row) => String(row.state || "").trim())
-            .filter(Boolean),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [tableRows],
-  );
-
   const filteredRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return tableRows.filter((row) => {
-      const rowState = String(row.state || "")
-        .trim()
-        .toLowerCase();
-      const rowVisibility = row.private ? "private" : "public";
       const haystack = [
         row.title,
         row.subtitle,
         row.datasetName,
         row.organization,
         row.resourceId,
+        row.state,
+        row.private ? "private" : "public",
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ");
 
-      const matchesSearch = query ? haystack.includes(query) : true;
-      const matchesState =
-        stateFilter === "all" ? true : rowState === stateFilter.toLowerCase();
-      const matchesVisibility =
-        visibilityFilter === "all" ? true : rowVisibility === visibilityFilter;
-
-      return matchesSearch && matchesState && matchesVisibility;
+      return query ? haystack.includes(query) : true;
     });
-  }, [searchTerm, stateFilter, tableRows, visibilityFilter]);
+  }, [searchTerm, tableRows]);
 
   const analytics = useMemo(() => {
     const linkedProjectIds = new Set();
@@ -352,7 +329,7 @@ export default function ResearchOutputsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, stateFilter, visibilityFilter]);
+  }, [searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
 
@@ -364,13 +341,6 @@ export default function ResearchOutputsPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredRows.slice(start, start + pageSize);
   }, [currentPage, filteredRows]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setStateFilter("all");
-    setVisibilityFilter("all");
-    setCurrentPage(1);
-  };
 
   const formatFileSize = (bytes) => {
     const value = Number(bytes || 0);
@@ -885,7 +855,7 @@ export default function ResearchOutputsPage() {
                       type="text"
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search file, dataset, project, org..."
+                      placeholder="Search file, dataset, project, center, state, or visibility"
                       className="control-input pl-8"
                     />
                   </label>
@@ -928,38 +898,7 @@ export default function ResearchOutputsPage() {
                   </button>
                 </div>
               </div>
-              <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[11rem_11rem]">
-                <select
-                  value={stateFilter}
-                  onChange={(event) => setStateFilter(event.target.value)}
-                  className="control-select"
-                >
-                  <option value="all">Filter by state</option>
-                  {stateOptions.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={visibilityFilter}
-                  onChange={(event) => setVisibilityFilter(event.target.value)}
-                  className="control-select"
-                >
-                  <option value="all">Filter by visibility</option>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="btn btn-outline"
-                >
-                  Reset
-                </button>
                 <p className="text-sm text-slate-600">
                   Showing{" "}
                   <span className="font-semibold">{filteredRows.length}</span>{" "}
@@ -971,7 +910,7 @@ export default function ResearchOutputsPage() {
               <div className="p-4">
                 <EmptyState
                   title="No research outputs found"
-                  description="Try adjusting your filters or add a new research output."
+                  description="Try a different search term or add a new research output."
                 />
               </div>
             ) : (
