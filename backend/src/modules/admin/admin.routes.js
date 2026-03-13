@@ -1082,6 +1082,13 @@ export function registerAdminRoutes(app, deps) {
           memberCount = Math.max(0, nonChiefUsers.length - editorCount);
         }
 
+        const totalAffiliates =
+          type === "center" && centerUserRows.length > 0
+            ? memberCount + editorCount + adminCount
+            : type === "department" && departmentUserRows.length > 0
+              ? memberCount + editorCount
+              : nonAdminMembers.length + (type === "department" ? 0 : adminCount);
+
         return res.json({
           projectCount:
             type === "center"
@@ -1090,22 +1097,12 @@ export function registerAdminRoutes(app, deps) {
                   const meta = extrasToMap(dataset?.extras);
                   return String(meta.department_id || "").trim() === id;
                 }).length,
-          profileCount:
-            type === "center" && centerUserRows.length > 0
-              ? memberCount + editorCount + adminCount
-              : type === "department" && departmentUserRows.length > 0
-              ? memberCount + editorCount + adminCount
-              : nonAdminMembers.length + adminCount,
+          profileCount: totalAffiliates,
           memberBreakdown: {
             adminCount,
             editorCount,
             memberCount,
-            totalCount:
-              type === "center" && centerUserRows.length > 0
-                ? memberCount + editorCount + adminCount
-                : type === "department" && departmentUserRows.length > 0
-                ? memberCount + editorCount + adminCount
-                : nonAdminMembers.length + adminCount,
+            totalCount: totalAffiliates,
           },
         });
       } catch (error) {
