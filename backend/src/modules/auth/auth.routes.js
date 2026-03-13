@@ -169,7 +169,10 @@ export function registerAuthRoutes(app, deps) {
         },
       });
 
-      return res.status(201).json({ ok: true });
+      const authUser = await resolveCenterChiefContext(created);
+      const token = signSession(authUser);
+      setSessionCookie(res, token);
+      return res.status(201).json(toAuthPayload(authUser, null));
     } catch (error) {
       await logAuditEvent({
         eventType: "auth.register_failed",
