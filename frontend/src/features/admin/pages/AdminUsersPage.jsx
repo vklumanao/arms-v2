@@ -359,8 +359,8 @@ export default function AdminUsersPage() {
         ckan_org_id: createForm.ckan_org_id || null,
         ckan_group_id: createForm.ckan_group_id || null,
         department:
-          departments.find((row) => row.id === createForm.ckan_group_id)?.name ||
-          null,
+          departments.find((row) => row.id === createForm.ckan_group_id)
+            ?.name || null,
       });
       setUsers((prev) => [created, ...prev]);
       setCreateResult(created || null);
@@ -424,10 +424,6 @@ export default function AdminUsersPage() {
           </h2>
           <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
             <label className="relative w-full lg:min-w-[22rem]">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
               <input
                 className="control-input pl-8"
                 placeholder="Search user by name, email, or role"
@@ -871,7 +867,10 @@ export default function AdminUsersPage() {
       ) : null}
 
       {createModalOpen ? (
-        <div className="modal-overlay modal-overlay-centered" onClick={closeCreateModal}>
+        <div
+          className="modal-overlay modal-overlay-centered"
+          onClick={closeCreateModal}
+        >
           <div
             className="modal-dialog modal-dialog-lg"
             onClick={(e) => e.stopPropagation()}
@@ -883,17 +882,23 @@ export default function AdminUsersPage() {
                     Create User Account
                   </h3>
                   <p className="text-sm text-slate-500">
-                    Add a faculty or student account with optional center and department assignment.
+                    Add a faculty or student account with optional center and
+                    department assignment.
                   </p>
                 </div>
-                <button className="btn btn-outline px-2" onClick={closeCreateModal}>
+                <button
+                  className="btn btn-outline px-2"
+                  onClick={closeCreateModal}
+                >
                   <X size={14} />
                 </button>
               </div>
               <div className="panel-body space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Full Name</span>
+                    <span className="font-medium text-slate-700">
+                      Full Name
+                    </span>
                     <input
                       className="control-input"
                       value={createForm.full_name}
@@ -938,7 +943,9 @@ export default function AdminUsersPage() {
                     </select>
                   </label>
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Research Center</span>
+                    <span className="font-medium text-slate-700">
+                      Research Center
+                    </span>
                     <select
                       className="control-select"
                       value={createForm.ckan_org_id}
@@ -958,7 +965,9 @@ export default function AdminUsersPage() {
                     </select>
                   </label>
                   <label className="space-y-1 text-sm md:col-span-2">
-                    <span className="font-medium text-slate-700">Department</span>
+                    <span className="font-medium text-slate-700">
+                      Department
+                    </span>
                     <select
                       className="control-select"
                       value={createForm.ckan_group_id}
@@ -981,7 +990,9 @@ export default function AdminUsersPage() {
 
                 {createResult?.temporary_password ? (
                   <div className="app-card-muted app-card-compact text-sm text-slate-700">
-                    <p className="font-semibold text-slate-900">Account created</p>
+                    <p className="font-semibold text-slate-900">
+                      Account created
+                    </p>
                     <p className="mt-1">
                       Temporary password:{" "}
                       <span className="font-mono font-semibold">
@@ -989,7 +1000,8 @@ export default function AdminUsersPage() {
                       </span>
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Share this once, then require the user to change it after first login.
+                      Share this once, then require the user to change it after
+                      first login.
                     </p>
                   </div>
                 ) : null}
@@ -1028,4 +1040,3 @@ export default function AdminUsersPage() {
     </section>
   );
 }
-
