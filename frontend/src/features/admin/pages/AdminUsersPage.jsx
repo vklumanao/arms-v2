@@ -448,7 +448,6 @@ export default function AdminUsersPage() {
               />
             </label>
             <button className="btn btn-primary" onClick={openCreateModal}>
-              <Plus size={14} />
               Create User
             </button>
           </div>
