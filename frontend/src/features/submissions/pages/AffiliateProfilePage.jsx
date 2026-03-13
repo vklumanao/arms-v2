@@ -121,7 +121,8 @@ export default function AffiliateProfilePage() {
       is_gs_faculty: Boolean(form.is_gs_faculty),
     };
 
-    const { data, error: updateError } = await updateAffiliateProfileService(payload);
+    const { data, error: updateError } =
+      await updateAffiliateProfileService(payload);
 
     if (updateError) {
       setError(updateError.message || "Unable to save affiliate profile.");
@@ -197,7 +198,9 @@ export default function AffiliateProfilePage() {
 
       {loading ? (
         <div className="panel">
-          <div className="panel-body text-sm text-slate-600">Loading profile...</div>
+          <div className="panel-body text-sm text-slate-600">
+            Loading profile...
+          </div>
         </div>
       ) : (
         <div className="page-stack">
@@ -210,17 +213,24 @@ export default function AffiliateProfilePage() {
             <div className="panel-body grid gap-4">
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Full name</span>
+                  <span className="font-semibold text-slate-700">
+                    Full name
+                  </span>
                   <input
                     className="control-input"
                     value={form.full_name || ""}
                     onChange={(e) =>
-                      setForm((prev) => ({ ...prev, full_name: e.target.value }))
+                      setForm((prev) => ({
+                        ...prev,
+                        full_name: e.target.value,
+                      }))
                     }
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Department</span>
+                  <span className="font-semibold text-slate-700">
+                    Department
+                  </span>
                   <select
                     className="control-select"
                     value={form.ckan_group_id || ""}
@@ -253,7 +263,9 @@ export default function AffiliateProfilePage() {
 
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Research Center</span>
+                  <span className="font-semibold text-slate-700">
+                    Research Center
+                  </span>
                   <select
                     className="control-select"
                     value={form.ckan_org_id || ""}
@@ -273,7 +285,9 @@ export default function AffiliateProfilePage() {
                   </select>
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Google Scholar Link</span>
+                  <span className="font-semibold text-slate-700">
+                    Google Scholar Link
+                  </span>
                   <input
                     className="control-input"
                     type="url"
@@ -291,7 +305,9 @@ export default function AffiliateProfilePage() {
 
               <div className="grid gap-2 sm:grid-cols-3">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Employment Status</span>
+                  <span className="font-semibold text-slate-700">
+                    Employment Status
+                  </span>
                   <select
                     className="control-select"
                     value={form.employment_status || ""}
@@ -308,7 +324,9 @@ export default function AffiliateProfilePage() {
                   </select>
                 </label>
                 <label className="space-y-1 text-sm sm:col-span-2">
-                  <span className="font-semibold text-slate-700">Designation</span>
+                  <span className="font-semibold text-slate-700">
+                    Designation
+                  </span>
                   <input
                     className="control-input"
                     placeholder="e.g. Department Head, Program Chair"
@@ -345,7 +363,10 @@ export default function AffiliateProfilePage() {
             </div>
           </form>
 
-          <form className="panel overflow-hidden" onSubmit={requestPasswordChange}>
+          <form
+            className="panel overflow-hidden"
+            onSubmit={requestPasswordChange}
+          >
             <div className="panel-header">
               <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
                 Change Password
@@ -353,7 +374,9 @@ export default function AffiliateProfilePage() {
             </div>
             <div className="panel-body grid gap-3 sm:grid-cols-3">
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Current Password</span>
+                <span className="font-semibold text-slate-700">
+                  Current Password
+                </span>
                 <div className="relative">
                   <input
                     className="control-input pr-10"
@@ -375,16 +398,25 @@ export default function AffiliateProfilePage() {
                         : "Show current password"
                     }
                     onClick={() =>
-                      setShowPassword((prev) => ({ ...prev, current: !prev.current }))
+                      setShowPassword((prev) => ({
+                        ...prev,
+                        current: !prev.current,
+                      }))
                     }
                   >
-                    {showPassword.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword.current ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
                   </button>
                 </div>
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">New Password</span>
+                <span className="font-semibold text-slate-700">
+                  New Password
+                </span>
                 <div className="relative">
                   <input
                     className="control-input pr-10"
@@ -400,18 +432,28 @@ export default function AffiliateProfilePage() {
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                    aria-label={showPassword.next ? "Hide new password" : "Show new password"}
+                    aria-label={
+                      showPassword.next
+                        ? "Hide new password"
+                        : "Show new password"
+                    }
                     onClick={() =>
                       setShowPassword((prev) => ({ ...prev, next: !prev.next }))
                     }
                   >
-                    {showPassword.next ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword.next ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
                   </button>
                 </div>
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Confirm New Password</span>
+                <span className="font-semibold text-slate-700">
+                  Confirm New Password
+                </span>
                 <div className="relative">
                   <input
                     className="control-input pr-10"
@@ -433,10 +475,17 @@ export default function AffiliateProfilePage() {
                         : "Show confirm password"
                     }
                     onClick={() =>
-                      setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))
+                      setShowPassword((prev) => ({
+                        ...prev,
+                        confirm: !prev.confirm,
+                      }))
                     }
                   >
-                    {showPassword.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword.confirm ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
                   </button>
                 </div>
               </label>
@@ -446,13 +495,19 @@ export default function AffiliateProfilePage() {
                   Password must be at least 8 characters and include uppercase,
                   lowercase, and a number.
                 </p>
-                <button className="btn btn-primary" disabled={changingPassword} type="submit">
+                <button
+                  className="btn btn-primary"
+                  disabled={changingPassword}
+                  type="submit"
+                >
                   {changingPassword ? "Updating..." : "Update Password"}
                 </button>
               </div>
 
               {passwordError ? (
-                <p className="sm:col-span-3 text-sm text-[var(--danger)]">{passwordError}</p>
+                <p className="sm:col-span-3 text-sm text-[var(--danger)]">
+                  {passwordError}
+                </p>
               ) : null}
             </div>
           </form>
