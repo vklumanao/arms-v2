@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { fetchCkanGroups, fetchCkanOrganizations } from "@/shared/api/ckanApi";
@@ -12,6 +12,7 @@ const SIGNUP_COOLDOWN_KEY = "arms_signup_cooldown_until";
 const DEFAULT_SIGNUP_COOLDOWN_SECONDS = 300;
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
@@ -139,10 +140,9 @@ export default function RegisterPage() {
         ckan_group_id: form.ckan_group_id || null,
       });
 
-      setMessage(
-        "Registration successful. You can now log in with your account.",
-      );
+      setMessage("Registration successful. Redirecting to dashboard...");
       window.localStorage.removeItem(SIGNUP_COOLDOWN_KEY);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const message = String(err?.message || "Unexpected registration error.");
       if (message.toLowerCase().includes("too many")) {
