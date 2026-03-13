@@ -29,7 +29,7 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://arms_user:arms_password@arms-db:5432/arms_v3
       DB_SSL: "false"
-      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://192.168.196.235:5173
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       CKAN_BASE_URL: http://ckan:5000
       CKAN_VERIFY_TLS: "false"
       ARMS_JWT_EXPIRES_IN: 12h
@@ -55,7 +55,7 @@ services:
     working_dir: /app
     command: npm run dev -- --host 0.0.0.0 --port 5173
     environment:
-      VITE_API_BASE_URL: http://192.168.196.235:4010/api
+      VITE_API_BASE_URL: http://localhost:4010/api
       VITE_UI_PREVIEW_MODE: "false"
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "300"
