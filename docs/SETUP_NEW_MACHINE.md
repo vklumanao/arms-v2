@@ -143,6 +143,23 @@ docker compose -f ckan-docker/docker-compose.yml -f ckan-docker/docker-compose.a
 - Frontend uses Vite with polling enabled for reliable file watching on Docker Desktop + Windows
 - Backend restarts automatically in dev when watched files change
 
+## 11) LAN access on the same Wi-Fi
+
+If you want to open ARMS from another device on the same network, bind the frontend to `0.0.0.0` and point the frontend API base URL plus backend `CORS_ORIGINS` to your current IPv4 host.
+
+Current LAN example:
+
+- Frontend: `http://192.168.196.235:5173`
+- Backend API: `http://192.168.196.235:4010/api`
+
+After changing `ckan-docker/docker-compose.arms.dev.yml`, recreate the affected containers:
+
+```bash
+docker compose -f ckan-docker/docker-compose.yml -f ckan-docker/docker-compose.arms.dev.yml up -d --force-recreate backend frontend
+```
+
+If another device still cannot connect, allow ports `5173` and `4010` through the host firewall.
+
 ## Troubleshooting
 
 - Docker Desktop reports virtualization missing:
