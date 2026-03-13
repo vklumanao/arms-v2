@@ -117,8 +117,9 @@ export default function AdminResearchCenterPage() {
   const scopedCenterRow = useMemo(
     () =>
       isScopedCenterChief
-        ? rows.find((row) => String(row?.id || "").trim() === managedCenterId) ||
-          null
+        ? rows.find(
+            (row) => String(row?.id || "").trim() === managedCenterId,
+          ) || null
         : null,
     [isScopedCenterChief, managedCenterId, rows],
   );
@@ -224,8 +225,7 @@ export default function AdminResearchCenterPage() {
                 .toLowerCase()
             ] || null;
           const centerChiefId =
-            String(centerMeta?.center_chief_id || "").trim() ||
-            "";
+            String(centerMeta?.center_chief_id || "").trim() || "";
           const centerChiefNameFromMeta = String(
             centerMeta?.center_chief_name || "",
           ).trim();
@@ -233,9 +233,7 @@ export default function AdminResearchCenterPage() {
             (ckanUser) => String(ckanUser?.id || "").trim() === centerChiefId,
           )?.name;
           const centerChiefName =
-            centerChiefNameFromMeta ||
-            centerChiefNameFromId ||
-            "";
+            centerChiefNameFromMeta || centerChiefNameFromId || "";
           return {
             id: orgId,
             code: String(item?.code || "").trim() || String(orgId || "-"),
@@ -296,8 +294,12 @@ export default function AdminResearchCenterPage() {
               type: "center",
               id: managedRow.id,
             });
-            setScopedMembers(Array.isArray(linked?.profiles) ? linked.profiles : []);
-            setScopedProjects(Array.isArray(linked?.projects) ? linked.projects : []);
+            setScopedMembers(
+              Array.isArray(linked?.profiles) ? linked.profiles : [],
+            );
+            setScopedProjects(
+              Array.isArray(linked?.projects) ? linked.projects : [],
+            );
           } catch (linksError) {
             setScopedMembers([]);
             setScopedProjects([]);
@@ -310,7 +312,9 @@ export default function AdminResearchCenterPage() {
         } else {
           setScopedMembers([]);
           setScopedProjects([]);
-          setScopedLinksError("Assigned Research Center could not be resolved.");
+          setScopedLinksError(
+            "Assigned Research Center could not be resolved.",
+          );
         }
       } else {
         setScopedMembers([]);
@@ -472,9 +476,13 @@ export default function AdminResearchCenterPage() {
 
   const scopedDepartmentOptions = useMemo(
     () =>
-      [...new Set(scopedMembers.map((member) => String(member?.department || "").trim()).filter(Boolean))].sort(
-        (a, b) => a.localeCompare(b),
-      ),
+      [
+        ...new Set(
+          scopedMembers
+            .map((member) => String(member?.department || "").trim())
+            .filter(Boolean),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
     [scopedMembers],
   );
 
@@ -495,7 +503,11 @@ export default function AdminResearchCenterPage() {
       [
         ...new Set(
           scopedProjects
-            .map((project) => String(project?.status || "").trim().toLowerCase())
+            .map((project) =>
+              String(project?.status || "")
+                .trim()
+                .toLowerCase(),
+            )
             .filter(Boolean),
         ),
       ].sort((a, b) => a.localeCompare(b)),
@@ -537,11 +549,18 @@ export default function AdminResearchCenterPage() {
     const keyword = projectFilters.search.trim().toLowerCase();
     return scopedProjects.filter((project) => {
       const title = String(project?.title || "").toLowerCase();
-      const leadResearcher = String(project?.lead_researcher || "").toLowerCase();
-      const status = String(project?.status || "").trim().toLowerCase();
+      const leadResearcher = String(
+        project?.lead_researcher || "",
+      ).toLowerCase();
+      const status = String(project?.status || "")
+        .trim()
+        .toLowerCase();
       const department = String(project?.department_name || "").trim();
 
-      if (keyword && !(title.includes(keyword) || leadResearcher.includes(keyword))) {
+      if (
+        keyword &&
+        !(title.includes(keyword) || leadResearcher.includes(keyword))
+      ) {
         return false;
       }
       if (projectFilters.status !== "all" && status !== projectFilters.status) {
@@ -1156,9 +1175,9 @@ export default function AdminResearchCenterPage() {
                   {scopedSummary.totalMembers}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0} Editor:{" "}
-                  {scopedCenterRow.memberBreakdown?.editorCount || 0} Member:{" "}
-                  {scopedCenterRow.memberBreakdown?.memberCount || 0}
+                  Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0}{" "}
+                  Editor: {scopedCenterRow.memberBreakdown?.editorCount || 0}{" "}
+                  Member: {scopedCenterRow.memberBreakdown?.memberCount || 0}
                 </p>
               </article>
               <article className="metric-card">
@@ -1182,10 +1201,6 @@ export default function AdminResearchCenterPage() {
                       Research Center Members ({filteredScopedMembers.length})
                     </h2>
                     <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                      <Search
-                        size={14}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
                       <input
                         className="control-input pl-8"
                         placeholder="Search name or email"
@@ -1291,7 +1306,9 @@ export default function AdminResearchCenterPage() {
                     <tbody>
                       {paginatedScopedMembers.map((member, index) => (
                         <tr key={member.id || `${member.email}-${index}`}>
-                          <td>{(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}</td>
+                          <td>
+                            {(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}
+                          </td>
                           <td>{member.full_name || "Unnamed user"}</td>
                           <td>{member.email || "-"}</td>
                           <td className="capitalize">{member.role || "-"}</td>
@@ -1304,7 +1321,9 @@ export default function AdminResearchCenterPage() {
                                   : "status-rejected"
                               }`}
                             >
-                              {member.is_active !== false ? "Active" : "Inactive"}
+                              {member.is_active !== false
+                                ? "Active"
+                                : "Inactive"}
                             </span>
                           </td>
                           <td>
@@ -1408,9 +1427,7 @@ export default function AdminResearchCenterPage() {
                     Loading linked projects...
                   </p>
                 ) : scopedLinksError ? (
-                  <p className="p-4 text-sm text-red-700">
-                    {scopedLinksError}
-                  </p>
+                  <p className="p-4 text-sm text-red-700">{scopedLinksError}</p>
                 ) : filteredScopedProjects.length === 0 ? (
                   <p className="p-4 text-sm text-slate-600">
                     No linked projects matched the current filters.
@@ -1431,9 +1448,13 @@ export default function AdminResearchCenterPage() {
                     <tbody>
                       {paginatedScopedProjects.map((project, index) => (
                         <tr key={project.id || `${project.title}-${index}`}>
-                          <td>{(projectPage - 1) * PROJECT_PAGE_SIZE + index + 1}</td>
+                          <td>
+                            {(projectPage - 1) * PROJECT_PAGE_SIZE + index + 1}
+                          </td>
                           <td>{project.title || "-"}</td>
-                          <td className="capitalize">{project.status || "-"}</td>
+                          <td className="capitalize">
+                            {project.status || "-"}
+                          </td>
                           <td>{project.year || "-"}</td>
                           <td>{project.lead_researcher || "-"}</td>
                           <td>{project.department_name || "-"}</td>
@@ -1515,16 +1536,15 @@ export default function AdminResearchCenterPage() {
                 Research Center Records ({filteredRows.length})
               </h2>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Search
-                  size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
                 <input
                   className="control-input pl-8"
                   placeholder="Search name, code, or id"
                   value={filters.search}
                   onChange={(event) =>
-                    setFilters((prev) => ({ ...prev, search: event.target.value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: event.target.value,
+                    }))
                   }
                 />
               </label>
@@ -1637,7 +1657,8 @@ export default function AdminResearchCenterPage() {
               </button>
             </div>
             <p className="text-sm text-slate-600">
-              Showing <span className="font-semibold">{filteredRows.length}</span>{" "}
+              Showing{" "}
+              <span className="font-semibold">{filteredRows.length}</span>{" "}
               research center record(s).
             </p>
           </div>
