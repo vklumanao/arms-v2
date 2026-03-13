@@ -31,7 +31,7 @@ function mockApiPayload(path, options = {}) {
 
   if (cleanPath === "/auth/me") return mockAuthPayload();
   if (cleanPath === "/auth/login") return mockAuthPayload();
-  if (cleanPath === "/auth/register") return { ok: true };
+  if (cleanPath === "/auth/register") return mockAuthPayload();
   if (cleanPath === "/auth/forgot-password") return { ok: true };
   if (cleanPath === "/auth/reset-password") return { ok: true };
   if (cleanPath === "/auth/change-password") return { ok: true, warning: null };
