@@ -232,6 +232,25 @@ export async function uploadMovFileToStorage({ storagePath, file }) {
   }
 }
 
+export async function removeMovFilesFromStorage({ filePaths }) {
+  (filePaths || []).forEach((path) => {
+    const raw = String(path || "").trim();
+    if (!raw) return;
+
+    if (raw.startsWith("blob:")) {
+      URL.revokeObjectURL(raw);
+      return;
+    }
+
+    const blobUrl = localBlobUrlByPath.get(raw);
+    if (blobUrl && blobUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(blobUrl);
+    }
+    localBlobUrlByPath.delete(raw);
+  });
+  return { data: null, error: null };
+}
+
 export async function createMovPreviewSignedUrl({ filePath }) {
   const raw = String(filePath || "").trim();
   if (!raw) {
