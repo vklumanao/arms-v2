@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  GraduationCap,
   Search,
-  UserCheck,
-  UserRound,
-  UserX,
-  Users,
 } from "lucide-react";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
@@ -14,7 +9,6 @@ import { useToast } from "@/app/providers/ToastProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { fetchCkanDatasets } from "@/shared/api/ckanApi";
 import {
-  buildAffiliateAnalytics,
   buildAffiliateExportRows,
   buildCenterNameById,
   createAffiliateEditForm,
@@ -87,8 +81,6 @@ export default function AdminAffiliatesModulePage() {
   }, [loadData]);
 
   const centerNameById = useMemo(() => buildCenterNameById(centers), [centers]);
-
-  const analytics = useMemo(() => buildAffiliateAnalytics(rows), [rows]);
 
   const departments = useMemo(() => listAffiliateDepartments(rows), [rows]);
   const departmentOptions = useMemo(() => {
@@ -194,10 +186,6 @@ export default function AdminAffiliatesModulePage() {
     selectedAffiliate?.full_name,
     selectedAffiliate?.id,
   ]);
-
-  const clearFilters = () => {
-    setFilters(createAffiliateModuleFilters());
-  };
 
   const openEditModal = (row) => {
     if (row.source === "ckan_only") {
@@ -411,54 +399,6 @@ export default function AdminAffiliatesModulePage() {
         description="Monitor and review affiliate records with analytics, filtering, and export-ready reports."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Users size={14} />
-            Total Affiliates
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.total}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <UserCheck size={14} />
-            Active
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.active}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <UserX size={14} />
-            Inactive
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.inactive}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <UserRound size={14} />
-            Faculty
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.faculty}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <GraduationCap size={14} />
-            Students
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.student}
-          </p>
-        </article>
-      </div>
-
       <div className="panel overflow-hidden">
         <div className="border-b border-[var(--border)] px-4 py-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -499,48 +439,6 @@ export default function AdminAffiliatesModulePage() {
               </button>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_10rem_minmax(0,14rem)]">
-            <select
-              className="control-select"
-              value={filters.role}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, role: event.target.value }))
-              }
-            >
-              <option value="all">All roles</option>
-              <option value="faculty">Faculty</option>
-              <option value="student">Student</option>
-              <option value="admin">Admin</option>
-            </select>
-            <select
-              className="control-select"
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, status: event.target.value }))
-              }
-            >
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <select
-              className="control-select"
-              value={filters.department}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  department: event.target.value,
-                }))
-              }
-            >
-              <option value="">All departments</option>
-              {departments.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex w-full flex-wrap gap-2 md:w-auto">
               <select
@@ -558,13 +456,6 @@ export default function AdminAffiliatesModulePage() {
                 <option value="recent_desc">Sort: Recently updated</option>
                 <option value="recent_asc">Sort: Least recently updated</option>
               </select>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={clearFilters}
-              >
-                Reset
-              </button>
             </div>
             <p className="text-sm text-slate-600">
               Showing{" "}
@@ -578,7 +469,7 @@ export default function AdminAffiliatesModulePage() {
           <div className="p-4">
             <EmptyState
               title="No affiliates found"
-              description="Try adjusting filters to find matching affiliate records."
+              description="Try a different search term to find matching affiliate records."
             />
           </div>
         ) : (
