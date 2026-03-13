@@ -3,6 +3,7 @@ import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { isValidEmail } from "@/shared/utils/validation";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
+import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   createAdminUser,
@@ -12,6 +13,7 @@ import {
   updateAdminUserRole,
   updateAdminUserStatus,
 } from "@/features/admin/services";
+import { paginateItemsWithMeta } from "@/features/admin/utils";
 import {
   BadgeCheck,
   Briefcase,
@@ -28,6 +30,7 @@ import {
 const ROLE_OPTIONS = ["student", "faculty", "admin"];
 
 export default function AdminUsersPage() {
+  const PAGE_SIZE = 10;
   const { centers, departments } = useReferenceData();
   const EMPTY_CREATE_FORM = {
     full_name: "",
@@ -50,6 +53,7 @@ export default function AdminUsersPage() {
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
   const [createSaving, setCreateSaving] = useState(false);
   const [createResult, setCreateResult] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const toast = useToast();
   const [detailData, setDetailData] = useState({
     submissionsCount: 0,
@@ -123,6 +127,10 @@ export default function AdminUsersPage() {
       );
     });
   }, [users, userSearch]);
+  const pagination = useMemo(
+    () => paginateItemsWithMeta(filteredUsers, currentPage, PAGE_SIZE),
+    [filteredUsers, currentPage],
+  );
 
   const metrics = useMemo(() => {
     const total = users.length;
@@ -133,6 +141,14 @@ export default function AdminUsersPage() {
     const students = users.filter((u) => u.role === "student").length;
     return { total, active, inactive, admins, faculty, students };
   }, [users]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [userSearch]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, pagination.totalPages));
+  }, [pagination.totalPages]);
 
   const detailCompleteness = useMemo(
     () => (detailUser ? getCompleteness(detailUser) : null),
@@ -458,9 +474,9 @@ export default function AdminUsersPage() {
                     <td colSpan={8}>No users found.</td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user, index) => (
+                  pagination.items.map((user, index) => (
                     <tr key={user.id}>
-                      <td>{index + 1}</td>
+                      <td>{pagination.start + index + 1}</td>
                       <td>{user.full_name || "-"}</td>
                       <td>{user.email || "-"}</td>
                       <td>
@@ -549,6 +565,14 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          {filteredUsers.length ? (
+            <PaginationControls
+              className="mt-4"
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setCurrentPage}
+            />
+          ) : null}
         </div>
       </div>
 
