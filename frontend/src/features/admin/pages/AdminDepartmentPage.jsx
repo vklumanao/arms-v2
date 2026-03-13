@@ -6,7 +6,6 @@ import {
   Link2,
   List,
   Search,
-  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import PageHeader from "@/shared/components/layout/PageHeader";
@@ -24,10 +23,6 @@ import {
 
 const INITIAL_FILTERS = {
   search: "",
-  code: "",
-  linkedAffiliates: "all",
-  linkedProjects: "all",
-  linkageState: "all",
 };
 const EMPTY_EDITING = {
   id: null,
@@ -235,7 +230,6 @@ export default function AdminDepartmentPage() {
 
   const filteredRows = useMemo(() => {
     const keyword = filters.search.trim().toLowerCase();
-    const codeKeyword = filters.code.trim().toLowerCase();
 
     return rows.filter((row) => {
       if (
@@ -243,35 +237,11 @@ export default function AdminDepartmentPage() {
         !(
           row.name.toLowerCase().includes(keyword) ||
           row.code.toLowerCase().includes(keyword) ||
+          String(row.chairpersonName || "").toLowerCase().includes(keyword) ||
           row.type.toLowerCase().includes(keyword) ||
           row.id.toLowerCase().includes(keyword)
         )
       ) {
-        return false;
-      }
-
-      if (codeKeyword && !row.code.toLowerCase().includes(codeKeyword)) {
-        return false;
-      }
-
-      if (filters.linkedAffiliates === "with" && row.profileCount <= 0) {
-        return false;
-      }
-      if (filters.linkedAffiliates === "without" && row.profileCount > 0) {
-        return false;
-      }
-
-      if (filters.linkedProjects === "with" && row.projectCount <= 0) {
-        return false;
-      }
-      if (filters.linkedProjects === "without" && row.projectCount > 0) {
-        return false;
-      }
-
-      if (filters.linkageState === "active" && row.totalLinks <= 0) {
-        return false;
-      }
-      if (filters.linkageState === "idle" && row.totalLinks > 0) {
         return false;
       }
 
@@ -320,22 +290,6 @@ export default function AdminDepartmentPage() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
-
-  const stats = useMemo(
-    () => ({
-      total: rows.length,
-      linkedAffiliates: rows.reduce(
-        (total, row) => total + (row.profileCount || 0),
-        0,
-      ),
-      linkedProjects: rows.reduce(
-        (total, row) => total + (row.projectCount || 0),
-        0,
-      ),
-      activeDepartments: rows.filter((row) => row.totalLinks > 0).length,
-    }),
-    [rows],
-  );
 
   const activeModalRef = createModalOpen
     ? createModalRef
@@ -763,45 +717,6 @@ export default function AdminDepartmentPage() {
         description="Manage departments and inspect linked affiliates, members, and projects in one view."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Building2 size={14} />
-            Total Departments
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {stats.total}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Users size={14} />
-            Linked Affiliates
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {stats.linkedAffiliates}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <FolderKanban size={14} />
-            Linked Projects
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {stats.linkedProjects}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Link2 size={14} />
-            Active Departments
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {stats.activeDepartments}
-          </p>
-        </article>
-      </div>
-
       <div className="panel overflow-hidden">
         <div className="border-b border-[var(--border)] px-4 py-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -812,7 +727,7 @@ export default function AdminDepartmentPage() {
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
                 <input
                   className="control-input pl-8"
-                  placeholder="Search name, code, or id"
+                  placeholder="Search name, code, chairperson, or id"
                   value={filters.search}
                   onChange={(event) =>
                     setFilters((prev) => ({
@@ -867,67 +782,7 @@ export default function AdminDepartmentPage() {
               </button>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_11rem_11rem]">
-            <input
-              className="control-input"
-              placeholder="Department code"
-              value={filters.code}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, code: event.target.value }))
-              }
-            />
-            <select
-              className="control-select"
-              value={filters.linkedAffiliates}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  linkedAffiliates: event.target.value,
-                }))
-              }
-            >
-              <option value="all">All affiliate linkage</option>
-              <option value="with">With affiliates</option>
-              <option value="without">Without affiliates</option>
-            </select>
-            <select
-              className="control-select"
-              value={filters.linkedProjects}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  linkedProjects: event.target.value,
-                }))
-              }
-            >
-              <option value="all">All project linkage</option>
-              <option value="with">With projects</option>
-              <option value="without">Without projects</option>
-            </select>
-          </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-full flex-wrap gap-2 md:w-auto">
-              <select
-                className="control-select w-full md:w-[10rem]"
-                value={filters.linkageState}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    linkageState: event.target.value,
-                  }))
-                }
-              >
-                <option value="all">All department states</option>
-                <option value="active">Active links</option>
-                <option value="idle">No links</option>
-              </select>
-              <button
-                className="btn btn-outline"
-                onClick={() => setFilters(INITIAL_FILTERS)}
-              >
-                Reset
-              </button>
-            </div>
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-semibold">{filteredRows.length}</span>{" "}
