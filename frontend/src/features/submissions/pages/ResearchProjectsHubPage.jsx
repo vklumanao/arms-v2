@@ -15,14 +15,12 @@ import {
   updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
-import { formatBytes, formatDate, STATUS_OPTIONS } from "@/features/submissions/utils";
 import {
-  CheckCircle2,
-  Clock3,
-  FileText,
-  Search,
-  XCircle,
-} from "lucide-react";
+  formatBytes,
+  formatDate,
+  STATUS_OPTIONS,
+} from "@/features/submissions/utils";
+import { CheckCircle2, Clock3, FileText, Search, XCircle } from "lucide-react";
 
 const PROJECTS_PAGE_SIZE = 10;
 const sanitizeDigits = (value) => String(value || "").replace(/\D+/g, "");
@@ -78,12 +76,9 @@ export default function ResearchProjectsHubPage() {
   useEffect(() => {
     const editId = searchParams.get("edit");
     if (editId) {
-      navigate(
-        `/submit-project/submit?edit=${encodeURIComponent(editId)}`,
-        {
-          replace: true,
-        },
-      );
+      navigate(`/submit-project/submit?edit=${encodeURIComponent(editId)}`, {
+        replace: true,
+      });
     }
   }, [navigate, searchParams]);
 
@@ -345,9 +340,7 @@ export default function ResearchProjectsHubPage() {
       setError("Project id is missing.");
       return;
     }
-    navigate(
-      `/submit-project/submit?edit=${encodeURIComponent(datasetId)}`,
-    );
+    navigate(`/submit-project/submit?edit=${encodeURIComponent(datasetId)}`);
   };
 
   const handleDeleteProject = async (project) => {
@@ -644,10 +637,6 @@ export default function ResearchProjectsHubPage() {
                 Research Project Records ({filteredProjects.length})
               </h2>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Search
-                  size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
                 <input
                   className="control-input pl-8"
                   placeholder="Search title, abstract, lead"
@@ -663,7 +652,9 @@ export default function ResearchProjectsHubPage() {
                     type="button"
                     className="btn btn-outline"
                     onClick={exportAsCsv}
-                    disabled={!filteredProjects.length || Boolean(exportingType)}
+                    disabled={
+                      !filteredProjects.length || Boolean(exportingType)
+                    }
                   >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </button>
@@ -671,7 +662,9 @@ export default function ResearchProjectsHubPage() {
                     type="button"
                     className="btn btn-outline"
                     onClick={exportAsPdf}
-                    disabled={!filteredProjects.length || Boolean(exportingType)}
+                    disabled={
+                      !filteredProjects.length || Boolean(exportingType)
+                    }
                   >
                     {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                   </button>
@@ -701,7 +694,9 @@ export default function ResearchProjectsHubPage() {
               value={filters.year}
               inputMode="numeric"
               pattern="[0-9]*"
-              onChange={(e) => updateFilter("year", sanitizeDigits(e.target.value))}
+              onChange={(e) =>
+                updateFilter("year", sanitizeDigits(e.target.value))
+              }
             />
             <select
               className="control-select"
@@ -758,7 +753,8 @@ export default function ResearchProjectsHubPage() {
                     const status = normalizeStatus(project.status);
                     const canToggleVisibility =
                       isAdmin && Boolean(project?.ckan_dataset_id);
-                    const canEdit = isAdmin && Boolean(project?.ckan_dataset_id);
+                    const canEdit =
+                      isAdmin && Boolean(project?.ckan_dataset_id);
                     return (
                       <tr key={project.id} className="align-top">
                         <td>
@@ -910,8 +906,12 @@ export default function ResearchProjectsHubPage() {
                     <td className="text-slate-600">
                       {project.submitted_by_name}
                     </td>
-                    <td className="text-slate-600">{project.lead_researcher}</td>
-                    <td className="text-slate-600">{project.research_center}</td>
+                    <td className="text-slate-600">
+                      {project.lead_researcher}
+                    </td>
+                    <td className="text-slate-600">
+                      {project.research_center}
+                    </td>
                     <td className="max-w-xs text-slate-600">
                       <span className="line-clamp-2">
                         {project.expected_outputs}
