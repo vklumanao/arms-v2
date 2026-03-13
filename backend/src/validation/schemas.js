@@ -206,6 +206,10 @@ const projectSubmissionFormSchema = z
     classification: z.string().trim().min(1, "Classification is required."),
     status: z.string().trim().min(1, "Status is required."),
     expected_outputs: z.string().trim().optional().nullable(),
+    expected_outputs_items: z
+      .array(submissionExpectedOutputSchema)
+      .optional()
+      .default([]),
     supporting_mov_link: z
       .string()
       .trim()
