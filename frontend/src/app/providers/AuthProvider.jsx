@@ -91,7 +91,10 @@ export function AuthProvider({ children }) {
         return payload;
       },
       register: async (payload) => {
-        return registerAccount(payload);
+        const authPayload = await registerAccount(payload);
+        applyAuthPayload(authPayload);
+        await syncRolePermissionMapFromServer();
+        return authPayload;
       },
       signOut: async () => {
         try {
