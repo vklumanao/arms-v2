@@ -428,10 +428,6 @@ export default function AwardsRecognitionPage() {
                 Awards and Recognition Records ({filteredRows.length})
               </h2>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Search
-                  size={14}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
                 <input
                   type="text"
                   value={searchTerm}
