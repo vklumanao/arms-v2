@@ -32,8 +32,6 @@ export default function AwardsRecognitionPage() {
       !String(profile?.department || "").trim());
   const [rows, setRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [levelFilter, setLevelFilter] = useState("all");
-  const [yearFilter, setYearFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [exportingType, setExportingType] = useState("");
   const [loading, setLoading] = useState(true);
@@ -81,41 +79,26 @@ export default function AwardsRecognitionPage() {
     };
   }, [loadAwards]);
 
-  const yearOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          rows
-            .map((row) => String(row?.year_received || "").trim())
-            .filter(Boolean),
-        ),
-      ).sort((a, b) => b.localeCompare(a)),
-    [rows],
-  );
-
   const filteredRows = useMemo(() => {
     const query = String(searchTerm || "")
       .trim()
       .toLowerCase();
     return rows.filter((row) => {
-      const level = String(row?.level || "").trim();
-      const year = String(row?.year_received || "").trim();
       const haystack = [
         row?.program_department,
         row?.work_title,
         row?.award_recognition,
         row?.awarding_body,
+        row?.level,
+        row?.year_received,
         row?.recipients,
         row?.supporting_movs,
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ");
-      const matchesSearch = query ? haystack.includes(query) : true;
-      const matchesLevel = levelFilter === "all" ? true : level === levelFilter;
-      const matchesYear = yearFilter === "all" ? true : year === yearFilter;
-      return matchesSearch && matchesLevel && matchesYear;
+      return query ? haystack.includes(query) : true;
     });
-  }, [levelFilter, rows, searchTerm, yearFilter]);
+  }, [rows, searchTerm]);
 
   const analytics = useMemo(() => {
     const uniqueRecipients = new Set();
@@ -149,7 +132,7 @@ export default function AwardsRecognitionPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, levelFilter, yearFilter]);
+  }, [searchTerm]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(filteredRows.length / AWARDS_PAGE_SIZE)),
@@ -164,12 +147,6 @@ export default function AwardsRecognitionPage() {
     const start = (currentPage - 1) * AWARDS_PAGE_SIZE;
     return filteredRows.slice(start, start + AWARDS_PAGE_SIZE);
   }, [currentPage, filteredRows]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setLevelFilter("all");
-    setYearFilter("all");
-  };
 
   const openEdit = (row) => {
     const recordId = String(row?.id || row?.ckan_dataset_id || "").trim();
@@ -432,7 +409,7 @@ export default function AwardsRecognitionPage() {
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search title, award, body, recipient..."
+                  placeholder="Search title, award, body, recipient, level, or year"
                   className="control-input pl-8"
                 />
               </label>
@@ -463,41 +440,7 @@ export default function AwardsRecognitionPage() {
               </Link>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[12rem_10rem]">
-            <select
-              value={levelFilter}
-              onChange={(event) => setLevelFilter(event.target.value)}
-              className="control-select"
-            >
-              <option value="all">Filter by level</option>
-              {levelOptions.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={yearFilter}
-              onChange={(event) => setYearFilter(event.target.value)}
-              className="control-select"
-            >
-              <option value="all">Filter by year</option>
-              {yearOptions.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={resetFilters}
-            >
-              Reset
-            </button>
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-semibold">{filteredRows.length}</span> award
@@ -517,7 +460,7 @@ export default function AwardsRecognitionPage() {
                 loadError ||
                 (loading
                   ? "Fetching CKAN-backed award records for this workspace."
-                  : "Try adjusting your filters once award records are available.")
+                  : "Try a different search term once award records are available.")
               }
             />
           </div>
