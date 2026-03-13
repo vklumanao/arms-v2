@@ -14,6 +14,8 @@ export function registerSubmissionsRoutes(app, deps) {
   const {
     authMiddleware,
     badRequest,
+    parseOrThrow,
+    projectSubmissionPublishSchema,
     config,
     asTrimmedString,
     asNumber,
@@ -781,14 +783,26 @@ export function registerSubmissionsRoutes(app, deps) {
 
   app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
     // Accepts both create and update flow depending on `dataset_id`.
-    const form = req.body?.form || {};
-    const expectedOutputs = Array.isArray(req.body?.expected_outputs)
-      ? req.body.expected_outputs
-      : [];
-    const datasetId = asTrimmedString(req.body?.dataset_id);
+    let parsedRequest;
+    try {
+      parsedRequest = parseOrThrow(
+        projectSubmissionPublishSchema,
+        req.body || {},
+        "Submission payload is invalid.",
+      );
+    } catch (error) {
+      return badRequest(
+        res,
+        String(error?.message || "Submission payload is invalid."),
+      );
+    }
 
+    const form = parsedRequest.form || {};
+    const expectedOutputs = Array.isArray(parsedRequest.expected_outputs)
+      ? parsedRequest.expected_outputs
+      : [];
+    const datasetId = asTrimmedString(parsedRequest.dataset_id);
     const title = asTrimmedString(form.title);
-    if (!title) return badRequest(res, "Project title is required.");
 
     const notes = asTrimmedString(form.abstract);
     const supportingMovLink = asTrimmedString(form.supporting_mov_link);
