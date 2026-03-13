@@ -50,6 +50,16 @@ export default function AppShell() {
     "/forgot-password",
     "/reset-password",
   ].includes(location.pathname);
+  const shouldShowPublicFooter = [
+    "/",
+    "/home",
+    "/about",
+    "/public-records",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+  ].includes(location.pathname);
 
   const landingLinks = useMemo(
     () => [
@@ -401,7 +411,7 @@ export default function AppShell() {
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
           <Outlet />
         </main>
-        <AppFooter />
+        {shouldShowPublicFooter ? <AppFooter /> : null}
       </div>
     );
   }
@@ -512,7 +522,6 @@ export default function AppShell() {
         <main className="page-shell flex-1">
           <Outlet />
         </main>
-        <AppFooter />
       </div>
 
       {shouldShowSidebar && mobileNavOpen && !isDesktop && (
