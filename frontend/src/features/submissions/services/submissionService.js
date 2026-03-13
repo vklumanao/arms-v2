@@ -33,6 +33,9 @@ export function buildProjectPayload(form, userId) {
     classification: form.classification,
     status: form.status || "ongoing",
     expected_outputs: form.expected_outputs || null,
+    expected_outputs_items: Array.isArray(form.expected_outputs_items)
+      ? form.expected_outputs_items
+      : [],
     supporting_mov_link: form.supporting_mov_link || null,
     signed_moa_reference: form.signed_moa_reference || null,
     start_date: form.start_date || null,
