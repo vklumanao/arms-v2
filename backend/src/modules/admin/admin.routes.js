@@ -229,6 +229,23 @@ export function registerAdminRoutes(app, deps) {
     return result.rows?.[0] || null;
   }
 
+  async function syncLocalCenterChiefProfile(selectedUser, center) {
+    const localUser = await findLocalUserByCkanMember(selectedUser);
+    if (!localUser?.id) return null;
+
+    const centerId =
+      asTrimmedString(center?.name) || asTrimmedString(center?.id) || null;
+    if (!centerId) return null;
+
+    return updateUser(localUser.id, {
+      ckan_org_id: centerId,
+      ckan_username:
+        asTrimmedString(selectedUser?.name) || localUser?.ckan_username || null,
+      ckan_user_id:
+        asTrimmedString(selectedUser?.id) || localUser?.ckan_user_id || null,
+    });
+  }
+
   function getDatasetExtraByKey(extras, key) {
     const rows = Array.isArray(extras) ? extras : [];
     const match = rows.find(
@@ -715,8 +732,32 @@ export function registerAdminRoutes(app, deps) {
           return res.status(404).json({ error: "Affiliate was not found." });
         }
 
+        const requestedGroupId = String(req.body?.ckan_group_id || "").trim();
+        let selectedGroup = null;
+        if (requestedGroupId) {
+          const groups = await listGroups();
+          selectedGroup =
+            (groups || []).find((row) =>
+              [row?.id, row?.name].some(
+                (value) =>
+                  asTrimmedString(value).toLowerCase() ===
+                  requestedGroupId.toLowerCase(),
+              ),
+            ) || null;
+          if (!selectedGroup) {
+            return badRequest(res, "Selected department was not found.");
+          }
+        }
+
         const patch = {
-          department: String(req.body?.department || "").trim() || null,
+          department:
+            selectedGroup?.title ||
+            selectedGroup?.display_name ||
+            selectedGroup?.name ||
+            String(req.body?.department || "").trim() ||
+            null,
+          ckan_group_id:
+            selectedGroup?.name || selectedGroup?.id || requestedGroupId || null,
           ckan_org_id: String(req.body?.ckan_org_id || "").trim() || null,
           designation: String(req.body?.designation || "").trim() || null,
           employment_status:
@@ -753,6 +794,7 @@ export function registerAdminRoutes(app, deps) {
             role: updated.role,
             department: updated.department,
             ckan_org_id: updated.ckan_org_id,
+            ckan_group_id: updated.ckan_group_id,
             ckan_username: updated.ckan_username,
             ckan_user_id: updated.ckan_user_id,
             is_active: updated.is_active,
@@ -867,9 +909,11 @@ export function registerAdminRoutes(app, deps) {
             return {
               id: orgId,
               name: row?.title || row?.display_name || row?.name || "-",
-              code: String(row?.name || row?.id || "")
-                .toUpperCase()
-                .replace(/[^A-Z0-9_]/g, "_"),
+              code:
+                String(getExtraValue(row, "code") || "").trim() ||
+                String(row?.name || row?.id || "")
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9_]/g, "_"),
               center_chief_id:
                 savedChiefId || centerChiefByOrg[orgId]?.id || null,
               center_chief_name:
@@ -885,6 +929,11 @@ export function registerAdminRoutes(app, deps) {
           departments: (departments || []).map((row) => ({
             id: row?.name || row?.id,
             name: row?.title || row?.display_name || row?.name || "-",
+            code:
+              String(getExtraValue(row, "code") || "").trim() ||
+              String(row?.name || row?.id || "")
+                .toUpperCase()
+                .replace(/[^A-Z0-9_]/g, "_"),
             chairperson_id: getExtraValue(row, "chairperson_id"),
             chairperson_name: getExtraValue(row, "chairperson_name"),
           })),
@@ -1700,6 +1749,7 @@ export function registerAdminRoutes(app, deps) {
             orgId: created?.name || created?.id || orgName,
             username: centerChiefUsername,
           });
+          await syncLocalCenterChiefProfile(selected, created || { name: orgName });
         } catch (error) {
           if (created?.name || created?.id) {
             try {
@@ -1932,11 +1982,13 @@ export function registerAdminRoutes(app, deps) {
 
         let centerChiefName = "";
         let centerChiefUsername = "";
+        let selectedCenterChief = null;
         {
           const users = await listUsers();
           const selected = (users || []).find(
             (row) => String(row?.id || "") === centerChiefId,
           );
+          selectedCenterChief = selected || null;
           centerChiefUsername = String(selected?.name || "").trim();
           if (!centerChiefUsername) {
             return badRequest(
@@ -2024,6 +2076,11 @@ export function registerAdminRoutes(app, deps) {
             });
           }
         }
+
+        await syncLocalCenterChiefProfile(
+          selectedCenterChief,
+          updated || { name: id, id },
+        );
 
         return res.json({
           data: {
