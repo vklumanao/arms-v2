@@ -224,7 +224,7 @@ export function mapDbOutputToLocalRow(row) {
     client_id: row.id,
     output_type: row.output_type || "",
     target_count: Math.max(1, Number(row.target_count) || 1),
-    specific_output: "",
+    specific_output: row.specific_output || "",
     notes: row.notes || "",
     file_path: row.file_path || "",
     file_name: row.file_name || "",
