@@ -18,13 +18,10 @@ import { normalizeStatus } from "@/shared/utils/status";
 import {
   formatBytes,
   formatDate,
-  STATUS_OPTIONS,
 } from "@/features/submissions/utils";
 import { CheckCircle2, Clock3, FileText, Search, XCircle } from "lucide-react";
 
 const PROJECTS_PAGE_SIZE = 10;
-const sanitizeDigits = (value) => String(value || "").replace(/\D+/g, "");
-
 export default function ResearchProjectsHubPage() {
   const { user, profile } = useAuth();
   const isAdmin =
@@ -42,8 +39,6 @@ export default function ResearchProjectsHubPage() {
   const [linkedProjects, setLinkedProjects] = useState([]);
   const [filters, setFilters] = useState({
     search: "",
-    status: "",
-    year: "",
     sortBy: "submitted_desc",
   });
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -175,18 +170,18 @@ export default function ResearchProjectsHubPage() {
       const leadResearcher = String(
         project.lead_researcher || "",
       ).toLowerCase();
+      const year = String(project.year || "").toLowerCase();
+      const organization = String(getProjectOrganization(project) || "").toLowerCase();
 
       if (
         normalizedSearch &&
         !title.includes(normalizedSearch) &&
         !abstract.includes(normalizedSearch) &&
-        !leadResearcher.includes(normalizedSearch)
+        !leadResearcher.includes(normalizedSearch) &&
+        !status.includes(normalizedSearch) &&
+        !year.includes(normalizedSearch) &&
+        !organization.includes(normalizedSearch)
       ) {
-        return false;
-      }
-
-      if (filters.status && status !== filters.status) return false;
-      if (filters.year && String(project.year || "") !== String(filters.year)) {
         return false;
       }
 
@@ -208,7 +203,7 @@ export default function ResearchProjectsHubPage() {
     });
 
     return sorted;
-  }, [filters, projects]);
+  }, [filters, getProjectOrganization, projects]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(filteredProjects.length / PROJECTS_PAGE_SIZE)),
@@ -321,15 +316,6 @@ export default function ResearchProjectsHubPage() {
 
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      search: "",
-      status: "",
-      year: "",
-      sortBy: "submitted_desc",
-    });
   };
 
   const openEditModal = (project) => {
@@ -639,7 +625,7 @@ export default function ResearchProjectsHubPage() {
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
                 <input
                   className="control-input pl-8"
-                  placeholder="Search title, abstract, lead"
+                  placeholder="Search title, abstract, lead, status, year, or center"
                   value={filters.search}
                   onChange={(e) => updateFilter("search", e.target.value)}
                 />
@@ -675,48 +661,19 @@ export default function ResearchProjectsHubPage() {
               </Link>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[11rem_8rem_minmax(0,14rem)]">
-            <select
-              className="control-select"
-              value={filters.status}
-              onChange={(e) => updateFilter("status", e.target.value)}
-            >
-              <option value="">Filter by status</option>
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status[0].toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-            <input
-              className="control-input"
-              placeholder="Year"
-              value={filters.year}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              onChange={(e) =>
-                updateFilter("year", sanitizeDigits(e.target.value))
-              }
-            />
-            <select
-              className="control-select"
-              value={filters.sortBy}
-              onChange={(e) => updateFilter("sortBy", e.target.value)}
-            >
-              <option value="submitted_desc">Sort: Newest submitted</option>
-              <option value="submitted_asc">Sort: Oldest submitted</option>
-              <option value="title_asc">Sort: Title A-Z</option>
-              <option value="title_desc">Sort: Title Z-A</option>
-            </select>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={clearFilters}
-            >
-              Reset
-            </button>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex w-full flex-wrap gap-2 md:w-auto">
+              <select
+                className="control-select w-full md:w-[14rem]"
+                value={filters.sortBy}
+                onChange={(e) => updateFilter("sortBy", e.target.value)}
+              >
+                <option value="submitted_desc">Sort: Newest submitted</option>
+                <option value="submitted_asc">Sort: Oldest submitted</option>
+                <option value="title_asc">Sort: Title A-Z</option>
+                <option value="title_desc">Sort: Title Z-A</option>
+              </select>
+            </div>
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-semibold">{filteredProjects.length}</span>{" "}
@@ -728,7 +685,7 @@ export default function ResearchProjectsHubPage() {
           <div className="p-4">
             <EmptyState
               title="No research projects found"
-              description="Try adjusting your filters or submit a new research project."
+              description="Try a different search term or submit a new research project."
             />
           </div>
         ) : (
