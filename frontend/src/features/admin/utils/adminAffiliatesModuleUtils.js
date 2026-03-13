@@ -141,6 +141,7 @@ export function filterAffiliateRelatedDatasets(datasets, affiliate) {
 export function createAffiliateEditForm(row) {
   return {
     department: row.department || "",
+    ckan_group_id: row.ckan_group_id || "",
     ckan_org_id: row.ckan_org_id || "",
     designation: row.designation || "",
     employment_status: row.employment_status || "",
