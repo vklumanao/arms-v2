@@ -15,9 +15,27 @@ import {
 import PageHeader from "@/shared/components/layout/PageHeader";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const PAGE_SIZE = 10;
 export default function PublicRecordsPage() {
+  const NONE_SELECT_VALUE = "__all__";
   const [records, setRecords] = useState([]);
   const [centers, setCenters] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -278,15 +296,15 @@ export default function PublicRecordsPage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
-        <aside className="panel h-fit lg:sticky lg:top-5">
-          <div className="panel-header">
-            <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-              Refine Search
-            </h2>
-          </div>
-          <div className="panel-body grid gap-3">
-            <input
-              className="control-input"
+        <aside className="h-fit lg:sticky lg:top-5">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Refine Search
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+            <Input
               placeholder="Search title or abstract (supports year:2025 status:completed)"
               value={filters.search}
               onChange={(event) =>
@@ -299,35 +317,47 @@ export default function PublicRecordsPage() {
               <code>classification:</code>
             </p>
 
-            <select
-              className="control-select"
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, status: event.target.value }))
-              }
-            >
-              <option value="">All status</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            <select
-              className="control-select"
-              value={filters.classification}
-              onChange={(event) =>
+            <Select
+              value={filters.status || NONE_SELECT_VALUE}
+              onValueChange={(value) =>
                 setFilters((prev) => ({
                   ...prev,
-                  classification: event.target.value,
+                  status: value === NONE_SELECT_VALUE ? "" : value,
                 }))
               }
             >
-              <option value="">All classification</option>
-              <option value="academic">Academic</option>
-              <option value="industry">Industry</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="All status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
+                <SelectItem value="ongoing">Ongoing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <input
-              className="control-input"
+            <Select
+              value={filters.classification || NONE_SELECT_VALUE}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  classification: value === NONE_SELECT_VALUE ? "" : value,
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All classification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_SELECT_VALUE}>
+                  All classification
+                </SelectItem>
+                <SelectItem value="academic">Academic</SelectItem>
+                <SelectItem value="industry">Industry</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input
               placeholder="Year"
               value={filters.year}
               onChange={(event) =>
@@ -335,49 +365,62 @@ export default function PublicRecordsPage() {
               }
             />
 
-            <select
-              className="control-select"
-              value={filters.center}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, center: event.target.value }))
-              }
-            >
-              <option value="">All centers</option>
-              {centers.map((center) => (
-                <option key={center.id} value={center.name}>
-                  {center.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="control-select"
-              value={filters.department}
-              onChange={(event) =>
+            <Select
+              value={filters.center || NONE_SELECT_VALUE}
+              onValueChange={(value) =>
                 setFilters((prev) => ({
                   ...prev,
-                  department: event.target.value,
+                  center: value === NONE_SELECT_VALUE ? "" : value,
                 }))
               }
             >
-              <option value="">All departments</option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.name}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="All centers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={center.name}>
+                    {center.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <button
+            <Select
+              value={filters.department || NONE_SELECT_VALUE}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  department: value === NONE_SELECT_VALUE ? "" : value,
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All departments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_SELECT_VALUE}>
+                  All departments
+                </SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.name}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={() => {
                 setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
                 setActivePreset("all");
               }}
             >
               Reset Filters
-            </button>
+            </Button>
 
             <div className="space-y-2 pt-2">
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -385,23 +428,30 @@ export default function PublicRecordsPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {PUBLIC_RECORD_PRESETS.map((preset) => (
-                  <button
+                  <Button
                     key={preset.id}
                     type="button"
-                    className={`btn btn-outline ${activePreset === preset.id ? "!border-blue-200 !bg-blue-50 !text-blue-700" : ""}`}
+                    variant="outline"
+                    size="sm"
+                    className={
+                      activePreset === preset.id
+                        ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
+                        : ""
+                    }
                     onClick={() => applyPreset(preset.id)}
                   >
                     {preset.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </aside>
 
         <div className="space-y-4">
-          <div className="panel">
-            <div className="panel-body flex flex-wrap items-center justify-between gap-3">
+          <Card>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
                   Scholarly Catalog
@@ -414,47 +464,48 @@ export default function PublicRecordsPage() {
               </div>
 
               <div className="min-w-48">
-                <select
-                  className="control-select"
-                  value={filters.sort}
-                  onChange={(event) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      sort: event.target.value,
-                    }))
+                <Select
+                  value={filters.sort || "most_recent"}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({ ...prev, sort: value }))
                   }
                 >
-                  <option value="most_recent">Sort: Most Recent</option>
-                  <option value="a_z">Sort: A-Z</option>
-                  <option value="most_complete">
-                    Sort: Most Complete Metadata
-                  </option>
-                  <option value="longest_abstract">
-                    Sort: Longest Abstract
-                  </option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="most_recent">Sort: Most Recent</SelectItem>
+                    <SelectItem value="a_z">Sort: A-Z</SelectItem>
+                    <SelectItem value="most_complete">
+                      Sort: Most Complete Metadata
+                    </SelectItem>
+                    <SelectItem value="longest_abstract">
+                      Sort: Longest Abstract
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {loading ? (
-            <section className="panel">
-              <div className="panel-body text-sm text-slate-600">
+            <Card>
+              <CardContent className="p-5 text-sm text-slate-600">
                 Loading records...
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           ) : filtered.rows.length === 0 ? (
-            <section className="panel">
-              <div className="panel-body text-sm text-slate-600">
+            <Card>
+              <CardContent className="p-5 text-sm text-slate-600">
                 No public records match the current filters.
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
               {pagedRows.map((record) => (
-                <article
+                <Card
                   key={record.id}
-                  className="panel cursor-pointer border-l-4 border-l-[var(--border-strong)] transition hover:border-l-[var(--brand)] hover:shadow-sm"
+                  className="cursor-pointer border-l-4 border-l-border transition hover:border-l-primary hover:shadow-sm"
                   role="button"
                   tabIndex={0}
                   onClick={() => openDetails(record.id)}
@@ -465,34 +516,38 @@ export default function PublicRecordsPage() {
                     }
                   }}
                 >
-                  <div className="panel-body space-y-3">
+                  <CardContent className="space-y-3 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
                         <h3 className="text-lg font-semibold text-slate-900">
                           {highlightText(record.title, filtered.terms)}
                         </h3>
                         <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                          {(record.year || "-") +
-                            " � " +
-                            (centerById[record.research_center_id] ||
-                              "Unknown Center") +
-                            " � " +
-                            (departmentById[record.department_id] ||
-                              "Unknown Department") +
-                            " � " +
-                            (record.classification || "unspecified") +
-                            " � " +
-                            (record.status || "-")}
+                          {[
+                            record.year || "-",
+                            centerById[record.research_center_id] ||
+                              "Unknown Center",
+                            departmentById[record.department_id] ||
+                              "Unknown Department",
+                            record.classification || "unspecified",
+                            record.status || "-",
+                          ].join(" | ")}
                         </p>
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <span className={`status-chip status-${record.status}`}>
-                          {record.status}
-                        </span>
-                        <span className="status-chip status-ongoing">
+                        <Badge
+                          variant={
+                            normalizeForCompare(record.status) === "completed"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {record.status || "unknown"}
+                        </Badge>
+                        <Badge variant="outline">
                           {record.classification || "unspecified"}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
 
@@ -503,24 +558,28 @@ export default function PublicRecordsPage() {
                     </p>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="status-chip status-ongoing">
+                      <Badge variant="outline">
                         {record.abstract ? "Has abstract" : "No abstract"}
-                      </span>
-                      <span className="status-chip status-ongoing">
+                      </Badge>
+                      <Badge variant="outline">
                         {timelineExists[record.id]
                           ? "Has timeline"
                           : "No timeline"}
-                      </span>
-                      <span className="status-chip status-ongoing">
+                      </Badge>
+                      <Badge variant="outline">
                         {record.expected_outputs ? "Has outputs" : "No outputs"}
-                      </span>
-                      <span
-                        className={`status-chip ${record.abstract && record.expected_outputs ? "status-completed" : "status-rejected"}`}
+                      </Badge>
+                      <Badge
+                        variant={
+                          record.abstract && record.expected_outputs
+                            ? "secondary"
+                            : "destructive"
+                        }
                       >
                         {record.abstract && record.expected_outputs
                           ? "Public-ready"
                           : "Needs enrichment"}
-                      </span>
+                      </Badge>
                     </div>
 
                     <dl className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
@@ -566,19 +625,20 @@ export default function PublicRecordsPage() {
                     </dl>
 
                     <div className="flex justify-end">
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-outline"
+                        variant="outline"
+                        size="sm"
                         onClick={(event) => {
                           event.stopPropagation();
                           openDetails(record.id);
                         }}
                       >
                         View Details
-                      </button>
+                      </Button>
                     </div>
-                  </div>
-                </article>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
@@ -593,160 +653,173 @@ export default function PublicRecordsPage() {
         </div>
       </section>
 
-      {selectedRecord ? (
-        <div
-          className="modal-overlay"
-          onClick={() => setDetailProjectId(null)}
-        >
-          <aside
-            className="ml-auto h-full w-full max-w-2xl overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-4 sm:p-5"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">
-                Record Details
-              </h3>
-              <button
+      <Dialog
+        open={Boolean(selectedRecord)}
+        onOpenChange={(open) => (!open ? setDetailProjectId(null) : null)}
+      >
+        <DialogContent className="right-0 top-0 h-screen w-full max-w-2xl translate-x-0 translate-y-0 rounded-none sm:rounded-l-lg">
+          <DialogHeader className="pr-10">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle>Record Details</DialogTitle>
+              <Button
                 type="button"
-                className="btn btn-outline"
+                variant="outline"
+                size="sm"
                 onClick={() => setDetailProjectId(null)}
               >
                 Close
-              </button>
+              </Button>
             </div>
+          </DialogHeader>
 
+          {selectedRecord ? (
             <div className="space-y-4">
-              <div className="app-card app-card-compact">
-                <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                  Title
-                </p>
-                <p className="mt-1 text-base font-semibold text-slate-900">
-                  {selectedRecord.title}
-                </p>
-              </div>
+              <Card>
+                <CardContent className="space-y-1 p-4">
+                  <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
+                    Title
+                  </p>
+                  <p className="text-base font-semibold text-slate-900">
+                    {selectedRecord.title}
+                  </p>
+                </CardContent>
+              </Card>
 
-              <div className="app-card app-card-compact">
-                <p className="mb-2 text-sm font-semibold">Tags</p>
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className={`status-chip status-${selectedRecord.status}`}
-                  >
-                    {selectedRecord.status || "unknown"}
-                  </span>
-                  <span className="status-chip status-ongoing">
-                    {selectedRecord.classification || "unspecified"}
-                  </span>
-                  <span className="status-chip status-ongoing">
-                    {selectedRecord.year || "No year"}
-                  </span>
-                  <span className="status-chip status-ongoing">
-                    {selectedCenter}
-                  </span>
-                  <span className="status-chip status-ongoing">
-                    {selectedDepartment}
-                  </span>
-                </div>
-              </div>
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-sm font-semibold">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant={
+                        normalizeForCompare(selectedRecord.status) === "completed"
+                          ? "secondary"
+                          : "outline"
+                      }
+                    >
+                      {selectedRecord.status || "unknown"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {selectedRecord.classification || "unspecified"}
+                    </Badge>
+                    <Badge variant="outline">
+                      {selectedRecord.year || "No year"}
+                    </Badge>
+                    <Badge variant="outline">{selectedCenter}</Badge>
+                    <Badge variant="outline">{selectedDepartment}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div className="app-card app-card-compact">
-                <p className="mb-2 text-sm font-semibold">Full Abstract</p>
-                <p className="text-sm text-slate-700">
-                  {selectedRecord.abstract || "No abstract available."}
-                </p>
-              </div>
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-sm font-semibold">Full Abstract</p>
+                  <p className="text-sm text-slate-700">
+                    {selectedRecord.abstract || "No abstract available."}
+                  </p>
+                </CardContent>
+              </Card>
 
-              <div className="app-card app-card-compact">
-                <p className="mb-2 text-sm font-semibold">Related Outputs</p>
-                <div className="flex flex-wrap gap-2">
-                  {String(selectedRecord.expected_outputs || "")
-                    .split(",")
-                    .map((value) => value.trim())
-                    .filter(Boolean).length === 0 ? (
-                    <span className="text-sm text-slate-600">
-                      No related outputs listed.
-                    </span>
-                  ) : (
-                    String(selectedRecord.expected_outputs || "")
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-sm font-semibold">Related Outputs</p>
+                  <div className="flex flex-wrap gap-2">
+                    {String(selectedRecord.expected_outputs || "")
                       .split(",")
                       .map((value) => value.trim())
-                      .filter(Boolean)
-                      .map((output) => (
-                        <span
-                          key={output}
-                          className="status-chip status-ongoing"
-                        >
-                          {output}
-                        </span>
-                      ))
+                      .filter(Boolean).length === 0 ? (
+                      <span className="text-sm text-slate-600">
+                        No related outputs listed.
+                      </span>
+                    ) : (
+                      String(selectedRecord.expected_outputs || "")
+                        .split(",")
+                        .map((value) => value.trim())
+                        .filter(Boolean)
+                        .map((output) => (
+                          <Badge key={output} variant="outline">
+                            {output}
+                          </Badge>
+                        ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <p className="text-sm font-semibold">Timeline</p>
+                  {detailLoading ? (
+                    <p className="text-sm text-slate-600">Loading timeline...</p>
+                  ) : selectedTimeline.length === 0 ? (
+                    <p className="text-sm text-slate-600">
+                      No timeline entries available.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-sm">
+                      {selectedTimeline.map((entry) => (
+                        <li key={entry.id}>
+                          <Card>
+                            <CardContent className="space-y-1 p-3">
+                              <p className="font-semibold text-slate-900">
+                                {entry.old_status || "none"} -&gt;{" "}
+                                {entry.new_status}
+                              </p>
+                              <p className="text-slate-600">
+                                {new Date(entry.changed_at).toLocaleString()}
+                              </p>
+                              {entry.remarks ? (
+                                <p className="text-slate-700">{entry.remarks}</p>
+                              ) : null}
+                            </CardContent>
+                          </Card>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div className="app-card app-card-compact">
-                <p className="mb-2 text-sm font-semibold">Timeline</p>
-                {detailLoading ? (
-                  <p className="text-sm text-slate-600">Loading timeline...</p>
-                ) : selectedTimeline.length === 0 ? (
-                  <p className="text-sm text-slate-600">
-                    No timeline entries available.
-                  </p>
-                ) : (
-                  <ul className="space-y-2 text-sm">
-                    {selectedTimeline.map((entry) => (
-                      <li
-                        key={entry.id}
-                        className="app-card app-card-micro"
+              <Card>
+                <CardContent className="space-y-3 p-4">
+                  <p className="text-sm font-semibold">Cite This Record</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
+                        APA
+                      </p>
+                      <p className="text-sm text-slate-700">{apaCitation}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => copyCitation(apaCitation, "APA")}
                       >
-                        <p className="font-semibold text-slate-900">
-                          {entry.old_status || "none"} -&gt; {entry.new_status}
-                        </p>
-                        <p className="text-slate-600">
-                          {new Date(entry.changed_at).toLocaleString()}
-                        </p>
-                        {entry.remarks ? (
-                          <p className="text-slate-700">{entry.remarks}</p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="app-card app-card-compact">
-                <p className="mb-2 text-sm font-semibold">Cite This Record</p>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                      APA
-                    </p>
-                    <p className="text-sm text-slate-700">{apaCitation}</p>
-                    <button
-                      type="button"
-                      className="btn btn-outline mt-2"
-                      onClick={() => copyCitation(apaCitation, "APA")}
-                    >
-                      Copy APA
-                    </button>
+                        Copy APA
+                      </Button>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
+                        MLA
+                      </p>
+                      <p className="text-sm text-slate-700">{mlaCitation}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => copyCitation(mlaCitation, "MLA")}
+                      >
+                        Copy MLA
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                      MLA
-                    </p>
-                    <p className="text-sm text-slate-700">{mlaCitation}</p>
-                    <button
-                      type="button"
-                      className="btn btn-outline mt-2"
-                      onClick={() => copyCitation(mlaCitation, "MLA")}
-                    >
-                      Copy MLA
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
-          </aside>
-        </div>
-      ) : null}
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
