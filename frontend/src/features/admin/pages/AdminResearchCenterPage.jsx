@@ -1,13 +1,55 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
+  Download,
   FolderKanban,
   LayoutGrid,
   Link2,
   List,
+  Pencil,
   Search,
+  Trash2,
   Users,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
@@ -99,12 +141,6 @@ export default function AdminResearchCenterPage() {
   const [projectFilters, setProjectFilters] = useState(INITIAL_PROJECT_FILTERS);
   const [memberPage, setMemberPage] = useState(1);
   const [projectPage, setProjectPage] = useState(1);
-  const viewModalRef = useRef(null);
-  const projectModalRef = useRef(null);
-  const editModalRef = useRef(null);
-  const createModalRef = useRef(null);
-  const lastFocusedElementRef = useRef(null);
-  const modalLockScrollYRef = useRef(0);
   const isScopedCenterChief =
     profile?.role === "faculty" &&
     profile?.is_center_chief === true &&
@@ -588,111 +624,6 @@ export default function AdminResearchCenterPage() {
     }
   }, [projectPage, projectTotalPages]);
 
-  const activeModalRef = createModalOpen
-    ? createModalRef
-    : editModalOpen
-      ? editModalRef
-      : projectLinksRow
-        ? projectModalRef
-        : viewRow
-          ? viewModalRef
-          : null;
-  const hasAnyModal = Boolean(
-    viewRow || projectLinksRow || editModalOpen || createModalOpen,
-  );
-
-  useEffect(() => {
-    if (hasAnyModal) {
-      modalLockScrollYRef.current = window.scrollY || window.pageYOffset || 0;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${modalLockScrollYRef.current}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
-      document.body.style.overflow = "hidden";
-      lastFocusedElementRef.current = document.activeElement;
-      const firstFocusable = activeModalRef.current?.querySelector(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (firstFocusable instanceof HTMLElement) {
-        firstFocusable.focus();
-      }
-      return () => {
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        document.body.style.overflow = "";
-        window.scrollTo(0, modalLockScrollYRef.current || 0);
-      };
-    }
-
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.left = "";
-    document.body.style.right = "";
-    document.body.style.width = "";
-    document.body.style.overflow = "";
-    if (lastFocusedElementRef.current instanceof HTMLElement) {
-      lastFocusedElementRef.current.focus();
-    }
-  }, [activeModalRef, hasAnyModal]);
-
-  useEffect(() => {
-    if (!hasAnyModal) return;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        if (createModalOpen && !createLoading) {
-          setCreateModalOpen(false);
-          setCreateErrors({});
-          return;
-        }
-        if (editModalOpen && !actionLoading) {
-          setEditModalOpen(false);
-          setEditErrors({});
-          setEditing(EMPTY_EDITING);
-          return;
-        }
-        if (projectLinksRow) {
-          setProjectLinksRow(null);
-          return;
-        }
-        if (viewRow) {
-          setViewRow(null);
-        }
-      }
-
-      if (event.key !== "Tab" || !activeModalRef?.current) return;
-      const focusableElements = activeModalRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusableElements.length) return;
-      const first = focusableElements[0];
-      const last = focusableElements[focusableElements.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    activeModalRef,
-    actionLoading,
-    createLoading,
-    createModalOpen,
-    editModalOpen,
-    hasAnyModal,
-    projectLinksRow,
-    viewRow,
-  ]);
-
   const toggleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
@@ -1094,43 +1025,52 @@ export default function AdminResearchCenterPage() {
         />
 
         {dataLoading ? (
-          <div className="panel p-6 text-sm text-slate-600">
-            Loading your Research Center...
-          </div>
+          <Card>
+            <CardContent className="p-6 text-sm text-slate-600">
+              Loading your Research Center...
+            </CardContent>
+          </Card>
         ) : !scopedCenterRow ? (
-          <div className="panel p-6 text-sm text-red-700">
-            Your assigned Research Center could not be loaded.
-          </div>
+          <Card>
+            <CardContent className="p-6 text-sm text-red-700">
+              Your assigned Research Center could not be loaded.
+            </CardContent>
+          </Card>
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <article className="metric-card">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Research Center
-                </p>
-                <p className="mt-2 text-xl font-black text-slate-900">
-                  {scopedCenterRow.name}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Code: {scopedCenterRow.code}
-                </p>
-              </article>
-              <article className="metric-card">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Center Chief
-                </p>
-                <p className="mt-2 text-xl font-black text-slate-900">
-                  {scopedCenterRow.centerChiefName || profile?.full_name || "-"}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Active Members: {scopedSummary.activeMembers}
-                </p>
-              </article>
-              <article className="metric-card">
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Research Center
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-slate-900">
+                    {scopedCenterRow.name}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Code: {scopedCenterRow.code}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Center Chief
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-slate-900">
+                    {scopedCenterRow.centerChiefName || profile?.full_name || "-"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Active Members: {scopedSummary.activeMembers}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Linked Affiliates
                 </p>
-                <p className="mt-2 text-3xl font-black text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-slate-900">
                   {scopedSummary.totalMembers}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
@@ -1138,97 +1078,117 @@ export default function AdminResearchCenterPage() {
                   Editor: {scopedCenterRow.memberBreakdown?.editorCount || 0}{" "}
                   Member: {scopedCenterRow.memberBreakdown?.memberCount || 0}
                 </p>
-              </article>
-              <article className="metric-card">
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Linked Projects
                 </p>
-                <p className="mt-2 text-3xl font-black text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-slate-900">
                   {scopedSummary.linkedProjects}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
                   Agendas: {scopedSummary.agendas}
                 </p>
-              </article>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="panel overflow-hidden">
-              <div className="border-b border-[var(--border)] px-4 py-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                      Research Center Members ({filteredScopedMembers.length})
-                    </h2>
-                    <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                      <input
-                        className="control-input pl-8"
-                        placeholder="Search name or email"
-                        value={memberFilters.search}
-                        onChange={(event) =>
-                          setMemberFilters((prev) => ({
-                            ...prev,
-                            search: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-[var(--border)] px-6 py-5 space-y-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-bold text-slate-900">
+                      Research Center Members
+                    </CardTitle>
+                    <CardDescription>
+                      {filteredScopedMembers.length} member(s) matched.
+                    </CardDescription>
                   </div>
+                  <label className="relative w-full lg:max-w-md">
+                    <span className="sr-only">Search members</span>
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      className="pl-8"
+                      placeholder="Search name or email"
+                      value={memberFilters.search}
+                      onChange={(event) =>
+                        setMemberFilters((prev) => ({
+                          ...prev,
+                          search: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_minmax(0,14rem)_10rem]">
-                  <select
-                    className="control-select"
+                  <Select
                     value={memberFilters.role}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setMemberFilters((prev) => ({
                         ...prev,
-                        role: event.target.value,
+                        role: value,
                       }))
                     }
                   >
-                    <option value="all">All roles</option>
-                    <option value="admin">Admin</option>
-                    <option value="faculty">Faculty</option>
-                    <option value="student">Student</option>
-                  </select>
-                  <select
-                    className="control-select"
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="faculty">Faculty</SelectItem>
+                      <SelectItem value="student">Student</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
                     value={memberFilters.department}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setMemberFilters((prev) => ({
                         ...prev,
-                        department: event.target.value,
+                        department: value,
                       }))
                     }
                   >
-                    <option value="all">All departments</option>
-                    {scopedDepartmentOptions.map((department) => (
-                      <option key={department} value={department}>
-                        {department}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="control-select"
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+                      {scopedDepartmentOptions.map((department) => (
+                        <SelectItem key={department} value={department}>
+                          {department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
                     value={memberFilters.status}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setMemberFilters((prev) => ({
                         ...prev,
-                        status: event.target.value,
+                        status: value,
                       }))
                     }
                   >
-                    <option value="all">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <button
-                    className="btn btn-outline"
+                  <Button
+                    variant="outline"
                     onClick={() => setMemberFilters(INITIAL_MEMBER_FILTERS)}
                   >
                     Reset
-                  </button>
+                  </Button>
                   <p className="text-sm text-slate-600">
                     Showing{" "}
                     <span className="font-semibold">
@@ -1237,7 +1197,8 @@ export default function AdminResearchCenterPage() {
                     member(s).
                   </p>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent className="p-0">
               <div className="overflow-x-auto">
                 {scopedLinksLoading ? (
                   <p className="p-4 text-sm text-slate-600">
@@ -1250,127 +1211,134 @@ export default function AdminResearchCenterPage() {
                     No members matched the current filters.
                   </p>
                 ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>No.</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department</th>
-                        <th>Status</th>
-                        <th>User ID</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No.</TableHead>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>User ID</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {paginatedScopedMembers.map((member, index) => (
-                        <tr key={member.id || `${member.email}-${index}`}>
-                          <td>
+                        <TableRow key={member.id || `${member.email}-${index}`}>
+                          <TableCell>
                             {(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}
-                          </td>
-                          <td>{member.full_name || "Unnamed user"}</td>
-                          <td>{member.email || "-"}</td>
-                          <td className="capitalize">{member.role || "-"}</td>
-                          <td>{member.department || "-"}</td>
-                          <td>
-                            <span
-                              className={`status-chip ${
-                                member.is_active !== false
-                                  ? "status-completed"
-                                  : "status-rejected"
-                              }`}
-                            >
+                          </TableCell>
+                          <TableCell>{member.full_name || "Unnamed user"}</TableCell>
+                          <TableCell>{member.email || "-"}</TableCell>
+                          <TableCell className="capitalize">{member.role || "-"}</TableCell>
+                          <TableCell>{member.department || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant={member.is_active !== false ? "secondary" : "destructive"}>
                               {member.is_active !== false
                                 ? "Active"
                                 : "Inactive"}
-                            </span>
-                          </td>
-                          <td>
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
                             <code>{member.id || "-"}</code>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 )}
               </div>
+              </CardContent>
               <PaginationControls
                 page={memberPage}
                 totalPages={memberTotalPages}
                 onPageChange={setMemberPage}
                 className="rounded-none border-0 border-t border-[var(--border)]"
               />
-            </div>
+            </Card>
 
-            <div className="panel overflow-hidden">
-              <div className="border-b border-[var(--border)] px-4 py-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                      Linked Projects ({filteredScopedProjects.length})
-                    </h2>
-                    <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                      <Search
-                        size={14}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
-                      <input
-                        className="control-input pl-8"
-                        placeholder="Search title or lead researcher"
-                        value={projectFilters.search}
-                        onChange={(event) =>
-                          setProjectFilters((prev) => ({
-                            ...prev,
-                            search: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-[var(--border)] px-6 py-5 space-y-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-bold text-slate-900">
+                      Linked Projects
+                    </CardTitle>
+                    <CardDescription>
+                      {filteredScopedProjects.length} project(s) matched.
+                    </CardDescription>
                   </div>
+                  <label className="relative w-full lg:max-w-md">
+                    <span className="sr-only">Search projects</span>
+                    <Search
+                      size={14}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <Input
+                      className="pl-8"
+                      placeholder="Search title or lead researcher"
+                      value={projectFilters.search}
+                      onChange={(event) =>
+                        setProjectFilters((prev) => ({
+                          ...prev,
+                          search: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[12rem_minmax(0,14rem)]">
-                  <select
-                    className="control-select"
+                  <Select
                     value={projectFilters.status}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setProjectFilters((prev) => ({
                         ...prev,
-                        status: event.target.value,
+                        status: value,
                       }))
                     }
                   >
-                    <option value="all">All statuses</option>
-                    {scopedProjectStatusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="control-select"
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      {scopedProjectStatusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
                     value={projectFilters.department}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setProjectFilters((prev) => ({
                         ...prev,
-                        department: event.target.value,
+                        department: value,
                       }))
                     }
                   >
-                    <option value="all">All departments</option>
-                    {scopedProjectDepartmentOptions.map((department) => (
-                      <option key={department} value={department}>
-                        {department}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+                      {scopedProjectDepartmentOptions.map((department) => (
+                        <SelectItem key={department} value={department}>
+                          {department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <button
-                    className="btn btn-outline"
+                  <Button
+                    variant="outline"
                     onClick={() => setProjectFilters(INITIAL_PROJECT_FILTERS)}
                   >
                     Reset
-                  </button>
+                  </Button>
                   <p className="text-sm text-slate-600">
                     Showing{" "}
                     <span className="font-semibold">
@@ -1379,7 +1347,8 @@ export default function AdminResearchCenterPage() {
                     linked project(s).
                   </p>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent className="p-0">
               <div className="overflow-x-auto">
                 {scopedLinksLoading ? (
                   <p className="p-4 text-sm text-slate-600">
@@ -1392,45 +1361,46 @@ export default function AdminResearchCenterPage() {
                     No linked projects matched the current filters.
                   </p>
                 ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>No.</th>
-                        <th>Project Title</th>
-                        <th>Status</th>
-                        <th>Year</th>
-                        <th>Lead Researcher</th>
-                        <th>Department</th>
-                        <th>Agendum</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No.</TableHead>
+                        <TableHead>Project Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Year</TableHead>
+                        <TableHead>Lead Researcher</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Agendum</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {paginatedScopedProjects.map((project, index) => (
-                        <tr key={project.id || `${project.title}-${index}`}>
-                          <td>
+                        <TableRow key={project.id || `${project.title}-${index}`}>
+                          <TableCell>
                             {(projectPage - 1) * PROJECT_PAGE_SIZE + index + 1}
-                          </td>
-                          <td>{project.title || "-"}</td>
-                          <td className="capitalize">
+                          </TableCell>
+                          <TableCell>{project.title || "-"}</TableCell>
+                          <TableCell className="capitalize">
                             {project.status || "-"}
-                          </td>
-                          <td>{project.year || "-"}</td>
-                          <td>{project.lead_researcher || "-"}</td>
-                          <td>{project.department_name || "-"}</td>
-                          <td>{project.agenda_name || "-"}</td>
-                        </tr>
+                          </TableCell>
+                          <TableCell>{project.year || "-"}</TableCell>
+                          <TableCell>{project.lead_researcher || "-"}</TableCell>
+                          <TableCell>{project.department_name || "-"}</TableCell>
+                          <TableCell>{project.agenda_name || "-"}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 )}
               </div>
+              </CardContent>
               <PaginationControls
                 page={projectPage}
                 totalPages={projectTotalPages}
                 onPageChange={setProjectPage}
                 className="rounded-none border-0 border-t border-[var(--border)]"
               />
-            </div>
+            </Card>
           </>
         )}
       </section>
@@ -1448,82 +1418,100 @@ export default function AdminResearchCenterPage() {
         }
       />
 
-      <div className="panel overflow-hidden">
-        <div className="border-b border-[var(--border)] px-4 py-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Research Center Records ({filteredRows.length})
-              </h2>
-              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <input
-                  className="control-input pl-8"
-                  placeholder="Search name, code, chief, agenda, or id"
-                  value={filters.search}
-                  onChange={(event) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <div className="inline-flex items-center gap-1 rounded-lg bg-[var(--surface-muted)] p-1">
-                <button
-                  className={`btn ${viewMode === "grid" ? "btn-primary" : "btn-outline"}`}
-                  onClick={() => setViewMode("grid")}
-                  type="button"
-                >
-                  <LayoutGrid size={14} />
-                  Grid
-                </button>
-                <button
-                  className={`btn ${viewMode === "list" ? "btn-primary" : "btn-outline"}`}
-                  onClick={() => setViewMode("list")}
-                  type="button"
-                >
-                  <List size={14} />
-                  List
-                </button>
-              </div>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Research Center Records
+              </CardTitle>
+              <CardDescription>
+                Showing {filteredRows.length} record(s).
+              </CardDescription>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                className="btn btn-outline"
-                onClick={() => exportRowsAsCsv(sortedFilteredRows, "filtered")}
-                disabled={exporting || filteredRows.length === 0}
-              >
-                Export CSV
-              </button>
-              <button
-                className="btn btn-outline"
-                onClick={() => exportRowsAsPdf(sortedFilteredRows, "filtered")}
-                disabled={exporting || filteredRows.length === 0}
-              >
-                Export PDF
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={exporting || filteredRows.length === 0}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      exportRowsAsCsv(sortedFilteredRows, "filtered")
+                    }
+                  >
+                    Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      exportRowsAsPdf(sortedFilteredRows, "filtered")
+                    }
+                  >
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {!isScopedCenterChief ? (
-                <button
-                  className="btn btn-primary"
+                <Button
                   onClick={() => {
                     setCreateErrors({});
                     setCreateModalOpen(true);
                   }}
                 >
                   Create Research Center
-                </button>
+                </Button>
               ) : null}
             </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-slate-600">
-              Showing{" "}
-              <span className="font-semibold">{filteredRows.length}</span>{" "}
-              research center record(s).
-            </p>
+
+          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <label className="relative w-full md:max-w-md">
+              <span className="sr-only">Search research centers</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                className="pl-8"
+                placeholder="Search name, code, chief, agenda, or id"
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-border bg-white p-1 md:w-auto">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                type="button"
+              >
+                <LayoutGrid size={14} />
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                type="button"
+              >
+                <List size={14} />
+                List
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="p-2">
+        </CardHeader>
+        <CardContent className="p-3">
           {!dataLoading && filteredRows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
               No research center records found.
@@ -1532,231 +1520,293 @@ export default function AdminResearchCenterPage() {
           {viewMode === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedRows.map((row, index) => (
-                <article
+                <Card
                   key={`${row.tag}-${row.id}`}
-                  className="metric-card transition hover:shadow-md"
+                  className="group border-border/60 bg-white transition-shadow hover:shadow-md"
                 >
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                        #{(currentPage - 1) * PAGE_SIZE + index + 1} |{" "}
-                        {row.type}
-                      </p>
-                      <h3 className="mt-1 text-base font-bold text-slate-900">
-                        {row.name}
-                      </h3>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
+                          {row.type}
+                        </p>
+                        <h3 className="mt-1 truncate text-base font-bold text-slate-900">
+                          {row.name}
+                        </h3>
+                        <p className="mt-1 truncate text-sm text-slate-600">
+                          Center Chief:{" "}
+                          <span className="font-semibold text-slate-800">
+                            {row.centerChiefName || "-"}
+                          </span>
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 font-mono">
+                        {row.code}
+                      </Badge>
                     </div>
-                    <span className="status-chip status-ongoing">
-                      {row.code}
-                    </span>
-                  </div>
 
-                  <div className="mb-2 flex flex-wrap gap-2 text-xs text-slate-600">
-                    <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1">
-                      Center Chief: {row.centerChiefName || "-"}
-                    </span>
-                    <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1">
-                      Agenda: {row.agendaCount || 0}
-                    </span>
-                  </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge variant="secondary">Agenda: {row.agendaCount || 0}</Badge>
+                      <Badge variant="secondary">Links: {row.totalLinks || 0}</Badge>
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className="app-card-muted app-card-micro text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--brand-soft)]"
-                      onClick={() => openView(row)}
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
-                        Linked Affiliates
-                      </p>
-                      <p className="mt-1 text-lg font-bold text-slate-900">
-                        {row.profileCount}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-700">
-                        Admin: {row.memberBreakdown?.adminCount || 0} Editor:{" "}
-                        {row.memberBreakdown?.editorCount || 0} Member:{" "}
-                        {row.memberBreakdown?.memberCount || 0}
-                      </p>
-                    </button>
-                    <button
-                      type="button"
-                      className="app-card-muted app-card-micro text-left transition hover:border-[var(--border-strong)] hover:bg-[var(--brand-soft)]"
-                      onClick={() => openProjectLinks(row)}
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
-                        Linked Projects
-                      </p>
-                      <p className="mt-1 text-lg font-bold text-slate-900">
-                        {row.projectCount}
-                      </p>
-                    </button>
-                  </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        className={cn(
+                          "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
+                          "hover:bg-muted/50",
+                        )}
+                        onClick={() => openView(row)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Affiliates
+                          </p>
+                          <Users className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="mt-2 text-2xl font-bold text-slate-900">
+                          {row.profileCount}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Admin {row.memberBreakdown?.adminCount || 0} · Editor{" "}
+                          {row.memberBreakdown?.editorCount || 0} · Member{" "}
+                          {row.memberBreakdown?.memberCount || 0}
+                        </p>
+                      </button>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={cn(
+                          "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
+                          "hover:bg-muted/50",
+                        )}
+                        onClick={() => openProjectLinks(row)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Projects
+                          </p>
+                          <FolderKanban className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="mt-2 text-2xl font-bold text-slate-900">
+                          {row.projectCount}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Linked research projects.
+                        </p>
+                      </button>
+                    </div>
+
                     {!isScopedCenterChief ? (
-                      <>
-                        <button
-                          className="btn btn-outline"
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => startEdit(row)}
                         >
                           Edit
-                        </button>
-                        <button
-                          className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-[var(--danger)] hover:bg-red-50"
                           onClick={() => setDeletingRow(row)}
                         >
                           Delete
-                        </button>
-                      </>
+                        </Button>
+                      </div>
                     ) : null}
-                  </div>
-                </article>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-              <div className="min-w-0">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>No.</th>
-                      <th>
-                        <button
+            <div className="rounded-xl border border-[var(--border)] bg-white">
+                <Table className="min-w-[980px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "code" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("code")}
                         >
-                          Code <span>{getSortIndicator("code")}</span>
-                        </button>
-                      </th>
-                      <th>
-                        <button
+                          Code{" "}
+                          <span className={sortConfig.key === "code" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("code")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "name" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("name")}
                         >
                           Research Center{" "}
-                          <span>{getSortIndicator("name")}</span>
-                        </button>
-                      </th>
-                      <th>
-                        <button
+                          <span className={sortConfig.key === "name" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("name")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "centerChiefName" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "centerChiefName" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("centerChiefName")}
                         >
                           Center Chief{" "}
-                          <span>{getSortIndicator("centerChiefName")}</span>
-                        </button>
-                      </th>
-                      <th>
-                        <button
+                          <span className={sortConfig.key === "centerChiefName" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("centerChiefName")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "agendaCount" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "agendaCount" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("agendaCount")}
                         >
-                          Agenda <span>{getSortIndicator("agendaCount")}</span>
-                        </button>
-                      </th>
-                      <th>
-                        <button
+                          Agenda{" "}
+                          <span className={sortConfig.key === "agendaCount" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("agendaCount")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "profileCount" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("profileCount")}
                         >
                           Affiliates{" "}
-                          <span>{getSortIndicator("profileCount")}</span>
-                        </button>
-                      </th>
-                      <th>
-                        <button
+                          <span className={sortConfig.key === "profileCount" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("profileCount")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
                           type="button"
-                          className={`table-sort-btn ${sortConfig.key === "projectCount" ? "active" : ""}`}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
                           onClick={() => toggleSort("projectCount")}
                         >
                           Projects{" "}
-                          <span>{getSortIndicator("projectCount")}</span>
-                        </button>
-                      </th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                          <span className={sortConfig.key === "projectCount" ? "text-[var(--brand)]" : "text-slate-400"}>
+                            {getSortIndicator("projectCount")}
+                          </span>
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedRows.map((row, index) => (
-                      <tr key={`${row.tag}-${row.id}`}>
-                        <td>{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
-                        <td>{row.code}</td>
-                        <td>{row.name}</td>
-                        <td>{row.centerChiefName || "-"}</td>
-                        <td>{row.agendaCount || 0}</td>
-                        <td>
-                          <button
+                      <TableRow key={`${row.tag}-${row.id}`}>
+                        <TableCell>{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
+                        <TableCell className="font-mono text-xs">{row.code}</TableCell>
+                        <TableCell>{row.name}</TableCell>
+                        <TableCell>{row.centerChiefName || "-"}</TableCell>
+                        <TableCell>{row.agendaCount || 0}</TableCell>
+                        <TableCell>
+                          <Button
                             type="button"
-                            className="rounded-md px-2 py-1 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
                             onClick={() => openView(row)}
                           >
                             {row.profileCount}
-                          </button>
-                        </td>
-                        <td>
-                          <button
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button
                             type="button"
-                            className="rounded-md px-2 py-1 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
                             onClick={() => openProjectLinks(row)}
                           >
                             {row.projectCount}
-                          </button>
-                        </td>
-                        <td>
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right">
                           {!isScopedCenterChief ? (
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                className="btn btn-outline"
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                                 onClick={() => startEdit(row)}
+                                aria-label={`Edit ${row?.name || "research center"}`}
+                                title="Edit"
                               >
-                                Edit
-                              </button>
-                              <button
-                                className="btn btn-outline text-[var(--danger)] hover:bg-red-50"
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
                                 onClick={() => setDeletingRow(row)}
+                                aria-label={`Delete ${row?.name || "research center"}`}
+                                title="Delete"
                               >
-                                Delete
-                              </button>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           ) : (
                             <span className="text-sm text-slate-500">
                               Scoped access
                             </span>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
             </div>
           )}
-        </div>
+        </CardContent>
         <PaginationControls
           page={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           className="rounded-none border-0 border-t border-[var(--border)]"
         />
-      </div>
+      </Card>
 
-      <div className="panel overflow-hidden">
-        <div className="border-b border-[var(--border)] bg-gradient-to-r from-slate-50 via-white to-sky-50 px-4 py-3">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] bg-muted/30 px-6 py-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-600">
-              Research Center Agenda
-            </h2>
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Research Center Agenda
+              </CardTitle>
+              <CardDescription>
+                Browse linked agenda items per center.
+              </CardDescription>
+            </div>
             <span className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-sm font-semibold text-slate-600">
               {filteredRows.length} centers
             </span>
           </div>
-        </div>
-        <div className="max-h-[80vh] overflow-auto p-4">
+        </CardHeader>
+        <CardContent className="max-h-[80vh] overflow-auto p-4">
           {agendaMatrixLoading ? (
             <p className="text-sm text-slate-600">Loading center agenda...</p>
           ) : filteredRows.length === 0 ? (
@@ -1778,10 +1828,8 @@ export default function AdminResearchCenterPage() {
                     : ["No agendum linked"];
 
                 return (
-                  <section
-                    key={`agenda-group-${row.id}`}
-                    className="app-card app-card-compact"
-                  >
+                  <Card key={`agenda-group-${row.id}`}>
+                    <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-bold text-slate-900">
@@ -1831,260 +1879,195 @@ export default function AdminResearchCenterPage() {
                         </button>
                       </div>
                     ) : null}
-                  </section>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
           )}
-        </div>
+        </CardContent>
         <PaginationControls
           page={agendaCurrentPage}
           totalPages={agendaTotalPages}
           onPageChange={setAgendaCurrentPage}
           className="rounded-none border-0 border-t border-[var(--border)]"
         />
-      </div>
+      </Card>
 
       {viewRow ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => setViewRow(null)}
-        >
-          <aside
-            className="modal-dialog modal-dialog-3xl min-h-[82vh]"
-            ref={viewModalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="view-center-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Research Center Details
-                </p>
-                <h3
-                  id="view-center-title"
-                  className="text-xl font-black text-slate-900"
-                >
-                  {viewRow.name}
-                </h3>
-              </div>
-              <button
-                className="btn btn-outline"
-                onClick={() => setViewRow(null)}
-              >
-                Close
-              </button>
+        <Dialog open={Boolean(viewRow)} onOpenChange={(open) => !open && setViewRow(null)}>
+          <DialogContent className="max-w-5xl" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>{viewRow.name}</DialogTitle>
+              <DialogDescription>
+                Research center details and linked affiliates.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5">
+              <dl className="grid gap-3 text-sm md:grid-cols-4">
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Center Code</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.code}</dd>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Type</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.type}</dd>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Center Chief</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.centerChiefName || "-"}</dd>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Research Agenda</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.agendaCount || 0}</dd>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Affiliates</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.profileCount || 0}</dd>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/40">
+                  <CardContent className="p-4">
+                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Projects</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.projectCount || 0}</dd>
+                  </CardContent>
+                </Card>
+              </dl>
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3">
+                  <CardTitle className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
+                    Linked Affiliates ({viewProfiles.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="max-h-80 overflow-auto">
+                    {viewLoading ? (
+                      <p className="p-4 text-sm text-slate-600">Loading linked records...</p>
+                    ) : viewError ? (
+                      <p className="p-4 text-sm text-red-700">{viewError}</p>
+                    ) : viewProfiles.length === 0 ? (
+                      <p className="p-4 text-sm text-slate-600">
+                        No affiliates are currently linked to this research center.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>No.</TableHead>
+                            <TableHead>Full Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>User ID</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {viewProfiles.map((profile, index) => (
+                            <TableRow key={profile.id}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell>{profile.full_name || "Unnamed user"}</TableCell>
+                              <TableCell>{profile.email || "-"}</TableCell>
+                              <TableCell className="capitalize">{profile.role || "-"}</TableCell>
+                              <TableCell>{profile.department || "-"}</TableCell>
+                              <TableCell>
+                                <Badge variant={profile.is_active ? "secondary" : "destructive"}>
+                                  {profile.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <code>{profile.id}</code>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <dl className="grid gap-3 text-sm md:grid-cols-4">
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Center Code
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.code}
-                </dd>
-              </div>
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Type
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.type}
-                </dd>
-              </div>
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Center Chief
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.centerChiefName || "-"}
-                </dd>
-              </div>
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Research Agenda
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.agendaCount || 0}
-                </dd>
-              </div>
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Linked Affiliates
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.profileCount || 0}
-                </dd>
-              </div>
-              <div className="app-card-muted app-card-compact">
-                <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Linked Projects
-                </dt>
-                <dd className="mt-1 font-semibold text-slate-800">
-                  {viewRow.projectCount || 0}
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-5 overflow-hidden rounded-xl border border-[var(--border)]">
-              <div className="border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
-                  Linked Affiliates ({viewProfiles.length})
-                </p>
-              </div>
-              <div className="max-h-80 overflow-auto">
-                {viewLoading ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    Loading linked records...
-                  </p>
-                ) : viewError ? (
-                  <p className="p-4 text-sm text-red-700">{viewError}</p>
-                ) : viewProfiles.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    No affiliates are currently linked to this research center.
-                  </p>
-                ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>No.</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department</th>
-                        <th>Status</th>
-                        <th>User ID</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {viewProfiles.map((profile, index) => (
-                        <tr key={profile.id}>
-                          <td>{index + 1}</td>
-                          <td>{profile.full_name || "Unnamed user"}</td>
-                          <td>{profile.email || "-"}</td>
-                          <td className="capitalize">{profile.role || "-"}</td>
-                          <td>{profile.department || "-"}</td>
-                          <td>
-                            <span
-                              className={`status-chip ${
-                                profile.is_active
-                                  ? "status-completed"
-                                  : "status-rejected"
-                              }`}
-                            >
-                              {profile.is_active ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td>
-                            <code>{profile.id}</code>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-          </aside>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {projectLinksRow ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => setProjectLinksRow(null)}
+        <Dialog
+          open={Boolean(projectLinksRow)}
+          onOpenChange={(open) => !open && setProjectLinksRow(null)}
         >
-          <aside
-            className="modal-dialog modal-dialog-3xl min-h-[82vh]"
-            ref={projectModalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="linked-projects-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Linked Projects
-                </p>
-                <h3
-                  id="linked-projects-title"
-                  className="text-xl font-black text-slate-900"
-                >
-                  {projectLinksRow.name}
-                </h3>
-              </div>
-              <button
-                className="btn btn-outline"
-                onClick={() => setProjectLinksRow(null)}
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-              <div className="max-h-[560px] overflow-auto">
-                {projectLinksLoading ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    Loading linked projects...
-                  </p>
-                ) : projectLinksError ? (
-                  <p className="p-4 text-sm text-red-700">
-                    {projectLinksError}
-                  </p>
-                ) : projectLinks.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    No linked projects found for this research center.
-                  </p>
-                ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>No.</th>
-                        <th>Project Title</th>
-                        <th>Status</th>
-                        <th>Year</th>
-                        <th>Lead Researcher</th>
-                        <th>Department</th>
-                        <th>Agendum</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {projectLinks.map((project, index) => (
-                        <tr key={project.id}>
-                          <td>{index + 1}</td>
-                          <td>{project.title || "-"}</td>
-                          <td className="capitalize">
-                            {project.status || "-"}
-                          </td>
-                          <td>{project.year || "-"}</td>
-                          <td>{project.lead_researcher || "-"}</td>
-                          <td>{project.department_name || "-"}</td>
-                          <td>{project.agenda_name || "-"}</td>
-                          <td>
-                            {project.start_date
-                              ? new Date(
-                                  project.start_date,
-                                ).toLocaleDateString()
-                              : "-"}
-                          </td>
-                          <td>
-                            {project.end_date
-                              ? new Date(project.end_date).toLocaleDateString()
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-          </aside>
-        </div>
+          <DialogContent className="max-w-6xl" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>{projectLinksRow.name}</DialogTitle>
+              <DialogDescription>
+                Projects linked to this research center.
+              </DialogDescription>
+            </DialogHeader>
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="max-h-[560px] overflow-auto">
+                  {projectLinksLoading ? (
+                    <p className="p-4 text-sm text-slate-600">Loading linked projects...</p>
+                  ) : projectLinksError ? (
+                    <p className="p-4 text-sm text-red-700">{projectLinksError}</p>
+                  ) : projectLinks.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-600">
+                      No linked projects found for this research center.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>No.</TableHead>
+                          <TableHead>Project Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Year</TableHead>
+                          <TableHead>Lead Researcher</TableHead>
+                          <TableHead>Department</TableHead>
+                          <TableHead>Agendum</TableHead>
+                          <TableHead>Start Date</TableHead>
+                          <TableHead>End Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {projectLinks.map((project, index) => (
+                          <TableRow key={project.id}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>{project.title || "-"}</TableCell>
+                            <TableCell className="capitalize">{project.status || "-"}</TableCell>
+                            <TableCell>{project.year || "-"}</TableCell>
+                            <TableCell>{project.lead_researcher || "-"}</TableCell>
+                            <TableCell>{project.department_name || "-"}</TableCell>
+                            <TableCell>{project.agenda_name || "-"}</TableCell>
+                            <TableCell>
+                              {project.start_date
+                                ? new Date(project.start_date).toLocaleDateString()
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {project.end_date
+                                ? new Date(project.end_date).toLocaleDateString()
+                                : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       <ConfirmActionModal
@@ -2099,27 +2082,14 @@ export default function AdminResearchCenterPage() {
       />
 
       {editModalOpen ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={cancelEdit}
-        >
-          <div
-            className="modal-dialog modal-dialog-lg"
-            ref={editModalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-center-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h3
-              id="edit-center-title"
-              className="modal-title text-xl font-bold text-slate-900"
-            >
-              Edit Research Center
-            </h3>
-            <p className="modal-subtitle mt-1 text-sm text-slate-600">
-              Update all research center information.
-            </p>
+        <Dialog open={editModalOpen} onOpenChange={(open) => !open && cancelEdit()}>
+          <DialogContent className="max-w-2xl" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>Edit Research Center</DialogTitle>
+              <DialogDescription>
+                Update all research center information.
+              </DialogDescription>
+            </DialogHeader>
 
             {editLoading ? (
               <p className="mt-4 text-sm text-slate-600">
@@ -2132,8 +2102,8 @@ export default function AdminResearchCenterPage() {
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Research Center Name *
                     </label>
-                    <input
-                      className={`control-input ${editErrors.name ? "input-error" : ""}`}
+                    <Input
+                      className={editErrors.name ? "input-error" : ""}
                       value={editing.name}
                       onChange={(event) => {
                         setEditing((prev) => ({
@@ -2151,8 +2121,8 @@ export default function AdminResearchCenterPage() {
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Code *
                     </label>
-                    <input
-                      className={`control-input ${editErrors.code ? "input-error" : ""}`}
+                    <Input
+                      className={editErrors.code ? "input-error" : ""}
                       value={editing.code}
                       onChange={(event) => {
                         setEditing((prev) => ({
@@ -2175,13 +2145,12 @@ export default function AdminResearchCenterPage() {
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Center Chief *
                     </label>
-                    <select
-                      className={`control-select ${editErrors.centerChiefId ? "input-error" : ""}`}
+                    <Select
                       value={editing.centerChiefId}
-                      onChange={(event) => {
+                      onValueChange={(value) => {
                         setEditing((prev) => ({
                           ...prev,
-                          centerChiefId: event.target.value,
+                          centerChiefId: value,
                         }));
                         setEditErrors((prev) => ({
                           ...prev,
@@ -2189,13 +2158,17 @@ export default function AdminResearchCenterPage() {
                         }));
                       }}
                     >
-                      <option value="">Select Center Chief</option>
-                      {centerChiefUsers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className={editErrors.centerChiefId ? "input-error" : ""}>
+                        <SelectValue placeholder="Select Center Chief" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {centerChiefUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {editErrors.centerChiefId ? (
                       <p className="field-error">{editErrors.centerChiefId}</p>
                     ) : null}
@@ -2207,8 +2180,8 @@ export default function AdminResearchCenterPage() {
                     Research Agendum *
                   </label>
                   <div className="flex gap-2">
-                    <input
-                      className={`control-input ${editErrors.researchAgendas ? "input-error" : ""}`}
+                    <Input
+                      className={editErrors.researchAgendas ? "input-error" : ""}
                       placeholder="Add research agendum"
                       value={editing.agendaInput}
                       onChange={(event) =>
@@ -2224,13 +2197,13 @@ export default function AdminResearchCenterPage() {
                         }
                       }}
                     />
-                    <button
-                      className="btn btn-outline"
+                    <Button
+                      variant="outline"
                       type="button"
                       onClick={addEditAgenda}
                     >
                       Add
-                    </button>
+                    </Button>
                   </div>
                   {editing.researchAgendas.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -2258,58 +2231,47 @@ export default function AdminResearchCenterPage() {
             )}
 
             <div className="modal-actions mt-6 flex justify-end gap-2">
-              <button
-                className="btn btn-outline"
+              <Button
+                variant="outline"
                 onClick={cancelEdit}
                 disabled={actionLoading}
               >
                 Cancel
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
                 onClick={saveEdit}
                 disabled={actionLoading || editLoading || !isEditFormValid}
               >
                 {actionLoading ? "Saving..." : "Save Changes"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {createModalOpen ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => {
-            if (!createLoading) {
+        <Dialog
+          open={createModalOpen}
+          onOpenChange={(open) => {
+            if (!open && !createLoading) {
               setCreateModalOpen(false);
               setCreateErrors({});
             }
           }}
         >
-          <div
-            className="modal-dialog modal-dialog-md"
-            ref={createModalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-center-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h3
-              id="create-center-title"
-              className="modal-title text-lg font-bold text-slate-900"
-            >
-              Create Research Center
-            </h3>
-            <p className="modal-subtitle mt-1 text-sm text-slate-600">
-              Add a new research center to the research center registry.
-            </p>
+          <DialogContent className="max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>Create Research Center</DialogTitle>
+              <DialogDescription>
+                Add a new research center to the research center registry.
+              </DialogDescription>
+            </DialogHeader>
             <div className="mt-4 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Research Center Name *
               </label>
-              <input
-                className={`control-input ${createErrors.name ? "input-error" : ""}`}
+              <Input
+                className={createErrors.name ? "input-error" : ""}
                 placeholder="e.g. Center for Human-Computer Interaction"
                 value={newResearchCenterName}
                 onChange={(event) => {
@@ -2326,8 +2288,8 @@ export default function AdminResearchCenterPage() {
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Code *
               </label>
-              <input
-                className={`control-input ${createErrors.code ? "input-error" : ""}`}
+              <Input
+                className={createErrors.code ? "input-error" : ""}
                 placeholder="e.g. CHCI"
                 value={newResearchCenterCode}
                 onChange={(event) => {
@@ -2346,22 +2308,24 @@ export default function AdminResearchCenterPage() {
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Center Chief *
               </label>
-              <select
-                className={`control-select ${createErrors.centerChiefId ? "input-error" : ""}`}
+              <Select
                 value={newCenterChiefId}
-                onChange={(event) => {
-                  setNewCenterChiefId(event.target.value);
+                onValueChange={(value) => {
+                  setNewCenterChiefId(value);
                   setCreateErrors((prev) => ({ ...prev, centerChiefId: "" }));
                 }}
-                required
               >
-                <option value="">Select Center Chief</option>
-                {centerChiefUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className={createErrors.centerChiefId ? "input-error" : ""}>
+                  <SelectValue placeholder="Select Center Chief" />
+                </SelectTrigger>
+                <SelectContent>
+                  {centerChiefUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {createErrors.centerChiefId ? (
                 <p className="field-error">{createErrors.centerChiefId}</p>
               ) : null}
@@ -2372,8 +2336,8 @@ export default function AdminResearchCenterPage() {
                 Research Agendum *
               </label>
               <div className="flex gap-2">
-                <input
-                  className={`control-input ${createErrors.researchAgendas ? "input-error" : ""}`}
+                <Input
+                  className={createErrors.researchAgendas ? "input-error" : ""}
                   placeholder="Add research agendum"
                   value={newAgendaInput}
                   onChange={(event) => setNewAgendaInput(event.target.value)}
@@ -2384,13 +2348,13 @@ export default function AdminResearchCenterPage() {
                     }
                   }}
                 />
-                <button
-                  className="btn btn-outline"
+                <Button
+                  variant="outline"
                   type="button"
                   onClick={addResearchAgenda}
                 >
                   Add
-                </button>
+                </Button>
               </div>
               {newResearchAgendas.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -2415,8 +2379,8 @@ export default function AdminResearchCenterPage() {
               ) : null}
             </div>
             <div className="modal-actions mt-5 flex justify-end gap-2">
-              <button
-                className="btn btn-outline"
+              <Button
+                variant="outline"
                 onClick={() => {
                   setCreateModalOpen(false);
                   setCreateErrors({});
@@ -2424,17 +2388,16 @@ export default function AdminResearchCenterPage() {
                 disabled={createLoading}
               >
                 Cancel
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
                 onClick={createResearchCenter}
                 disabled={createLoading || !isCreateFormValid}
               >
                 {createLoading ? "Creating..." : "Create"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </section>
   );
