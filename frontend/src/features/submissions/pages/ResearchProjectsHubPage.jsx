@@ -2,6 +2,44 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
@@ -19,7 +57,19 @@ import {
   formatBytes,
   formatDate,
 } from "@/features/submissions/utils";
-import { CheckCircle2, Clock3, FileText, Search, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 
 const PROJECTS_PAGE_SIZE = 10;
 export default function ResearchProjectsHubPage() {
@@ -545,17 +595,17 @@ export default function ResearchProjectsHubPage() {
           title="Research Projects"
           description="Browse all submitted projects first, then open the submission form only when needed."
         />
-        <div className="panel">
-          <div className="panel-body space-y-3">
+        <Card>
+          <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
               Please set your Organization (Research Center) and Department in
               My Profile first before accessing Research Projects.
             </p>
-            <Link className="btn btn-primary" to="/my-profile">
-              Go to My Profile
-            </Link>
-          </div>
-        </div>
+            <Button asChild>
+              <Link to="/my-profile">Go to My Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -568,7 +618,8 @@ export default function ResearchProjectsHubPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <article className="metric-card">
+        <Card>
+          <CardContent className="p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
             <FileText size={14} />
             Total Projects
@@ -576,8 +627,10 @@ export default function ResearchProjectsHubPage() {
           <p className="mt-2 text-3xl font-black text-slate-900">
             {analytics.total}
           </p>
-        </article>
-        <article className="metric-card">
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
             <FileText size={14} />
             Proposal
@@ -585,8 +638,10 @@ export default function ResearchProjectsHubPage() {
           <p className="mt-2 text-3xl font-black text-slate-900">
             {analytics.proposal}
           </p>
-        </article>
-        <article className="metric-card">
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
             <Clock3 size={14} />
             Ongoing
@@ -594,8 +649,10 @@ export default function ResearchProjectsHubPage() {
           <p className="mt-2 text-3xl font-black text-slate-900">
             {analytics.ongoing}
           </p>
-        </article>
-        <article className="metric-card">
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
             <CheckCircle2 size={14} />
             Completed
@@ -603,8 +660,10 @@ export default function ResearchProjectsHubPage() {
           <p className="mt-2 text-3xl font-black text-slate-900">
             {analytics.completed}
           </p>
-        </article>
-        <article className="metric-card">
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
             <XCircle size={14} />
             Rejected
@@ -612,75 +671,88 @@ export default function ResearchProjectsHubPage() {
           <p className="mt-2 text-3xl font-black text-slate-900">
             {analytics.rejected}
           </p>
-        </article>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="panel overflow-hidden">
-        <div className="border-b border-[var(--border)] px-4 py-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Research Project Records ({filteredProjects.length})
-              </h2>
-              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <input
-                  className="control-input pl-8"
-                  placeholder="Search title, abstract, lead, status, year, or center"
-                  value={filters.search}
-                  onChange={(e) => updateFilter("search", e.target.value)}
-                />
-              </label>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Research Project Records
+              </CardTitle>
+              <CardDescription>
+                Showing {filteredProjects.length} project(s).
+              </CardDescription>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               {isAdmin ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={exportAsCsv}
-                    disabled={
-                      !filteredProjects.length || Boolean(exportingType)
-                    }
-                  >
-                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={exportAsPdf}
-                    disabled={
-                      !filteredProjects.length || Boolean(exportingType)
-                    }
-                  >
-                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                  </button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        !filteredProjects.length || Boolean(exportingType)
+                      }
+                    >
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={exportAsCsv}>
+                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportAsPdf}>
+                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : null}
-              <Link className="btn btn-primary" to="/submit-project/submit">
-                Submit Research Project
-              </Link>
+
+              <Button asChild>
+                <Link to="/submit-project/submit">Submit Research Project</Link>
+              </Button>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+
+          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <label className="relative w-full md:max-w-md">
+              <span className="sr-only">Search projects</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                className="pl-8"
+                placeholder="Search title, abstract, lead, status, year, or center"
+                value={filters.search}
+                onChange={(e) => updateFilter("search", e.target.value)}
+              />
+            </label>
+
             <div className="flex w-full flex-wrap gap-2 md:w-auto">
-              <select
-                className="control-select w-full md:w-[14rem]"
+              <Select
                 value={filters.sortBy}
-                onChange={(e) => updateFilter("sortBy", e.target.value)}
+                onValueChange={(value) => updateFilter("sortBy", value)}
               >
-                <option value="submitted_desc">Sort: Newest submitted</option>
-                <option value="submitted_asc">Sort: Oldest submitted</option>
-                <option value="title_asc">Sort: Title A-Z</option>
-                <option value="title_desc">Sort: Title Z-A</option>
-              </select>
+                <SelectTrigger className="w-full md:w-[16rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="submitted_desc">
+                    Sort: Newest submitted
+                  </SelectItem>
+                  <SelectItem value="submitted_asc">
+                    Sort: Oldest submitted
+                  </SelectItem>
+                  <SelectItem value="title_asc">Sort: Title A-Z</SelectItem>
+                  <SelectItem value="title_desc">Sort: Title Z-A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <p className="text-sm text-slate-600">
-              Showing{" "}
-              <span className="font-semibold">{filteredProjects.length}</span>{" "}
-              project(s).
-            </p>
           </div>
-        </div>
+        </CardHeader>
         {filteredProjects.length === 0 ? (
           <div className="p-4">
             <EmptyState
@@ -689,23 +761,23 @@ export default function ResearchProjectsHubPage() {
             />
           </div>
         ) : (
-          <div className="space-y-3">
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Title</th>
-                    <th>Submitted By</th>
-                    <th>Year</th>
-                    <th>Status</th>
-                    <th>Visibility</th>
-                    <th>Research Center</th>
-                    <th>Submitted</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Submitted By</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>Research Center</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {paginatedProjects.map((project, index) => {
                     const status = normalizeStatus(project.status);
                     const canToggleVisibility =
@@ -713,14 +785,14 @@ export default function ResearchProjectsHubPage() {
                     const canEdit =
                       isAdmin && Boolean(project?.ckan_dataset_id);
                     return (
-                      <tr key={project.id} className="align-top">
-                        <td>
+                      <TableRow key={project.id} className="align-top">
+                        <TableCell>
                           {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
-                        </td>
-                        <td className="font-medium text-slate-900">
+                        </TableCell>
+                        <TableCell className="font-medium text-slate-900">
                           {project.title || "-"}
-                        </td>
-                        <td className="text-slate-600">
+                        </TableCell>
+                        <TableCell className="text-slate-600">
                           <p className="font-medium text-slate-900">
                             {project.submitted_by_name || "Unknown user"}
                           </p>
@@ -729,106 +801,143 @@ export default function ResearchProjectsHubPage() {
                               project.submitted_by ||
                               "-"}
                           </p>
-                        </td>
-                        <td className="text-slate-600">
+                        </TableCell>
+                        <TableCell className="text-slate-600">
                           {project.year || "-"}
-                        </td>
-                        <td>
-                          <span className={`status-chip status-${status}`}>
-                            {status}
-                          </span>
-                        </td>
-                        <td>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{status}</Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`status-chip ${project.private ? "status-rejected" : "status-completed"}`}
-                            >
+                            <Badge variant={project.private ? "destructive" : "secondary"}>
                               {project.private ? "Private" : "Public"}
-                            </span>
+                            </Badge>
                             {canToggleVisibility ? (
-                              <button
+                              <Button
                                 type="button"
-                                className="btn btn-outline"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                                 disabled={Boolean(
                                   visibilitySavingByDataset[
                                     project.ckan_dataset_id
                                   ],
                                 )}
                                 onClick={() => handleToggleVisibility(project)}
+                                aria-label={
+                                  visibilitySavingByDataset[
+                                    project.ckan_dataset_id
+                                  ]
+                                    ? "Saving visibility..."
+                                    : project.private
+                                      ? "Make public"
+                                      : "Make private"
+                                }
+                                title={
+                                  visibilitySavingByDataset[
+                                    project.ckan_dataset_id
+                                  ]
+                                    ? "Saving..."
+                                    : project.private
+                                      ? "Make Public"
+                                      : "Make Private"
+                                }
                               >
                                 {visibilitySavingByDataset[
                                   project.ckan_dataset_id
                                 ]
-                                  ? "Saving..."
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
                                   : project.private
-                                    ? "Make Public"
-                                    : "Make Private"}
-                              </button>
+                                    ? <Eye className="h-4 w-4" />
+                                    : <EyeOff className="h-4 w-4" />}
+                              </Button>
                             ) : null}
                           </div>
-                        </td>
-                        <td className="text-slate-600">
+                        </TableCell>
+                        <TableCell className="text-slate-600">
                           {getProjectOrganization(project)}
-                        </td>
-                        <td className="text-slate-600">
+                        </TableCell>
+                        <TableCell className="text-slate-600">
                           {formatDate(project.submitted_at)}
-                        </td>
-                        <td>
-                          <div className="flex flex-wrap gap-2">
-                            <button
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <Button
                               type="button"
-                              className="btn btn-outline"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => setSelectedProjectId(project.id)}
+                              aria-label={`View ${project?.title || "project"}`}
+                              title="View"
                             >
-                              View
-                            </button>
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             {canEdit ? (
-                              <button
+                              <Button
                                 type="button"
-                                className="btn btn-outline"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                                 onClick={() => openEditModal(project)}
+                                aria-label={`Edit ${project?.title || "project"}`}
+                                title="Edit"
                               >
-                                Edit
-                              </button>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
                             ) : null}
                             {canEdit ? (
-                              <button
+                              <Button
                                 type="button"
-                                className="btn btn-danger-outline"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
                                 onClick={() => handleDeleteProject(project)}
                                 disabled={deletingProjectId === project.id}
+                                aria-label={`Delete ${project?.title || "project"}`}
+                                title={deletingProjectId === project.id ? "Deleting..." : "Delete"}
                               >
-                                {deletingProjectId === project.id
-                                  ? "Deleting..."
-                                  : "Delete"}
-                              </button>
+                                {deletingProjectId === project.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
-          </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
       <PaginationControls
         page={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
 
-      <div className="panel overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            Linked Projects ({linkedProjectRows.length})
-          </h2>
-          <p className="text-sm text-slate-500">
-            Linked content summary for your submitted research projects.
-          </p>
-        </div>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Linked Projects
+              </CardTitle>
+              <CardDescription>
+                Linked content summary for your submitted research projects.
+              </CardDescription>
+            </div>
+            <p className="text-sm text-slate-600">
+              {linkedProjectRows.length} row(s).
+            </p>
+          </div>
+        </CardHeader>
         {linkedProjectRows.length === 0 ? (
           <div className="p-4">
             <EmptyState
@@ -837,93 +946,89 @@ export default function ResearchProjectsHubPage() {
             />
           </div>
         ) : (
+          <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Project</th>
-                  <th>Submitted By</th>
-                  <th>Lead Researcher</th>
-                  <th>Research Center</th>
-                  <th>Expected Outputs</th>
-                  <th>Linked Files</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="min-w-[980px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Submitted By</TableHead>
+                  <TableHead>Lead Researcher</TableHead>
+                  <TableHead>Research Center</TableHead>
+                  <TableHead>Expected Outputs</TableHead>
+                  <TableHead>Linked Files</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {linkedProjectRows.map((project, index) => (
-                  <tr key={`linked-${project.id}`}>
-                    <td>{index + 1}</td>
-                    <td className="font-medium text-slate-900">
+                  <TableRow key={`linked-${project.id}`}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium text-slate-900">
                       {project.title}
-                    </td>
-                    <td className="text-slate-600">
+                    </TableCell>
+                    <TableCell className="text-slate-600">
                       {project.submitted_by_name}
-                    </td>
-                    <td className="text-slate-600">
+                    </TableCell>
+                    <TableCell className="text-slate-600">
                       {project.lead_researcher}
-                    </td>
-                    <td className="text-slate-600">
+                    </TableCell>
+                    <TableCell className="text-slate-600">
                       {project.research_center}
-                    </td>
-                    <td className="max-w-xs text-slate-600">
+                    </TableCell>
+                    <TableCell className="max-w-xs text-slate-600">
                       <span className="line-clamp-2">
                         {project.expected_outputs}
                       </span>
-                    </td>
-                    <td className="text-slate-600">
+                    </TableCell>
+                    <TableCell className="text-slate-600">
                       {project.linked_resources_count}
-                    </td>
-                    <td>
-                      <span className={`status-chip status-${project.status}`}>
-                        {project.status}
-                      </span>
-                    </td>
-                    <td className="text-slate-600">
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{project.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-600">
                       {formatDate(project.submitted_at)}
-                    </td>
-                    <td>
-                      <button
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
                         type="button"
-                        className="btn btn-outline"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() => setSelectedProjectId(project.id)}
+                        aria-label={`View ${project?.title || "project"}`}
+                        title="View"
                       >
-                        View
-                      </button>
-                    </td>
-                  </tr>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
 
       {selectedProject ? (
-        <div
-          className="modal-overlay"
-          onClick={() => setSelectedProjectId(null)}
+        <Dialog
+          open={Boolean(selectedProject)}
+          onOpenChange={(open) => !open && setSelectedProjectId(null)}
         >
-          <aside
-            className="ml-auto h-full w-full overflow-y-auto border-l border-[var(--border)] bg-white p-4 shadow-2xl sm:max-w-xl sm:p-5 lg:max-w-6xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4">
-              <h2 className="text-base font-bold uppercase tracking-[0.08em] text-slate-500">
-                Project Details
-              </h2>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setSelectedProjectId(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="grid gap-4 py-4 sm:grid-cols-2">
+          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-6xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
+            <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left">
+              <DialogTitle>Project Details</DialogTitle>
+              <DialogDescription>
+                Review submitted project information and linked CKAN resources.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-6 py-5">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
                   Title
@@ -949,11 +1054,9 @@ export default function ResearchProjectsHubPage() {
                 <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
                   Status
                 </p>
-                <span
-                  className={`status-chip status-${normalizeStatus(selectedProject.status)}`}
-                >
+                <Badge variant="outline">
                   {normalizeStatus(selectedProject.status)}
-                </span>
+                </Badge>
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
@@ -1043,43 +1146,46 @@ export default function ResearchProjectsHubPage() {
                     </p>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       {resourcePanel.resources.map((resource) => (
-                        <div
+                        <Card
                           key={resource.id || resource.url || resource.name}
-                          className="rounded-lg border border-slate-200 bg-slate-50/40 p-4"
+                          className="border-slate-200 bg-slate-50/40"
                         >
-                          <p className="truncate text-base font-semibold text-slate-900">
-                            {resource.name || "Unnamed resource"}
-                          </p>
-                          <p className="text-sm text-slate-600">
-                            Format: {resource.format || "-"} | Size:{" "}
-                            {formatBytes(resource.size)} | Updated:{" "}
-                            {formatDate(
-                              resource.lastModified || resource.created,
-                            )}
-                          </p>
-                          {resource.url ? (
-                            <a
-                              href={resource.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-1 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800"
-                            >
-                              Open / Download
-                            </a>
-                          ) : (
-                            <p className="mt-1 text-sm text-slate-500">
-                              No resource URL available.
+                          <CardContent className="p-4">
+                            <p className="truncate text-base font-semibold text-slate-900">
+                              {resource.name || "Unnamed resource"}
                             </p>
-                          )}
-                        </div>
+                            <p className="text-sm text-slate-600">
+                              Format: {resource.format || "-"} | Size:{" "}
+                              {formatBytes(resource.size)} | Updated:{" "}
+                              {formatDate(
+                                resource.lastModified || resource.created,
+                              )}
+                            </p>
+                            {resource.url ? (
+                              <a
+                                href={resource.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-1 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800"
+                              >
+                                Open / Download
+                              </a>
+                            ) : (
+                              <p className="mt-1 text-sm text-slate-500">
+                                No resource URL available.
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
             </div>
-          </aside>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       <ConfirmActionModal
