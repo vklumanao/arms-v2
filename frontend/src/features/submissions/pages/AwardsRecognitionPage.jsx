@@ -6,6 +6,29 @@ import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal"
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   deleteAwardRecognitionRecord,
   listAwardRecognitionRecords,
@@ -13,6 +36,7 @@ import {
 import {
   Award,
   Building2,
+  Download,
   PencilLine,
   Search,
   Trash2,
@@ -38,16 +62,6 @@ export default function AwardsRecognitionPage() {
   const [loadError, setLoadError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-
-  const levelOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          rows.map((row) => String(row?.level || "").trim()).filter(Boolean),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [rows],
-  );
 
   const loadAwards = useCallback(() => {
     setLoading(true);
@@ -336,17 +350,17 @@ export default function AwardsRecognitionPage() {
           title="Awards and Recognition"
           description="Browse awards and recognition records using the same project-style workspace."
         />
-        <div className="panel">
-          <div className="panel-body space-y-3">
+        <Card>
+          <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
               Please set your Organization (Research Center) and Department in
               My Profile first before accessing Awards and Recognition.
             </p>
-            <Link className="btn btn-primary" to="/my-profile">
-              Go to My Profile
-            </Link>
-          </div>
-        </div>
+            <Button asChild>
+              <Link to="/my-profile">Go to My Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -359,97 +373,92 @@ export default function AwardsRecognitionPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Award size={14} />
-            Total Awards
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.total}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Building2 size={14} />
-            National / Local
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.national}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Award size={14} />
-            International
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.international}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Users size={14} />
-            Recognized Recipients
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.recipients}
-          </p>
-        </article>
+        {[
+          { label: "Total Awards", value: analytics.total, icon: Award },
+          {
+            label: "National / Local",
+            value: analytics.national,
+            icon: Building2,
+          },
+          {
+            label: "International",
+            value: analytics.international,
+            icon: Award,
+          },
+          {
+            label: "Recognized Recipients",
+            value: analytics.recipients,
+            icon: Users,
+          },
+        ].map(({ label, value, icon: Icon }) => (
+          <Card key={label}>
+            <CardContent className="p-5">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                <Icon size={14} />
+                {label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-slate-900">{value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="panel overflow-hidden">
-        <div className="border-b border-[var(--border)] px-4 py-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Awards and Recognition Records ({filteredRows.length})
-              </h2>
-              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search title, award, body, recipient, level, or year"
-                  className="control-input pl-8"
-                />
-              </label>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Awards and Recognition Records
+              </CardTitle>
+              <CardDescription>
+                Showing {filteredRows.length} record(s).
+              </CardDescription>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               {isAdmin ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={exportAsCsv}
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={exportAsPdf}
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                  </button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={!filteredRows.length || Boolean(exportingType)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={exportAsCsv}>
+                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportAsPdf}>
+                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : null}
-              <Link to="/awards-recognitions/add" className="btn btn-primary">
-                Add Awards/Recognitions
-              </Link>
+
+              <Button asChild>
+                <Link to="/awards-recognitions/add">Add Awards/Recognitions</Link>
+              </Button>
             </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-slate-600">
-              Showing{" "}
-              <span className="font-semibold">{filteredRows.length}</span> award
-              record(s).
-            </p>
+
+          <div className="mt-4">
+            <label className="relative block w-full md:max-w-xl">
+              <span className="sr-only">Search awards and recognitions</span>
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search title, award, body, recipient, level, or year"
+                className="pl-9"
+              />
+            </label>
           </div>
-        </div>
+        </CardHeader>
         {filteredRows.length === 0 ? (
-          <div className="p-4">
+          <CardContent className="p-4">
             <EmptyState
               title={
                 loading
@@ -463,36 +472,39 @@ export default function AwardsRecognitionPage() {
                   : "Try a different search term once award records are available.")
               }
             />
-          </div>
+          </CardContent>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Department</th>
-                  <th>Title of Research</th>
-                  <th>Award/Recognition</th>
-                  <th>Awarding Body</th>
-                  <th>Year Received</th>
-                  <th>Level</th>
-                  <th>Recipient(s)</th>
-                  <th>Supporting MOVs</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-700">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Title of Research</TableHead>
+                    <TableHead>Award/Recognition</TableHead>
+                    <TableHead>Awarding Body</TableHead>
+                    <TableHead>Year Received</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Recipient(s)</TableHead>
+                    <TableHead>Supporting MOVs</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {paginatedRows.map((row, index) => (
-                  <tr key={row.id || index}>
-                    <td>{(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}</td>
-                    <td>{row.program_department || "-"}</td>
-                    <td>{row.work_title || "-"}</td>
-                    <td>{row.award_recognition || "-"}</td>
-                    <td>{row.awarding_body || "-"}</td>
-                    <td>{row.year_received || "-"}</td>
-                    <td>{row.level || "-"}</td>
-                    <td>{row.recipients || "-"}</td>
-                    <td>
+                  <TableRow key={row.id || index}>
+                    <TableCell>
+                      {(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}
+                    </TableCell>
+                    <TableCell>{row.program_department || "-"}</TableCell>
+                    <TableCell>{row.work_title || "-"}</TableCell>
+                    <TableCell>{row.award_recognition || "-"}</TableCell>
+                    <TableCell>{row.awarding_body || "-"}</TableCell>
+                    <TableCell>{row.year_received || "-"}</TableCell>
+                    <TableCell>{row.level || "-"}</TableCell>
+                    <TableCell>{row.recipients || "-"}</TableCell>
+                    <TableCell>
                       <div className="space-y-1">
                         {row.supporting_movs ? (
                           <a
@@ -519,38 +531,43 @@ export default function AwardsRecognitionPage() {
                           ? "-"
                           : null}
                       </div>
-                    </td>
-                    <td>
-                      <div className="flex flex-wrap gap-2">
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex items-center justify-end gap-1">
                         {isAdmin ? (
                           <>
-                            <button
-                              type="button"
-                              className="btn btn-outline"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => openEdit(row)}
+                              aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
+                              title="Edit"
                             >
-                              <PencilLine size={14} />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline"
+                              <PencilLine className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
                               onClick={() => setDeleteTarget(row)}
+                              aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
+                              title="Delete"
                             >
-                              <Trash2 size={14} />
-                              Delete
-                            </button>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </>
                         ) : null}
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
 
       <PaginationControls
         page={currentPage}
