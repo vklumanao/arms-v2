@@ -1,3 +1,8 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
 export default function ReferenceCard({
   icon,
   title,
@@ -12,36 +17,35 @@ export default function ReferenceCard({
   listClassName = "",
 }) {
   return (
-    <article className={`panel ${className}`.trim()}>
-      <header className="panel-header flex items-start justify-between gap-3">
+    <Card className={className}>
+      <CardHeader className="flex items-start justify-between gap-3 space-y-0">
         <div className="space-y-1">
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
             Reference Data
           </p>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900">
             {icon}
             {title}
-          </h2>
+          </CardTitle>
           <p className="text-xs text-slate-500">{subtitle}</p>
         </div>
-        <span className="status-chip status-ongoing">{items.length} items</span>
-      </header>
+        <Badge variant="outline">{items.length} items</Badge>
+      </CardHeader>
 
-      <div className="panel-body space-y-3">
+      <CardContent className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            className="control-input"
+          <Input
             placeholder={placeholder}
             value={value}
             onChange={onChange}
           />
-          <button className="btn btn-primary sm:min-w-28" onClick={onAdd}>
+          <Button className="sm:min-w-28" onClick={onAdd}>
             Add
-          </button>
+          </Button>
         </div>
 
         <div
-          className={`max-h-64 overflow-auto app-card-muted app-card-micro ${listClassName}`.trim()}
+          className={`max-h-64 overflow-auto rounded-md border bg-muted/30 p-2 ${listClassName}`.trim()}
         >
           {items.length === 0 ? (
             <p className="px-2 py-3 text-sm text-slate-500">
@@ -53,7 +57,7 @@ export default function ReferenceCard({
             </ul>
           )}
         </div>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }
