@@ -2,6 +2,21 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   isLikelyUrl,
   validatePasswordStrength,
@@ -34,6 +49,7 @@ const INITIAL_PASSWORD_FORM = {
 export default function AffiliateProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const { centers, departments, error: referenceError } = useReferenceData();
+  const NONE_SELECT_VALUE = "__none__";
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -197,27 +213,27 @@ export default function AffiliateProfilePage() {
       />
 
       {loading ? (
-        <div className="panel">
-          <div className="panel-body text-sm text-slate-600">
+        <Card>
+          <CardContent className="p-5 text-sm text-slate-600">
             Loading profile...
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : (
         <div className="page-stack">
-          <form className="panel overflow-hidden" onSubmit={saveProfile}>
-            <div className="panel-header">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Profile Details
-              </h2>
-            </div>
-            <div className="panel-body grid gap-4">
+          <form onSubmit={saveProfile}>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Profile Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 p-5">
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Full name
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     value={form.full_name || ""}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -231,33 +247,43 @@ export default function AffiliateProfilePage() {
                   <span className="font-semibold text-slate-700">
                     Department
                   </span>
-                  <select
-                    className="control-select"
-                    value={form.ckan_group_id || ""}
-                    onChange={(e) => {
+                  <Select
+                    value={form.ckan_group_id || NONE_SELECT_VALUE}
+                    onValueChange={(value) => {
+                      if (value === NONE_SELECT_VALUE) {
+                        setForm((prev) => ({
+                          ...prev,
+                          ckan_group_id: "",
+                          department: "",
+                        }));
+                        return;
+                      }
                       const selected = (departments || []).find(
                         (row) =>
                           String(row?.id || "")
                             .trim()
                             .toLowerCase() ===
-                          String(e.target.value || "")
-                            .trim()
-                            .toLowerCase(),
+                          String(value || "").trim().toLowerCase(),
                       );
                       setForm((prev) => ({
                         ...prev,
-                        ckan_group_id: e.target.value,
+                        ckan_group_id: value,
                         department: selected?.name || "",
                       }));
                     }}
                   >
-                    <option value="">Select department</option>
-                    {(departments || []).map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                      {(departments || []).map((row) => (
+                        <SelectItem key={row.id} value={row.id}>
+                          {row.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
               </div>
 
@@ -266,30 +292,34 @@ export default function AffiliateProfilePage() {
                   <span className="font-semibold text-slate-700">
                     Research Center
                   </span>
-                  <select
-                    className="control-select"
-                    value={form.ckan_org_id || ""}
-                    onChange={(e) =>
+                  <Select
+                    value={form.ckan_org_id || NONE_SELECT_VALUE}
+                    onValueChange={(value) =>
                       setForm((prev) => ({
                         ...prev,
-                        ckan_org_id: e.target.value,
+                        ckan_org_id:
+                          value === NONE_SELECT_VALUE ? "" : value,
                       }))
                     }
                   >
-                    <option value="">Select research center</option>
-                    {(centers || []).map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select research center" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                      {(centers || []).map((row) => (
+                        <SelectItem key={row.id} value={row.id}>
+                          {row.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Google Scholar Link
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     type="url"
                     placeholder="https://scholar.google.com/..."
                     value={form.google_scholar_link || ""}
@@ -308,27 +338,31 @@ export default function AffiliateProfilePage() {
                   <span className="font-semibold text-slate-700">
                     Employment Status
                   </span>
-                  <select
-                    className="control-select"
-                    value={form.employment_status || ""}
-                    onChange={(e) =>
+                  <Select
+                    value={form.employment_status || NONE_SELECT_VALUE}
+                    onValueChange={(value) =>
                       setForm((prev) => ({
                         ...prev,
-                        employment_status: e.target.value,
+                        employment_status:
+                          value === NONE_SELECT_VALUE ? "" : value,
                       }))
                     }
                   >
-                    <option value="">None</option>
-                    <option value="Permanent">Permanent</option>
-                    <option value="Lecturer">Lecturer</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                      <SelectItem value="Permanent">Permanent</SelectItem>
+                      <SelectItem value="Lecturer">Lecturer</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="space-y-1 text-sm sm:col-span-2">
                   <span className="font-semibold text-slate-700">
                     Designation
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     placeholder="e.g. Department Head, Program Chair"
                     value={form.designation || ""}
                     onChange={(e) =>
@@ -356,30 +390,31 @@ export default function AffiliateProfilePage() {
               </label>
 
               <div className="flex justify-end">
-                <button className="btn btn-primary" disabled={saving}>
+                <Button disabled={saving}>
                   {saving ? "Saving..." : "Save Profile"}
-                </button>
+                </Button>
               </div>
-            </div>
+              </CardContent>
+            </Card>
           </form>
 
           <form
-            className="panel overflow-hidden"
             onSubmit={requestPasswordChange}
           >
-            <div className="panel-header">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Change Password
-              </h2>
-            </div>
-            <div className="panel-body grid gap-3 sm:grid-cols-3">
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Change Password
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 p-5 sm:grid-cols-3">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Current Password
                 </span>
                 <div className="relative">
-                  <input
-                    className="control-input pr-10"
+                  <Input
+                    className="pr-10"
                     type={showPassword.current ? "text" : "password"}
                     value={passwordForm.current_password}
                     onChange={(e) =>
@@ -389,9 +424,11 @@ export default function AffiliateProfilePage() {
                       }))
                     }
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
                     aria-label={
                       showPassword.current
                         ? "Hide current password"
@@ -409,7 +446,7 @@ export default function AffiliateProfilePage() {
                     ) : (
                       <Eye size={16} />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </label>
 
@@ -418,8 +455,8 @@ export default function AffiliateProfilePage() {
                   New Password
                 </span>
                 <div className="relative">
-                  <input
-                    className="control-input pr-10"
+                  <Input
+                    className="pr-10"
                     type={showPassword.next ? "text" : "password"}
                     value={passwordForm.new_password}
                     onChange={(e) =>
@@ -429,9 +466,11 @@ export default function AffiliateProfilePage() {
                       }))
                     }
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
                     aria-label={
                       showPassword.next
                         ? "Hide new password"
@@ -446,7 +485,7 @@ export default function AffiliateProfilePage() {
                     ) : (
                       <Eye size={16} />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </label>
 
@@ -455,8 +494,8 @@ export default function AffiliateProfilePage() {
                   Confirm New Password
                 </span>
                 <div className="relative">
-                  <input
-                    className="control-input pr-10"
+                  <Input
+                    className="pr-10"
                     type={showPassword.confirm ? "text" : "password"}
                     value={passwordForm.confirm_password}
                     onChange={(e) =>
@@ -466,9 +505,11 @@ export default function AffiliateProfilePage() {
                       }))
                     }
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
                     aria-label={
                       showPassword.confirm
                         ? "Hide confirm password"
@@ -486,7 +527,7 @@ export default function AffiliateProfilePage() {
                     ) : (
                       <Eye size={16} />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </label>
 
@@ -495,13 +536,12 @@ export default function AffiliateProfilePage() {
                   Password must be at least 8 characters and include uppercase,
                   lowercase, and a number.
                 </p>
-                <button
-                  className="btn btn-primary"
+                <Button
                   disabled={changingPassword}
                   type="submit"
                 >
                   {changingPassword ? "Updating..." : "Update Password"}
-                </button>
+                </Button>
               </div>
 
               {passwordError ? (
@@ -509,7 +549,8 @@ export default function AffiliateProfilePage() {
                   {passwordError}
                 </p>
               ) : null}
-            </div>
+              </CardContent>
+            </Card>
           </form>
         </div>
       )}
