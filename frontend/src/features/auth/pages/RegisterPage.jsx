@@ -7,11 +7,22 @@ import {
   isValidEmail,
   validatePasswordStrength,
 } from "@/shared/utils/validation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SIGNUP_COOLDOWN_KEY = "arms_signup_cooldown_until";
 const DEFAULT_SIGNUP_COOLDOWN_SECONDS = 300;
 
 export default function RegisterPage() {
+  const NONE_SELECT_VALUE = "__none__";
   const navigate = useNavigate();
   const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -162,18 +173,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md panel">
-      <div className="panel-header">
+    <section className="mx-auto max-w-md">
+      <Card>
+      <CardHeader>
         <h1 className="text-3xl font-bold text-center">Create Account</h1>
         <p className="mt-1 text-sm text-slate-600 text-center">
           Register as student or faculty to manage research projects.
         </p>
-      </div>
-      <form className="panel-body space-y-3" onSubmit={onSubmit}>
+      </CardHeader>
+      <CardContent>
+      <form className="space-y-3" onSubmit={onSubmit}>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Full name</span>
-          <input
-            className="control-input"
+          <Input
             placeholder="Enter your full name"
             required
             value={form.full_name}
@@ -184,8 +196,7 @@ export default function RegisterPage() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Email</span>
-          <input
-            className="control-input"
+          <Input
             placeholder="Enter your email address"
             type="email"
             required
@@ -196,8 +207,8 @@ export default function RegisterPage() {
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Password</span>
           <div className="relative">
-            <input
-              className="control-input pr-16"
+            <Input
+              className="pr-10"
               placeholder="Create a password"
               type={showPassword ? "text" : "password"}
               required
@@ -206,80 +217,107 @@ export default function RegisterPage() {
                 setForm((p) => ({ ...p, password: e.target.value }))
               }
             />
-            <button
+            <Button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            </Button>
           </div>
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Role</span>
-          <select
-            className="control-select"
+          <Select
             value={form.role}
-            onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+            onValueChange={(value) => setForm((p) => ({ ...p, role: value }))}
           >
-            <option value="student">Student</option>
-            <option value="faculty">Faculty</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student">Student</SelectItem>
+              <SelectItem value="faculty">Faculty</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Research Center</span>
-          <select
-            className="control-select"
-            value={form.ckan_org_id}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, ckan_org_id: e.target.value }))
+          <Select
+            value={form.ckan_org_id || NONE_SELECT_VALUE}
+            onValueChange={(value) =>
+              setForm((p) => ({
+                ...p,
+                ckan_org_id: value === NONE_SELECT_VALUE ? "" : value,
+              }))
             }
             disabled={ckanLoading}
           >
-            <option value="">
-              {ckanLoading
-                ? "Loading Research Centers..."
-                : "Optional: Select Research Center"}
-            </option>
-            {ckanOrganizations.map((org) => (
-              <option key={org.id} value={org.name || org.id}>
-                {org.title || org.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  ckanLoading
+                    ? "Loading Research Centers..."
+                    : "Optional: Select Research Center"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE_SELECT_VALUE}>
+                Optional: Select Research Center
+              </SelectItem>
+              {ckanOrganizations.map((org) => (
+                <SelectItem key={org.id} value={org.name || org.id}>
+                  {org.title || org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Department</span>
-          <select
-            className="control-select"
-            value={form.ckan_group_id}
-            onChange={(e) =>
+          <Select
+            value={form.ckan_group_id || NONE_SELECT_VALUE}
+            onValueChange={(value) =>
               setForm((p) => {
+                if (value === NONE_SELECT_VALUE) {
+                  return { ...p, ckan_group_id: "", department: "" };
+                }
                 const selectedGroup = ckanGroups.find(
-                  (group) =>
-                    String(group.name || group.id) === String(e.target.value),
+                  (group) => String(group.name || group.id) === String(value),
                 );
                 return {
                   ...p,
-                  ckan_group_id: e.target.value,
+                  ckan_group_id: value,
                   department: selectedGroup?.title || selectedGroup?.name || "",
                 };
               })
             }
             disabled={ckanGroupsLoading}
           >
-            <option value="">
-              {ckanGroupsLoading
-                ? "Loading CKAN groups..."
-                : "Optional: Select department"}
-            </option>
-            {ckanGroups.map((group) => (
-              <option key={group.id} value={group.name || group.id}>
-                {group.title || group.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  ckanGroupsLoading
+                    ? "Loading CKAN groups..."
+                    : "Optional: Select department"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE_SELECT_VALUE}>
+                Optional: Select department
+              </SelectItem>
+              {ckanGroups.map((group) => (
+                <SelectItem key={group.id} value={group.name || group.id}>
+                  {group.title || group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
 
         {ckanError && (
@@ -291,24 +329,26 @@ export default function RegisterPage() {
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         {message && <p className="text-sm text-[var(--success)]">{message}</p>}
 
-        <button
+        <Button
           disabled={loading || cooldownSeconds > 0}
-          className="btn btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full"
         >
           {loading
             ? "Creating account..."
             : cooldownSeconds > 0
               ? `Retry in ${cooldownSeconds}s`
               : "Register"}
-        </button>
+        </Button>
       </form>
+      </CardContent>
 
-      <p className="px-6 pb-6 text-sm text-slate-600">
+      <CardFooter className="text-sm text-slate-600">
         Already have an account?{" "}
         <Link className="text-blue-700" to="/login">
           Login
         </Link>
-      </p>
+      </CardFooter>
+      </Card>
     </section>
   );
 }
