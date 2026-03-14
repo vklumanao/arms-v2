@@ -1407,6 +1407,38 @@ export default function AdminResearchCenterPage() {
     );
   }
 
+  const deleteGuard = (() => {
+    if (!deletingRow) {
+      return {
+        blocked: false,
+        confirmLabel: "Delete",
+        message: "",
+      };
+    }
+
+    const projectCount = Number(deletingRow?.projectCount || 0);
+    const editorCount = Number(deletingRow?.memberBreakdown?.editorCount || 0);
+    const memberCount = Number(deletingRow?.memberBreakdown?.memberCount || 0);
+    const nonAdminAffiliates = editorCount + memberCount;
+
+    const reasons = [];
+    if (projectCount > 0) reasons.push(`${projectCount} linked project(s)`);
+    if (nonAdminAffiliates > 0) {
+      reasons.push(`${nonAdminAffiliates} linked affiliate(s)`);
+    }
+
+    const blocked = reasons.length > 0;
+    const name = String(deletingRow?.name || "").trim();
+
+    return {
+      blocked,
+      confirmLabel: blocked ? "Close" : "Delete",
+      message: blocked
+        ? `Cannot delete "${name}". This research center has ${reasons.join(" and ")}. Remove/reassign them first.`
+        : `Delete "${name}"? This action cannot be undone.`,
+    };
+  })();
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -2073,12 +2105,12 @@ export default function AdminResearchCenterPage() {
       <ConfirmActionModal
         open={Boolean(deletingRow)}
         title="Delete Research Center"
-        message={`Delete "${deletingRow?.name || ""}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        message={deleteGuard.message}
+        confirmLabel={deleteGuard.confirmLabel}
         align="center"
-        loading={actionLoading}
+        loading={deleteGuard.blocked ? false : actionLoading}
         onCancel={() => setDeletingRow(null)}
-        onConfirm={confirmDelete}
+        onConfirm={deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete}
       />
 
       {editModalOpen ? (
