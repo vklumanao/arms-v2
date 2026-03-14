@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import { normalizeStatus } from "@/shared/utils/status";
 import {
   ACTIVITY_PAGE_SIZE,
@@ -22,7 +42,6 @@ import {
   filterDashboardProjects,
   findDashboardDeadlineAlerts,
   getActivityToneClass,
-  getQuickFilterButtonClass,
   isDashboardNeedsAction,
   paginateItems,
 } from "@/features/dashboard/utils";
@@ -377,6 +396,23 @@ export default function DashboardPage() {
     setRecordsPage(1);
   }, [filters, quickFilter, projects.length, historyRows.length]);
 
+  const statusBadgeClassName = (status) => {
+    if (status === "completed") {
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    }
+    if (status === "ongoing") return "border-sky-200 bg-sky-50 text-sky-900";
+    if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-900";
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  };
+
+  const booleanBadgeClassName = (ok) =>
+    ok
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : "border-slate-200 bg-slate-50 text-slate-700";
+
+  const highlightOutlineButtonClassName =
+    "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]";
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -384,14 +420,14 @@ export default function DashboardPage() {
         description="Monitor proposal lifecycle, filter records, and track upcoming deadlines."
         actions={
           isAdmin ? (
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
               onClick={() => loadData({ silent: true })}
               disabled={refreshing}
             >
               {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+            </Button>
           ) : null
         }
       />
@@ -416,14 +452,14 @@ export default function DashboardPage() {
       {profile?.role && profile.role !== "admin" ? (
         <DashboardPanel
           title="Quick Actions"
-          bodyClassName="panel-body flex flex-wrap gap-2"
+          bodyClassName="p-5 flex flex-wrap gap-2"
         >
-          <Link className="btn btn-primary" to="/submit-project">
-            Open Research Projects
-          </Link>
-          <Link className="btn btn-outline" to="/public-records">
-            Browse Public Records
-          </Link>
+          <Button asChild>
+            <Link to="/submit-project">Open Research Projects</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/public-records">Browse Public Records</Link>
+          </Button>
         </DashboardPanel>
       ) : null}
 
@@ -431,79 +467,96 @@ export default function DashboardPage() {
         <>
           <DashboardPanel
             title="Global Filters"
-            bodyClassName="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+            bodyClassName="p-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
           >
-            <input
-              className="control-input"
+            <Input
               placeholder="Search title"
               value={filters.search}
               onChange={(event) => updateFilter("search", event.target.value)}
             />
 
-            <select
-              className="control-select"
-              value={filters.status}
-              onChange={(event) => updateFilter("status", event.target.value)}
+            <Select
+              value={filters.status || "__all__"}
+              onValueChange={(value) =>
+                updateFilter("status", value === "__all__" ? "" : value)
+              }
             >
-              <option value="">Filter by status</option>
-              {STATUS_FILTER_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status[0].toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All statuses</SelectItem>
+                {STATUS_FILTER_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status[0].toUpperCase() + status.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <input
-              className="control-input"
+            <Input
               placeholder="Year"
               value={filters.year}
               onChange={(event) => updateFilter("year", event.target.value)}
             />
 
-            <select
-              className="control-select"
-              value={filters.center}
-              onChange={(event) => updateFilter("center", event.target.value)}
-            >
-              <option value="">Filter by center</option>
-              {centers.map((center) => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="control-select"
-              value={filters.department}
-              onChange={(event) =>
-                updateFilter("department", event.target.value)
+            <Select
+              value={filters.center || "__all__"}
+              onValueChange={(value) =>
+                updateFilter("center", value === "__all__" ? "" : value)
               }
             >
-              <option value="">Filter by department</option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by center" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All centers</SelectItem>
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={String(center.id)}>
+                    {center.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filters.department || "__all__"}
+              onValueChange={(value) =>
+                updateFilter("department", value === "__all__" ? "" : value)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All departments</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={String(department.id)}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </DashboardPanel>
 
           <DashboardPanel
             title="Quick Filters"
-            bodyClassName="panel-body flex flex-wrap gap-2"
+            bodyClassName="p-5 flex flex-wrap gap-2"
           >
             {QUICK_FILTER_OPTIONS.map((option) => (
-              <button
+              <Button
                 key={option.value}
                 type="button"
-                className={getQuickFilterButtonClass(
-                  quickFilter === option.value,
+                variant="outline"
+                className={cn(
+                  quickFilter === option.value
+                    ? highlightOutlineButtonClassName
+                    : null,
                 )}
                 onClick={() => setQuickFilter(option.value)}
               >
                 {option.label}
-              </button>
+              </Button>
             ))}
           </DashboardPanel>
         </>
@@ -542,11 +595,13 @@ export default function DashboardPage() {
 
         <DashboardPanel title="Lifecycle Status Breakdown (Stacked Bar)">
           {lifecycleBreakdown.length === 0 ? (
-            <div className="app-card app-card-compact">
-              <p className="text-sm text-slate-600">
-                No lifecycle data available yet.
-              </p>
-            </div>
+            <Card className="shadow-none">
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-600">
+                  No lifecycle data available yet.
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <ChartFrame height={300}>
               <BarChart
@@ -593,138 +648,170 @@ export default function DashboardPage() {
           <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
             <DashboardPanel title="Research Centers Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Total centers</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.totalCenters}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Active centers</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.activeCenters}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    Centers with no projects
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.centersWithNoProjects}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Total agenda count</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.totalAgenda}
-                  </p>
-                </div>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Total centers</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.researchCenters.totalCenters}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Active centers</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.researchCenters.activeCenters}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      Centers with no projects
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.researchCenters.centersWithNoProjects}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Total agenda count</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.researchCenters.totalAgenda}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </DashboardPanel>
 
             <DashboardPanel title="Affiliates Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Total affiliates</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.totalAffiliates}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Active vs inactive</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.activeAffiliates} /{" "}
-                    {adminSummaries.affiliates.inactiveAffiliates}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Faculty vs student</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.facultyCount} /{" "}
-                    {adminSummaries.affiliates.studentCount}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    Top departments by affiliate count
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {(topDepartmentsByAffiliate[0] &&
-                      `${topDepartmentsByAffiliate[0].label} (${topDepartmentsByAffiliate[0].count})`) ||
-                      "-"}
-                  </p>
-                </div>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Total affiliates</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.affiliates.totalAffiliates}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Active vs inactive</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.affiliates.activeAffiliates} /{" "}
+                      {adminSummaries.affiliates.inactiveAffiliates}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Faculty vs student</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.affiliates.facultyCount} /{" "}
+                      {adminSummaries.affiliates.studentCount}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      Top departments by affiliate count
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {(topDepartmentsByAffiliate[0] &&
+                        `${topDepartmentsByAffiliate[0].label} (${topDepartmentsByAffiliate[0].count})`) ||
+                        "-"}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </DashboardPanel>
 
             <DashboardPanel title="Research Projects Summary">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Total projects</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.totalProjects}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    This year submissions
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.thisYear}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact sm:col-span-2">
-                  <p className="text-xs text-slate-500">By status</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Proposal {adminSummaries.projects.proposal} | Ongoing{" "}
-                    {adminSummaries.projects.ongoing} | Completed{" "}
-                    {adminSummaries.projects.completed} | Rejected{" "}
-                    {adminSummaries.projects.rejected}
-                  </p>
-                </div>
-                <div className="app-card app-card-compact sm:col-span-2">
-                  <p className="text-xs text-slate-500">
-                    Projects nearing deadline
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.nearingDeadline}
-                  </p>
-                </div>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Total projects</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.projects.totalProjects}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      This year submissions
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.projects.thisYear}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none sm:col-span-2">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">By status</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Proposal {adminSummaries.projects.proposal} | Ongoing{" "}
+                      {adminSummaries.projects.ongoing} | Completed{" "}
+                      {adminSummaries.projects.completed} | Rejected{" "}
+                      {adminSummaries.projects.rejected}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none sm:col-span-2">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      Projects nearing deadline
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {adminSummaries.projects.nearingDeadline}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </DashboardPanel>
 
             <DashboardPanel title="Cross-Module Health Widget">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    % projects with assigned center
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.projectCenterPct}%
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    % projects with assigned agenda
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.projectAgendaPct}%
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">
-                    % affiliates with center assignment
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.affiliateCenterPct}%
-                  </p>
-                </div>
-                <div className="app-card app-card-compact">
-                  <p className="text-xs text-slate-500">Data quality score</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.dataQualityScore}%
-                  </p>
-                </div>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      % projects with assigned center
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {crossModuleHealth.projectCenterPct}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      % projects with assigned agenda
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {crossModuleHealth.projectAgendaPct}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">
+                      % affiliates with center assignment
+                    </p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {crossModuleHealth.affiliateCenterPct}%
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-slate-500">Data quality score</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {crossModuleHealth.dataQualityScore}%
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </DashboardPanel>
           </div>
@@ -738,7 +825,7 @@ export default function DashboardPage() {
                   topCentersByProject.map((item) => (
                     <li
                       key={item.label}
-                      className="app-card app-card-micro flex items-center justify-between"
+                      className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -762,7 +849,7 @@ export default function DashboardPage() {
                   topAgendaByUsage.map((item) => (
                     <li
                       key={item.label}
-                      className="app-card app-card-micro flex items-center justify-between"
+                      className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -786,7 +873,7 @@ export default function DashboardPage() {
                   topDepartmentsByProject.map((item) => (
                     <li
                       key={item.label}
-                      className="app-card app-card-micro flex items-center justify-between"
+                      className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
                     >
                       <span className="text-sm text-slate-700">
                         {item.label}
@@ -810,7 +897,10 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentSubmittedProjects.map((project) => (
-                    <li key={project.id} className="app-card app-card-micro">
+                    <li
+                      key={project.id}
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
+                    >
                       <p className="text-sm font-medium text-slate-900">
                         {project.title}
                       </p>
@@ -831,7 +921,10 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentUpdatedAffiliates.map((affiliate) => (
-                    <li key={affiliate.id} className="app-card app-card-micro">
+                    <li
+                      key={affiliate.id}
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
+                    >
                       <p className="text-sm font-medium text-slate-900">
                         {affiliate.full_name || affiliate.email || affiliate.id}
                       </p>
@@ -854,7 +947,10 @@ export default function DashboardPage() {
                   </li>
                 ) : (
                   recentCentersActivity.map((center) => (
-                    <li key={center.id} className="app-card app-card-micro">
+                    <li
+                      key={center.id}
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
+                    >
                       <p className="text-sm font-medium text-slate-900">
                         {center.name}
                       </p>
@@ -891,52 +987,72 @@ export default function DashboardPage() {
                       hasAbstract && hasOutputs && status !== "proposal";
 
                     return (
-                      <article
-                        key={record.id}
-                        className="app-card app-card-compact"
-                      >
-                        <p className="text-sm font-semibold text-slate-900">
-                          {record.title}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.08em] text-slate-500">
-                          {record.year || "-"} |{" "}
-                          {centerById[record.research_center_id] ||
-                            "Unknown Center"}{" "}
-                          |{" "}
-                          {departmentById[record.department_id] ||
-                            "Unknown Department"}{" "}
-                          | {record.classification || "unspecified"} | {status}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className={`status-chip status-${status}`}>
-                            {status}
-                          </span>
-                          <span className="status-chip status-ongoing">
-                            {hasAbstract ? "Has abstract" : "No abstract"}
-                          </span>
-                          <span className="status-chip status-ongoing">
-                            {hasTimeline ? "Has timeline" : "No timeline"}
-                          </span>
-                          <span className="status-chip status-ongoing">
-                            {hasOutputs ? "Has outputs" : "No outputs"}
-                          </span>
-                          <span
-                            className={`status-chip ${
-                              isReady ? "status-completed" : "status-rejected"
-                            }`}
-                          >
-                            {isReady ? "Public-ready" : "Needs enrichment"}
-                          </span>
-                          {isDashboardNeedsAction(
-                            record,
-                            profile?.role || "",
-                          ) ? (
-                            <span className="status-chip status-proposal">
-                              Needs action
-                            </span>
-                          ) : null}
-                        </div>
-                      </article>
+                      <Card key={record.id} className="shadow-none">
+                        <CardContent className="p-4">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {record.title}
+                          </p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.08em] text-slate-500">
+                            {record.year || "-"} |{" "}
+                            {centerById[record.research_center_id] ||
+                              "Unknown Center"}{" "}
+                            |{" "}
+                            {departmentById[record.department_id] ||
+                              "Unknown Department"}{" "}
+                            | {record.classification || "unspecified"} | {status}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "capitalize",
+                                statusBadgeClassName(status),
+                              )}
+                            >
+                              {status}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={booleanBadgeClassName(hasAbstract)}
+                            >
+                              {hasAbstract ? "Has abstract" : "No abstract"}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={booleanBadgeClassName(hasTimeline)}
+                            >
+                              {hasTimeline ? "Has timeline" : "No timeline"}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={booleanBadgeClassName(hasOutputs)}
+                            >
+                              {hasOutputs ? "Has outputs" : "No outputs"}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                isReady
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                  : "border-rose-200 bg-rose-50 text-rose-900",
+                              )}
+                            >
+                              {isReady ? "Public-ready" : "Needs enrichment"}
+                            </Badge>
+                            {isDashboardNeedsAction(
+                              record,
+                              profile?.role || "",
+                            ) ? (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-200 bg-amber-50 text-amber-900"
+                              >
+                                Needs action
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
@@ -989,49 +1105,57 @@ export default function DashboardPage() {
             title={`Records (${filtered.length})`}
             className="overflow-hidden"
           >
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Year</th>
-                    <th>Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4}>Loading records...</td>
-                    </tr>
-                  ) : filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={4}>
-                        No records found for selected filters.
-                      </td>
-                    </tr>
-                  ) : (
-                    recordsPagination.items.map((project) => {
-                      const status = normalizeStatus(project.status);
-                      return (
-                        <tr key={project.id}>
-                          <td>{project.title}</td>
-                          <td>
-                            <span className={`status-chip status-${status}`}>
-                              {status}
-                            </span>
-                          </td>
-                          <td>{project.year}</td>
-                          <td>
-                            {new Date(project.updated_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Table className="min-w-[520px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Year</TableHead>
+                  <TableHead>Updated</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-slate-600">
+                      Loading records...
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-slate-600">
+                      No records found for selected filters.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  recordsPagination.items.map((project) => {
+                    const status = normalizeStatus(project.status);
+                    return (
+                      <TableRow key={project.id}>
+                        <TableCell className="min-w-[240px] font-medium text-slate-900">
+                          {project.title}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "capitalize",
+                              statusBadgeClassName(status),
+                            )}
+                          >
+                            {status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{project.year}</TableCell>
+                        <TableCell>
+                          {new Date(project.updated_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
             <PaginationControls
               page={recordsPagination.page}
               totalPages={recordsPagination.totalPages}
@@ -1042,25 +1166,31 @@ export default function DashboardPage() {
 
           <DashboardPanel title="Upcoming Deadlines">
             {alerts.length === 0 ? (
-              <div className="app-card app-card-compact">
-                <p className="text-sm font-semibold text-slate-800">
-                  No upcoming deadlines
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  No ongoing projects are due within the next 14 days.
-                </p>
-              </div>
+              <Card className="shadow-none">
+                <CardContent className="p-4">
+                  <p className="text-sm font-semibold text-slate-800">
+                    No upcoming deadlines
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    No ongoing projects are due within the next 14 days.
+                  </p>
+                </CardContent>
+              </Card>
             ) : (
               <div className="space-y-3">
                 <ul className="space-y-2 text-sm">
                   {alerts.slice(0, 5).map((alert) => (
-                    <li key={alert.id} className="app-card app-card-compact">
-                      <p className="font-semibold text-slate-900">
-                        {alert.title}
-                      </p>
-                      <p className="text-slate-600">
-                        Due {new Date(alert.end_date).toLocaleDateString()}
-                      </p>
+                    <li key={alert.id}>
+                      <Card className="shadow-none">
+                        <CardContent className="p-4">
+                          <p className="font-semibold text-slate-900">
+                            {alert.title}
+                          </p>
+                          <p className="text-slate-600">
+                            Due {new Date(alert.end_date).toLocaleDateString()}
+                          </p>
+                        </CardContent>
+                      </Card>
                     </li>
                   ))}
                 </ul>
@@ -1070,14 +1200,16 @@ export default function DashboardPage() {
                   </p>
                   <div className="grid gap-2">
                     {deadlineCalendar.slice(0, 4).map((item) => (
-                      <div key={item.id} className="app-card app-card-micro">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {item.title}
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          Due {new Date(item.end_date).toLocaleDateString()}
-                        </p>
-                      </div>
+                      <Card key={item.id} className="shadow-none">
+                        <CardContent className="p-3">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            Due {new Date(item.end_date).toLocaleDateString()}
+                          </p>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
