@@ -1,17 +1,22 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
 export default function DashboardPanel({
   title,
   children,
   className = "",
-  bodyClassName = "panel-body",
+  bodyClassName = "p-5",
 }) {
   return (
-    <section className={`panel ${className}`.trim()}>
-      <div className="panel-header">
-        <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-          {title}
-        </h2>
-      </div>
-      <div className={bodyClassName}>{children}</div>
+    <section className={className}>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b px-5 py-4">
+          <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className={cn(bodyClassName)}>{children}</CardContent>
+      </Card>
     </section>
   );
 }
