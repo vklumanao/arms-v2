@@ -1,4 +1,14 @@
-﻿export default function ConfirmActionModal({
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+export default function ConfirmActionModal({
   open,
   title,
   message,
@@ -9,38 +19,45 @@
   onConfirm,
   onCancel,
 }) {
-  if (!open) return null;
-
   return (
-    <div
-      className={`modal-overlay ${
-        align === "center" ? "modal-overlay-centered" : ""
-      }`}
-      onClick={() => (loading ? null : onCancel?.())}
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !loading) onCancel?.();
+      }}
     >
-      <div
-        className="modal-dialog modal-dialog-md"
-        onClick={(event) => event.stopPropagation()}
+      <DialogContent
+        className={
+          align === "center"
+            ? "top-1/2"
+            : "top-[14%] -translate-y-0 sm:top-[18%]"
+        }
+        onInteractOutside={(event) => {
+          if (loading) event.preventDefault();
+        }}
       >
-        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-        <p className="mt-2 text-sm text-slate-600">{message}</p>
-        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            className="btn btn-outline w-full sm:w-auto"
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
             onClick={onCancel}
             disabled={loading}
           >
             {cancelLabel}
-          </button>
-          <button
-            className="btn btn-primary w-full sm:w-auto"
+          </Button>
+          <Button
+            className="w-full sm:w-auto"
             onClick={onConfirm}
             disabled={loading}
           >
             {loading ? "Processing..." : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
