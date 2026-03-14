@@ -1,9 +1,28 @@
-﻿import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import AppFooter from "@/shared/components/layout/AppFooter";
 import NotificationPanel from "@/shared/components/navigation/NotificationPanel";
 import Breadcrumbs from "@/shared/components/navigation/Breadcrumbs";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   hasPermission,
   PERMISSIONS,
@@ -13,9 +32,13 @@ import {
   Award,
   Building2,
   ChartNoAxesColumn,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronDown,
   Database,
-  FolderTree,
   FolderOpen,
+  FolderTree,
+  LogOut,
   Menu,
   Settings,
   User,
@@ -26,23 +49,33 @@ import {
 
 const DESKTOP_SIDEBAR_BREAKPOINT = 1100;
 
+function getInitials(value) {
+  const name = String(value || "").trim();
+  if (!name) return "U";
+  const parts = name.split(/\s+/).filter(Boolean);
+  const letters = parts.slice(0, 2).map((part) => part[0]?.toUpperCase());
+  return letters.join("") || "U";
+}
+
 export default function AppShell() {
   const { user, profile, profileLoading, signOut } = useAuth();
   const location = useLocation();
+
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" && typeof window.matchMedia === "function"
       ? window.matchMedia(`(min-width: ${DESKTOP_SIDEBAR_BREAKPOINT}px)`)
           .matches
       : true,
   );
+
   const [, setPermissionVersion] = useState(0);
   const desktopSidebarScrollRef = useRef(null);
   const mobileSidebarScrollRef = useRef(null);
   const desktopSidebarScrollTopRef = useRef(0);
   const mobileSidebarScrollTopRef = useRef(0);
-  const mobileNavLockScrollYRef = useRef(0);
 
   const isAuthPage = [
     "/login",
@@ -50,6 +83,7 @@ export default function AppShell() {
     "/forgot-password",
     "/reset-password",
   ].includes(location.pathname);
+
   const shouldShowPublicFooter = [
     "/",
     "/home",
@@ -69,38 +103,37 @@ export default function AppShell() {
     [],
   );
 
-  const handleNavToggle = () => {
-    if (isDesktop) {
-      setSidebarCollapsed((prev) => !prev);
-      return;
-    }
+  const isHomeActive =
+    (location.pathname === "/" || location.pathname === "/home") &&
+    (!location.hash || location.hash === "#home" || location.hash === "");
+  const isAboutActive =
+    location.pathname === "/about" ||
+    ((location.pathname === "/" || location.pathname === "/home") &&
+      location.hash === "#about");
+  const isLandingPage =
+    location.pathname === "/" ||
+    location.pathname === "/home" ||
+    location.pathname === "/about";
+  const shouldShowSidebar = Boolean(profile) || !isLandingPage;
+  const isAuthRoute = location.pathname === "/login";
 
-    setMobileNavOpen(true);
+  const landingLinkClass = (to) => {
+    const isActive =
+      (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
+    return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+      isActive
+        ? "bg-[var(--brand-soft)] text-[var(--brand)]"
+        : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]"
+    }`;
   };
 
-  const NavSection = ({ title, links }) => (
-    <section className="space-y-1">
-      <h3 className="nav-section-title">{title}</h3>
-      {links
-        .filter((item) => hasPermission(profile?.role, item.permission))
-        .map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileNavOpen(false)}
-              className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
-              }
-            >
-              <Icon size={15} />
-              <span>{item.label}</span>
-            </NavLink>
-          );
-        })}
-    </section>
-  );
+  const handleNavToggle = () => {
+    if (isDesktop) {
+      setDesktopSidebarOpen((prev) => !prev);
+      return;
+    }
+    setMobileNavOpen(true);
+  };
 
   const adminGovernanceLinks = useMemo(
     () => [
@@ -211,49 +244,52 @@ export default function AppShell() {
   const isAcademicRole = ["student", "faculty"].includes(profile?.role || "");
   const isAdminRole = profile?.role === "admin";
 
-  const workspaceNav = isAcademicRole ? (
-    <div className="space-y-5">
-      <NavSection title="Core Modules" links={workspaceCoreLinks} />
-      <NavSection title="Research Modules" links={workspaceResearchLinks} />
-      <NavSection title="Profile" links={workspaceProfileLinks} />
-    </div>
-  ) : isAdminRole ? (
-    <div className="space-y-5">
-      <NavSection title="Core Modules" links={workspaceCoreLinks} />
-      <NavSection title="Research Modules" links={workspaceResearchLinks} />
-      <NavSection title="Profile" links={workspaceProfileLinks} />
-    </div>
-  ) : (
-    <NavSection title="Workspace" links={workspaceLinks} />
-  );
+  const navGroups = useMemo(() => {
+    if (!profile) return [];
 
-  const adminNav = (
-    <div className="space-y-5">
-      <NavSection title="Admin Governance" links={adminGovernanceLinks} />
-    </div>
-  );
+    const groups = [];
 
-  const workspaceAndAdminNav = (
-    <>
-      {profile ? workspaceNav : null}
-      {profile?.role === "admin" ? adminNav : null}
-    </>
-  );
+    if (isAcademicRole || isAdminRole) {
+      groups.push(
+        { key: "core", title: "Core Modules", links: workspaceCoreLinks },
+        { key: "research", title: "Research Modules", links: workspaceResearchLinks },
+        { key: "profile", title: "Profile", links: workspaceProfileLinks },
+      );
+    } else {
+      groups.push({ key: "workspace", title: "Workspace", links: workspaceLinks });
+    }
 
-  const isHomeActive =
-    (location.pathname === "/" || location.pathname === "/home") &&
-    (!location.hash || location.hash === "#home" || location.hash === "");
-  const isAboutActive =
-    location.pathname === "/about" ||
-    ((location.pathname === "/" || location.pathname === "/home") &&
-      location.hash === "#about");
-  const isLandingPage =
-    location.pathname === "/" ||
-    location.pathname === "/home" ||
-    location.pathname === "/about";
-  const shouldShowSidebar = Boolean(profile) || !isLandingPage;
-  const isShellCollapsed = sidebarCollapsed || !shouldShowSidebar;
-  const isAuthRoute = location.pathname === "/login";
+    if (profile.role === "admin") {
+      groups.push({
+        key: "admin",
+        title: "Admin Governance",
+        links: adminGovernanceLinks,
+      });
+    }
+
+    return groups;
+  }, [
+    adminGovernanceLinks,
+    isAcademicRole,
+    isAdminRole,
+    profile,
+    workspaceCoreLinks,
+    workspaceLinks,
+    workspaceProfileLinks,
+    workspaceResearchLinks,
+  ]);
+
+  const visibleGroups = useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.links
+            .filter((item) => hasPermission(profile?.role, item.permission))
+        }))
+        .filter((group) => group.items.length > 0),
+    [navGroups, profile?.role],
+  );
 
   useEffect(() => {
     if (!(location.pathname === "/" || location.pathname === "/home")) return;
@@ -281,12 +317,10 @@ export default function AppShell() {
 
   useLayoutEffect(() => {
     if (desktopSidebarScrollRef.current) {
-      desktopSidebarScrollRef.current.scrollTop =
-        desktopSidebarScrollTopRef.current;
+      desktopSidebarScrollRef.current.scrollTop = desktopSidebarScrollTopRef.current;
     }
     if (mobileSidebarScrollRef.current) {
-      mobileSidebarScrollRef.current.scrollTop =
-        mobileSidebarScrollTopRef.current;
+      mobileSidebarScrollRef.current.scrollTop = mobileSidebarScrollTopRef.current;
     }
   }, [location.pathname]);
 
@@ -310,34 +344,6 @@ export default function AppShell() {
   }, [isDesktop]);
 
   useEffect(() => {
-    if (!mobileNavOpen) {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      return;
-    }
-    mobileNavLockScrollYRef.current = window.scrollY || window.pageYOffset || 0;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${mobileNavLockScrollYRef.current}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      window.scrollTo(0, mobileNavLockScrollYRef.current || 0);
-    };
-  }, [mobileNavOpen]);
-
-  useEffect(() => {
     const handlePermissionsUpdated = () => {
       setPermissionVersion((prev) => prev + 1);
     };
@@ -353,20 +359,201 @@ export default function AppShell() {
     };
   }, []);
 
-  const landingLinkClass = (to) => {
-    const isActive =
-      (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
-    return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
-      isActive
-        ? "bg-[var(--brand-soft)] text-[var(--brand)]"
-        : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]"
-    }`;
+  const NavItem = ({ item, onNavigate }) => {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        to={item.to}
+        onClick={onNavigate}
+        className={({ isActive }) =>
+          cn(
+            "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition-colors",
+            "hover:bg-muted hover:text-slate-900",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            isActive && "bg-muted text-slate-900",
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <span
+              className={cn(
+                "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-transparent transition",
+                "group-hover:bg-slate-200",
+                isActive && "bg-[var(--brand)]",
+              )}
+              aria-hidden="true"
+            />
+            <Icon className="h-4 w-4 shrink-0 text-slate-500 group-hover:text-slate-700" />
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          </>
+        )}
+      </NavLink>
+    );
+  };
+
+  const SidebarAccount = ({ onNavigate }) => {
+    if (!profile) {
+      return (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-slate-700">
+            Sign in to access your workspace.
+          </p>
+          <Button asChild variant="outline" className="w-full" onClick={onNavigate}>
+            <Link to="/login">Login</Link>
+          </Button>
+        </div>
+      );
+    }
+
+    const initials = getInitials(profile.full_name);
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start gap-3 px-3 py-2.5"
+          >
+            <Avatar className="h-9 w-9">
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-sm font-bold text-slate-900">
+                {profile.full_name}
+              </span>
+              <span className="block truncate text-xs text-slate-600">
+                {profile.role}
+              </span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top" className="w-60">
+          <DropdownMenuLabel className="space-y-0.5">
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {profile.full_name}
+            </p>
+            <p className="truncate text-xs font-normal text-slate-600">
+              {profile.role}
+            </p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/my-profile" onClick={onNavigate}>
+              <span className="flex w-full items-center gap-2">
+                <User className="h-4 w-4" />
+                My Profile
+              </span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              signOut();
+            }}
+          >
+            <span className="flex w-full items-center gap-2 text-red-700">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  const SidebarContent = ({ variant }) => {
+    const onNavigate = variant === "mobile" ? () => setMobileNavOpen(false) : undefined;
+
+    const scrollRef =
+      variant === "mobile" ? mobileSidebarScrollRef : desktopSidebarScrollRef;
+    const scrollTopRef =
+      variant === "mobile" ? mobileSidebarScrollTopRef : desktopSidebarScrollTopRef;
+
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/70 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              to="/home"
+              className="min-w-0 flex-1"
+              onClick={onNavigate}
+            >
+              <div className="leading-tight">
+                <div className="truncate text-lg font-extrabold tracking-tight text-slate-900">
+                  ARMS
+                </div>
+                <div className="truncate text-xs font-medium text-slate-500">
+                  Affiliation and Research Management
+                </div>
+              </div>
+            </Link>
+
+            {variant === "desktop" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Hide sidebar"
+                onClick={() => setDesktopSidebarOpen(false)}
+                className="shrink-0"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          ref={scrollRef}
+          className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1"
+          onScroll={(event) => {
+            scrollTopRef.current = event.currentTarget.scrollTop;
+          }}
+        >
+          {visibleGroups.length === 0 ? (
+            <div className="rounded-md border border-dashed border-[var(--border)] bg-white/60 p-4">
+              <p className="text-sm font-semibold text-slate-800">
+                No navigation items available.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {visibleGroups.map((group, groupIndex) => (
+                <div key={group.key}>
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                      {group.title}
+                    </h3>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {group.items.map((item) => (
+                      <NavItem key={item.to} item={item} onNavigate={onNavigate} />
+                    ))}
+                  </div>
+                  {groupIndex < visibleGroups.length - 1 ? (
+                    <Separator className="my-4" />
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <SidebarAccount onNavigate={onNavigate} />
+        </div>
+      </div>
+    );
   };
 
   if (isAuthPage) {
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="border-b border-[var(--border)] bg-white/88 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <header className="border-b border-border bg-white/88 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-5">
               <Link to="/home" className="flex items-center">
@@ -390,9 +577,9 @@ export default function AppShell() {
                 ))}
               </nav>
               {!isAuthRoute ? (
-                <Link to="/login" className="btn btn-outline">
-                  Login
-                </Link>
+                <Button asChild variant="outline">
+                  <Link to="/login">Login</Link>
+                </Button>
               ) : null}
             </div>
           </div>
@@ -418,49 +605,15 @@ export default function AppShell() {
 
   return (
     <div
-      className={`app-shell ${isShellCollapsed ? "app-shell-collapsed" : ""}`}
+      className={cn(
+        "app-shell",
+        (!shouldShowSidebar || !isDesktop || !desktopSidebarOpen) &&
+          "app-shell-no-sidebar",
+      )}
     >
-      {shouldShowSidebar && !isShellCollapsed && isDesktop ? (
+      {shouldShowSidebar && isDesktop && desktopSidebarOpen ? (
         <aside className="sidebar-shell">
-          <div className="sidebar-brand-panel mb-6">
-            <Link
-              to="/home"
-              className="flex w-full items-center justify-center"
-            >
-              <img
-                src="/arms-logo-v2.svg"
-                alt="ARMS Logo"
-                className="h-24 w-full object-contain"
-              />
-            </Link>
-            <p className="sidebar-tagline">Affiliation & Research Management</p>
-          </div>
-
-          <div
-            ref={desktopSidebarScrollRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
-            onScroll={(event) => {
-              desktopSidebarScrollTopRef.current =
-                event.currentTarget.scrollTop;
-            }}
-          >
-            <div className="space-y-5">{workspaceAndAdminNav}</div>
-          </div>
-
-          {profile ? (
-            <div className="sidebar-user-card">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Signed in as
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-900">
-                {profile.full_name}
-              </p>
-              <p className="text-xs text-slate-600">{profile.role}</p>
-              <button className="btn btn-outline mt-3 w-full" onClick={signOut}>
-                Logout
-              </button>
-            </div>
-          ) : null}
+          <SidebarContent variant="desktop" />
         </aside>
       ) : null}
 
@@ -476,18 +629,22 @@ export default function AppShell() {
                 />
               </Link>
             ) : null}
-            {shouldShowSidebar ? (
-              <button
+
+            {shouldShowSidebar && (!isDesktop || !desktopSidebarOpen) ? (
+              <Button
                 type="button"
-                aria-label={
-                  isShellCollapsed ? "Show navigation" : "Hide navigation"
-                }
-                className="btn btn-outline"
+                aria-label={isDesktop ? "Show navigation" : "Open navigation"}
+                variant="outline"
                 onClick={handleNavToggle}
               >
-                <Menu size={16} />
-              </button>
+                {isDesktop ? (
+                  <ChevronsRight className="h-4 w-4" />
+                ) : (
+                  <Menu size={16} />
+                )}
+              </Button>
             ) : null}
+
             <div className="min-w-0 flex-1">
               <Breadcrumbs />
             </div>
@@ -505,6 +662,7 @@ export default function AppShell() {
                 </Link>
               ))}
             </nav>
+
             {profile ? (
               <div className="shrink-0">
                 <NotificationPanel />
@@ -512,70 +670,39 @@ export default function AppShell() {
             ) : user && profileLoading ? (
               <span className="text-sm text-slate-600">Loading profile...</span>
             ) : (
-              <Link to="/login" className="btn btn-outline">
-                Login
-              </Link>
+              <Button asChild variant="outline">
+                <Link to="/login">Login</Link>
+              </Button>
             )}
           </div>
         </header>
 
-        <main className="page-shell flex-1">
+        <main
+          className={cn(
+            "page-shell flex-1",
+            !shouldShowSidebar && "page-shell-landing",
+          )}
+        >
           <Outlet />
         </main>
       </div>
 
-      {shouldShowSidebar && mobileNavOpen && !isDesktop && (
-        <div
-          className="modal-overlay modal-overlay-sidebar"
-          onClick={() => setMobileNavOpen(false)}
-        >
-          <aside
-            className="flex h-full w-[min(22rem,92vw)] flex-col border-r border-[var(--border)] bg-[var(--surface)] px-4 pb-4 pt-0 sm:px-5 sm:pb-5 sm:pt-0"
-            onClick={(e) => e.stopPropagation()}
+      {shouldShowSidebar && !isDesktop ? (
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetContent
+            side="left"
+            className="flex h-full w-[min(22rem,92vw)] flex-col bg-background p-4 sm:p-5"
           >
-            <div className="mb-5 mt-3 flex shrink-0 items-center justify-between">
-              <div className="flex items-center gap-2">
-                <img src="/arms-logo-v2.svg" alt="ARMS Logo" />
-              </div>
-              <button
-                className="btn btn-outline"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div
-              ref={mobileSidebarScrollRef}
-              className="min-h-0 flex-1 overflow-y-auto pr-1"
-              onScroll={(event) => {
-                mobileSidebarScrollTopRef.current =
-                  event.currentTarget.scrollTop;
-              }}
-            >
-              <div className="space-y-5">{workspaceAndAdminNav}</div>
-            </div>
-
-            {profile ? (
-              <div className="mt-4 shrink-0 rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Signed in as
-                </p>
-                <p className="mt-1 text-sm font-bold text-slate-900">
-                  {profile.full_name}
-                </p>
-                <p className="text-xs text-slate-600">{profile.role}</p>
-                <button
-                  type="button"
-                  className="btn btn-outline mt-3 w-full"
-                  onClick={signOut}
-                >
-                  Logout
-                </button>
-              </div>
-            ) : null}
-          </aside>
-        </div>
-      )}
+            <SheetHeader className="sr-only">
+              <SheetTitle>Workspace navigation</SheetTitle>
+              <SheetDescription>
+                Browse workspace, research, and admin navigation links.
+              </SheetDescription>
+            </SheetHeader>
+            <SidebarContent variant="mobile" />
+          </SheetContent>
+        </Sheet>
+      ) : null}
     </div>
   );
 }
