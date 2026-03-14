@@ -1,11 +1,3 @@
-export function getQuickFilterButtonClass(active) {
-  return `btn btn-outline ${
-    active
-      ? "!border-[var(--brand)] !bg-[var(--brand-soft)] !text-[var(--brand)]"
-      : ""
-  }`;
-}
-
 export function getActivityToneClass(tone) {
   if (tone === "warning") return "border-amber-300 bg-amber-50";
   if (tone === "success") return "border-emerald-300 bg-emerald-50";
