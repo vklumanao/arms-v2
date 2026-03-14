@@ -1,4 +1,8 @@
-﻿export default function PaginationControls({
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+export default function PaginationControls({
   page,
   totalPages,
   onPageChange,
@@ -8,31 +12,32 @@
   if (!showWhenSinglePage && totalPages <= 1) return null;
 
   return (
-    <div
-      className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm ${className}`.trim()}
-    >
-      <p className="min-w-0 text-slate-600">
-        Page {page} of {totalPages}
-      </p>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={page <= 1}
-          onClick={() => onPageChange(Math.max(1, page - 1))}
-        >
-          Previous
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-        >
-          Next
-        </button>
-      </div>
-    </div>
+    <Card className={cn(className)}>
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+        <p className="min-w-0 text-slate-600">
+          Page {page} of {totalPages}
+        </p>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
-
