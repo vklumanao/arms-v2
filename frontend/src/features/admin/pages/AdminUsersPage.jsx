@@ -4,6 +4,38 @@ import { isValidEmail } from "@/shared/utils/validation";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   createAdminUser,
@@ -17,14 +49,14 @@ import { paginateItemsWithMeta } from "@/features/admin/utils";
 import {
   BadgeCheck,
   Briefcase,
+  Eye,
+  Loader2,
   Mail,
-  Plus,
-  Search,
   ShieldCheck,
   UserCheck,
   UserCog,
+  UserX,
   Users,
-  X,
 } from "lucide-react";
 
 const ROLE_OPTIONS = ["student", "faculty", "admin"];
@@ -395,106 +427,127 @@ export default function AdminUsersPage() {
         description="Manage account access, role assignment, password reset, and account-level activity."
       />
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <Users size={14} /> Total Users
-          </p>
-          <p className="kpi-value">{metrics.total}</p>
-        </div>
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <UserCheck size={14} /> Active
-          </p>
-          <p className="kpi-value">{metrics.active}</p>
-        </div>
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <BadgeCheck size={14} /> Inactive
-          </p>
-          <p className="kpi-value">{metrics.inactive}</p>
-        </div>
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <ShieldCheck size={14} /> Admins
-          </p>
-          <p className="kpi-value">{metrics.admins}</p>
-        </div>
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <Briefcase size={14} /> Faculty
-          </p>
-          <p className="kpi-value">{metrics.faculty}</p>
-        </div>
-        <div className="kpi-card flex min-h-28 flex-col justify-between">
-          <p className="kpi-label flex items-center gap-1">
-            <Users size={14} /> Student
-          </p>
-          <p className="kpi-value">{metrics.students}</p>
-        </div>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <Users size={14} /> Total Users
+            </p>
+            <p className="kpi-value">{metrics.total}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <UserCheck size={14} /> Active
+            </p>
+            <p className="kpi-value">{metrics.active}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <BadgeCheck size={14} /> Inactive
+            </p>
+            <p className="kpi-value">{metrics.inactive}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <ShieldCheck size={14} /> Admins
+            </p>
+            <p className="kpi-value">{metrics.admins}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <Briefcase size={14} /> Faculty
+            </p>
+            <p className="kpi-value">{metrics.faculty}</p>
+          </CardContent>
+        </Card>
+        <Card className="flex min-h-28 flex-col justify-between">
+          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+            <p className="kpi-label flex items-center gap-1">
+              <Users size={14} /> Student
+            </p>
+            <p className="kpi-value">{metrics.students}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="panel">
-        <div className="panel-header flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500 flex items-center gap-2">
-            <UserCog size={15} /> Accounts Directory
-          </h2>
+      <Card>
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Accounts Directory
+              </CardTitle>
+              <CardDescription>
+                Search, create, and manage account roles and access.
+              </CardDescription>
+            </div>
           <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
             <label className="relative w-full lg:min-w-[22rem]">
-              <input
-                className="control-input pl-8"
+              <Input
+                className="pl-8"
                 placeholder="Search user by name, email, or role"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
               />
             </label>
-            <button className="btn btn-primary" onClick={openCreateModal}>
+            <Button onClick={openCreateModal}>
               Create User
-            </button>
+            </Button>
           </div>
-        </div>
-        <div className="panel-body pt-0">
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
           <div className="max-h-[70vh] overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)]">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Joined</th>
-                  <th>Last Sign-in</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="min-w-[980px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Last Sign-in</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={8}>No users found.</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={8}>No users found.</TableCell>
+                  </TableRow>
                 ) : (
                   pagination.items.map((user, index) => (
-                    <tr key={user.id}>
-                      <td>{pagination.start + index + 1}</td>
-                      <td>{user.full_name || "-"}</td>
-                      <td>{user.email || "-"}</td>
-                      <td>
-                        <select
-                          className="control-select min-w-32"
+                    <TableRow key={user.id}>
+                      <TableCell>{pagination.start + index + 1}</TableCell>
+                      <TableCell>{user.full_name || "-"}</TableCell>
+                      <TableCell>{user.email || "-"}</TableCell>
+                      <TableCell>
+                        <Select
                           value={user.role || "student"}
                           disabled={Boolean(savingUserById[user.id])}
-                          onChange={(e) =>
-                            openRoleConfirm(user, e.target.value)
-                          }
+                          onValueChange={(value) => openRoleConfirm(user, value)}
                         >
-                          {ROLE_OPTIONS.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
+                          <SelectTrigger className="min-w-32 capitalize">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.map((role) => (
+                              <SelectItem key={role} value={role} className="capitalize">
+                                {role}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
                         {(() => {
                           const state = pendingResetByUserId[user.id]
                             ? "pending_reset"
@@ -502,67 +555,96 @@ export default function AdminUsersPage() {
                               ? "active"
                               : "deactivated";
                           return (
-                            <span
-                              className={`status-chip ${
+                            <Badge
+                              variant={
                                 state === "active"
-                                  ? "status-completed"
+                                  ? "secondary"
                                   : state === "pending_reset"
-                                    ? "status-proposal"
-                                    : "status-rejected"
-                              }`}
+                                    ? "outline"
+                                    : "destructive"
+                              }
                             >
                               {state === "active"
                                 ? "Active"
                                 : state === "pending_reset"
                                   ? "Pending reset"
                                   : "Deactivated"}
-                            </span>
+                            </Badge>
                           );
                         })()}
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         {user.created_at
                           ? new Date(user.created_at).toLocaleDateString()
                           : "-"}
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         {user.last_sign_in_at
                           ? new Date(user.last_sign_in_at).toLocaleString()
                           : "Never"}
-                      </td>
-                      <td>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            className="btn btn-outline"
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={
+                              user.is_active
+                                ? "h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                : "h-8 w-8 text-emerald-700 hover:bg-emerald-50"
+                            }
                             disabled={Boolean(savingUserById[user.id])}
                             onClick={() => openStatusConfirm(user)}
+                            aria-label={
+                              savingUserById[user.id]
+                                ? "Saving status..."
+                                : user.is_active
+                                  ? `Deactivate ${user?.full_name || user?.email || "user"}`
+                                  : `Activate ${user?.full_name || user?.email || "user"}`
+                            }
+                            title={
+                              savingUserById[user.id]
+                                ? "Saving..."
+                                : user.is_active
+                                  ? "Deactivate"
+                                  : "Activate"
+                            }
                           >
-                            {savingUserById[user.id]
-                              ? "Saving..."
-                              : user.is_active
-                                ? "Deactivate"
-                                : "Activate"}
-                          </button>
-                          <button
-                            className="btn btn-outline"
+                            {savingUserById[user.id] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : user.is_active ? (
+                              <UserX className="h-4 w-4" />
+                            ) : (
+                              <UserCheck className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => openResetConfirm(user)}
+                            aria-label={`Send password reset to ${user?.full_name || user?.email || "user"}`}
+                            title="Send reset"
                           >
-                            <Mail size={14} />
-                            Reset
-                          </button>
-                          <button
-                            className="btn btn-primary"
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => openUserDetail(user)}
+                            aria-label={`View ${user?.full_name || user?.email || "user"}`}
+                            title="View"
                           >
-                            View
-                          </button>
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           {filteredUsers.length ? (
             <PaginationControls
@@ -572,358 +654,349 @@ export default function AdminUsersPage() {
               onPageChange={setCurrentPage}
             />
           ) : null}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {detailUser ? (
-        <div className="modal-overlay" onClick={() => setDetailUser(null)}>
-          <aside
-            className="ml-auto h-full w-full max-w-2xl overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-4 sm:p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  {detailUser.full_name || detailUser.email}
-                </h3>
-                <p className="text-sm text-slate-600">{detailUser.email}</p>
+        <Dialog
+          open={Boolean(detailUser)}
+          onOpenChange={(open) => !open && setDetailUser(null)}
+        >
+          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-2xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
+            <DialogHeader className="border-b border-border px-6 py-5 text-left">
+              <DialogTitle>{detailUser.full_name || detailUser.email}</DialogTitle>
+              <DialogDescription>{detailUser.email}</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-6 py-5">
+              <div className="mb-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (!detailUser?.id) return;
+                    const latest = await loadLatestUserSnapshot(detailUser.id);
+                    if (latest) setDetailUser((prev) => ({ ...prev, ...latest }));
+                  }}
+                >
+                  Refresh User Info
+                </Button>
               </div>
-              <button
-                className="btn btn-outline"
-                onClick={() => setDetailUser(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="mb-3 flex justify-end">
-              <button
-                className="btn btn-outline"
-                onClick={async () => {
-                  if (!detailUser?.id) return;
-                  const latest = await loadLatestUserSnapshot(detailUser.id);
-                  if (latest) setDetailUser((prev) => ({ ...prev, ...latest }));
-                }}
-              >
-                Refresh User Info
-              </button>
-            </div>
 
-            {detailLoading ? (
-              <p className="text-sm text-slate-600">Loading user details...</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">User Information</p>
-                  <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Full Name
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.full_name || "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Email
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.email || "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Role
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.role || "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Account State
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {pendingResetByUserId[detailUser.id]
-                          ? "Pending reset"
-                          : detailUser.is_active
-                            ? "Active"
-                            : "Deactivated"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Department
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.department || "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Center
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.ckan_org_id
-                          ? centerNameById[detailUser.ckan_org_id] || "-"
-                          : "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Joined
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.created_at
-                          ? new Date(detailUser.created_at).toLocaleString()
-                          : "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Last Sign-in
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.last_sign_in_at
-                          ? new Date(
-                              detailUser.last_sign_in_at,
-                            ).toLocaleString()
-                          : "Never"}
-                      </dd>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                        Email Confirmed
-                      </dt>
-                      <dd className="font-medium text-slate-800">
-                        {detailUser.email_confirmed_at
-                          ? new Date(
-                              detailUser.email_confirmed_at,
-                            ).toLocaleString()
-                          : "Not confirmed"}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">Account Summary</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(() => {
-                      const state = pendingResetByUserId[detailUser.id]
-                        ? "pending_reset"
-                        : detailUser.is_active
-                          ? "active"
-                          : "deactivated";
-                      return (
-                        <span
-                          className={`status-chip ${
-                            state === "active"
-                              ? "status-completed"
-                              : state === "pending_reset"
-                                ? "status-proposal"
-                                : "status-rejected"
-                          }`}
-                        >
-                          {state === "active"
-                            ? "Active"
-                            : state === "pending_reset"
-                              ? "Pending reset"
-                              : "Deactivated"}
-                        </span>
-                      );
-                    })()}
-                    <span
-                      className={`status-chip ${
-                        (detailCompleteness?.score || 0) >= 4
-                          ? "status-completed"
-                          : (detailCompleteness?.score || 0) >= 2
-                            ? "status-proposal"
-                            : "status-rejected"
-                      }`}
-                    >
-                      Profile {detailCompleteness?.score || 0}/4
-                    </span>
-                    {detailCompleteness?.checks.contact ? (
-                      <span className="status-chip status-ongoing">
-                        Contact
-                      </span>
-                    ) : null}
-                    {detailCompleteness?.checks.role ? (
-                      <span className="status-chip status-ongoing">Role</span>
-                    ) : null}
-                    {detailCompleteness?.checks.department ? (
-                      <span className="status-chip status-ongoing">
-                        Department
-                      </span>
-                    ) : null}
-                    {detailUser?.ckan_org_id ? (
-                      <span className="status-chip status-ongoing">
-                        Center:{" "}
-                        {centerNameById[detailUser.ckan_org_id] || "Set"}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="app-card app-card-compact">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Submissions
-                    </p>
-                    <p className="mt-1 text-xl font-bold">
-                      {detailData.submissionsCount}
-                    </p>
-                  </div>
-                  <div className="app-card app-card-compact">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Current Projects
-                    </p>
-                    <p className="mt-1 text-xl font-bold">
-                      {detailData.currentProjectsCount}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">
-                    Project Status Breakdown
-                  </p>
-                  <div className="grid gap-2 md:grid-cols-4 text-sm">
-                    {Object.entries(detailData.statusCounts).map(
-                      ([status, count]) => (
-                        <div key={status} className="app-card app-card-micro">
-                          <p className="capitalize text-slate-600">{status}</p>
-                          <p className="font-bold">{count}</p>
+              {detailLoading ? (
+                <p className="text-sm text-slate-600">Loading user details...</p>
+              ) : (
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="space-y-2 p-5">
+                      <p className="text-sm font-semibold">User Information</p>
+                      <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Full Name
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.full_name || "-"}
+                          </dd>
                         </div>
-                      ),
-                    )}
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Email
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.email || "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Role
+                          </dt>
+                          <dd className="font-medium capitalize text-slate-800">
+                            {detailUser.role || "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Account State
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {pendingResetByUserId[detailUser.id]
+                              ? "Pending reset"
+                              : detailUser.is_active
+                                ? "Active"
+                                : "Deactivated"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Department
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.department || "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Center
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.ckan_org_id
+                              ? centerNameById[detailUser.ckan_org_id] || "-"
+                              : "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Joined
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.created_at
+                              ? new Date(detailUser.created_at).toLocaleString()
+                              : "-"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Last Sign-in
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.last_sign_in_at
+                              ? new Date(detailUser.last_sign_in_at).toLocaleString()
+                              : "Never"}
+                          </dd>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
+                            Email Confirmed
+                          </dt>
+                          <dd className="font-medium text-slate-800">
+                            {detailUser.email_confirmed_at
+                              ? new Date(
+                                  detailUser.email_confirmed_at,
+                                ).toLocaleString()
+                              : "Not confirmed"}
+                          </dd>
+                        </div>
+                      </dl>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-sm font-semibold">Account Summary</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const state = pendingResetByUserId[detailUser.id]
+                            ? "pending_reset"
+                            : detailUser.is_active
+                              ? "active"
+                              : "deactivated";
+                          return (
+                            <Badge
+                              variant={
+                                state === "active"
+                                  ? "secondary"
+                                  : state === "pending_reset"
+                                    ? "outline"
+                                    : "destructive"
+                              }
+                            >
+                              {state === "active"
+                                ? "Active"
+                                : state === "pending_reset"
+                                  ? "Pending reset"
+                                  : "Deactivated"}
+                            </Badge>
+                          );
+                        })()}
+                        <Badge
+                          variant={
+                            (detailCompleteness?.score || 0) >= 4
+                              ? "secondary"
+                              : (detailCompleteness?.score || 0) >= 2
+                                ? "outline"
+                                : "destructive"
+                          }
+                        >
+                          Profile {detailCompleteness?.score || 0}/4
+                        </Badge>
+                        {detailCompleteness?.checks.contact ? (
+                          <Badge variant="outline">Contact</Badge>
+                        ) : null}
+                        {detailCompleteness?.checks.role ? (
+                          <Badge variant="outline">Role</Badge>
+                        ) : null}
+                        {detailCompleteness?.checks.department ? (
+                          <Badge variant="outline">Department</Badge>
+                        ) : null}
+                        {detailUser?.ckan_org_id ? (
+                          <Badge variant="outline">
+                            Center: {centerNameById[detailUser.ckan_org_id] || "Set"}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Card>
+                      <CardContent className="p-5">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Submissions
+                        </p>
+                        <p className="mt-1 text-xl font-bold">
+                          {detailData.submissionsCount}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-5">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Current Projects
+                        </p>
+                        <p className="mt-1 text-xl font-bold">
+                          {detailData.currentProjectsCount}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
 
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">Recent Projects</p>
-                  {detailData.projects.length === 0 ? (
-                    <p className="text-sm text-slate-600">
-                      No submissions yet.
-                    </p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {detailData.projects.map((project) => (
-                        <li
-                          key={project.id}
-                          className="app-card app-card-micro"
-                        >
-                          <p className="font-semibold">{project.title}</p>
-                          <p className="capitalize text-slate-600">
-                            {project.status}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                  <Card>
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-sm font-semibold">
+                        Project Status Breakdown
+                      </p>
+                      <div className="grid gap-2 text-sm md:grid-cols-4">
+                        {Object.entries(detailData.statusCounts).map(
+                          ([status, count]) => (
+                            <Card key={status}>
+                              <CardContent className="p-3">
+                                <p className="capitalize text-slate-600">{status}</p>
+                                <p className="font-bold">{count}</p>
+                              </CardContent>
+                            </Card>
+                          ),
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">
-                    Status History (Projects)
-                  </p>
-                  {detailData.statusHistory.length === 0 ? (
-                    <p className="text-sm text-slate-600">
-                      No status history records.
-                    </p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {detailData.statusHistory.map((entry) => (
-                        <li key={entry.id} className="app-card app-card-micro">
-                          <p className="font-semibold">
-                            {entry.old_status || "none"} {"->"}{" "}
-                            {entry.new_status}
-                          </p>
-                          <p className="text-slate-600">
-                            {new Date(entry.changed_at).toLocaleString()}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                  <Card>
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-sm font-semibold">Recent Projects</p>
+                      {detailData.projects.length === 0 ? (
+                        <p className="text-sm text-slate-600">
+                          No submissions yet.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 text-sm">
+                          {detailData.projects.map((project) => (
+                            <li key={project.id}>
+                              <Card>
+                                <CardContent className="p-3">
+                                  <p className="font-semibold">{project.title}</p>
+                                  <p className="capitalize text-slate-600">
+                                    {project.status}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                <div className="app-card app-card-compact">
-                  <p className="mb-2 text-sm font-semibold">
-                    Role Change Audit
-                  </p>
-                  {detailData.roleAudit.length === 0 ? (
-                    <p className="text-sm text-slate-600">
-                      No role change records found.
-                    </p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {detailData.roleAudit.map((entry) => (
-                        <li
-                          key={entry.id}
-                          className="app-card-muted app-card-micro"
-                        >
-                          <p className="font-semibold">
-                            {entry.old_role || "none"} {"->"} {entry.new_role}
-                          </p>
-                          <p className="text-slate-600">
-                            {new Date(entry.changed_at).toLocaleString()}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Changed by:{" "}
-                            {entry.changed_by
-                              ? detailData.roleAuditActorMap[
-                                  entry.changed_by
-                                ] || entry.changed_by
-                              : "System"}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <Card>
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-sm font-semibold">
+                        Status History (Projects)
+                      </p>
+                      {detailData.statusHistory.length === 0 ? (
+                        <p className="text-sm text-slate-600">
+                          No status history records.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 text-sm">
+                          {detailData.statusHistory.map((entry) => (
+                            <li key={entry.id}>
+                              <Card>
+                                <CardContent className="p-3">
+                                  <p className="font-semibold">
+                                    {entry.old_status || "none"} {"->"} {entry.new_status}
+                                  </p>
+                                  <p className="text-slate-600">
+                                    {new Date(entry.changed_at).toLocaleString()}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="space-y-3 p-5">
+                      <p className="text-sm font-semibold">Role Change Audit</p>
+                      {detailData.roleAudit.length === 0 ? (
+                        <p className="text-sm text-slate-600">
+                          No role change records found.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 text-sm">
+                          {detailData.roleAudit.map((entry) => (
+                            <li key={entry.id}>
+                              <Card className="bg-muted/40">
+                                <CardContent className="space-y-1 p-3">
+                                  <p className="font-semibold">
+                                    {entry.old_role || "none"} {"->"} {entry.new_role}
+                                  </p>
+                                  <p className="text-slate-600">
+                                    {new Date(entry.changed_at).toLocaleString()}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    Changed by:{" "}
+                                    {entry.changed_by
+                                      ? detailData.roleAuditActorMap[
+                                          entry.changed_by
+                                        ] || entry.changed_by
+                                      : "System"}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-            )}
-          </aside>
-        </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {createModalOpen ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={closeCreateModal}
+        <Dialog
+          open={createModalOpen}
+          onOpenChange={(open) => !open && closeCreateModal()}
         >
-          <div
-            className="modal-dialog modal-dialog-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="panel">
-              <div className="panel-header flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900">
-                    Create User Account
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    Add a faculty or student account with optional center and
-                    department assignment.
-                  </p>
-                </div>
-                <button
-                  className="btn btn-outline px-2"
-                  onClick={closeCreateModal}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="panel-body space-y-4">
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create User Account</DialogTitle>
+              <DialogDescription>
+                Add a faculty or student account with optional center and
+                department assignment.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
                       Full Name
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       value={createForm.full_name}
                       onChange={(e) =>
                         setCreateForm((prev) => ({
@@ -936,8 +1009,7 @@ export default function AdminUsersPage() {
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Email</span>
-                    <input
-                      className="control-input"
+                    <Input
                       type="email"
                       value={createForm.email}
                       onChange={(e) =>
@@ -951,68 +1023,81 @@ export default function AdminUsersPage() {
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Role</span>
-                    <select
-                      className="control-select"
+                    <Select
                       value={createForm.role}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setCreateForm((prev) => ({
                           ...prev,
-                          role: e.target.value,
+                          role: value,
                         }))
                       }
                     >
-                      <option value="faculty">Faculty</option>
-                      <option value="student">Student</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="faculty">Faculty</SelectItem>
+                        <SelectItem value="student">Student</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
                       Research Center
                     </span>
-                    <select
-                      className="control-select"
+                    <Select
                       value={createForm.ckan_org_id}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setCreateForm((prev) => ({
                           ...prev,
-                          ckan_org_id: e.target.value,
+                          ckan_org_id: value === "__none__" ? "" : value,
                         }))
                       }
                     >
-                      <option value="">None</option>
-                      {(centers || []).map((center) => (
-                        <option key={center.id} value={center.id}>
-                          {center.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {(centers || []).map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="space-y-1 text-sm md:col-span-2">
                     <span className="font-medium text-slate-700">
                       Department
                     </span>
-                    <select
-                      className="control-select"
+                    <Select
                       value={createForm.ckan_group_id}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setCreateForm((prev) => ({
                           ...prev,
-                          ckan_group_id: e.target.value,
+                          ckan_group_id: value === "__none__" ? "" : value,
                         }))
                       }
                     >
-                      <option value="">None</option>
-                      {(departments || []).map((department) => (
-                        <option key={department.id} value={department.id}>
-                          {department.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {(departments || []).map((department) => (
+                          <SelectItem key={department.id} value={department.id}>
+                            {department.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                 </div>
 
                 {createResult?.temporary_password ? (
-                  <div className="app-card-muted app-card-compact text-sm text-slate-700">
+                  <Card className="bg-muted/40">
+                    <CardContent className="space-y-1 p-4 text-sm text-slate-700">
                     <p className="font-semibold text-slate-900">
                       Account created
                     </p>
@@ -1026,29 +1111,25 @@ export default function AdminUsersPage() {
                       Share this once, then require the user to change it after
                       first login.
                     </p>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ) : null}
 
                 <div className="flex justify-end gap-2">
-                  <button
-                    className="btn btn-outline"
+                  <Button
+                    variant="outline"
                     onClick={closeCreateModal}
                     disabled={createSaving}
                   >
                     Close
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={submitCreateUser}
-                    disabled={createSaving}
-                  >
+                  </Button>
+                  <Button onClick={submitCreateUser} disabled={createSaving}>
                     {createSaving ? "Creating..." : "Create User"}
-                  </button>
+                  </Button>
                 </div>
-              </div>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       <ConfirmActionModal
