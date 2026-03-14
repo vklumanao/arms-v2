@@ -3,6 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { validatePasswordStrength } from "@/shared/utils/validation";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -54,8 +57,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md panel">
-      <div className="panel-header">
+    <section className="mx-auto max-w-md">
+      <Card>
+      <CardHeader>
         <img
           src="/arms-logo-v2.svg"
           alt="ARMS Logo"
@@ -65,18 +69,17 @@ export default function ResetPasswordPage() {
         <p className="mt-1 text-sm text-slate-600">
           Set a new password for your account.
         </p>
-      </div>
-      <form className="panel-body space-y-3" onSubmit={submit}>
-        <input
-          className="control-input"
+      </CardHeader>
+      <CardContent>
+      <form className="space-y-3" onSubmit={submit}>
+        <Input
           placeholder="Enter your new password"
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <input
-          className="control-input"
+        <Input
           placeholder="Confirm your new password"
           type="password"
           required
@@ -85,8 +88,10 @@ export default function ResetPasswordPage() {
         />
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         {message && <p className="text-sm text-[var(--success)]">{message}</p>}
-        <button className="btn btn-primary w-full">Update password</button>
+        <Button className="w-full">Update password</Button>
       </form>
+      </CardContent>
+      </Card>
 
       <ConfirmActionModal
         open={confirmChange}
