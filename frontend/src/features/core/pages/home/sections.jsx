@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   aboutPillars,
   audienceCards,
@@ -52,13 +54,15 @@ export function HeroSection() {
 
         <div className="relative z-10 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
           <div className="page-stack-lg">
-            <div className="w-full app-card app-card-compact">
-              <img
-                src="/arms-logo-v2.svg"
-                alt="ARMS Logo"
-                className="h-auto w-full object-contain"
-              />
-            </div>
+            <Card className="w-full shadow-none">
+              <CardContent className="p-4">
+                <img
+                  src="/arms-logo-v2.svg"
+                  alt="ARMS Logo"
+                  className="h-auto w-full object-contain"
+                />
+              </CardContent>
+            </Card>
 
             <h1 className="max-w-4xl text-3xl font-black leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
               One Academic Platform for Affiliation, Review, Documentation, and
@@ -94,37 +98,41 @@ export function HeroSection() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               {heroHighlights.map((item) => (
-                <article
+                <Card
                   key={item.title}
-                  className="app-card app-card-compact app-card-interactive"
+                  className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">
-                    {item.description}
-                  </p>
-                </article>
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">
+                      {item.description}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
 
           <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             {heroSidebarCards.map((item) => (
-              <article
+              <Card
                 key={item.title}
-                className="app-card app-card-interactive"
+                className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  {item.title}
-                </p>
-                <h2 className="mt-2 text-lg font-black text-slate-900">
-                  {item.heading}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {item.description}
-                </p>
-              </article>
+                <CardContent className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {item.title}
+                  </p>
+                  <h2 className="mt-2 text-lg font-black text-slate-900">
+                    {item.heading}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {item.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </aside>
         </div>
@@ -142,20 +150,19 @@ export function SystemFramingSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {systemFramingCards.map((item) => (
-          <article
-            key={item.title}
-            className="app-card-muted app-card"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-              {item.title}
-            </p>
-            <h2 className="mt-2 text-lg font-black text-slate-900">
-              {item.heading}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              {item.description}
-            </p>
-          </article>
+          <Card key={item.title} className="bg-muted/30 shadow-none">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+                {item.title}
+              </p>
+              <h2 className="mt-2 text-lg font-black text-slate-900">
+                {item.heading}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -166,20 +173,22 @@ export function AudienceSection() {
   return (
     <section className="grid gap-4 md:grid-cols-3">
       {audienceCards.map((item, idx) => (
-        <article
+        <Card
           key={item.heading}
-          className="app-card app-card-interactive"
+          className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-            Audience {idx + 1}
-          </p>
-          <h2 className="mt-2 text-lg font-black text-slate-900">
-            {item.heading}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {item.description}
-          </p>
-        </article>
+          <CardContent className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+              Audience {idx + 1}
+            </p>
+            <h2 className="mt-2 text-lg font-black text-slate-900">
+              {item.heading}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {item.description}
+            </p>
+          </CardContent>
+        </Card>
       ))}
     </section>
   );
@@ -193,9 +202,9 @@ export function WorkflowSection() {
           eyebrow="Academic Workflow"
           title="Standardized Process from Submission to Public Output"
         />
-        <Link to="/submit-project" className="btn btn-primary">
-          Open Research Projects
-        </Link>
+        <Button asChild>
+          <Link to="/submit-project">Open Research Projects</Link>
+        </Button>
       </div>
 
       <ol className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -203,20 +212,22 @@ export function WorkflowSection() {
           const isLast = index === workflowSteps.length - 1;
           return (
             <li key={item.step} className="relative">
-              <article className="h-full app-card app-card-interactive">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">
-                    Step {item.step}
-                  </span>
-                  <ShieldCheck size={16} className="text-sky-600" />
-                </div>
-                <p className="text-base font-black text-slate-900">
-                  {item.title}
-                </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  {item.description}
-                </p>
-              </article>
+              <Card className="h-full shadow-none transition hover:-translate-y-0.5 hover:shadow-md">
+                <CardContent className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">
+                      Step {item.step}
+                    </span>
+                    <ShieldCheck size={16} className="text-sky-600" />
+                  </div>
+                  <p className="text-base font-black text-slate-900">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {item.description}
+                  </p>
+                </CardContent>
+              </Card>
               {!isLast ? (
                 <span
                   className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-sky-200 bg-white p-1 text-sky-600 xl:inline-flex"
@@ -242,15 +253,14 @@ export function BenefitsSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         {benefitsCards.map((item) => (
-          <article
-            key={item.heading}
-            className="app-card-muted app-card"
-          >
-            <h3 className="font-bold text-slate-900">{item.heading}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {item.description}
-            </p>
-          </article>
+          <Card key={item.heading} className="bg-muted/30 shadow-none">
+            <CardContent className="p-5">
+              <h3 className="font-bold text-slate-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -296,15 +306,14 @@ export function ModulesSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {moduleCards.map((item) => (
-          <article
-            key={item.heading}
-            className="app-card-muted app-card-compact"
-          >
-            <h3 className="font-bold text-slate-900">{item.heading}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {item.description}
-            </p>
-          </article>
+          <Card key={item.heading} className="bg-muted/30 shadow-none">
+            <CardContent className="p-4">
+              <h3 className="font-bold text-slate-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -320,17 +329,19 @@ export function RolesSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {roleCards.map((item) => (
-          <article
+          <Card
             key={item.heading}
-            className="app-card app-card-interactive"
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <h3 className="text-lg font-black text-slate-900">
-              {item.heading}
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {item.description}
-            </p>
-          </article>
+            <CardContent className="p-5">
+              <h3 className="text-lg font-black text-slate-900">
+                {item.heading}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -346,15 +357,17 @@ export function GovernanceSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         {governanceCards.map((item) => (
-          <article
+          <Card
             key={item.heading}
-            className="app-card app-card-interactive"
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <h3 className="font-bold text-slate-900">{item.heading}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {item.description}
-            </p>
-          </article>
+            <CardContent className="p-5">
+              <h3 className="font-bold text-slate-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -370,17 +383,19 @@ export function SuccessIndicatorsSection() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {indicatorCards.map((item) => (
-          <article
+          <Card
             key={item.title}
-            className="app-card app-card-interactive"
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-700">
-              {item.title}
-            </p>
-            <p className="mt-2 text-sm font-bold text-slate-900">
-              {item.description}
-            </p>
-          </article>
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-sky-700">
+                {item.title}
+              </p>
+              <p className="mt-2 text-sm font-bold text-slate-900">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
@@ -396,14 +411,16 @@ export function VisionSection() {
           title="A Research Culture Supported by Shared Systems and Standards"
           subtitle="ARMS enables better planning and better outcomes by making records, status, and workflows visible to the right stakeholders."
         />
-        <div className="app-card-muted app-card">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Core Message
-          </p>
-          <p className="mt-2 text-lg font-black leading-snug text-slate-900">
-            One platform. One process. One trusted source of research truth.
-          </p>
-        </div>
+        <Card className="bg-muted/30 shadow-none">
+          <CardContent className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Core Message
+            </p>
+            <p className="mt-2 text-lg font-black leading-snug text-slate-900">
+              One platform. One process. One trusted source of research truth.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
