@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isLikelyUrl } from "@/shared/utils/validation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   deletePublication,
   fetchUserProjectsForPublications,
@@ -180,6 +192,16 @@ export default function PublicationsPage() {
     await loadPublications();
   };
 
+  const statusToneClassName = (status) => {
+    if (status === "published" || status === "approved") {
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    }
+    if (status === "presented") return "border-sky-200 bg-sky-50 text-sky-900";
+    if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-900";
+    if (status === "submitted") return "border-amber-200 bg-amber-50 text-amber-900";
+    return "border-slate-200 bg-slate-50 text-slate-700";
+  };
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -187,40 +209,46 @@ export default function PublicationsPage() {
         description="Manage publication and scholarly output records linked to your projects."
       />
 
-      <form className="panel" onSubmit={submit}>
-        <div className="panel-header">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            {form.id ? "Edit Publication" : "Add Publication"}
-          </h2>
-        </div>
-        <div className="panel-body grid gap-3 sm:grid-cols-2">
+      <form onSubmit={submit}>
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              {form.id ? "Edit Publication" : "Add Publication"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
           <label className="space-y-1 text-sm sm:col-span-2">
             <span className="font-semibold text-slate-700">
               Related project
             </span>
-            <select
-              className="control-select"
-              value={form.project_id}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, project_id: e.target.value }))
+            <Select
+              value={form.project_id || "__none__"}
+              onValueChange={(value) =>
+                setForm((prev) => ({
+                  ...prev,
+                  project_id: value === "__none__" ? "" : value,
+                }))
               }
-              required
             >
-              <option value="">Select project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.title} ({project.year})
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select project</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.title} ({project.year})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-1 text-sm sm:col-span-2">
             <span className="font-semibold text-slate-700">
               Publication title
             </span>
-            <input
-              className="control-input"
+            <Input
               placeholder="Research paper title"
               value={form.title}
               onChange={(e) =>
@@ -232,29 +260,32 @@ export default function PublicationsPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Status</span>
-            <select
-              className="control-select"
-              value={form.publication_status}
-              onChange={(e) =>
+            <Select
+              value={form.publication_status || "__none__"}
+              onValueChange={(value) =>
                 setForm((prev) => ({
                   ...prev,
-                  publication_status: e.target.value,
+                  publication_status: value === "__none__" ? "" : value,
                 }))
               }
             >
-              <option value="">Select status</option>
-              <option value="submitted">Submitted</option>
-              <option value="presented">Presented</option>
-              <option value="published">Published</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select status</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="presented">Presented</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Venue</span>
-            <input
-              className="control-input"
+            <Input
               placeholder="Journal / Conference"
               value={form.venue}
               onChange={(e) =>
@@ -265,8 +296,7 @@ export default function PublicationsPage() {
 
           <label className="space-y-1 text-sm sm:col-span-2">
             <span className="font-semibold text-slate-700">DOI / Link</span>
-            <input
-              className="control-input"
+            <Input
               placeholder="https://..."
               value={form.doi_link}
               onChange={(e) =>
@@ -276,59 +306,66 @@ export default function PublicationsPage() {
           </label>
 
           <div className="sm:col-span-2 flex flex-wrap gap-2">
-            <button className="btn btn-primary" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               {saving
                 ? "Saving..."
                 : form.id
                   ? "Update Publication"
                   : "Add Publication"}
-            </button>
+            </Button>
             {form.id ? (
-              <button
+              <Button
                 type="button"
-                className="btn btn-outline"
+                variant="outline"
                 onClick={() => setForm(INITIAL_PUBLICATION_FORM)}
               >
                 Cancel Edit
-              </button>
+              </Button>
             ) : null}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       </form>
 
-      <div className="panel">
-        <div className="panel-body grid gap-2 sm:grid-cols-2">
-          <input
-            className="control-input"
+      <Card>
+        <CardContent className="grid gap-2 p-5 sm:grid-cols-2">
+          <Input
             placeholder="Search publication title"
             value={filters.search}
             onChange={(e) =>
               setFilters((prev) => ({ ...prev, search: e.target.value }))
             }
           />
-          <select
-            className="control-select"
-            value={filters.status}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, status: e.target.value }))
+          <Select
+            value={filters.status || "__all__"}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                status: value === "__all__" ? "" : value,
+              }))
             }
           >
-            <option value="">Filter by status</option>
-            <option value="submitted">Submitted</option>
-            <option value="presented">Presented</option>
-            <option value="published">Published</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-      </div>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All statuses</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="presented">Presented</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="panel">
-          <div className="panel-body text-sm text-slate-600">
+        <Card>
+          <CardContent className="p-5 text-sm text-slate-600">
             Loading publications...
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : filteredItems.length === 0 ? (
         <EmptyState
           title="No publications yet"
@@ -338,18 +375,25 @@ export default function PublicationsPage() {
         <div className="space-y-3">
           {filteredItems.map((item) => {
             const project = projectMap[item.project_id];
+            const normalizedStatus = String(item.publication_status || "unspecified")
+              .toLowerCase()
+              .replace(/\s+/g, "_");
             return (
-              <article key={item.id} className="panel">
-                <div className="panel-body">
+              <Card key={item.id}>
+                <CardContent className="p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="font-semibold text-slate-900">
                       {item.title}
                     </h2>
-                    <span
-                      className={`status-chip status-${(item.publication_status || "unspecified").toLowerCase().replace(/\s+/g, "_")}`}
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "capitalize",
+                        statusToneClassName(normalizedStatus),
+                      )}
                     >
                       {item.publication_status || "unspecified"}
-                    </span>
+                    </Badge>
                   </div>
                   <p className="text-sm text-slate-600">
                     Project: {project?.title || item.project_id} | Venue:{" "}
@@ -366,21 +410,15 @@ export default function PublicationsPage() {
                     </a>
                   ) : null}
                   <div className="mt-3 flex gap-2">
-                    <button
-                      className="btn btn-outline"
-                      onClick={() => editItem(item)}
-                    >
+                    <Button type="button" variant="outline" onClick={() => editItem(item)}>
                       Edit
-                    </button>
-                    <button
-                      className="btn btn-danger-outline"
-                      onClick={() => deleteItem(item.id)}
-                    >
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={() => deleteItem(item.id)}>
                       Delete
-                    </button>
+                    </Button>
                   </div>
-                </div>
-              </article>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
