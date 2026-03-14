@@ -4,6 +4,17 @@ import PageHeader from "@/shared/components/layout/PageHeader";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { useToast } from "@/app/providers/ToastProvider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   createAwardRecognitionRecord,
   fetchAwardRecognitionRecord,
@@ -383,17 +394,17 @@ export default function SubmitAwardRecognitionPage() {
           title="Add Award or Recognition"
           description="Complete your profile affiliation first before creating award records."
         />
-        <div className="panel">
-          <div className="panel-body space-y-3">
+        <Card>
+          <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
               Please set your Organization (Research Center) and Department in
               My Profile first before adding an award or recognition entry.
             </p>
-            <Link className="btn btn-primary" to="/my-profile">
-              Go to My Profile
-            </Link>
-          </div>
-        </div>
+            <Button asChild>
+              <Link to="/my-profile">Go to My Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -408,29 +419,29 @@ export default function SubmitAwardRecognitionPage() {
             : "Create a new award record for your research-related accomplishments."
         }
         actions={
-          <button
+          <Button
             type="button"
-            className="btn btn-outline"
+            variant="outline"
             onClick={() => navigate("/awards-recognitions")}
           >
             Back to Awards
-          </button>
+          </Button>
         }
       />
 
-      <form className="panel" onSubmit={handleSubmit}>
-        {loadingEdit ? (
-          <div className="panel-body">
-            <p className="text-sm text-slate-600">Loading award record...</p>
-          </div>
-        ) : null}
-        <div className="panel-body grid gap-4 md:grid-cols-2">
+      <form onSubmit={handleSubmit}>
+        <Card>
+          {loadingEdit ? (
+            <CardContent className="p-5">
+              <p className="text-sm text-slate-600">Loading award record...</p>
+            </CardContent>
+          ) : null}
+          <CardContent className="grid gap-4 p-5 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-semibold text-slate-700">
               Title of Research / Work
             </span>
-            <input
-              className="control-input"
+            <Input
               value={form.work_title}
               onChange={(event) => updateField("work_title", event.target.value)}
               placeholder="Enter the title of the recognized work"
@@ -441,8 +452,7 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Award / Recognition
             </span>
-            <input
-              className="control-input"
+            <Input
               value={form.award_recognition}
               onChange={(event) =>
                 updateField("award_recognition", event.target.value)
@@ -455,8 +465,7 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Awarding Body
             </span>
-            <input
-              className="control-input"
+            <Input
               value={form.awarding_body}
               onChange={(event) =>
                 updateField("awarding_body", event.target.value)
@@ -469,8 +478,7 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Year Received
             </span>
-            <input
-              className="control-input"
+            <Input
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={4}
@@ -484,27 +492,29 @@ export default function SubmitAwardRecognitionPage() {
 
           <label className="space-y-2">
             <span className="text-sm font-semibold text-slate-700">Level</span>
-            <select
-              className="control-select"
+            <Select
               value={form.level}
-              onChange={(event) => updateField("level", event.target.value)}
+              onValueChange={(value) => updateField("level", value)}
             >
-              <option value="">Select level</option>
-              {LEVEL_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                {LEVEL_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-700">
               Recipient(s)
             </span>
-            <div className="space-y-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3">
-              <input
-                className="control-input"
+            <div className="space-y-2 rounded-md border bg-white p-3">
+              <Input
                 value={recipientSearch}
                 onChange={(event) => setRecipientSearch(event.target.value)}
                 onKeyDown={(event) => {
@@ -518,10 +528,12 @@ export default function SubmitAwardRecognitionPage() {
               <div className="flex flex-wrap gap-2">
                 {(form.recipient_users || []).length ? (
                   form.recipient_users.map((item) => (
-                    <button
+                    <Button
                       key={item.id}
                       type="button"
-                      className="status-chip status-ongoing"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 rounded-full px-3 text-xs"
                       onClick={() =>
                         updateRecipientUsers((prev) =>
                           prev.filter((entry) => entry.id !== item.id),
@@ -530,7 +542,7 @@ export default function SubmitAwardRecognitionPage() {
                       title="Remove recipient"
                     >
                       {item.name}
-                    </button>
+                    </Button>
                   ))
                 ) : (
                   <span className="text-sm text-slate-500">
@@ -541,13 +553,13 @@ export default function SubmitAwardRecognitionPage() {
               {loadingRecipients ? (
                 <p className="text-sm text-slate-500">Loading CKAN users...</p>
               ) : recipientSearch.trim() ? (
-                <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] p-2">
+                <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
                   {filteredRecipientOptions.length ? (
                     filteredRecipientOptions.map((option) => (
                       <button
                         key={option.id}
                         type="button"
-                        className="flex w-full items-start gap-3 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-white"
+                        className="flex w-full items-start gap-3 rounded-md px-2 py-1.5 text-left hover:bg-white"
                         onClick={() => addRecipientUser(option)}
                       >
                         <span className="min-w-0 text-sm">
@@ -578,48 +590,53 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Research Center
             </span>
-            <select
-              className="control-select"
+            <Select
               value={form.research_center_id}
-              onChange={(event) =>
-                updateField("research_center_id", event.target.value)
+              onValueChange={(value) =>
+                updateField("research_center_id", value)
               }
               disabled={!isAdmin}
             >
-              <option value="">Select research center</option>
-              {centers.map((center) => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select research center" />
+              </SelectTrigger>
+              <SelectContent>
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-2">
             <span className="text-sm font-semibold text-slate-700">
               Department
             </span>
-            <select
-              className="control-select"
+            <Select
               value={effectiveDepartmentId}
-              onChange={(event) => updateField("department_id", event.target.value)}
+              onValueChange={(value) => updateField("department_id", value)}
               disabled={!isAdmin && Boolean(defaultDepartmentId)}
             >
-              <option value="">Select department</option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-700">
               Supporting MOV Reference
             </span>
-            <input
-              className="control-input"
+            <Input
               value={form.supporting_movs}
               onChange={(event) =>
                 updateField("supporting_movs", event.target.value)
@@ -632,7 +649,7 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Supporting MOV File
             </span>
-            <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+            <div className="rounded-md border bg-muted/30 p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-slate-800">
@@ -648,17 +665,19 @@ export default function SubmitAwardRecognitionPage() {
                         : "Upload a file to store the supporting MOV as a CKAN resource"}
                   </p>
                 </div>
-                <label className="btn btn-outline cursor-pointer">
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] || null;
-                      setMovFile(file);
-                    }}
-                  />
-                  {movFile || existingMov ? "Replace File" : "Choose File"}
-                </label>
+                <Button variant="outline" asChild>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] || null;
+                        setMovFile(file);
+                      }}
+                    />
+                    {movFile || existingMov ? "Replace File" : "Choose File"}
+                  </label>
+                </Button>
               </div>
               {existingMov?.filePath && !movFile ? (
                 <a
@@ -675,36 +694,36 @@ export default function SubmitAwardRecognitionPage() {
 
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-700">Notes</span>
-            <textarea
-              className="control-input min-h-28"
+            <Textarea
               value={form.notes}
               onChange={(event) => updateField("notes", event.target.value)}
               placeholder="Additional context about the award or recognition"
             />
           </label>
-        </div>
+          </CardContent>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-3">
-          <p className="text-sm text-rose-700">{error || " "}</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => navigate("/awards-recognitions")}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting
-                ? editId
-                  ? "Updating..."
-                  : "Saving..."
-                : editId
-                  ? "Update Award Record"
-                  : "Save Award Record"}
-            </button>
-          </div>
-        </div>
+          <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
+            <p className="text-sm text-rose-700">{error || " "}</p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/awards-recognitions")}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting
+                  ? editId
+                    ? "Updating..."
+                    : "Saving..."
+                  : editId
+                    ? "Update Award Record"
+                    : "Save Award Record"}
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
       </form>
     </section>
   );
