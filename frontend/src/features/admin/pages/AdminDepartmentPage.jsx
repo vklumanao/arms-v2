@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Download,
+  Eye,
   FolderKanban,
   LayoutGrid,
   List,
@@ -639,6 +640,38 @@ export default function AdminDepartmentPage() {
     }
   };
 
+  const deleteGuard = (() => {
+    if (!deletingRow) {
+      return {
+        blocked: false,
+        confirmLabel: "Delete",
+        message: "",
+      };
+    }
+
+    const projectCount = Number(deletingRow?.projectCount || 0);
+    const editorCount = Number(deletingRow?.memberBreakdown?.editorCount || 0);
+    const memberCount = Number(deletingRow?.memberBreakdown?.memberCount || 0);
+    const nonAdminAffiliates = editorCount + memberCount;
+
+    const reasons = [];
+    if (projectCount > 0) reasons.push(`${projectCount} linked project(s)`);
+    if (nonAdminAffiliates > 0) {
+      reasons.push(`${nonAdminAffiliates} linked affiliate(s)`);
+    }
+
+    const blocked = reasons.length > 0;
+    const name = String(deletingRow?.name || "").trim();
+
+    return {
+      blocked,
+      confirmLabel: blocked ? "Close" : "Delete",
+      message: blocked
+        ? `Cannot delete "${name}". This department has ${reasons.join(" and ")}. Remove/reassign them first.`
+        : `Delete "${name}"? This action cannot be undone.`,
+    };
+  })();
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -828,6 +861,14 @@ export default function AdminDepartmentPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => openView(row)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => startEdit(row)}
                       >
                         Edit
@@ -955,6 +996,16 @@ export default function AdminDepartmentPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openView(row)}
+                              aria-label={`View ${row?.name || "department"}`}
+                              title="View"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1161,12 +1212,12 @@ export default function AdminDepartmentPage() {
       <ConfirmActionModal
         open={Boolean(deletingRow)}
         title="Delete Department"
-        message={`Delete "${deletingRow?.name || ""}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        message={deleteGuard.message}
+        confirmLabel={deleteGuard.confirmLabel}
         align="center"
-        loading={actionLoading}
+        loading={deleteGuard.blocked ? false : actionLoading}
         onCancel={() => setDeletingRow(null)}
-        onConfirm={confirmDelete}
+        onConfirm={deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete}
       />
 
       {editModalOpen ? (
