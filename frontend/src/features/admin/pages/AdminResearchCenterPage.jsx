@@ -2,6 +2,7 @@
 import {
   Building2,
   Download,
+  Eye,
   FolderKanban,
   LayoutGrid,
   Link2,
@@ -1636,6 +1637,14 @@ export default function AdminResearchCenterPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openView(row)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => startEdit(row)}
                         >
                           Edit
@@ -1649,7 +1658,18 @@ export default function AdminResearchCenterPage() {
                           Delete
                         </Button>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openView(row)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -1778,34 +1798,42 @@ export default function AdminResearchCenterPage() {
                           </Button>
                         </TableCell>
                         <TableCell className="text-right">
-                          {!isScopedCenterChief ? (
-                            <div className="inline-flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => startEdit(row)}
-                                aria-label={`Edit ${row?.name || "research center"}`}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
-                                onClick={() => setDeletingRow(row)}
-                                aria-label={`Delete ${row?.name || "research center"}`}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-slate-500">
-                              Scoped access
-                            </span>
-                          )}
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openView(row)}
+                              aria-label={`View ${row?.name || "research center"}`}
+                              title="View"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {!isScopedCenterChief ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => startEdit(row)}
+                                  aria-label={`Edit ${row?.name || "research center"}`}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                  onClick={() => setDeletingRow(row)}
+                                  aria-label={`Delete ${row?.name || "research center"}`}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
