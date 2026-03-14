@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   PERMISSIONS,
   PERMISSION_LABELS,
@@ -160,90 +170,93 @@ export default function AdminControlsPage() {
         </div>
       ) : null}
 
-      <div className="panel">
-        <div className="panel-header flex flex-wrap items-start justify-between gap-3">
+      <Card>
+        <CardHeader className="flex flex-wrap items-start justify-between gap-3 space-y-0">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-600">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-600">
               Roles & Permissions
-            </h2>
+            </CardTitle>
             <p className="text-xs text-slate-500">
               Simple access matrix for Student, Faculty, and Admin.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn btn-outline" onClick={resetPermissions}>
+            <Button variant="outline" onClick={resetPermissions}>
               Reset Defaults
-            </button>
-            <button className="btn btn-primary" onClick={savePermissions}>
-              Save Permissions
-            </button>
+            </Button>
+            <Button onClick={savePermissions}>Save Permissions</Button>
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="panel-body space-y-3">
+        <CardContent className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-3">
             {roleKeys.map((role) => (
-              <div
-                key={`role-summary-${role}`}
-                className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
-              >
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>{ROLE_LABELS[role]}</span>
-                  <span>
-                    {(permissionDraft[role] || []).length}/{permissionKeys.length}
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-1">
-                  <button
-                    className="btn btn-outline h-7 px-2 text-[11px]"
-                    onClick={() => setPermissionsForRole(role, permissionKeys)}
-                  >
-                    Select all
-                  </button>
-                  <button
-                    className="btn btn-outline h-7 px-2 text-[11px]"
-                    onClick={() => setPermissionsForRole(role, [])}
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
+              <Card key={`role-summary-${role}`} className="bg-muted/30">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                    <span>{ROLE_LABELS[role]}</span>
+                    <span>
+                      {(permissionDraft[role] || []).length}/
+                      {permissionKeys.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() =>
+                        setPermissionsForRole(role, permissionKeys)
+                      }
+                    >
+                      Select all
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setPermissionsForRole(role, [])}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
           <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--border)]">
-            <table className="data-table">
-              <thead className="bg-[var(--surface-muted)]">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold text-slate-700">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="text-left font-semibold text-slate-700">
                     Permission
-                  </th>
+                  </TableHead>
                   {roleKeys.map((role) => (
-                    <th
+                    <TableHead
                       key={`role-column-${role}`}
-                      className="px-3 py-2 text-center font-semibold text-slate-700"
+                      className="text-center font-semibold text-slate-700"
                     >
                       {ROLE_LABELS[role]}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {permissionKeys.map((permission) => (
-                  <tr
+                  <TableRow
                     key={`permission-row-${permission}`}
-                    className="border-t border-[var(--border)]"
                   >
-                    <td className="px-3 py-2 text-slate-700">
+                    <TableCell className="text-slate-700">
                       <p className="font-medium">
                         {PERMISSION_LABELS[permission] || permission}
                       </p>
                       <p className="text-xs text-slate-500">{permission}</p>
-                    </td>
+                    </TableCell>
                     {roleKeys.map((role) => (
-                      <td
+                      <TableCell
                         key={`permission-cell-${permission}-${role}`}
-                        className="px-3 py-2 text-center"
+                        className="text-center"
                       >
                         <input
                           type="checkbox"
@@ -259,15 +272,15 @@ export default function AdminControlsPage() {
                             )
                           }
                         />
-                      </td>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <ConfirmActionModal
         open={Boolean(confirmAction)}
