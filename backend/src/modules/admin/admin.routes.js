@@ -2193,6 +2193,27 @@ export function registerAdminRoutes(app, deps) {
             });
           }
 
+          const activeMembers = (members || []).filter(
+            (member) =>
+              String(member?.state || "active").toLowerCase() !== "deleted",
+          );
+          const nonAdminMembers = activeMembers.filter(
+            (member) =>
+              String(member?.capacity || "")
+                .trim()
+                .toLowerCase() !== "admin",
+          );
+
+          if (nonAdminMembers.length) {
+            return res.status(409).json({
+              error:
+                "Research center cannot be deleted while it still has linked affiliates.",
+              details: {
+                linkedAffiliates: nonAdminMembers.length,
+              },
+            });
+          }
+
           const removableMembers = (members || []).filter(
             (member) =>
               String(member?.state || "active").toLowerCase() !== "deleted" &&
