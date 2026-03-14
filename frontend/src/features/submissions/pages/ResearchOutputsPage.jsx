@@ -4,6 +4,44 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   createResearchOutput,
   createResearchOutputWithFile,
@@ -16,7 +54,16 @@ import {
 import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/features/submissions/utils";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
-import { Eye, EyeOff, FileText, Search } from "lucide-react";
+import {
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+} from "lucide-react";
 
 const PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS = [
   "Software Applications",
@@ -140,17 +187,17 @@ export default function ResearchOutputsPage() {
               : "Your submitted resource files from project expected outputs."
           }
         />
-        <div className="panel">
-          <div className="panel-body space-y-3">
+        <Card>
+          <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
               Please set your Organization (Research Center) and Department in
               My Profile first before accessing Research Outputs.
             </p>
-            <Link className="btn btn-primary" to="/my-profile">
-              Go to My Profile
-            </Link>
-          </div>
-        </div>
+            <Button asChild>
+              <Link to="/my-profile">Go to My Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -341,6 +388,8 @@ export default function ResearchOutputsPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredRows.slice(start, start + pageSize);
   }, [currentPage, filteredRows]);
+
+  const sanitizeDigits = (value) => String(value || "").replace(/[^\d]/g, "");
 
   const formatFileSize = (bytes) => {
     const value = Number(bytes || 0);
@@ -788,50 +837,34 @@ export default function ResearchOutputsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <FileText size={14} />
-            Total Outputs
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.total}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Eye size={14} />
-            Public Outputs
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.public}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <EyeOff size={14} />
-            Private Outputs
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.private}
-          </p>
-        </article>
-        <article className="metric-card">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <FileText size={14} />
-            Linked Projects
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.linkedProjects}
-          </p>
-        </article>
+        {[
+          { label: "Total Outputs", value: analytics.total, icon: FileText },
+          { label: "Public Outputs", value: analytics.public, icon: Eye },
+          { label: "Private Outputs", value: analytics.private, icon: EyeOff },
+          {
+            label: "Linked Projects",
+            value: analytics.linkedProjects,
+            icon: FileText,
+          },
+        ].map(({ label, value, icon: Icon }) => (
+          <Card key={label}>
+            <CardContent className="p-5">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                <Icon size={14} />
+                {label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-slate-900">{value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {loading ? (
-        <div className="panel">
-          <div className="panel-body text-sm text-slate-600">
+        <Card>
+          <CardContent className="p-5 text-sm text-slate-600">
             Loading research outputs...
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       {!loading && !error && !tableRows.length ? (
@@ -843,115 +876,112 @@ export default function ResearchOutputsPage() {
 
       {!loading && !error && tableRows.length ? (
         <div className="page-stack">
-          <div className="panel overflow-hidden">
-            <div className="border-b border-[var(--border)] px-4 py-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                  <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                    Research Output Records ({filteredRows.length})
-                  </h2>
-                  <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search file, dataset, project, center, state, or visibility"
-                      className="control-input pl-8"
-                    />
-                  </label>
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    Research Output Records
+                  </CardTitle>
+                  <CardDescription>
+                    Showing {filteredRows.length} output(s).
+                  </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {isAdmin ? (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={exportAsCsv}
-                        disabled={
-                          !filteredRows.length || Boolean(exportingType)
-                        }
-                      >
-                        {exportingType === "csv"
-                          ? "Exporting..."
-                          : "Export CSV"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={exportAsPdf}
-                        disabled={
-                          !filteredRows.length || Boolean(exportingType)
-                        }
-                      >
-                        {exportingType === "pdf"
-                          ? "Exporting..."
-                          : "Export PDF"}
-                      </button>
-                    </>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={
+                            !filteredRows.length || Boolean(exportingType)
+                          }
+                        >
+                          <Download className="h-4 w-4" />
+                          Export
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={exportAsCsv}>
+                          {exportingType === "csv"
+                            ? "Exporting..."
+                            : "Export CSV"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={exportAsPdf}>
+                          {exportingType === "pdf"
+                            ? "Exporting..."
+                            : "Export PDF"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : null}
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={openAddOutputModal}
-                  >
-                    Add Output
-                  </button>
+                  <Button onClick={openAddOutputModal}>Add Output</Button>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-slate-600">
-                  Showing{" "}
-                  <span className="font-semibold">{filteredRows.length}</span>{" "}
-                  output(s).
-                </p>
+
+              <div className="mt-4">
+                <label className="relative block w-full md:max-w-xl">
+                  <span className="sr-only">Search outputs</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search file, dataset, project, center, state, or visibility"
+                    className="pl-9"
+                  />
+                </label>
               </div>
-            </div>
+            </CardHeader>
             {filteredRows.length === 0 ? (
-              <div className="p-4">
+              <CardContent className="p-4">
                 <EmptyState
                   title="No research outputs found"
                   description="Try a different search term or add a new research output."
                 />
-              </div>
+              </CardContent>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>No.</th>
-                      <th>Resource/File</th>
-                      <th>Project</th>
-                      <th>Research Center</th>
-                      <th>Visibility</th>
-                      <th>Updated</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-700">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[980px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No.</TableHead>
+                        <TableHead>Resource/File</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Research Center</TableHead>
+                        <TableHead>Visibility</TableHead>
+                        <TableHead>Updated</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                     {paginatedRows.map((row, index) => (
-                      <tr key={row.id}>
-                        <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                        <td>
+                      <TableRow key={row.id}>
+                        <TableCell>
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </TableCell>
+                        <TableCell>
                           <div className="font-medium">{row.title}</div>
                           {row.subtitle ? (
                             <div className="text-xs text-slate-500">
                               {row.subtitle}
                             </div>
                           ) : null}
-                        </td>
-                        <td>{row.datasetName || "-"}</td>
-                        <td>{row.organization || "-"}</td>
-                        <td>
+                        </TableCell>
+                        <TableCell>{row.datasetName || "-"}</TableCell>
+                        <TableCell>{row.organization || "-"}</TableCell>
+                        <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`status-chip ${row.private ? "status-rejected" : "status-completed"}`}
+                            <Badge
+                              variant={row.private ? "destructive" : "secondary"}
                             >
                               {row.private ? "Private" : "Public"}
-                            </span>
+                            </Badge>
                             {isAdmin ? (
-                              <button
-                                type="button"
-                                className="btn btn-outline"
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                                 disabled={
                                   !row.datasetId ||
                                   Boolean(
@@ -959,65 +989,93 @@ export default function ResearchOutputsPage() {
                                   )
                                 }
                                 onClick={() => handleToggleVisibility(row)}
+                                aria-label={
+                                  visibilitySavingByDataset[row.datasetId]
+                                    ? "Saving visibility..."
+                                    : row.private
+                                      ? "Make public"
+                                      : "Make private"
+                                }
+                                title={
+                                  visibilitySavingByDataset[row.datasetId]
+                                    ? "Saving..."
+                                    : row.private
+                                      ? "Make Public"
+                                      : "Make Private"
+                                }
                               >
-                                {visibilitySavingByDataset[row.datasetId]
-                                  ? "Saving..."
-                                  : row.private
-                                    ? "Make Public"
-                                    : "Make Private"}
-                              </button>
+                                {visibilitySavingByDataset[row.datasetId] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : row.private ? (
+                                  <Eye className="h-4 w-4" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4" />
+                                )}
+                              </Button>
                             ) : null}
                           </div>
-                        </td>
-                        <td>
+                        </TableCell>
+                        <TableCell>
                           {row.metadataModified
                             ? new Date(row.metadataModified).toLocaleString()
                             : "-"}
-                        </td>
-                        <td>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              className="btn btn-outline"
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => setViewTarget(row)}
+                              aria-label={`View details for ${row?.title || "research output"}`}
+                              title="View details"
                             >
-                              View Details
-                            </button>
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             {isAdmin ? (
                               <>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline"
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
                                   disabled={Boolean(
                                     deletingByResource[row.resourceId],
                                   )}
                                   onClick={() => handleOpenEdit(row)}
+                                  aria-label={`Edit ${row?.title || "research output"}`}
+                                  title="Edit"
                                 >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-danger"
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
                                   disabled={Boolean(
                                     deletingByResource[row.resourceId],
                                   )}
                                   onClick={() => setDeleteTarget(row)}
+                                  aria-label={`Delete ${row?.title || "research output"}`}
+                                  title={deletingByResource[row.resourceId] ? "Deleting..." : "Delete"}
                                 >
-                                  {deletingByResource[row.resourceId]
-                                    ? "Deleting..."
-                                    : "Delete"}
-                                </button>
+                                  {deletingByResource[row.resourceId] ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             )}
-          </div>
+          </Card>
 
           {filteredRows.length ? (
             <PaginationControls
@@ -1029,514 +1087,481 @@ export default function ResearchOutputsPage() {
         </div>
       ) : null}
 
-      {showAddOutputModal ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => !addingOutput && setShowAddOutputModal(false)}
-        >
-          <aside
-            className="modal-dialog max-w-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="app-card">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Add Output
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Add a new output entry to a selected research project.
+      <Dialog
+        open={showAddOutputModal}
+        onOpenChange={(open) => !addingOutput && setShowAddOutputModal(open)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Output</DialogTitle>
+            <DialogDescription>
+              Add a new output entry to a selected research project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <label className="space-y-2 text-sm">
+              <span className="font-semibold text-slate-700">Project</span>
+              <Select
+                value={addOutputForm.project_id}
+                onValueChange={(value) =>
+                  setAddOutputForm((prev) => ({ ...prev, project_id: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mergedProjectOptions.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.title || project.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="space-y-2 text-sm">
+              <span className="font-semibold text-slate-700">Output Type</span>
+              <Select
+                value={addOutputForm.output_type}
+                onValueChange={(value) =>
+                  setAddOutputForm((prev) => ({
+                    ...prev,
+                    output_type: value,
+                    specific_output:
+                      value === "product_software" ? prev.specific_output : "",
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select output type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            {addOutputForm.output_type === "product_software" ? (
+              <label className="space-y-2 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Specific Output
+                </span>
+                <Select
+                  value={addOutputForm.specific_output}
+                  onValueChange={(value) =>
+                    setAddOutputForm((prev) => ({
+                      ...prev,
+                      specific_output: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select specific output" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+
+            <label className="space-y-2 text-sm">
+              <span className="font-semibold text-slate-700">Target Count</span>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={addOutputForm.target_count}
+                onChange={(event) =>
+                  setAddOutputForm((prev) => ({
+                    ...prev,
+                    target_count: sanitizeDigits(event.target.value),
+                  }))
+                }
+              />
+            </label>
+
+            <label className="space-y-2 text-sm">
+              <span className="font-semibold text-slate-700">Notes</span>
+              <textarea
+                className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={addOutputForm.notes}
+                onChange={(event) =>
+                  setAddOutputForm((prev) => ({
+                    ...prev,
+                    notes: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="space-y-2 text-sm">
+              <span className="font-semibold text-slate-700">
+                Output file (optional)
+              </span>
+              <Input
+                type="file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  setAddOutputFile(file);
+                }}
+              />
+              <p className="text-xs text-slate-500">
+                {addOutputFile
+                  ? `${addOutputFile.name} (${Math.max(
+                      1,
+                      Math.round(addOutputFile.size / 1024),
+                    )} KB)`
+                  : "No file selected"}
               </p>
-              <div className="mt-4 grid gap-3">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Project</span>
-                  <select
-                    className="control-select"
-                    value={addOutputForm.project_id}
-                    onChange={(event) =>
-                      setAddOutputForm((prev) => ({
-                        ...prev,
-                        project_id: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Select project</option>
-                    {mergedProjectOptions.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.title || project.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            </label>
+          </div>
 
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Output Type
-                  </span>
-                  <select
-                    className="control-select"
-                    value={addOutputForm.output_type}
-                    onChange={(event) =>
-                      setAddOutputForm((prev) => ({
-                        ...prev,
-                        output_type: event.target.value,
-                        specific_output:
-                          event.target.value === "product_software"
-                            ? prev.specific_output
-                            : "",
-                      }))
-                    }
-                  >
-                    <option value="">Select output type</option>
-                    {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={addingOutput}
+              onClick={() => setShowAddOutputModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button disabled={addingOutput} onClick={handleCreateOutput}>
+              {addingOutput ? "Adding..." : "Add Output"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                {addOutputForm.output_type === "product_software" ? (
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Specific Output
-                    </span>
-                    <select
-                      className="control-select"
-                      value={addOutputForm.specific_output}
-                      onChange={(event) =>
-                        setAddOutputForm((prev) => ({
-                          ...prev,
-                          specific_output: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select specific output</option>
-                      {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Target Count
-                  </span>
-                  <input
-                    className="control-input"
-                    type="number"
-                    min={1}
-                    step={1}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={addOutputForm.target_count}
-                    onChange={(event) =>
-                      setAddOutputForm((prev) => ({
-                        ...prev,
-                        target_count: sanitizeDigits(event.target.value),
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Notes</span>
-                  <textarea
-                    className="control-input min-h-[90px]"
-                    value={addOutputForm.notes}
-                    onChange={(event) =>
-                      setAddOutputForm((prev) => ({
-                        ...prev,
-                        notes: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Output file (optional)
-                  </span>
-                  <input
-                    className="control-input"
-                    type="file"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] || null;
-                      setAddOutputFile(file);
-                    }}
-                  />
-                  <p className="text-xs text-slate-500">
-                    {addOutputFile
-                      ? `${addOutputFile.name} (${Math.max(
-                          1,
-                          Math.round(addOutputFile.size / 1024),
-                        )} KB)`
-                      : "No file selected"}
-                  </p>
-                </label>
-              </div>
-
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  disabled={addingOutput}
-                  onClick={() => setShowAddOutputModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={addingOutput}
-                  onClick={handleCreateOutput}
-                >
-                  {addingOutput ? "Adding..." : "Add Output"}
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
-      {viewTarget ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => setViewTarget(null)}
-        >
-          <aside
-            className="modal-dialog modal-dialog-3xl max-h-[92vh] overflow-y-auto"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="sticky top-0 z-10 border-b border-[var(--border)] bg-white pb-4">
-              <div className="app-card app-card-compact">
+      <Dialog open={Boolean(viewTarget)} onOpenChange={() => setViewTarget(null)}>
+        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
+          {viewTarget ? (
+            <>
+              <DialogHeader>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
                       Resource Details
                     </p>
-                    <h2 className="mt-1 break-words text-2xl font-semibold text-slate-900">
+                    <DialogTitle className="mt-1 break-words text-2xl">
                       {viewTarget.title || "-"}
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-600">
+                    </DialogTitle>
+                    <DialogDescription className="mt-1 text-sm">
                       {viewTarget.subtitle || "No linked project title"}
-                    </p>
+                    </DialogDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {viewTarget.resourceUrl ? (
-                      <a
-                        className="btn btn-outline"
-                        href={viewTarget.resourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Open Resource
-                      </a>
+                      <Button variant="outline" asChild>
+                        <a
+                          href={viewTarget.resourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open Resource
+                        </a>
+                      </Button>
                     ) : null}
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => setViewTarget(null)}
-                    >
+                    <Button variant="outline" onClick={() => setViewTarget(null)}>
                       Close
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="status-chip status-ongoing">
-                    {viewTarget.outputType || "-"}
-                  </span>
-                  <span
-                    className={`status-chip ${viewTarget.private ? "status-rejected" : "status-completed"}`}
+                  <Badge variant="outline">{viewTarget.outputType || "-"}</Badge>
+                  <Badge
+                    variant={viewTarget.private ? "destructive" : "secondary"}
                   >
                     {viewTarget.private ? "Private" : "Public"}
-                  </span>
-                  <span className="status-chip status-proposal">
-                    {viewTarget.state || "-"}
-                  </span>
+                  </Badge>
+                  <Badge variant="outline">{viewTarget.state || "-"}</Badge>
                 </div>
-              </div>
-            </div>
+              </DialogHeader>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <section className="app-card">
-                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  File Information
-                </p>
-                <div className="mt-3 grid gap-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="app-card-muted app-card-micro">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
-                        File Size
-                      </p>
-                      <p className="text-base font-semibold text-slate-800">
-                        {formatFileSize(viewTarget.fileSize)}
-                      </p>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardContent className="space-y-3 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+                      File Information
+                    </p>
+                    <div className="grid gap-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Card>
+                          <CardContent className="p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500">
+                              File Size
+                            </p>
+                            <p className="text-base font-semibold text-slate-800">
+                              {formatFileSize(viewTarget.fileSize)}
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500">
+                              MIME Type
+                            </p>
+                            <p className="break-words text-base font-semibold text-slate-800">
+                              {viewTarget.mimeType || "-"}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Notes
+                          </p>
+                          <p className="text-base text-slate-800">
+                            {viewTarget.notes || "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
                     </div>
-                    <div className="app-card-muted app-card-micro">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
-                        MIME Type
-                      </p>
-                      <p className="break-words text-base font-semibold text-slate-800">
-                        {viewTarget.mimeType || "-"}
-                      </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="space-y-3 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+                      Project Context
+                    </p>
+                    <div className="grid gap-3">
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Organization
+                          </p>
+                          <p className="text-base font-semibold text-slate-800">
+                            {viewTarget.organization || "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Dataset
+                          </p>
+                          <p className="break-words text-base font-semibold text-slate-800">
+                            {viewTarget.datasetName || "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Last Updated
+                          </p>
+                          <p className="text-base font-semibold text-slate-800">
+                            {viewTarget.metadataModified
+                              ? new Date(
+                                  viewTarget.metadataModified,
+                                ).toLocaleString()
+                              : "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Notes
-                    </p>
-                    <p className="text-base text-slate-800">
-                      {viewTarget.notes || "-"}
-                    </p>
-                  </div>
-                </div>
-              </section>
+                  </CardContent>
+                </Card>
 
-              <section className="app-card">
-                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  Project Context
-                </p>
-                <div className="mt-3 grid gap-3">
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Organization
+                <Card className="lg:col-span-2">
+                  <CardContent className="space-y-3 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+                      Technical IDs
                     </p>
-                    <p className="text-base font-semibold text-slate-800">
-                      {viewTarget.organization || "-"}
-                    </p>
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Dataset
-                    </p>
-                    <p className="break-words text-base font-semibold text-slate-800">
-                      {viewTarget.datasetName || "-"}
-                    </p>
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Last Updated
-                    </p>
-                    <p className="text-base font-semibold text-slate-800">
-                      {viewTarget.metadataModified
-                        ? new Date(viewTarget.metadataModified).toLocaleString()
-                        : "-"}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="app-card lg:col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  Technical IDs
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Dataset ID
-                    </p>
-                    <p className="break-all text-sm font-semibold text-slate-800">
-                      {viewTarget.datasetId || "-"}
-                    </p>
-                  </div>
-                  <div className="app-card-muted app-card-micro">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Resource ID
-                    </p>
-                    <p className="break-all text-sm font-semibold text-slate-800">
-                      {viewTarget.resourceId || "-"}
-                    </p>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
-      {editingTarget ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() => !editSaving && setEditingTarget(null)}
-        >
-          <aside
-            className="modal-dialog modal-dialog-xl max-h-[92vh] overflow-y-auto"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="app-card">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Edit Research Output
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Update the selected resource fields.
-              </p>
-
-              <div className="mt-4 grid gap-3">
-                <label className="block space-y-1">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    File Name
-                  </span>
-                  <input
-                    type="text"
-                    value={editForm.file_name}
-                    onChange={(event) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        file_name: event.target.value,
-                      }))
-                    }
-                    className="control-input"
-                  />
-                </label>
-
-                <label className="block space-y-1">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Notes
-                  </span>
-                  <textarea
-                    value={editForm.notes}
-                    onChange={(event) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        notes: event.target.value,
-                      }))
-                    }
-                    className="control-input min-h-[90px]"
-                  />
-                </label>
-
-                <label className="block space-y-1">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    File URL / Path
-                  </span>
-                  <input
-                    type="text"
-                    value={editForm.file_path}
-                    onChange={(event) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        file_path: event.target.value,
-                      }))
-                    }
-                    className="control-input"
-                  />
-                </label>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="block space-y-1">
-                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      MIME Type
-                    </span>
-                    <input
-                      type="text"
-                      value={editForm.mime_type}
-                      onChange={(event) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          mime_type: event.target.value,
-                        }))
-                      }
-                      className="control-input"
-                    />
-                  </label>
-
-                  <label className="block space-y-1">
-                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      File Size (bytes)
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={editForm.file_size}
-                      onChange={(event) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          file_size: event.target.value,
-                        }))
-                      }
-                      className="control-input"
-                    />
-                  </label>
-                </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Dataset ID
+                          </p>
+                          <p className="break-all text-sm font-semibold text-slate-800">
+                            {viewTarget.datasetId || "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Resource ID
+                          </p>
+                          <p className="break-all text-sm font-semibold text-slate-800">
+                            {viewTarget.resourceId || "-"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  disabled={editSaving}
-                  onClick={() => setEditingTarget(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={editSaving}
-                  onClick={handleSaveEdit}
-                >
-                  {editSaving ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
+      <Dialog
+        open={Boolean(editingTarget)}
+        onOpenChange={(open) => !editSaving && !open && setEditingTarget(null)}
+      >
+        <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Research Output</DialogTitle>
+            <DialogDescription>
+              Update the selected resource fields.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3">
+            <label className="block space-y-1">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                File Name
+              </span>
+              <Input
+                type="text"
+                value={editForm.file_name}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    file_name: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Notes
+              </span>
+              <textarea
+                value={editForm.notes}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    notes: event.target.value,
+                  }))
+                }
+                className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                File URL / Path
+              </span>
+              <Input
+                type="text"
+                value={editForm.file_path}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    file_path: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block space-y-1">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  MIME Type
+                </span>
+                <Input
+                  type="text"
+                  value={editForm.mime_type}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      mime_type: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="block space-y-1">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  File Size (bytes)
+                </span>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editForm.file_size}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      file_size: event.target.value,
+                    }))
+                  }
+                />
+              </label>
             </div>
-          </aside>
-        </div>
-      ) : null}
+          </div>
 
-      {deleteTarget ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={() =>
-            !deletingByResource[deleteTarget.resourceId] &&
-            setDeleteTarget(null)
-          }
-        >
-          <aside
-            className="modal-dialog max-w-lg"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="app-card">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Delete Research Output
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                This will permanently remove the selected resource from CKAN.
-              </p>
-              <p className="mt-2 text-sm font-medium text-slate-800">
-                {deleteTarget.title || "-"}
-              </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={editSaving}
+              onClick={() => setEditingTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button disabled={editSaving} onClick={handleSaveEdit}>
+              {editSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  disabled={Boolean(
-                    deletingByResource[deleteTarget.resourceId],
-                  )}
-                  onClick={() => setDeleteTarget(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  disabled={Boolean(
-                    deletingByResource[deleteTarget.resourceId],
-                  )}
-                  onClick={() => handleDeleteResource(deleteTarget)}
-                >
-                  {deletingByResource[deleteTarget.resourceId]
-                    ? "Deleting..."
-                    : "Delete"}
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      ) : null}
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) =>
+          !deletingByResource[deleteTarget?.resourceId] &&
+          !open &&
+          setDeleteTarget(null)
+        }
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delete Research Output</DialogTitle>
+            <DialogDescription>
+              This will permanently remove the selected resource from CKAN.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm font-medium text-slate-800">
+            {deleteTarget?.title || "-"}
+          </p>
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={Boolean(deletingByResource[deleteTarget?.resourceId])}
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={Boolean(deletingByResource[deleteTarget?.resourceId])}
+              onClick={() => handleDeleteResource(deleteTarget)}
+            >
+              {deletingByResource[deleteTarget?.resourceId]
+                ? "Deleting..."
+                : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
