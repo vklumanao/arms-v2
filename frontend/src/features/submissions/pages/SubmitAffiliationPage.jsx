@@ -2,6 +2,34 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, CircleDot, FileText, Lock, Upload } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import {
   fetchCkanOrganizationAgendas,
@@ -854,13 +882,13 @@ export default function SubmitAffiliationPage() {
         title={editId ? "Revise Research Project" : "Submit Research Project"}
         description="Use step-by-step form completion. Your draft is auto-saved in this browser."
         actions={
-          <button
+          <Button
             type="button"
-            className="btn btn-outline"
+            variant="outline"
             onClick={() => navigate("/submit-project")}
           >
             Go back
-          </button>
+          </Button>
         }
       />
 
@@ -956,30 +984,27 @@ export default function SubmitAffiliationPage() {
       </div>
 
       {loadingEdit ? (
-        <div className="panel">
-          <div className="panel-body text-sm text-slate-600">
+        <Card>
+          <CardContent className="p-5 text-sm text-slate-600">
             Loading submission for revision...
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : null}
 
-      <form className="panel overflow-hidden" onSubmit={handleSubmitAttempt}>
-        <div className="panel-header flex flex-wrap items-start justify-between gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            {SUBMISSION_STEPS[step].label}
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={clearDraft}
-            >
-              Clear Draft
-            </button>
-          </div>
-        </div>
+      <form onSubmit={handleSubmitAttempt}>
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-wrap items-start justify-between gap-2 border-b px-5 py-4">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              {SUBMISSION_STEPS[step].label}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={clearDraft}>
+                Clear Draft
+              </Button>
+            </div>
+          </CardHeader>
 
-        <div className="panel-body grid w-full gap-6">
+          <CardContent className="grid w-full gap-6 p-5">
           {step === 0 ? (
             <div className="space-y-5">
               <div className="form-section">
@@ -995,8 +1020,7 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Project title
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     placeholder="e.g. AI Mentorship in Public Schools"
                     required
                     value={form.title}
@@ -1013,8 +1037,8 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Project abstract/summary
                   </span>
-                  <textarea
-                    className="control-textarea min-h-24"
+                  <Textarea
+                    className="min-h-24"
                     placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
                     value={form.abstract}
                     onChange={(e) =>
@@ -1034,8 +1058,7 @@ export default function SubmitAffiliationPage() {
                       Lead researcher
                     </span>
                     <div ref={leadFieldRef} className="relative space-y-2">
-                      <input
-                        className="control-input"
+                      <Input
                         placeholder="Type a CKAN user name"
                         value={leadSearch}
                         onFocus={() =>
@@ -1073,7 +1096,8 @@ export default function SubmitAffiliationPage() {
                         </div>
                       ) : null}
                     </div>
-                    <div className="app-card-muted app-card-micro">
+                    <Card className="bg-muted/30 shadow-none">
+                      <CardContent className="p-3">
                       {!selectedLeadResearcher ? (
                         <p className="text-xs text-slate-500">
                           No CKAN user selected yet.
@@ -1096,7 +1120,8 @@ export default function SubmitAffiliationPage() {
                           </span>
                         </div>
                       )}
-                    </div>
+                      </CardContent>
+                    </Card>
                     <p className="text-xs text-slate-500">
                       Type to search and select one CKAN user only.
                     </p>
@@ -1106,8 +1131,7 @@ export default function SubmitAffiliationPage() {
                       Research team (faculty)
                     </span>
                     <div ref={facultyFieldRef} className="relative space-y-2">
-                      <input
-                        className="control-input"
+                      <Input
                         placeholder="Type a CKAN user name"
                         value={facultySearch}
                         onFocus={() =>
@@ -1151,7 +1175,8 @@ export default function SubmitAffiliationPage() {
                         </div>
                       ) : null}
                     </div>
-                    <div className="app-card-muted app-card-micro">
+                    <Card className="bg-muted/30 shadow-none">
+                      <CardContent className="p-3">
                       {facultyTeamSelections.length === 0 ? (
                         <p className="text-xs text-slate-500">
                           No CKAN users selected yet.
@@ -1178,7 +1203,8 @@ export default function SubmitAffiliationPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                      </CardContent>
+                    </Card>
                     <p className="text-xs text-slate-500">
                       Type to search and select one or more CKAN users.
                     </p>
@@ -1188,8 +1214,7 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Research team (students)
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     placeholder="Comma-separated names (optional)"
                     value={form.student_team}
                     onChange={(e) =>
@@ -1211,8 +1236,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Project year
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       type="number"
                       min="2000"
                       max="2100"
@@ -1232,8 +1256,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Research center
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       value={
                         centerName === "-"
                           ? form.research_center_id ||
@@ -1263,61 +1286,66 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Project classification
                   </span>
-                  <select
-                    className="control-select"
-                    required
-                    value={form.classification}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        classification: e.target.value,
-                      }))
+                  <Select
+                    value={form.classification || "academic"}
+                    onValueChange={(value) =>
+                      setForm((p) => ({ ...p, classification: value }))
                     }
                   >
-                    <option value="academic">Academic</option>
-                    <option value="industry">Industry</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select classification" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="academic">Academic</SelectItem>
+                      <SelectItem value="industry">Industry</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
 
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">Status</span>
-                  <select
-                    className="control-select"
-                    required
-                    value={form.status}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, status: e.target.value }))
-                    }
+                  <Select
+                    value={form.status || "proposal"}
+                    onValueChange={(value) => setForm((p) => ({ ...p, status: value }))}
                   >
-                    <option value="proposal">Proposal</option>
-                    <option value="ongoing">On-going</option>
-                    <option value="completed">Completed</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="proposal">Proposal</SelectItem>
+                      <SelectItem value="ongoing">On-going</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
 
                 <label className="block space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Research agenda
                   </span>
-                  <select
-                    className="control-select"
-                    value={form.research_agenda_id}
+                  <Select
+                    value={form.research_agenda_id || "__none__"}
                     disabled={effectiveAgendas.length === 0}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       setForm((p) => ({
                         ...p,
-                        research_agenda_id: e.target.value,
+                        research_agenda_id: value === "__none__" ? "" : value,
                       }))
                     }
                   >
-                    <option value="">Select research agenda</option>
-                    {effectiveAgendas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select research agenda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Select research agenda</SelectItem>
+                      {effectiveAgendas.map((a) => (
+                        <SelectItem key={a.id} value={String(a.id)}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {effectiveAgendas.length === 0 ? (
                     <p className="text-xs text-amber-700">
                       No research agenda found in your organization custom
@@ -1330,8 +1358,7 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Department
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     value={departmentName === "-" ? "" : departmentName}
                     readOnly
                     disabled
@@ -1341,8 +1368,7 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Scholarly type
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     placeholder="e.g. Industry-based, Other Scholarly"
                     value={form.scholarly_type}
                     onChange={(e) =>
@@ -1372,28 +1398,28 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Funding type
                     </span>
-                    <select
-                      className="control-select"
-                      value={form.funding_type}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          funding_type: e.target.value,
-                        }))
+                    <Select
+                      value={form.funding_type || "none"}
+                      onValueChange={(value) =>
+                        setForm((p) => ({ ...p, funding_type: value }))
                       }
                     >
-                      <option value="none">None</option>
-                      <option value="internal">Internal</option>
-                      <option value="external">External</option>
-                      <option value="self_funded">Self Funded</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select funding type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="internal">Internal</SelectItem>
+                        <SelectItem value="external">External</SelectItem>
+                        <SelectItem value="self_funded">Self Funded</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="block space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
                       Funding category
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       placeholder="e.g. External (Industry-Sponsored)"
                       value={form.funding_category}
                       onChange={(e) =>
@@ -1408,8 +1434,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Funding source
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       placeholder="e.g. ARMS Grants Office"
                       value={form.funding_source}
                       onChange={(e) =>
@@ -1424,8 +1449,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Funding amount
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       placeholder="e.g. 50000"
                       type="number"
                       min="0"
@@ -1452,8 +1476,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Industry/Agency partner
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       placeholder="e.g. PNP, DA-BAFE"
                       value={form.industry_partner}
                       onChange={(e) =>
@@ -1485,29 +1508,31 @@ export default function SubmitAffiliationPage() {
                             </p>
                           </div>
                         </div>
-                        <label className="btn btn-outline upload-trigger">
-                          <Upload size={14} aria-hidden="true" />
-                          <span>{moaFile ? "Replace" : "Choose File"}</span>
-                          <input
-                            className="sr-only"
-                            type="file"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                            onChange={(e) => {
-                              const nextFile = e.target.files?.[0] || null;
-                              if (!nextFile) {
-                                setMoaFile(null);
-                                return;
-                              }
-                              if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
-                                setError("MOA file must be 25MB or smaller.");
-                                e.target.value = "";
-                                return;
-                              }
-                              setError("");
-                              setMoaFile(nextFile);
-                            }}
-                          />
-                        </label>
+                        <Button asChild variant="outline" className="upload-trigger">
+                          <label>
+                            <Upload size={14} aria-hidden="true" />
+                            <span>{moaFile ? "Replace" : "Choose File"}</span>
+                            <input
+                              className="sr-only"
+                              type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                              onChange={(e) => {
+                                const nextFile = e.target.files?.[0] || null;
+                                if (!nextFile) {
+                                  setMoaFile(null);
+                                  return;
+                                }
+                                if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
+                                  setError("MOA file must be 25MB or smaller.");
+                                  e.target.value = "";
+                                  return;
+                                }
+                                setError("");
+                                setMoaFile(nextFile);
+                              }}
+                            />
+                          </label>
+                        </Button>
                       </div>
                       <div className="upload-field-preview">
                         <p className="upload-field-preview-text">
@@ -1529,8 +1554,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Start date
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       type="date"
                       value={form.start_date}
                       onChange={(e) =>
@@ -1545,8 +1569,7 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       End date (due date)
                     </span>
-                    <input
-                      className="control-input"
+                    <Input
                       type="date"
                       value={form.end_date}
                       onChange={(e) =>
@@ -1564,16 +1587,18 @@ export default function SubmitAffiliationPage() {
 
           {step === 3 ? (
             <div className="space-y-5">
-              <div className="app-card-muted app-card-compact text-sm text-slate-700">
-                <p className="font-semibold text-slate-900">
-                  Submission checklist
-                </p>
-                <ul className="mt-1 list-disc pl-4">
-                  <li>Title and center are filled.</li>
-                  <li>Classification and year are valid.</li>
-                  <li>Dates and funding values are logically consistent.</li>
-                </ul>
-              </div>
+              <Card className="bg-muted/30 shadow-none">
+                <CardContent className="p-4 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">
+                    Submission checklist
+                  </p>
+                  <ul className="mt-1 list-disc pl-4">
+                    <li>Title and center are filled.</li>
+                    <li>Classification and year are valid.</li>
+                    <li>Dates and funding values are logically consistent.</li>
+                  </ul>
+                </CardContent>
+              </Card>
 
               <div className="form-section">
                 <div className="form-section-head">
@@ -1588,43 +1613,39 @@ export default function SubmitAffiliationPage() {
                     <span className="font-semibold text-slate-700">
                       Expected research outputs
                     </span>
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={openAddOutputModal}
-                    >
+                    <Button type="button" variant="outline" onClick={openAddOutputModal}>
                       Add Output
-                    </button>
+                    </Button>
                   </div>
                   <p className="text-xs text-slate-500">
                     Rows are finalized in database when you submit/save
                     revision.
                   </p>
-                  <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Output Type</th>
-                          <th>Target</th>
-                          <th>Notes</th>
-                          <th>File</th>
-                          <th className="text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
+                    <Table className="min-w-[680px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Output Type</TableHead>
+                          <TableHead>Target</TableHead>
+                          <TableHead>Notes</TableHead>
+                          <TableHead>File</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {expectedOutputRows.length === 0 ? (
-                          <tr>
-                            <td
+                          <TableRow>
+                            <TableCell
                               colSpan={5}
                               className="px-3 py-4 text-center text-xs text-slate-500"
                             >
                               No expected outputs added yet.
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ) : (
                           paginatedExpectedOutputRows.map((row) => (
-                            <tr key={row.client_id}>
-                              <td>
+                            <TableRow key={row.client_id}>
+                              <TableCell>
                                 {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
                                   (item) => item.value === row.output_type,
                                 )?.label ||
@@ -1635,49 +1656,50 @@ export default function SubmitAffiliationPage() {
                                     Specific: {row.specific_output}
                                   </p>
                                 ) : null}
-                              </td>
-                              <td className="text-slate-600">
+                              </TableCell>
+                              <TableCell className="text-slate-600">
                                 {Math.max(1, Number(row.target_count) || 1)}
-                              </td>
-                              <td className="text-slate-600">
+                              </TableCell>
+                              <TableCell className="text-slate-600">
                                 {row.notes || "-"}
                                 {row.needs_file_reselect ? (
                                   <p className="text-xs text-amber-700">
                                     File needs re-attach after refresh.
                                   </p>
                                 ) : null}
-                              </td>
-                              <td className="text-slate-600 break-all">
+                              </TableCell>
+                              <TableCell className="break-all text-slate-600">
                                 {row.file_name ||
                                   row.file?.name ||
                                   row.file_path ||
                                   "-"}
-                              </td>
-                              <td className="text-right">
+                              </TableCell>
+                              <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <button
+                                  <Button
                                     type="button"
-                                    className="btn btn-outline"
+                                    variant="outline"
                                     onClick={() => openEditOutputModal(row)}
                                   >
                                     Edit
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     type="button"
-                                    className="btn btn-outline"
+                                    variant="outline"
+                                    className="border-destructive text-destructive hover:bg-destructive/10"
                                     onClick={() =>
                                       deleteExpectedOutputRow(row.client_id)
                                     }
                                   >
                                     Delete
-                                  </button>
+                                  </Button>
                                 </div>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))
                         )}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                   {expectedOutputRows.length > 0 ? (
                     <PaginationControls
@@ -1691,8 +1713,7 @@ export default function SubmitAffiliationPage() {
                   <span className="font-semibold text-slate-700">
                     Supporting MOV link (optional)
                   </span>
-                  <input
-                    className="control-input"
+                  <Input
                     placeholder="Google Drive link or repository of supporting MOVs"
                     value={form.supporting_mov_link}
                     onChange={(e) =>
@@ -1701,7 +1722,7 @@ export default function SubmitAffiliationPage() {
                         supporting_mov_link: e.target.value,
                       }))
                     }
-                    />
+                  />
                 </label>
                 <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3 text-sm sm:max-w-2xl">
                   <input
@@ -1740,7 +1761,8 @@ export default function SubmitAffiliationPage() {
               </div>
 
               <div className="grid gap-4">
-                <div className="app-card">
+                <Card>
+                  <CardContent className="p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
                     Step 1: Project
                   </p>
@@ -1749,8 +1771,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Project Title
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.title || "-"}
                         readOnly
                       />
@@ -1759,8 +1780,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Lead Researcher
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.lead_researcher || "-"}
                         readOnly
                       />
@@ -1769,8 +1789,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Project Year
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.year || "-"}
                         readOnly
                       />
@@ -1779,8 +1798,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Research Center
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={centerName}
                         readOnly
                       />
@@ -1789,8 +1807,8 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Faculty Team
                       </span>
-                      <textarea
-                        className="control-textarea min-h-20"
+                      <Textarea
+                        className="min-h-20"
                         value={form.faculty_team || "-"}
                         readOnly
                       />
@@ -1799,8 +1817,8 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Student Team
                       </span>
-                      <textarea
-                        className="control-textarea min-h-20"
+                      <Textarea
+                        className="min-h-20"
                         value={form.student_team || "-"}
                         readOnly
                       />
@@ -1809,16 +1827,18 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Abstract
                       </span>
-                      <textarea
-                        className="control-textarea min-h-24"
+                      <Textarea
+                        className="min-h-24"
                         value={form.abstract || "-"}
                         readOnly
                       />
                     </label>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div className="app-card">
+                <Card>
+                  <CardContent className="p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
                     Step 2: Classification
                   </p>
@@ -1827,8 +1847,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Status
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.status || "-"}
                         readOnly
                       />
@@ -1837,8 +1856,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Classification
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.classification || "-"}
                         readOnly
                       />
@@ -1847,8 +1865,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Scholarly Type
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.scholarly_type || "-"}
                         readOnly
                       />
@@ -1857,8 +1874,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Research Agenda
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={agendaName}
                         readOnly
                       />
@@ -1867,16 +1883,17 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Department
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={departmentName}
                         readOnly
                       />
                     </label>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div className="app-card">
+                <Card>
+                  <CardContent className="p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
                     Step 3: Funding & Timeline
                   </p>
@@ -1885,8 +1902,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Funding Type
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.funding_type || "-"}
                         readOnly
                       />
@@ -1895,8 +1911,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Funding Category
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.funding_category || "-"}
                         readOnly
                       />
@@ -1905,8 +1920,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Funding Source
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.funding_source || "-"}
                         readOnly
                       />
@@ -1915,8 +1929,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Funding Amount
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.funding_amount || "0"}
                         readOnly
                       />
@@ -1925,8 +1938,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Industry/Agency Partner
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.industry_partner || "-"}
                         readOnly
                       />
@@ -1935,8 +1947,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Signed MOA Reference
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={
                           moaFile?.name || form.signed_moa_reference || "-"
                         }
@@ -1947,8 +1958,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Start Date
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.start_date || "-"}
                         readOnly
                       />
@@ -1957,16 +1967,17 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         End Date
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.end_date || "-"}
                         readOnly
                       />
                     </label>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div className="app-card">
+                <Card>
+                  <CardContent className="p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
                     Step 4: Outputs & Visibility
                   </p>
@@ -1980,35 +1991,37 @@ export default function SubmitAffiliationPage() {
                           <p className="text-sm text-slate-600">-</p>
                         ) : (
                           expectedOutputRows.map((row) => (
-                            <div
+                            <Card
                               key={`review-output-${row.client_id}`}
-                              className="app-card app-card-micro text-sm"
+                              className="shadow-none"
                             >
-                              <p className="font-semibold text-slate-800">
-                                {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
-                                  (item) => item.value === row.output_type,
-                                )?.label ||
-                                  row.output_type ||
-                                  "-"}
-                              </p>
-                              {String(row.specific_output || "").trim() ? (
-                                <p className="text-slate-600">
-                                  Specific: {row.specific_output}
+                              <CardContent className="p-3 text-sm">
+                                <p className="font-semibold text-slate-800">
+                                  {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
+                                    (item) => item.value === row.output_type,
+                                  )?.label ||
+                                    row.output_type ||
+                                    "-"}
                                 </p>
-                              ) : null}
-                              <p className="text-slate-600">
-                                Target:{" "}
-                                {Math.max(1, Number(row.target_count) || 1)} |
-                                Notes: {row.notes || "-"}
-                              </p>
-                              <p className="text-slate-600 break-all">
-                                File:{" "}
-                                {row.file?.name ||
-                                  row.file_name ||
-                                  row.file_path ||
-                                  "-"}
-                              </p>
-                            </div>
+                                {String(row.specific_output || "").trim() ? (
+                                  <p className="text-slate-600">
+                                    Specific: {row.specific_output}
+                                  </p>
+                                ) : null}
+                                <p className="text-slate-600">
+                                  Target:{" "}
+                                  {Math.max(1, Number(row.target_count) || 1)} |{" "}
+                                  Notes: {row.notes || "-"}
+                                </p>
+                                <p className="text-slate-600 break-all">
+                                  File:{" "}
+                                  {row.file?.name ||
+                                    row.file_name ||
+                                    row.file_path ||
+                                    "-"}
+                                </p>
+                              </CardContent>
+                            </Card>
                           ))
                         )}
                       </div>
@@ -2017,8 +2030,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Supporting MOV Link
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={form.supporting_mov_link || "-"}
                         readOnly
                       />
@@ -2027,8 +2039,7 @@ export default function SubmitAffiliationPage() {
                       <span className="font-semibold text-slate-700">
                         Visibility
                       </span>
-                      <input
-                        className="control-input"
+                      <Input
                         value={
                           form.public_visible ? "Publicly visible" : "Private"
                         }
@@ -2036,28 +2047,30 @@ export default function SubmitAffiliationPage() {
                       />
                     </label>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             {step > 0 ? (
-              <button
+              <Button
                 type="button"
-                className={`btn btn-outline ${disabledOutlineButtonClass}`}
+                variant="outline"
+                className={cn(disabledOutlineButtonClass)}
                 onClick={() => moveStep(-1)}
               >
                 Previous
-              </button>
+              </Button>
             ) : (
               <span />
             )}
             <div className="flex gap-2">
               {step < SUBMISSION_STEPS.length - 1 ? (
-                <button
+                <Button
                   type="button"
-                  className={`btn btn-primary ${disabledButtonClass}`}
+                  className={cn(disabledButtonClass)}
                   onClick={(event) => {
                     event.preventDefault();
                     moveStep(1);
@@ -2067,38 +2080,40 @@ export default function SubmitAffiliationPage() {
                   )}
                 >
                   Next
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="submit"
-                  className={`btn btn-primary ${disabledButtonClass}`}
+                  className={cn(disabledButtonClass)}
                   disabled={Boolean(getSubmissionValidationError())}
                 >
                   {editId ? "Save Revision" : "Submit Research Project"}
-                </button>
+                </Button>
               )}
             </div>
           </div>
-        </div>
+        </CardContent>
+        </Card>
       </form>
 
       <div className="fixed bottom-3 left-3 right-3 z-20 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white/95 p-2 shadow-sm backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-2">
           {step > 0 ? (
-            <button
+            <Button
               type="button"
-              className={`btn btn-outline ${disabledOutlineButtonClass}`}
+              variant="outline"
+              className={cn(disabledOutlineButtonClass)}
               onClick={() => moveStep(-1)}
             >
               Prev
-            </button>
+            </Button>
           ) : (
             <span />
           )}
           {step < SUBMISSION_STEPS.length - 1 ? (
-            <button
+            <Button
               type="button"
-              className={`btn btn-primary ${disabledButtonClass}`}
+              className={cn(disabledButtonClass)}
               onClick={(event) => {
                 event.preventDefault();
                 moveStep(1);
@@ -2108,16 +2123,16 @@ export default function SubmitAffiliationPage() {
               )}
             >
               Next Step
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
-              className={`btn btn-primary ${disabledButtonClass}`}
+              className={cn(disabledButtonClass)}
               onClick={handleSubmitAttempt}
               disabled={Boolean(getSubmissionValidationError())}
             >
               {editId ? "Save" : "Submit Project"}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -2133,134 +2148,143 @@ export default function SubmitAffiliationPage() {
         onConfirm={submit}
       />
 
-      {showAddOutputModal ? (
-        <div
-          className="modal-overlay modal-overlay-centered"
-          onClick={closeAddOutputModal}
-        >
-          <div
-            className="modal-dialog modal-dialog-md"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p className="text-base font-bold text-slate-900">
+      <Dialog
+        open={showAddOutputModal}
+        onOpenChange={(open) => {
+          if (!open) closeAddOutputModal();
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
               {editingOutputClientId ? "Edit Output" : "Add Output"}
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
+            </DialogTitle>
+            <DialogDescription>
               Fill out the output details, then click{" "}
               {editingOutputClientId ? "Save" : "Add"} to list it in Step 4.
-            </p>
-            <div className="mt-3 space-y-3">
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Output type</span>
+              <Select
+                value={newOutputDraft.output_type || "__none__"}
+                onValueChange={(value) =>
+                  setNewOutputDraft((prev) => ({
+                    ...prev,
+                    output_type: value === "__none__" ? "" : value,
+                    specific_output:
+                      value === "product_software"
+                        ? prev.specific_output || ""
+                        : "",
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select output type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Select output type</SelectItem>
+                  {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            {newOutputDraft.output_type === "product_software" ? (
               <label className="block space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
-                  Output type
+                  Specific output
                 </span>
-                <select
-                  className="control-select"
-                  value={newOutputDraft.output_type}
-                  onChange={(e) =>
+                <Select
+                  value={newOutputDraft.specific_output || "__none__"}
+                  onValueChange={(value) =>
                     setNewOutputDraft((prev) => ({
                       ...prev,
-                      output_type: e.target.value,
-                      specific_output:
-                        e.target.value === "product_software"
-                          ? prev.specific_output || ""
-                          : "",
+                      specific_output: value === "__none__" ? "" : value,
                     }))
                   }
                 >
-                  <option value="">Select output type</option>
-                  {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {newOutputDraft.output_type === "product_software" ? (
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Specific output
-                  </span>
-                  <select
-                    className="control-select"
-                    value={newOutputDraft.specific_output || ""}
-                    onChange={(e) =>
-                      setNewOutputDraft((prev) => ({
-                        ...prev,
-                        specific_output: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Select specific output</option>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select specific output" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">
+                      Select specific output
+                    </SelectItem>
                     {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
-                      <option key={item} value={item}>
+                      <SelectItem key={item} value={item}>
                         {item}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                </label>
-              ) : null}
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Target count
-                </span>
-                <input
-                  className="control-input"
-                  type="number"
-                  min={1}
-                  step={1}
-                  inputMode="numeric"
-                  value={newOutputDraft.target_count}
-                  onChange={(e) =>
-                    setNewOutputDraft((prev) => ({
-                      ...prev,
-                      target_count: sanitizeDigits(e.target.value, 3),
-                    }))
-                  }
-                />
+                  </SelectContent>
+                </Select>
               </label>
-              <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Notes</span>
-                <input
-                  className="control-input"
-                  placeholder="Short note about this expected output"
-                  value={newOutputDraft.notes || ""}
-                  onChange={(e) =>
-                    setNewOutputDraft((prev) => ({
-                      ...prev,
-                      notes: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <div className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Output file (optional)
-                </span>
-                <div className="upload-field">
-                  <div className="upload-picker">
-                    <div className="upload-picker-info">
-                      <FileText
-                        size={16}
-                        className="mt-0.5 text-slate-500"
-                        aria-hidden="true"
-                      />
-                      <div className="space-y-0.5">
-                        <p className="upload-picker-name">
-                          {newOutputDraft.file?.name ||
-                            newOutputDraft.file_name ||
-                            "No file selected"}
-                        </p>
-                        <p className="upload-picker-sub">
-                          Size:{" "}
-                          {formatFileSize(
-                            newOutputDraft.file?.size ||
-                              newOutputDraft.file_size,
-                          )}
-                        </p>
-                      </div>
+            ) : null}
+
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Target count</span>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={newOutputDraft.target_count}
+                onChange={(e) =>
+                  setNewOutputDraft((prev) => ({
+                    ...prev,
+                    target_count: sanitizeDigits(e.target.value, 3),
+                  }))
+                }
+              />
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Notes</span>
+              <Input
+                placeholder="Short note about this expected output"
+                value={newOutputDraft.notes || ""}
+                onChange={(e) =>
+                  setNewOutputDraft((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <div className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">
+                Output file (optional)
+              </span>
+              <div className="upload-field">
+                <div className="upload-picker">
+                  <div className="upload-picker-info">
+                    <FileText
+                      size={16}
+                      className="mt-0.5 text-slate-500"
+                      aria-hidden="true"
+                    />
+                    <div className="space-y-0.5">
+                      <p className="upload-picker-name">
+                        {newOutputDraft.file?.name ||
+                          newOutputDraft.file_name ||
+                          "No file selected"}
+                      </p>
+                      <p className="upload-picker-sub">
+                        Size:{" "}
+                        {formatFileSize(
+                          newOutputDraft.file?.size || newOutputDraft.file_size,
+                        )}
+                      </p>
                     </div>
-                    <label className="btn btn-outline upload-trigger">
+                  </div>
+                  <Button asChild variant="outline" className="upload-trigger">
+                    <label>
                       <Upload size={14} aria-hidden="true" />
                       <span>
                         {newOutputDraft.file ? "Replace" : "Choose File"}
@@ -2294,34 +2318,27 @@ export default function SubmitAffiliationPage() {
                         }}
                       />
                     </label>
-                  </div>
-                  <div className="upload-field-preview">
-                    <p className="upload-field-hint">
-                      Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
-                    </p>
-                  </div>
+                  </Button>
+                </div>
+                <div className="upload-field-preview">
+                  <p className="upload-field-hint">
+                    Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={closeAddOutputModal}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={saveNewExpectedOutput}
-              >
-                {editingOutputClientId ? "Save" : "Add"}
-              </button>
-            </div>
           </div>
-        </div>
-      ) : null}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeAddOutputModal}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={saveNewExpectedOutput}>
+              {editingOutputClientId ? "Save" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
