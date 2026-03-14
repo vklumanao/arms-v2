@@ -2,6 +2,9 @@
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isValidEmail } from "@/shared/utils/validation";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
   const { requestPasswordReset } = useAuth();
@@ -42,8 +45,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md panel">
-      <div className="panel-header">
+    <section className="mx-auto max-w-md">
+      <Card>
+        <CardHeader>
         <img
           src="/arms-logo-v2.svg"
           alt="ARMS Logo"
@@ -53,10 +57,10 @@ export default function ForgotPasswordPage() {
         <p className="mt-1 text-sm text-slate-600">
           Enter your email and we will send a reset link.
         </p>
-      </div>
-      <form className="panel-body space-y-3" onSubmit={submit}>
-        <input
-          className="control-input"
+        </CardHeader>
+        <CardContent>
+      <form className="space-y-3" onSubmit={submit}>
+        <Input
           placeholder="Enter your account email"
           type="email"
           required
@@ -65,8 +69,10 @@ export default function ForgotPasswordPage() {
         />
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         {message && <p className="text-sm text-[var(--success)]">{message}</p>}
-        <button className="btn btn-primary w-full">Send reset link</button>
+        <Button className="w-full">Send reset link</Button>
       </form>
+        </CardContent>
+      </Card>
 
       <ConfirmActionModal
         open={Boolean(confirmEmail)}
