@@ -1,7 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Eye,
+  Pencil,
   Search,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
@@ -399,16 +427,17 @@ export default function AdminAffiliatesModulePage() {
         description="Monitor and review affiliate records with analytics, filtering, and export-ready reports."
       />
 
-      <div className="panel overflow-hidden">
-        <div className="border-b border-[var(--border)] px-4 py-3">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-4 py-3 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
                 Affiliate Records ({filteredRows.length})
-              </h2>
+              </CardTitle>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <input
-                  className="control-input pl-8"
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  className="pl-8"
                   placeholder="Search name/email/id"
                   value={filters.search}
                   onChange={(event) =>
@@ -421,41 +450,45 @@ export default function AdminAffiliatesModulePage() {
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button
+              <Button
                 type="button"
-                className="btn btn-outline"
+                variant="outline"
                 onClick={exportAsCsv}
                 disabled={!filteredRows.length || Boolean(exportingType)}
               >
                 {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-outline"
+                variant="outline"
                 onClick={exportAsPdf}
                 disabled={!filteredRows.length || Boolean(exportingType)}
               >
                 {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-              </button>
+              </Button>
             </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex w-full flex-wrap gap-2 md:w-auto">
-              <select
-                className="control-select w-full md:w-[14rem]"
+              <Select
                 value={filters.sortBy}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setFilters((prev) => ({
                     ...prev,
-                    sortBy: event.target.value,
+                    sortBy: value,
                   }))
                 }
               >
-                <option value="name_asc">Sort: Name A-Z</option>
-                <option value="name_desc">Sort: Name Z-A</option>
-                <option value="recent_desc">Sort: Recently updated</option>
-                <option value="recent_asc">Sort: Least recently updated</option>
-              </select>
+                <SelectTrigger className="w-full md:w-[14rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
+                  <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
+                  <SelectItem value="recent_desc">Sort: Recently updated</SelectItem>
+                  <SelectItem value="recent_asc">Sort: Least recently updated</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <p className="text-sm text-slate-600">
               Showing{" "}
@@ -463,7 +496,7 @@ export default function AdminAffiliatesModulePage() {
               affiliate record(s).
             </p>
           </div>
-        </div>
+        </CardHeader>
 
         {filteredRows.length === 0 ? (
           <div className="p-4">
@@ -473,110 +506,109 @@ export default function AdminAffiliatesModulePage() {
             />
           </div>
         ) : (
-          <div className="space-y-3">
+          <CardContent className="space-y-3 p-0">
             <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="bg-slate-50 text-left text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">No.</th>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Role</th>
-                    <th className="px-4 py-3 font-semibold">Department</th>
-                    <th className="px-4 py-3 font-semibold">Research Center</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">GS Faculty</th>
-                    <th className="px-4 py-3 font-semibold">Publications</th>
-                    <th className="px-4 py-3 font-semibold">Projects</th>
-                    <th className="px-4 py-3 font-semibold">Creative Works</th>
-                    <th className="px-4 py-3 font-semibold">Awards</th>
-                    <th className="px-4 py-3 font-semibold">IPs</th>
-                    <th className="px-4 py-3 font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Research Center</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>GS Faculty</TableHead>
+                    <TableHead>Publications</TableHead>
+                    <TableHead>Projects</TableHead>
+                    <TableHead>Creative Works</TableHead>
+                    <TableHead>Awards</TableHead>
+                    <TableHead>IPs</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {pagination.items.map((row, index) => (
-                    <tr
-                      key={row.id}
-                      className="border-t border-[var(--border)] align-top"
-                    >
-                      <td className="px-4 py-3 text-slate-600">
+                    <TableRow key={row.id}>
+                      <TableCell className="text-slate-600">
                         {pagination.start + index + 1}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <p className="font-semibold text-slate-900">
                           {row.full_name || "-"}
                         </p>
                         <p className="text-xs text-slate-500">
                           {row.email || "-"}
                         </p>
-                      </td>
-                      <td className="px-4 py-3 capitalize text-slate-700">
+                      </TableCell>
+                      <TableCell className="capitalize text-slate-700">
                         {row.role || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {row.department || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`status-chip ${
-                            row.is_active
-                              ? "status-completed"
-                              : "status-rejected"
-                          }`}
-                        >
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={row.is_active ? "secondary" : "destructive"}>
                           {row.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.publication_count || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.research_project_count || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.creative_work_count || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.awards_count || 0)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.ip_count || 0)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <button
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
                             type="button"
-                            className="btn btn-outline"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => setViewAffiliateId(row.id)}
+                            aria-label={`View ${row?.full_name || "affiliate"}`}
+                            title="View"
                           >
-                            View
-                          </button>
-                          <button
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
                             type="button"
-                            className="btn btn-outline"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             disabled={row.source === "ckan_only"}
                             onClick={() => openEditModal(row)}
+                            aria-label={`Edit ${row?.full_name || "affiliate"}`}
+                            title={row.source === "ckan_only" ? "Edit disabled (CKAN only)" : "Edit"}
                           >
-                            Edit
-                          </button>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
-          </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
       {filteredRows.length > 0 ? (
         <PaginationControls
           page={currentPage}
@@ -586,23 +618,19 @@ export default function AdminAffiliatesModulePage() {
       ) : null}
 
       {selectedAffiliate ? (
-        <div className="modal-overlay" onClick={() => setViewAffiliateId(null)}>
-          <aside
-            className="ml-auto h-full w-full max-w-6xl overflow-y-auto border-l border-[var(--border)] bg-white px-4 pb-4 pt-0 shadow-2xl sm:px-5 sm:pb-5 sm:pt-0"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Affiliate Details
-              </h2>
-              <button
-                className="btn btn-outline"
-                onClick={() => setViewAffiliateId(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="grid gap-3 py-4 sm:grid-cols-2">
+        <Dialog
+          open={Boolean(selectedAffiliate)}
+          onOpenChange={(open) => !open && setViewAffiliateId(null)}
+        >
+          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-6xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
+            <DialogHeader className="border-b border-border px-5 py-4 text-left">
+              <DialogTitle>Affiliate Details</DialogTitle>
+              <DialogDescription>
+                Review affiliate profile details and related projects.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-5 py-4">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
                   Full Name
@@ -729,7 +757,7 @@ export default function AdminAffiliatesModulePage() {
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
                   Related Projects ({affiliateProjectsPanel.rows.length})
                 </p>
-                <div className="overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)]">
+                <Card className="overflow-hidden">
                   <div className="max-h-[320px] overflow-auto">
                     {affiliateProjectsPanel.loading ? (
                       <p className="p-3 text-sm text-slate-600">
@@ -744,37 +772,37 @@ export default function AdminAffiliatesModulePage() {
                         No related projects found for this affiliate.
                       </p>
                     ) : (
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>No.</th>
-                            <th>Project Title</th>
-                            <th>Status</th>
-                            <th>Year</th>
-                            <th>Organization</th>
-                            <th>Updated</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>No.</TableHead>
+                            <TableHead>Project Title</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Year</TableHead>
+                            <TableHead>Organization</TableHead>
+                            <TableHead>Updated</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {affiliateProjectsPanel.rows.map((project, index) => (
-                            <tr key={project.id}>
-                              <td>{index + 1}</td>
-                              <td>{project.title}</td>
-                              <td className="capitalize">{project.status}</td>
-                              <td>{project.year}</td>
-                              <td>{project.organization}</td>
-                              <td>
+                            <TableRow key={project.id}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell>{project.title}</TableCell>
+                              <TableCell className="capitalize">{project.status}</TableCell>
+                              <TableCell>{project.year}</TableCell>
+                              <TableCell>{project.organization}</TableCell>
+                              <TableCell>
                                 {project.updatedAt
                                   ? new Date(project.updatedAt).toLocaleString()
                                   : "-"}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     )}
                   </div>
-                </div>
+                </Card>
               </div>
               <div className="sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
@@ -785,34 +813,30 @@ export default function AdminAffiliatesModulePage() {
                 </code>
               </div>
             </div>
-          </aside>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {editingAffiliate ? (
-        <div className="modal-overlay modal-overlay-centered">
-          <div className="panel w-full max-w-4xl">
-            <div className="panel-header flex items-center justify-between gap-3">
-              <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Edit Affiliate
-              </h2>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setEditingAffiliate(null)}
-                disabled={savingEdit}
-              >
-                Close
-              </button>
-            </div>
-            <div className="panel-body grid gap-3 sm:grid-cols-2">
+        <Dialog
+          open={Boolean(editingAffiliate)}
+          onOpenChange={(open) => !open && !savingEdit && setEditingAffiliate(null)}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Edit Affiliate</DialogTitle>
+              <DialogDescription>
+                Update affiliate organization links and profile metrics.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Department</span>
-                <select
-                  className="control-select"
+                <Select
                   value={editForm.ckan_group_id}
-                  onChange={(event) => {
-                    const nextGroupId = event.target.value;
+                  onValueChange={(value) => {
+                    const nextGroupId = value === "__none__" ? "" : value;
                     const selectedDepartment = departmentOptions.find(
                       (option) => option.id === nextGroupId,
                     );
@@ -823,42 +847,50 @@ export default function AdminAffiliatesModulePage() {
                     }));
                   }}
                 >
-                  <option value="">None</option>
-                  {departmentOptions.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {departmentOptions.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Research Center
                 </span>
-                <select
-                  className="control-select"
+                <Select
                   value={editForm.ckan_org_id}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      ckan_org_id: event.target.value,
+                      ckan_org_id: value === "__none__" ? "" : value,
                     }))
                   }
                 >
-                  <option value="">None</option>
-                  {centers.map((center) => (
-                    <option key={center.id} value={center.id}>
-                      {center.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {centers.map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Designation
                 </span>
-                <input
-                  className="control-input"
+                <Input
                   placeholder="e.g. Associate Professor"
                   value={editForm.designation}
                   onChange={(event) =>
@@ -873,28 +905,31 @@ export default function AdminAffiliatesModulePage() {
                 <span className="font-semibold text-slate-700">
                   Employment Status
                 </span>
-                <select
-                  className="control-select"
+                <Select
                   value={editForm.employment_status}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      employment_status: event.target.value,
+                      employment_status: value === "__none__" ? "" : value,
                     }))
                   }
                 >
-                  <option value="">None</option>
-                  <option value="Permanent">Permanent</option>
-                  <option value="Lecturer">Lecturer</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    <SelectItem value="Permanent">Permanent</SelectItem>
+                    <SelectItem value="Lecturer">Lecturer</SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">
                 <span className="font-semibold text-slate-700">
                   Google Scholar Link
                 </span>
-                <input
+                <Input
                   type="url"
-                  className="control-input"
                   placeholder="https://scholar.google.com/..."
                   value={editForm.google_scholar_link}
                   onChange={(event) =>
@@ -922,11 +957,10 @@ export default function AdminAffiliatesModulePage() {
                 <span className="font-semibold text-slate-700">
                   Publications
                 </span>
-                <input
+                <Input
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  className="control-input"
                   value={editForm.publication_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -938,11 +972,10 @@ export default function AdminAffiliatesModulePage() {
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Projects</span>
-                <input
+                <Input
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  className="control-input"
                   value={editForm.research_project_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -959,11 +992,10 @@ export default function AdminAffiliatesModulePage() {
                 <span className="font-semibold text-slate-700">
                   Creative Works
                 </span>
-                <input
+                <Input
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  className="control-input"
                   value={editForm.creative_work_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -978,11 +1010,10 @@ export default function AdminAffiliatesModulePage() {
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Awards</span>
-                <input
+                <Input
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  className="control-input"
                   value={editForm.awards_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -994,11 +1025,10 @@ export default function AdminAffiliatesModulePage() {
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">IPs</span>
-                <input
+                <Input
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  className="control-input"
                   value={editForm.ip_count}
                   onChange={(event) =>
                     setEditForm((prev) => ({
@@ -1009,26 +1039,25 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <div className="sm:col-span-2 flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
-                  className="btn btn-outline"
+                  variant="outline"
                   onClick={() => setEditingAffiliate(null)}
                   disabled={savingEdit}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="btn btn-primary"
                   onClick={saveAffiliateEdit}
                   disabled={savingEdit}
                 >
                   {savingEdit ? "Saving..." : "Save Changes"}
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </section>
   );
