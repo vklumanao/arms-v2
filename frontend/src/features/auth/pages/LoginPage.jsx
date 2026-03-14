@@ -5,6 +5,9 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
 import { toDisplayFirstName } from "@/features/auth/utils";
 import { isValidEmail } from "@/shared/utils/validation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -98,18 +101,19 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md panel">
-      <div className="panel-header">
+    <section className="mx-auto max-w-md">
+      <Card>
+      <CardHeader>
         <h1 className="text-3xl font-bold text-center">Login</h1>
         <p className="mt-1 text-sm text-slate-600 text-center">
           Access your workspace and continue your proposal workflow.
         </p>
-      </div>
-      <form className="panel-body space-y-3" onSubmit={onSubmit}>
+      </CardHeader>
+      <CardContent>
+      <form className="space-y-3" onSubmit={onSubmit}>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Email</span>
-          <input
-            className="control-input"
+          <Input
             placeholder="Enter your institutional email"
             type="email"
             required
@@ -120,8 +124,8 @@ export default function LoginPage() {
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Password</span>
           <div className="relative">
-            <input
-              className="control-input pr-16"
+            <Input
+              className="pr-10"
               placeholder="Enter your password"
               type={showPassword ? "text" : "password"}
               required
@@ -130,30 +134,33 @@ export default function LoginPage() {
                 setForm((p) => ({ ...p, password: e.target.value }))
               }
             />
-            <button
+            <Button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            </Button>
           </div>
         </label>
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button
+        <Button
           disabled={loading || cooldownSeconds > 0}
-          className="btn btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full"
         >
           {loading
             ? "Logging in..."
             : cooldownSeconds > 0
               ? `Retry in ${cooldownSeconds}s`
               : "Login"}
-        </button>
+        </Button>
       </form>
+      </CardContent>
 
-      <div className="flex items-center justify-between px-6 pb-6 text-sm">
+      <CardFooter className="flex items-center justify-between text-sm">
         <Link to="/register" className="font-semibold text-[var(--brand)]">
           Create account
         </Link>
@@ -163,7 +170,8 @@ export default function LoginPage() {
         >
           Forgot password?
         </Link>
-      </div>
+      </CardFooter>
+      </Card>
     </section>
   );
 }
