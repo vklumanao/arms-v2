@@ -2123,9 +2123,10 @@ export function registerAdminRoutes(app, deps) {
         }
 
         if (type === "department") {
-          const [members, datasets] = await Promise.all([
+          const [members, datasets, departmentGroup] = await Promise.all([
             listGroupMembers(id),
             listAllDatasetsAcrossCkan(),
+            getGroup(id),
           ]);
           const linkedProjects = (datasets || []).filter((dataset) => {
             const meta = extrasToMap(dataset?.extras);
@@ -2138,6 +2139,32 @@ export function registerAdminRoutes(app, deps) {
                 "Department cannot be deleted while it still has linked projects.",
               details: {
                 linkedProjects: linkedProjects.length,
+              },
+            });
+          }
+
+          const chairpersonId = String(
+            getExtraValue(departmentGroup, "chairperson_id") || "",
+          ).trim();
+          const activeMembers = (members || []).filter(
+            (member) =>
+              String(member?.state || "active").toLowerCase() !== "deleted",
+          );
+          const nonAdminMembers = activeMembers.filter((member) => {
+            const memberId = String(member?.id || "").trim();
+            const capacity = String(member?.capacity || "")
+              .trim()
+              .toLowerCase();
+            if (chairpersonId && memberId === chairpersonId) return false;
+            return capacity !== "admin";
+          });
+
+          if (nonAdminMembers.length) {
+            return res.status(409).json({
+              error:
+                "Department cannot be deleted while it still has linked affiliates.",
+              details: {
+                linkedAffiliates: nonAdminMembers.length,
               },
             });
           }
