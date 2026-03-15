@@ -241,6 +241,7 @@ export async function deleteOrganization(orgId) {
 export async function updateOrganizationMetadata({
   orgId,
   title,
+  description = null,
   extras = [],
 }) {
   const id = String(orgId || "").trim();
@@ -251,6 +252,9 @@ export async function updateOrganizationMetadata({
     title: String(title || "").trim() || id,
     extras: Array.isArray(extras) ? extras : [],
   };
+  if (description != null) {
+    payload.description = String(description || "").trim();
+  }
 
   try {
     // Prefer patch to avoid clobbering unrelated org fields on CKAN.
