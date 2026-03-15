@@ -10,13 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -49,14 +42,10 @@ import {
   deleteOwnedProject,
   fetchLinkedProjects,
   fetchUserProjects,
-  fetchProjectResources,
   updateResearchOutputVisibility,
 } from "@/features/submissions/services";
 import { normalizeStatus } from "@/shared/utils/status";
-import {
-  formatBytes,
-  formatDate,
-} from "@/features/submissions/utils";
+import { formatDate } from "@/features/submissions/utils";
 import {
   CheckCircle2,
   Clock3,
@@ -91,19 +80,11 @@ export default function ResearchProjectsHubPage() {
     search: "",
     sortBy: "submitted_desc",
   });
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [deletingProjectId, setDeletingProjectId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [exportingType, setExportingType] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [resourcePanel, setResourcePanel] = useState({
-    loading: false,
-    error: "",
-    dataset: null,
-    resources: [],
-    syncEnabled: true,
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const [visibilitySavingByDataset, setVisibilitySavingByDataset] = useState(
     {},
@@ -126,6 +107,12 @@ export default function ResearchProjectsHubPage() {
       });
     }
   }, [navigate, searchParams]);
+
+  const goToProjectDetail = (project) => {
+    const id = String(project?.id || "").trim();
+    if (!id) return;
+    navigate(`/submit-project/${encodeURIComponent(id)}`);
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -291,79 +278,6 @@ export default function ResearchProjectsHubPage() {
     [getProjectOrganization, linkedProjects],
   );
 
-  const selectedProject = useMemo(
-    () =>
-      filteredProjects.find((project) => project.id === selectedProjectId) ||
-      linkedProjects.find((project) => project.id === selectedProjectId) ||
-      null,
-    [filteredProjects, linkedProjects, selectedProjectId],
-  );
-
-  useEffect(() => {
-    if (!selectedProject?.id) {
-      setResourcePanel({
-        loading: false,
-        error: "",
-        dataset: null,
-        resources: [],
-        syncEnabled: true,
-      });
-      return;
-    }
-
-    let isMounted = true;
-    setResourcePanel({
-      loading: true,
-      error: "",
-      dataset: null,
-      resources: [],
-      syncEnabled: true,
-    });
-
-    if (selectedProject.source === "ckan") {
-      setResourcePanel({
-        loading: false,
-        error: "",
-        dataset: selectedProject,
-        resources: Array.isArray(selectedProject.resources)
-          ? selectedProject.resources
-          : [],
-        syncEnabled: true,
-      });
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    fetchProjectResources({ projectId: selectedProject.id }).then(
-      ({ data, error: loadError }) => {
-        if (!isMounted) return;
-        if (loadError) {
-          setResourcePanel({
-            loading: false,
-            error: loadError.message || "Unable to load linked CKAN resources.",
-            dataset: null,
-            resources: [],
-            syncEnabled: true,
-          });
-          return;
-        }
-
-        setResourcePanel({
-          loading: false,
-          error: "",
-          dataset: data?.dataset || null,
-          resources: Array.isArray(data?.resources) ? data.resources : [],
-          syncEnabled: data?.syncEnabled !== false,
-        });
-      },
-    );
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedProject?.id]);
-
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -403,7 +317,6 @@ export default function ResearchProjectsHubPage() {
     }
 
     setProjects((prev) => prev.filter((item) => item.id !== project.id));
-    if (selectedProjectId === project.id) setSelectedProjectId(null);
     setDeleteTarget(null);
     setDeletingProjectId("");
     setMessage("Project deleted successfully.");
@@ -868,7 +781,7 @@ export default function ResearchProjectsHubPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => setSelectedProjectId(project.id)}
+                              onClick={() => goToProjectDetail(project)}
                               aria-label={`View ${project?.title || "project"}`}
                               title="View"
                             >
@@ -999,7 +912,7 @@ export default function ResearchProjectsHubPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setSelectedProjectId(project.id)}
+                        onClick={() => goToProjectDetail(project)}
                         aria-label={`View ${project?.title || "project"}`}
                         title="View"
                       >
@@ -1014,179 +927,6 @@ export default function ResearchProjectsHubPage() {
           </CardContent>
         )}
       </Card>
-
-      {selectedProject ? (
-        <Dialog
-          open={Boolean(selectedProject)}
-          onOpenChange={(open) => !open && setSelectedProjectId(null)}
-        >
-          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-6xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
-            <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left">
-              <DialogTitle>Project Details</DialogTitle>
-              <DialogDescription>
-                Review submitted project information and linked CKAN resources.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-6 py-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Title
-                </p>
-                <p className="text-base font-semibold text-slate-900">
-                  {selectedProject.title || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Submitted By
-                </p>
-                <p className="text-base text-slate-800">
-                  {selectedProject.submitted_by_name || "Unknown user"}
-                </p>
-                <p className="text-sm text-slate-500">
-                  {selectedProject.submitted_by_email ||
-                    selectedProject.submitted_by ||
-                    "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Status
-                </p>
-                <Badge variant="outline">
-                  {normalizeStatus(selectedProject.status)}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Organization
-                </p>
-                <p className="text-base text-slate-800">
-                  {getProjectOrganization(selectedProject)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Year
-                </p>
-                <p className="text-base text-slate-800">
-                  {selectedProject.year || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Submitted Date
-                </p>
-                <p className="text-base text-slate-800">
-                  {formatDate(selectedProject.submitted_at)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Lead Researcher
-                </p>
-                <p className="text-base text-slate-800">
-                  {selectedProject.lead_researcher || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Research Team (Faculty)
-                </p>
-                <p className="text-base whitespace-pre-line text-slate-700">
-                  {selectedProject.faculty_team || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Research Team (Students)
-                </p>
-                <p className="text-base whitespace-pre-line text-slate-700">
-                  {selectedProject.student_team || "-"}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Abstract
-                </p>
-                <p className="text-base text-slate-700">
-                  {selectedProject.abstract || "-"}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm uppercase tracking-[0.06em] text-slate-500">
-                  Linked CKAN Resources
-                </p>
-                {!resourcePanel.syncEnabled ? (
-                  <p className="mt-1 text-base text-slate-600">
-                    CKAN sync is disabled in this environment.
-                  </p>
-                ) : resourcePanel.loading ? (
-                  <p className="mt-1 text-base text-slate-600">
-                    Loading linked resources...
-                  </p>
-                ) : resourcePanel.error ? (
-                  <p className="mt-1 text-base text-red-700">
-                    {resourcePanel.error}
-                  </p>
-                ) : resourcePanel.resources.length === 0 ? (
-                  <p className="mt-1 text-base text-slate-600">
-                    No linked CKAN resources found for this project.
-                  </p>
-                ) : (
-                  <div className="mt-2 space-y-3">
-                    <p className="text-sm text-slate-500">
-                      Dataset:{" "}
-                      <span className="font-semibold text-slate-700">
-                        {resourcePanel.dataset?.title ||
-                          resourcePanel.dataset?.name ||
-                          "-"}
-                      </span>
-                    </p>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                      {resourcePanel.resources.map((resource) => (
-                        <Card
-                          key={resource.id || resource.url || resource.name}
-                          className="border-slate-200 bg-slate-50/40"
-                        >
-                          <CardContent className="p-4">
-                            <p className="truncate text-base font-semibold text-slate-900">
-                              {resource.name || "Unnamed resource"}
-                            </p>
-                            <p className="text-sm text-slate-600">
-                              Format: {resource.format || "-"} | Size:{" "}
-                              {formatBytes(resource.size)} | Updated:{" "}
-                              {formatDate(
-                                resource.lastModified || resource.created,
-                              )}
-                            </p>
-                            {resource.url ? (
-                              <a
-                                href={resource.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-1 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800"
-                              >
-                                Open / Download
-                              </a>
-                            ) : (
-                              <p className="mt-1 text-sm text-slate-500">
-                                No resource URL available.
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
 
       <ConfirmActionModal
         open={Boolean(deleteTarget)}
