@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -107,6 +108,7 @@ export default function AdminDepartmentDetailPage() {
   const [editForm, setEditForm] = useState({
     name: "",
     code: "",
+    description: "",
     chairpersonId: "",
   });
   const [editErrors, setEditErrors] = useState({});
@@ -186,6 +188,7 @@ export default function AdminDepartmentDetailPage() {
                   deptRow?.name ||
                   "-",
                 code: String(deptRow?.code || "").trim() || departmentId,
+                description: String(deptRow?.description || "").trim(),
                 chairpersonId: chairpersonId || null,
                 chairpersonName: chairpersonName || "-",
               }
@@ -194,6 +197,7 @@ export default function AdminDepartmentDetailPage() {
         setEditForm({
           name: String(deptRow?.title || deptRow?.display_name || deptRow?.name || "").trim(),
           code: String(deptRow?.code || "").trim() || String(departmentId || ""),
+          description: String(deptRow?.description || "").trim(),
           chairpersonId: chairpersonId || "",
         });
         setUsage({
@@ -320,6 +324,7 @@ export default function AdminDepartmentDetailPage() {
         id: departmentId,
         name: String(editForm.name || "").trim(),
         code: String(editForm.code || "").trim(),
+        description: String(editForm.description || "").trim(),
         chairperson_id: String(editForm.chairpersonId || "").trim(),
       });
       if (updateError) throw updateError;
@@ -603,6 +608,16 @@ export default function AdminDepartmentDetailPage() {
                   </p>
                 </div>
               ) : null}
+
+              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Description
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                  {String(department?.description || "").trim() ||
+                    "No description provided."}
+                </p>
+              </div>
 
               <Tabs value={activeTab} onValueChange={setTab}>
                 <TabsList>
@@ -904,6 +919,21 @@ export default function AdminDepartmentDetailPage() {
               {editErrors.code ? (
                 <p className="field-error">{editErrors.code}</p>
               ) : null}
+            </label>
+
+            <label className="space-y-1 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">Description</span>
+              <Textarea
+                value={editForm.description}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                rows={4}
+                placeholder="Optional short description about the department..."
+              />
             </label>
 
             <label className="space-y-1 text-sm">
