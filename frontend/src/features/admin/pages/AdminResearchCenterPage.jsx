@@ -304,7 +304,7 @@ export default function AdminResearchCenterPage() {
               item.name ||
               item.username ||
               item.email ||
-              "Unnamed CKAN User",
+              "Unnamed User",
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
@@ -2273,7 +2273,7 @@ export default function AdminResearchCenterPage() {
               {createErrors.centerChiefId ? (
                 <p className="field-error">{createErrors.centerChiefId}</p>
               ) : null}
-              <p className="text-xs text-slate-500">Select from CKAN users.</p>
+              <p className="text-xs text-slate-500">Select from users.</p>
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
