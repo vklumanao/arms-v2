@@ -16,6 +16,7 @@ export function registerSubmissionsRoutes(app, deps) {
     badRequest,
     parseOrThrow,
     projectSubmissionPublishSchema,
+    projectSubmissionDraftSchema,
     config,
     asTrimmedString,
     asNumber,
@@ -42,6 +43,56 @@ export function registerSubmissionsRoutes(app, deps) {
     "others",
   ]);
   const MAX_OUTPUT_UPLOAD_BYTES = 25 * 1024 * 1024;
+  const SUBMISSION_STATE_DRAFT = "draft";
+  const SUBMISSION_STATE_SUBMITTED = "submitted";
+
+  function getSubmissionStateFromExtras(extras = []) {
+    const raw = asTrimmedString(getExtraByKey(extras, "submission_state"))
+      .trim()
+      .toLowerCase();
+    return raw === SUBMISSION_STATE_DRAFT ? SUBMISSION_STATE_DRAFT : SUBMISSION_STATE_SUBMITTED;
+  }
+
+  function parseDraftExpectedOutputs(extras = []) {
+    const raw = asTrimmedString(
+      getExtraByKey(extras, "draft_expected_outputs_json"),
+    );
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function normalizeDraftExpectedOutputs(rows = []) {
+    const items = Array.isArray(rows) ? rows : [];
+    return items
+      .map((row, index) => {
+        const outputType = asTrimmedString(row?.output_type || row?.outputType);
+        if (!ALLOWED_OUTPUT_TYPES.has(outputType)) return null;
+        const targetCount = Math.max(
+          1,
+          Number(row?.target_count || row?.targetCount || 1) || 1,
+        );
+        return {
+          id:
+            asTrimmedString(row?.id) ||
+            asTrimmedString(row?.client_id) ||
+            `draft-output-${index + 1}`,
+          output_type: outputType,
+          target_count: targetCount,
+          specific_output: asTrimmedString(row?.specific_output || row?.specificOutput),
+          notes: asTrimmedString(row?.notes),
+          file_path: asTrimmedString(row?.file_path || row?.filePath),
+          file_name: asTrimmedString(row?.file_name || row?.fileName),
+          mime_type: asTrimmedString(row?.mime_type || row?.mimeType),
+          file_size: Number(row?.file_size || row?.fileSize || 0) || null,
+        };
+      })
+      .filter(Boolean);
+  }
 
   function serializeSelectedUsers(items = []) {
     return JSON.stringify(
@@ -360,15 +411,25 @@ export function registerSubmissionsRoutes(app, deps) {
    */
   function mapDatasetToEditableForm(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const submission_state = getSubmissionStateFromExtras(extras);
     const yearFromExtra = asTrimmedString(
       getExtraByKey(extras, "project_year") || getExtraByKey(extras, "year"),
     );
     const createdYear = new Date(
       dataset?.metadata_created || dataset?.metadata_modified || 0,
     ).getFullYear();
+    const draftPublicVisible = asTrimmedString(
+      getExtraByKey(extras, "draft_public_visible"),
+    )
+      .trim()
+      .toLowerCase();
+    const draftStepRaw = asTrimmedString(getExtraByKey(extras, "draft_step"));
+    const draftStep = Math.max(0, Number(draftStepRaw || 0) || 0);
 
     return {
       id: dataset?.id || dataset?.name || null,
+      submission_state,
+      draft_step: submission_state === SUBMISSION_STATE_DRAFT ? draftStep : null,
       title: asTrimmedString(dataset?.title || dataset?.name),
       lead_researcher: asTrimmedString(
         getExtraByKey(extras, "lead_researcher"),
@@ -424,7 +485,11 @@ export function registerSubmissionsRoutes(app, deps) {
       ),
       start_date: asTrimmedString(getExtraByKey(extras, "start_date")),
       end_date: asTrimmedString(getExtraByKey(extras, "end_date")),
-      public_visible: !Boolean(dataset?.private),
+      public_visible:
+        submission_state === SUBMISSION_STATE_DRAFT &&
+        (draftPublicVisible === "true" || draftPublicVisible === "false")
+          ? draftPublicVisible === "true"
+          : !Boolean(dataset?.private),
     };
   }
 
@@ -475,6 +540,7 @@ export function registerSubmissionsRoutes(app, deps) {
 
   function mapDatasetToProjectListRecord(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const submission_state = getSubmissionStateFromExtras(extras);
     const metadataCreated = asTrimmedString(dataset?.metadata_created);
     const createdYear = metadataCreated
       ? new Date(metadataCreated).getFullYear()
@@ -487,6 +553,7 @@ export function registerSubmissionsRoutes(app, deps) {
       id: dataset?.id || dataset?.name || null,
       source: "ckan",
       ckan_dataset_id: dataset?.id || dataset?.name || null,
+      submission_state,
       title: dataset?.title || dataset?.name || "Untitled project",
       abstract: asTrimmedString(dataset?.notes),
       lead_researcher: asTrimmedString(
@@ -821,6 +888,17 @@ export function registerSubmissionsRoutes(app, deps) {
           });
         }
 
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const submissionState = getSubmissionStateFromExtras(extras);
+        if (submissionState === SUBMISSION_STATE_DRAFT) {
+          const draftRows = normalizeDraftExpectedOutputs(
+            parseDraftExpectedOutputs(extras),
+          );
+          if (draftRows.length > 0) {
+            return res.json({ data: draftRows });
+          }
+        }
+
         return res.json({ data: mapResourcesToExpectedOutputs(dataset) });
       } catch (error) {
         return res.status(500).json({
@@ -829,6 +907,172 @@ export function registerSubmissionsRoutes(app, deps) {
       }
     },
   );
+
+  app.post("/api/submissions/draft", authMiddleware, async (req, res) => {
+    let parsedRequest;
+    try {
+      parsedRequest = parseOrThrow(
+        projectSubmissionDraftSchema,
+        req.body || {},
+        "Draft payload is invalid.",
+      );
+    } catch (error) {
+      return badRequest(
+        res,
+        String(error?.message || "Draft payload is invalid."),
+      );
+    }
+
+    const form =
+      parsedRequest?.form && typeof parsedRequest.form === "object"
+        ? parsedRequest.form
+        : {};
+    const datasetId = asTrimmedString(parsedRequest?.dataset_id);
+    const expectedOutputsRaw = Array.isArray(parsedRequest?.expected_outputs)
+      ? parsedRequest.expected_outputs
+      : [];
+    const expectedOutputs = normalizeDraftExpectedOutputs(expectedOutputsRaw);
+    const draftStep = Math.max(
+      0,
+      Math.min(10, Number(parsedRequest?.draft_step || 0) || 0),
+    );
+    const nowIso = new Date().toISOString();
+
+    try {
+      const existingDataset = datasetId ? await getDataset(datasetId) : null;
+      if (datasetId && !existingDataset) {
+        return res.status(404).json({ error: "Dataset not found." });
+      }
+
+      if (existingDataset) {
+        const extrasRows = Array.isArray(existingDataset?.extras)
+          ? existingDataset.extras
+          : [];
+        const existingState = getSubmissionStateFromExtras(extrasRows);
+        if (existingState !== SUBMISSION_STATE_DRAFT) {
+          return res.status(409).json({
+            error: "This project is already submitted and cannot be saved as a draft.",
+          });
+        }
+
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin && !isDatasetOwnedByUser(existingDataset, req.user)) {
+          return res.status(403).json({
+            error: "You are not allowed to edit this draft.",
+          });
+        }
+      }
+
+      const ownerOrg =
+        asTrimmedString(form?.research_center_id) ||
+        asTrimmedString(existingDataset?.owner_org) ||
+        asTrimmedString(req.user?.ckan_org_id);
+      if (!ownerOrg) {
+        return badRequest(
+          res,
+          "Research center (CKAN organization) is required to save a draft.",
+        );
+      }
+
+      const title =
+        asTrimmedString(form?.title) ||
+        asTrimmedString(existingDataset?.title || existingDataset?.name) ||
+        "Untitled Draft";
+      const notes =
+        asTrimmedString(form?.abstract) ||
+        asTrimmedString(existingDataset?.notes) ||
+        "";
+
+      let extras = toDatasetExtras(form, req.user);
+      if (existingDataset) {
+        const existingExtras = Array.isArray(existingDataset?.extras)
+          ? existingDataset.extras
+          : [];
+        // Preserve original submitter/ownership metadata during edits.
+        for (const key of [
+          "submitted_by_user_id",
+          "submitted_by_email",
+          "submitted_by_name",
+          "submitted_by_role",
+          "submitted_at",
+          "submission_trace_id",
+        ]) {
+          const value = asTrimmedString(getExtraByKey(existingExtras, key));
+          if (value) extras = upsertExtra(extras, key, value);
+        }
+      }
+
+      extras = upsertExtra(extras, "submission_state", SUBMISSION_STATE_DRAFT);
+      extras = upsertExtra(extras, "draft_saved_at", nowIso);
+      extras = upsertExtra(extras, "draft_step", String(draftStep));
+      extras = upsertExtra(
+        extras,
+        "draft_public_visible",
+        String(Boolean(form?.public_visible)),
+      );
+      extras = upsertExtra(
+        extras,
+        "draft_expected_outputs_json",
+        JSON.stringify(expectedOutputs),
+      );
+
+      const baseDatasetPayload = {
+        name: asTrimmedString(existingDataset?.name) || toCkanName(title),
+        title,
+        notes,
+        owner_org: ownerOrg,
+        author:
+          asTrimmedString(existingDataset?.author) ||
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        author_email:
+          asTrimmedString(existingDataset?.author_email) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        maintainer:
+          asTrimmedString(existingDataset?.maintainer) ||
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        maintainer_email:
+          asTrimmedString(existingDataset?.maintainer_email) ||
+          asTrimmedString(req.user?.email) ||
+          null,
+        // Drafts are always private. Intended visibility is stored in extras.
+        private: true,
+        tags: [
+          asTrimmedString(form?.classification),
+          asTrimmedString(form?.status),
+          asTrimmedString(form?.scholarly_type),
+        ]
+          .filter(Boolean)
+          .map((value) => ({
+            name: value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          })),
+        extras,
+      };
+
+      const dataset = datasetId
+        ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+        : await createDataset(baseDatasetPayload);
+
+      return res.status(datasetId ? 200 : 201).json({
+        data: {
+          id: dataset?.id || datasetId || null,
+          name: dataset?.name || null,
+          title: dataset?.title || title,
+          submission_state: SUBMISSION_STATE_DRAFT,
+          draft_saved_at: nowIso,
+          draft_step: draftStep,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to save draft."),
+      });
+    }
+  });
 
   app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
     // Accepts both create and update flow depending on `dataset_id`.
@@ -906,6 +1150,7 @@ export function registerSubmissionsRoutes(app, deps) {
           if (value) extras = upsertExtra(extras, key, value);
         }
       }
+      extras = upsertExtra(extras, "submission_state", SUBMISSION_STATE_SUBMITTED);
 
       const baseDatasetPayload = {
         name: asTrimmedString(existingDataset?.name) || toCkanName(title),
