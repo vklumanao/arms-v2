@@ -1,7 +1,7 @@
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,7 @@ const MAX_OUTPUT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 export default function ResearchOutputsPage() {
   const toast = useToast();
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const { centers } = useReferenceData();
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
   const missingAffiliation =
@@ -91,7 +92,6 @@ export default function ResearchOutputsPage() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewTarget, setViewTarget] = useState(null);
   const [editingTarget, setEditingTarget] = useState(null);
   const [editForm, setEditForm] = useState({
     file_name: "",
@@ -119,6 +119,15 @@ export default function ResearchOutputsPage() {
   });
   const [addOutputFile, setAddOutputFile] = useState(null);
   const pageSize = 10;
+
+  const goToOutputProject = (row) => {
+    const datasetId = String(row?.datasetId || "").trim();
+    if (!datasetId) {
+      toast.error("Unable to open project", "Dataset id is missing.");
+      return;
+    }
+    navigate(`/submit-project/${encodeURIComponent(datasetId)}`);
+  };
 
   useEffect(() => {
     if (!error) return;
@@ -583,13 +592,6 @@ export default function ResearchOutputsPage() {
       ),
     );
 
-    setViewTarget((prev) => {
-      if (!prev) return prev;
-      return String(prev?.datasetId || "").trim() === datasetId
-        ? { ...prev, private: !isNowPublic }
-        : prev;
-    });
-
     toast.success(
       "Visibility updated",
       isNowPublic ? "Dataset is now public." : "Dataset is now private.",
@@ -680,20 +682,6 @@ export default function ResearchOutputsPage() {
       ),
     );
 
-    setViewTarget((prev) => {
-      if (!prev) return prev;
-      if (String(prev?.resourceId || "").trim() !== resourceId) return prev;
-      return {
-        ...prev,
-        title: nextFileName || prev.title,
-        notes: nextNotes,
-        resourceUrl: nextPath,
-        mimeType: nextMime,
-        fileSize: nextSize,
-        metadataModified: nextUpdatedAt,
-      };
-    });
-
     setEditingTarget(null);
     toast.success("Research output updated", "Changes were saved.");
   };
@@ -725,9 +713,6 @@ export default function ResearchOutputsPage() {
       prev.filter(
         (item) => String(item?.ckan_resource_id || "").trim() !== resourceId,
       ),
-    );
-    setViewTarget((prev) =>
-      String(prev?.resourceId || "").trim() === resourceId ? null : prev,
     );
     setEditingTarget((prev) =>
       String(prev?.resourceId || "").trim() === resourceId ? null : prev,
@@ -1026,9 +1011,9 @@ export default function ResearchOutputsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => setViewTarget(row)}
-                              aria-label={`View details for ${row?.title || "research output"}`}
-                              title="View details"
+                              onClick={() => goToOutputProject(row)}
+                              aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
+                              title="Open project"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -1240,174 +1225,6 @@ export default function ResearchOutputsPage() {
               {addingOutput ? "Adding..." : "Add Output"}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={Boolean(viewTarget)} onOpenChange={() => setViewTarget(null)}>
-        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
-          {viewTarget ? (
-            <>
-              <DialogHeader>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                      Resource Details
-                    </p>
-                    <DialogTitle className="mt-1 break-words text-2xl">
-                      {viewTarget.title || "-"}
-                    </DialogTitle>
-                    <DialogDescription className="mt-1 text-sm">
-                      {viewTarget.subtitle || "No linked project title"}
-                    </DialogDescription>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {viewTarget.resourceUrl ? (
-                      <Button variant="outline" asChild>
-                        <a
-                          href={viewTarget.resourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Open Resource
-                        </a>
-                      </Button>
-                    ) : null}
-                    <Button variant="outline" onClick={() => setViewTarget(null)}>
-                      Close
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge variant="outline">{viewTarget.outputType || "-"}</Badge>
-                  <Badge
-                    variant={viewTarget.private ? "destructive" : "secondary"}
-                  >
-                    {viewTarget.private ? "Private" : "Public"}
-                  </Badge>
-                  <Badge variant="outline">{viewTarget.state || "-"}</Badge>
-                </div>
-              </DialogHeader>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                      File Information
-                    </p>
-                    <div className="grid gap-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <Card>
-                          <CardContent className="p-3">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                              File Size
-                            </p>
-                            <p className="text-base font-semibold text-slate-800">
-                              {formatFileSize(viewTarget.fileSize)}
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-3">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                              MIME Type
-                            </p>
-                            <p className="break-words text-base font-semibold text-slate-800">
-                              {viewTarget.mimeType || "-"}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Notes
-                          </p>
-                          <p className="text-base text-slate-800">
-                            {viewTarget.notes || "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                      Project Context
-                    </p>
-                    <div className="grid gap-3">
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Organization
-                          </p>
-                          <p className="text-base font-semibold text-slate-800">
-                            {viewTarget.organization || "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Dataset
-                          </p>
-                          <p className="break-words text-base font-semibold text-slate-800">
-                            {viewTarget.datasetName || "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Last Updated
-                          </p>
-                          <p className="text-base font-semibold text-slate-800">
-                            {viewTarget.metadataModified
-                              ? new Date(
-                                  viewTarget.metadataModified,
-                                ).toLocaleString()
-                              : "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="lg:col-span-2">
-                  <CardContent className="space-y-3 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                      Technical IDs
-                    </p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Dataset ID
-                          </p>
-                          <p className="break-all text-sm font-semibold text-slate-800">
-                            {viewTarget.datasetId || "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Resource ID
-                          </p>
-                          <p className="break-all text-sm font-semibold text-slate-800">
-                            {viewTarget.resourceId || "-"}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          ) : null}
         </DialogContent>
       </Dialog>
 
