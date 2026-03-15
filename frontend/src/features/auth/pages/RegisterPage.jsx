@@ -302,7 +302,7 @@ export default function RegisterPage() {
               <SelectValue
                 placeholder={
                   ckanGroupsLoading
-                    ? "Loading CKAN groups..."
+                    ? "Loading department..."
                     : "Optional: Select department"
                 }
               />
