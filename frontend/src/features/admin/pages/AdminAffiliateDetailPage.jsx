@@ -284,7 +284,7 @@ export default function AdminAffiliateDetailPage() {
                         Related Projects
                       </CardTitle>
                       <CardDescription>
-                        CKAN datasets linked to this affiliate.
+                        Projects linked to this affiliate.
                       </CardDescription>
                     </div>
                     <span className="text-sm text-slate-600">
