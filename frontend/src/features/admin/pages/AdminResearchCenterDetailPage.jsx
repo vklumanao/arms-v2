@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -112,6 +113,7 @@ export default function AdminResearchCenterDetailPage() {
   const [editForm, setEditForm] = useState({
     name: "",
     code: "",
+    description: "",
     centerChiefId: "",
     agendaInput: "",
     researchAgendas: [],
@@ -200,6 +202,7 @@ export default function AdminResearchCenterDetailPage() {
                 id: centerId,
                 name: centerRow?.name || "-",
                 code: String(centerRow?.code || "").trim() || centerId,
+                description: String(centerRow?.description || "").trim(),
                 centerChiefId: centerChiefId || null,
                 centerChiefName: centerChiefName || "-",
                 agendaNames,
@@ -209,6 +212,7 @@ export default function AdminResearchCenterDetailPage() {
         setEditForm({
           name: String(centerRow?.name || "").trim(),
           code: String(centerRow?.code || "").trim() || String(centerId || ""),
+          description: String(centerRow?.description || "").trim(),
           centerChiefId: centerChiefId || "",
           agendaInput: "",
           researchAgendas: agendaNames,
@@ -341,6 +345,7 @@ export default function AdminResearchCenterDetailPage() {
         id: centerId,
         name: String(editForm.name || "").trim(),
         code: String(editForm.code || "").trim(),
+        description: String(editForm.description || "").trim(),
         center_chief_id: String(editForm.centerChiefId || "").trim(),
         research_agendas: Array.isArray(editForm.researchAgendas)
           ? editForm.researchAgendas
@@ -390,12 +395,21 @@ export default function AdminResearchCenterDetailPage() {
               id: centerId,
               name: centerRow?.name || "-",
               code: String(centerRow?.code || "").trim() || centerId,
+              description: String(centerRow?.description || "").trim(),
               centerChiefId: centerChiefId || null,
               centerChiefName: centerChiefName || "-",
               agendaNames,
             }
           : null,
       );
+      setEditForm({
+        name: String(centerRow?.name || "").trim(),
+        code: String(centerRow?.code || "").trim() || String(centerId || ""),
+        description: String(centerRow?.description || "").trim(),
+        centerChiefId: centerChiefId || "",
+        agendaInput: "",
+        researchAgendas: agendaNames,
+      });
       setUsage({
         projectCount: Number(usagePayload?.projectCount || 0),
         profileCount: Number(usagePayload?.profileCount || 0),
@@ -687,6 +701,15 @@ export default function AdminResearchCenterDetailPage() {
                   </p>
                 </div>
               ) : null}
+
+              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Description
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                  {String(center?.description || "").trim() || "No description provided."}
+                </p>
+              </div>
 
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -1023,6 +1046,21 @@ export default function AdminResearchCenterDetailPage() {
               {editErrors.code ? (
                 <p className="field-error">{editErrors.code}</p>
               ) : null}
+            </label>
+
+            <label className="space-y-1 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">Description</span>
+              <Textarea
+                value={editForm.description}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                rows={4}
+                placeholder="Optional short description about the research center..."
+              />
             </label>
 
             <label className="space-y-1 text-sm">
