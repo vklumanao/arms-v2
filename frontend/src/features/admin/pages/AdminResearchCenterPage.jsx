@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -85,6 +86,7 @@ const EMPTY_EDITING = {
   id: null,
   name: "",
   code: "",
+  description: "",
   centerChiefId: "",
   agendaInput: "",
   researchAgendas: [],
@@ -115,6 +117,8 @@ export default function AdminResearchCenterPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newResearchCenterName, setnewResearchCenterName] = useState("");
   const [newResearchCenterCode, setnewResearchCenterCode] = useState("");
+  const [newResearchCenterDescription, setNewResearchCenterDescription] =
+    useState("");
   const [newCenterChiefId, setNewCenterChiefId] = useState("");
   const [centerChiefUsers, setCenterChiefUsers] = useState([]);
   const [newAgendaInput, setNewAgendaInput] = useState("");
@@ -265,6 +269,7 @@ export default function AdminResearchCenterPage() {
             id: orgId,
             code: String(item?.code || "").trim() || String(orgId || "-"),
             name: item.name || "-",
+            description: String(item?.description || "").trim(),
             type: "Research Center",
             tag: "research-center",
             centerChiefId,
@@ -676,6 +681,7 @@ export default function AdminResearchCenterPage() {
       id: row.id,
       name: row.name === "-" ? "" : row.name,
       code: row.code === "-" ? "" : row.code,
+      description: String(row?.description || "").trim(),
       centerChiefId: row.centerChiefId || "",
     });
 
@@ -757,6 +763,7 @@ export default function AdminResearchCenterPage() {
       id: editing.id,
       name: nextName,
       code: nextCode,
+      description: editing.description,
       center_chief_id: editing.centerChiefId,
       research_agendas: editing.researchAgendas,
     });
@@ -828,6 +835,7 @@ export default function AdminResearchCenterPage() {
       type: "center",
       name,
       code,
+      description: newResearchCenterDescription,
       center_chief_id: newCenterChiefId,
       research_agendas: newResearchAgendas,
     });
@@ -846,6 +854,7 @@ export default function AdminResearchCenterPage() {
     setCreateErrors({});
     setnewResearchCenterName("");
     setnewResearchCenterCode("");
+    setNewResearchCenterDescription("");
     setNewCenterChiefId("");
     setNewAgendaInput("");
     setNewResearchAgendas([]);
@@ -2073,6 +2082,26 @@ export default function AdminResearchCenterPage() {
                   </div>
                 </div>
 
+                <div className="mt-4 space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Description
+                  </label>
+                  <Textarea
+                    value={editing.description}
+                    placeholder="Optional short description about the research center..."
+                    onChange={(event) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        description: event.target.value,
+                      }))
+                    }
+                    rows={4}
+                  />
+                  <p className="text-xs text-slate-500">
+                    Shown on the research center detail page.
+                  </p>
+                </div>
+
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -2245,6 +2274,22 @@ export default function AdminResearchCenterPage() {
               {createErrors.code ? (
                 <p className="field-error">{createErrors.code}</p>
               ) : null}
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Description
+              </label>
+              <Textarea
+                value={newResearchCenterDescription}
+                placeholder="Optional short description about the research center..."
+                onChange={(event) =>
+                  setNewResearchCenterDescription(event.target.value)
+                }
+                rows={4}
+              />
+              <p className="text-xs text-slate-500">
+                This will appear on the research center detail page.
+              </p>
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
