@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -98,13 +99,13 @@ function validateDepartmentForm({ name, code, chairpersonId }) {
 }
 
 export default function AdminDepartmentPage() {
+  const navigate = useNavigate();
   const toast = useToast();
   const PAGE_SIZE = 10;
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rows, setRows] = useState([]);
-  const [viewRow, setViewRow] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
   const [editLoading, setEditLoading] = useState(false);
@@ -112,13 +113,6 @@ export default function AdminDepartmentPage() {
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
-  const [viewError, setViewError] = useState("");
-  const [viewProfiles, setViewProfiles] = useState([]);
-  const [projectLinksRow, setProjectLinksRow] = useState(null);
-  const [projectLinksLoading, setProjectLinksLoading] = useState(false);
-  const [projectLinksError, setProjectLinksError] = useState("");
-  const [projectLinks, setProjectLinks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("grid");
   const [exporting, setExporting] = useState(false);
@@ -272,7 +266,9 @@ export default function AdminDepartmentPage() {
         !(
           row.name.toLowerCase().includes(keyword) ||
           row.code.toLowerCase().includes(keyword) ||
-          String(row.chairpersonName || "").toLowerCase().includes(keyword) ||
+          String(row.chairpersonName || "")
+            .toLowerCase()
+            .includes(keyword) ||
           row.type.toLowerCase().includes(keyword) ||
           row.id.toLowerCase().includes(keyword)
         )
@@ -448,42 +444,11 @@ export default function AdminDepartmentPage() {
     setDeletingRow(null);
   };
 
-  const openView = async (row) => {
-    setViewRow(row);
-    setViewLoading(true);
-    setViewError("");
-    setViewProfiles([]);
-    try {
-      const result = await fetchReferenceLinks({
-        type: "department",
-        id: row.id,
-      });
-      setViewProfiles(result?.profiles || []);
-    } catch (loadError) {
-      setViewError(loadError.message || "Unable to load linked profiles.");
-    } finally {
-      setViewLoading(false);
-    }
-  };
-
-  const openProjectLinks = async (row) => {
-    setProjectLinksRow(row);
-    setProjectLinksLoading(true);
-    setProjectLinksError("");
-    setProjectLinks([]);
-    try {
-      const result = await fetchReferenceLinks({
-        type: "department",
-        id: row.id,
-      });
-      setProjectLinks(result?.projects || []);
-    } catch (loadError) {
-      setProjectLinksError(
-        loadError.message || "Unable to load linked projects.",
-      );
-    } finally {
-      setProjectLinksLoading(false);
-    }
+  const goToDepartmentDetail = (row, tab = null) => {
+    const id = String(row?.id || "").trim();
+    if (!id) return;
+    const query = tab ? `?tab=${encodeURIComponent(tab)}` : "";
+    navigate(`/admin/departments/${encodeURIComponent(id)}${query}`);
   };
 
   const createDepartment = async () => {
@@ -806,7 +771,9 @@ export default function AdminDepartmentPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge variant="secondary">Links: {row.totalLinks || 0}</Badge>
+                      <Badge variant="secondary">
+                        Links: {row.totalLinks || 0}
+                      </Badge>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
@@ -816,7 +783,7 @@ export default function AdminDepartmentPage() {
                           "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
                           "hover:bg-muted/50",
                         )}
-                        onClick={() => openView(row)}
+                        onClick={() => goToDepartmentDetail(row, "affiliates")}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -840,7 +807,7 @@ export default function AdminDepartmentPage() {
                           "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
                           "hover:bg-muted/50",
                         )}
-                        onClick={() => openProjectLinks(row)}
+                        onClick={() => goToDepartmentDetail(row, "projects")}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -861,7 +828,7 @@ export default function AdminDepartmentPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openView(row)}
+                        onClick={() => goToDepartmentDetail(row)}
                       >
                         <Eye className="h-4 w-4" />
                         View
@@ -888,150 +855,184 @@ export default function AdminDepartmentPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-[var(--border)] bg-white">
-                <Table className="min-w-[980px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No.</TableHead>
-                      <TableHead>
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("code")}
+                      >
+                        Code{" "}
+                        <span
+                          className={
+                            sortConfig.key === "code"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("code")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("name")}
+                      >
+                        Department{" "}
+                        <span
+                          className={
+                            sortConfig.key === "name"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("name")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "chairpersonName" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("chairpersonName")}
+                      >
+                        Chairperson{" "}
+                        <span
+                          className={
+                            sortConfig.key === "chairpersonName"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("chairpersonName")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("profileCount")}
+                      >
+                        Affiliates{" "}
+                        <span
+                          className={
+                            sortConfig.key === "profileCount"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("profileCount")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("projectCount")}
+                      >
+                        Projects{" "}
+                        <span
+                          className={
+                            sortConfig.key === "projectCount"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("projectCount")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedRows.map((row, index) => (
+                    <TableRow key={`${row.tag}-${row.id}`}>
+                      <TableCell>
+                        {(currentPage - 1) * PAGE_SIZE + index + 1}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {row.code}
+                      </TableCell>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.chairpersonName || "-"}</TableCell>
+                      <TableCell>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("code")}
+                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                          onClick={() => goToDepartmentDetail(row, "affiliates")}
                         >
-                          Code{" "}
-                          <span className={sortConfig.key === "code" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("code")}
-                          </span>
+                          {row.profileCount}
                         </Button>
-                      </TableHead>
-                      <TableHead>
+                      </TableCell>
+                      <TableCell>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("name")}
+                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                          onClick={() => goToDepartmentDetail(row, "projects")}
                         >
-                          Department{" "}
-                          <span className={sortConfig.key === "name" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("name")}
-                          </span>
+                          {row.projectCount}
                         </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "chairpersonName" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("chairpersonName")}
-                        >
-                          Chairperson{" "}
-                          <span className={sortConfig.key === "chairpersonName" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("chairpersonName")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("profileCount")}
-                        >
-                          Affiliates{" "}
-                          <span className={sortConfig.key === "profileCount" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("profileCount")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("projectCount")}
-                        >
-                          Projects{" "}
-                          <span className={sortConfig.key === "projectCount" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("projectCount")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => goToDepartmentDetail(row)}
+                            aria-label={`View ${row?.name || "department"}`}
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => startEdit(row)}
+                            aria-label={`Edit ${row?.name || "department"}`}
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                            onClick={() => setDeletingRow(row)}
+                            aria-label={`Delete ${row?.name || "department"}`}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedRows.map((row, index) => (
-                      <TableRow key={`${row.tag}-${row.id}`}>
-                        <TableCell>{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
-                        <TableCell className="font-mono text-xs">{row.code}</TableCell>
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell>{row.chairpersonName || "-"}</TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                            onClick={() => openView(row)}
-                          >
-                            {row.profileCount}
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                            onClick={() => openProjectLinks(row)}
-                          >
-                            {row.projectCount}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => openView(row)}
-                              aria-label={`View ${row?.name || "department"}`}
-                              title="View"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => startEdit(row)}
-                              aria-label={`Edit ${row?.name || "department"}`}
-                              title="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
-                              onClick={() => setDeletingRow(row)}
-                              aria-label={`Delete ${row?.name || "department"}`}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -1043,172 +1044,6 @@ export default function AdminDepartmentPage() {
         />
       </Card>
 
-      {viewRow ? (
-        <Dialog open={Boolean(viewRow)} onOpenChange={(open) => !open && setViewRow(null)}>
-          <DialogContent className="max-w-5xl" onOpenAutoFocus={(event) => event.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>{viewRow.name}</DialogTitle>
-              <DialogDescription>Department details and linked affiliates.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5">
-              <dl className="grid gap-3 text-sm md:grid-cols-4">
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Department Code</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.code}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Type</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.type}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Chairperson</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.chairpersonName || "-"}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Affiliates</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.profileCount || 0}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40 md:col-span-2">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Projects</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.projectCount || 0}</dd>
-                  </CardContent>
-                </Card>
-              </dl>
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3">
-                  <CardTitle className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
-                    Linked Affiliates ({viewProfiles.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="max-h-80 overflow-auto">
-                    {viewLoading ? (
-                      <p className="p-4 text-sm text-slate-600">Loading linked records...</p>
-                    ) : viewError ? (
-                      <p className="p-4 text-sm text-red-700">{viewError}</p>
-                    ) : viewProfiles.length === 0 ? (
-                      <p className="p-4 text-sm text-slate-600">
-                        No affiliates are currently linked to this department.
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No.</TableHead>
-                            <TableHead>Full Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Department</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>User ID</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {viewProfiles.map((profile, index) => (
-                            <TableRow key={profile.id}>
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell>{profile.full_name || "Unnamed user"}</TableCell>
-                              <TableCell>{profile.email || "-"}</TableCell>
-                              <TableCell className="capitalize">{profile.role || "-"}</TableCell>
-                              <TableCell>{profile.department || "-"}</TableCell>
-                              <TableCell>
-                                <Badge variant={profile.is_active ? "secondary" : "destructive"}>
-                                  {profile.is_active ? "Active" : "Inactive"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <code>{profile.id}</code>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
-      {projectLinksRow ? (
-        <Dialog
-          open={Boolean(projectLinksRow)}
-          onOpenChange={(open) => !open && setProjectLinksRow(null)}
-        >
-          <DialogContent className="max-w-6xl" onOpenAutoFocus={(event) => event.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>{projectLinksRow.name}</DialogTitle>
-              <DialogDescription>Projects linked to this department.</DialogDescription>
-            </DialogHeader>
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="max-h-[560px] overflow-auto">
-                  {projectLinksLoading ? (
-                    <p className="p-4 text-sm text-slate-600">Loading linked projects...</p>
-                  ) : projectLinksError ? (
-                    <p className="p-4 text-sm text-red-700">{projectLinksError}</p>
-                  ) : projectLinks.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-600">
-                      No linked projects found for this department.
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>No.</TableHead>
-                          <TableHead>Project Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Year</TableHead>
-                          <TableHead>Lead Researcher</TableHead>
-                          <TableHead>Department</TableHead>
-                          <TableHead>Research Agenda</TableHead>
-                          <TableHead>Start Date</TableHead>
-                          <TableHead>End Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {projectLinks.map((project, index) => (
-                          <TableRow key={project.id}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{project.title || "-"}</TableCell>
-                            <TableCell className="capitalize">{project.status || "-"}</TableCell>
-                            <TableCell>{project.year || "-"}</TableCell>
-                            <TableCell>{project.lead_researcher || "-"}</TableCell>
-                            <TableCell>{project.department_name || "-"}</TableCell>
-                            <TableCell>{project.agenda_name || "-"}</TableCell>
-                            <TableCell>
-                              {project.start_date
-                                ? new Date(project.start_date).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {project.end_date
-                                ? new Date(project.end_date).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
       <ConfirmActionModal
         open={Boolean(deletingRow)}
         title="Delete Department"
@@ -1217,12 +1052,20 @@ export default function AdminDepartmentPage() {
         align="center"
         loading={deleteGuard.blocked ? false : actionLoading}
         onCancel={() => setDeletingRow(null)}
-        onConfirm={deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete}
+        onConfirm={
+          deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete
+        }
       />
 
       {editModalOpen ? (
-        <Dialog open={editModalOpen} onOpenChange={(open) => !open && cancelEdit()}>
-          <DialogContent className="max-w-2xl" onOpenAutoFocus={(event) => event.preventDefault()}>
+        <Dialog
+          open={editModalOpen}
+          onOpenChange={(open) => !open && cancelEdit()}
+        >
+          <DialogContent
+            className="max-w-2xl"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Edit Department</DialogTitle>
               <DialogDescription>
@@ -1294,7 +1137,11 @@ export default function AdminDepartmentPage() {
                         }));
                       }}
                     >
-                      <SelectTrigger className={editErrors.chairpersonId ? "input-error" : ""}>
+                      <SelectTrigger
+                        className={
+                          editErrors.chairpersonId ? "input-error" : ""
+                        }
+                      >
                         <SelectValue placeholder="Select Chairperson" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1342,7 +1189,10 @@ export default function AdminDepartmentPage() {
             }
           }}
         >
-          <DialogContent className="max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogContent
+            className="max-w-md"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Create Department</DialogTitle>
               <DialogDescription>
@@ -1398,7 +1248,9 @@ export default function AdminDepartmentPage() {
                   setCreateErrors((prev) => ({ ...prev, chairpersonId: "" }));
                 }}
               >
-                <SelectTrigger className={createErrors.chairpersonId ? "input-error" : ""}>
+                <SelectTrigger
+                  className={createErrors.chairpersonId ? "input-error" : ""}
+                >
                   <SelectValue placeholder="Select Chairperson" />
                 </SelectTrigger>
                 <SelectContent>
