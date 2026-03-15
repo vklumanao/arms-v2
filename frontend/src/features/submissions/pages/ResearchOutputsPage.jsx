@@ -1352,7 +1352,7 @@ export default function ResearchOutputsPage() {
           <DialogHeader>
             <DialogTitle>Delete Research Output</DialogTitle>
             <DialogDescription>
-              This will permanently remove the selected resource from CKAN.
+              This will permanently remove the selected resource from the system.
             </DialogDescription>
           </DialogHeader>
           <p className="text-sm font-medium text-slate-800">
