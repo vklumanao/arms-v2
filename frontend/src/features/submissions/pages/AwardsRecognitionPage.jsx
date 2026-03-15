@@ -195,7 +195,7 @@ export default function AwardsRecognitionPage() {
     setDeleting(false);
     toast.success(
       "Award record deleted",
-      "The CKAN-backed award record was removed.",
+      "The award record was removed.",
     );
   };
 
@@ -468,7 +468,7 @@ export default function AwardsRecognitionPage() {
               description={
                 loadError ||
                 (loading
-                  ? "Fetching CKAN-backed award records for this workspace."
+                  ? "Fetching award records for this workspace."
                   : "Try a different search term once award records are available.")
               }
             />
@@ -578,7 +578,7 @@ export default function AwardsRecognitionPage() {
       <ConfirmActionModal
         open={Boolean(deleteTarget)}
         title="Delete Award Record"
-        message={`Delete "${deleteTarget?.award_recognition || deleteTarget?.work_title || "this award record"}"? This will remove the CKAN dataset for this record.`}
+        message={`Delete "${deleteTarget?.award_recognition || deleteTarget?.work_title || "this award record"}"? This will remove the dataset for this record.`}
         confirmLabel="Delete Record"
         loading={deleting}
         onConfirm={confirmDelete}
