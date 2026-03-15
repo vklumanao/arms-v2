@@ -692,7 +692,21 @@ export default function ResearchProjectsHubPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedProjects.map((project, index) => {
+                    const isDraft =
+                      String(project?.submission_state || "")
+                        .trim()
+                        .toLowerCase() === "draft";
                     const status = normalizeStatus(project.status);
+                    const ownerKey = String(project?.submitted_by || "").trim();
+                    const currentUserKey = String(
+                      profile?.id || user?.id || "",
+                    ).trim();
+                    const canContinueDraft =
+                      isDraft &&
+                      ownerKey &&
+                      currentUserKey &&
+                      ownerKey === currentUserKey &&
+                      Boolean(project?.ckan_dataset_id || project?.id);
                     const canToggleVisibility =
                       isAdmin && Boolean(project?.ckan_dataset_id);
                     const canEdit =
@@ -719,7 +733,12 @@ export default function ResearchProjectsHubPage() {
                           {project.year || "-"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{status}</Badge>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {isDraft ? (
+                              <Badge variant="secondary">Draft</Badge>
+                            ) : null}
+                            <Badge variant="outline">{status}</Badge>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
@@ -787,6 +806,19 @@ export default function ResearchProjectsHubPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {canContinueDraft ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEditModal(project)}
+                                aria-label={`Continue ${project?.title || "draft"}`}
+                                title="Continue"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            ) : null}
                             {canEdit ? (
                               <Button
                                 type="button"
