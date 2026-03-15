@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, CircleDot, FileText, Lock, Upload } from "lucide-react";
+import { CheckCircle2, CircleDot, FileText, Loader2, Lock, Upload } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,7 @@ import {
   fetchEditableSubmission,
   fetchProjectExpectedOutputs,
   removeExpectedOutputFilesFromStorage,
+  saveDraftSubmission,
   saveSubmission,
 } from "@/features/submissions/services";
 import {
@@ -100,6 +101,8 @@ export default function SubmitAffiliationPage() {
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [submissionState, setSubmissionState] = useState(null);
   const [form, setForm] = useState(INITIAL_SUBMISSION_FORM);
   const [orgAgendaOptions, setOrgAgendaOptions] = useState([]);
   const [ckanUsers, setCkanUsers] = useState([]);
@@ -169,7 +172,17 @@ export default function SubmitAffiliationPage() {
           setError("Unable to load submission for revision.");
           return;
         }
+        setSubmissionState(
+          String(data?.submission_state || "submitted").trim().toLowerCase(),
+        );
         setForm(mapProjectToSubmissionForm(data));
+        if (
+          String(data?.submission_state || "").trim().toLowerCase() ===
+            "draft" &&
+          typeof data?.draft_step === "number"
+        ) {
+          setStep(clampSubmissionStep(data.draft_step));
+        }
 
         const { data: outputData, error: outputError } =
           await fetchProjectExpectedOutputs({ projectId: editId });
@@ -189,6 +202,11 @@ export default function SubmitAffiliationPage() {
   }, [editId, user?.id]);
 
   useEffect(() => {
+    if (editId) {
+      // Server-backed drafts/edits should hydrate from the backend, not localStorage.
+      setDraftHydrated(true);
+      return;
+    }
     if (!draftKey) return;
     setDraftHydrated(false);
     const parsed = parseSavedSubmissionDraft(localStorage.getItem(draftKey));
@@ -216,9 +234,10 @@ export default function SubmitAffiliationPage() {
       hasDraftExpectedOutputsRef.current = false;
     }
     setDraftHydrated(true);
-  }, [draftKey]);
+  }, [draftKey, editId]);
 
   useEffect(() => {
+    if (editId) return;
     if (!draftKey) return;
     if (!draftHydrated) return;
     if (skipNextAutosaveRef.current) {
@@ -249,7 +268,7 @@ export default function SubmitAffiliationPage() {
         savedAt: new Date().toISOString(),
       }),
     );
-  }, [draftKey, step, form, draftHydrated, expectedOutputRows]);
+  }, [draftKey, step, form, draftHydrated, expectedOutputRows, editId]);
 
   useEffect(() => {
     const orgId = String(profile?.ckan_org_id || "").trim();
@@ -879,6 +898,48 @@ export default function SubmitAffiliationPage() {
     setStep(0);
     setShowSubmitConfirm(false);
     setSubmitting(false);
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user?.id) return;
+    if (editId && submissionState && submissionState !== "draft") {
+      setError("Only draft submissions can be saved as a draft.");
+      return;
+    }
+    setSavingDraft(true);
+    setMessage("");
+    setError("");
+
+    const { data, error: draftError } = await saveDraftSubmission({
+      userId: user.id,
+      editId,
+      form,
+      expectedOutputs: expectedOutputRows,
+      draftStep: step,
+    });
+
+    if (draftError || !data?.id) {
+      setError(draftError?.message || "Unable to save draft.");
+      setSavingDraft(false);
+      return;
+    }
+
+    if (draftKey) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+    }
+
+    setMessage("Draft saved.");
+    setSavingDraft(false);
+
+    if (!editId) {
+      navigate(`/submit-project/submit?edit=${encodeURIComponent(data.id)}`, {
+        replace: true,
+      });
+    }
   };
 
   return (
@@ -2067,6 +2128,26 @@ export default function SubmitAffiliationPage() {
                 <span />
               )}
               <div className="flex gap-2">
+                {!editId || submissionState === "draft" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={savingDraft || submitting || loadingEdit}
+                  >
+                    {savingDraft ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Save Draft
+                      </span>
+                    )}
+                  </Button>
+                ) : null}
                 {step < SUBMISSION_STEPS.length - 1 ? (
                   <Button
                     type="button"
@@ -2110,6 +2191,20 @@ export default function SubmitAffiliationPage() {
           ) : (
             <span />
           )}
+          {!editId || submissionState === "draft" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={savingDraft || submitting || loadingEdit}
+            >
+              {savingDraft ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+            </Button>
+          ) : null}
           {step < SUBMISSION_STEPS.length - 1 ? (
             <Button
               type="button"
