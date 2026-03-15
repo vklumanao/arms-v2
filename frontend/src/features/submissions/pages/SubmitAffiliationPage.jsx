@@ -415,8 +415,12 @@ export default function SubmitAffiliationPage() {
           row.name || row.fullname || row.display_name || row.username || "",
         ).trim() || "CKAN User",
       username: String(row.username || row.name || "").trim(),
-      email: String(row.email || "").trim().toLowerCase(),
-      role: String(row.role || "").trim().toLowerCase(),
+      email: String(row.email || "")
+        .trim()
+        .toLowerCase(),
+      role: String(row.role || "")
+        .trim()
+        .toLowerCase(),
     }));
   }, [ckanUsers]);
   const leadEligibleUserOptions = useMemo(
@@ -456,7 +460,8 @@ export default function SubmitAffiliationPage() {
       .map(
         (name) =>
           facultyEligibleUserOptions.find(
-            (row) => String(row.name || "").trim() === String(name || "").trim(),
+            (row) =>
+              String(row.name || "").trim() === String(name || "").trim(),
           ) || { id: "", name, username: "", email: "", role: "faculty" },
       )
       .filter(Boolean);
@@ -1005,1094 +1010,1089 @@ export default function SubmitAffiliationPage() {
           </CardHeader>
 
           <CardContent className="grid w-full gap-6 p-5">
-          {step === 0 ? (
-            <div className="space-y-5">
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">
-                    Basic Project Information
-                  </p>
-                  <p className="form-section-note">
-                    Start with the core project details to establish context.
-                  </p>
-                </div>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Project title
-                  </span>
-                  <Input
-                    placeholder="e.g. AI Mentorship in Public Schools"
-                    required
-                    value={form.title}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, title: e.target.value }))
-                    }
-                  />
-                  <p className="text-xs text-slate-500">
-                    Use a concise, descriptive title that will appear in
-                    reports.
-                  </p>
-                </label>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Project abstract/summary
-                  </span>
-                  <Textarea
-                    className="min-h-24"
-                    placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
-                    value={form.abstract}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, abstract: e.target.value }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">Research Team</p>
-                </div>
-                <div className="form-fields-grid form-fields-grid-2">
+            {step === 0 ? (
+              <div className="space-y-5">
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">
+                      Basic Project Information
+                    </p>
+                    <p className="form-section-note">
+                      Start with the core project details to establish context.
+                    </p>
+                  </div>
                   <label className="block space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
-                      Lead researcher
-                    </span>
-                    <div ref={leadFieldRef} className="relative space-y-2">
-                      <Input
-                        placeholder="Type a CKAN user name"
-                        value={leadSearch}
-                        onFocus={() =>
-                          setLeadDropdownOpen(Boolean(leadSearch.trim()))
-                        }
-                        onChange={(e) => {
-                          setLeadSearch(e.target.value);
-                          setLeadDropdownOpen(Boolean(e.target.value.trim()));
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && leadSuggestions[0]) {
-                            e.preventDefault();
-                            setLeadResearcherSelection(leadSuggestions[0]);
-                            setLeadSearch("");
-                            setLeadDropdownOpen(false);
-                          }
-                        }}
-                      />
-                      {leadDropdownOpen && leadSuggestions.length > 0 ? (
-                        <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
-                          {leadSuggestions.map((ckanUser) => (
-                            <button
-                              key={`lead-option-${ckanUser.id}`}
-                              type="button"
-                              className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
-                              onClick={() => {
-                                setLeadResearcherSelection(ckanUser);
-                                setLeadSearch("");
-                                setLeadDropdownOpen(false);
-                              }}
-                            >
-                              {ckanUser.name}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                    <Card className="bg-muted/30 shadow-none">
-                      <CardContent className="p-3">
-                      {!selectedLeadResearcher ? (
-                        <p className="text-xs text-slate-500">
-                          No CKAN user selected yet.
-                        </p>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          <span
-                            key={`lead-chip-${selectedLeadResearcher}`}
-                            className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
-                          >
-                            {selectedLeadResearcher}
-                            <button
-                              type="button"
-                              className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
-                              onClick={() => setLeadResearcherSelection(null)}
-                              aria-label={`Remove ${selectedLeadResearcher}`}
-                            >
-                              x
-                            </button>
-                          </span>
-                        </div>
-                      )}
-                      </CardContent>
-                    </Card>
-                    <p className="text-xs text-slate-500">
-                      Type to search and select one CKAN user only.
-                    </p>
-                  </label>
-                  <label className="block space-y-1 text-sm lg:col-span-1">
-                    <span className="font-semibold text-slate-700">
-                      Research team (faculty)
-                    </span>
-                    <div ref={facultyFieldRef} className="relative space-y-2">
-                      <Input
-                        placeholder="Type a CKAN user name"
-                        value={facultySearch}
-                        onFocus={() =>
-                          setFacultyDropdownOpen(Boolean(facultySearch.trim()))
-                        }
-                        onChange={(e) => {
-                          setFacultySearch(e.target.value);
-                          setFacultyDropdownOpen(Boolean(e.target.value.trim()));
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && facultySuggestions[0]) {
-                            e.preventDefault();
-                            addProponentSelection(
-                              "faculty_team",
-                              facultySuggestions[0],
-                            );
-                            setFacultySearch("");
-                            setFacultyDropdownOpen(false);
-                          }
-                        }}
-                      />
-                      {facultyDropdownOpen && facultySuggestions.length > 0 ? (
-                        <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
-                          {facultySuggestions.map((ckanUser) => (
-                            <button
-                              key={`faculty-option-${ckanUser.id}`}
-                              type="button"
-                              className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
-                              onClick={() => {
-                                addProponentSelection(
-                                  "faculty_team",
-                                  ckanUser,
-                                );
-                                setFacultySearch("");
-                                setFacultyDropdownOpen(false);
-                              }}
-                            >
-                              {ckanUser.name}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                    <Card className="bg-muted/30 shadow-none">
-                      <CardContent className="p-3">
-                      {facultyTeamSelections.length === 0 ? (
-                        <p className="text-xs text-slate-500">
-                          No CKAN users selected yet.
-                        </p>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {facultyTeamSelections.map((name) => (
-                            <span
-                              key={`faculty-chip-${name}`}
-                              className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
-                            >
-                              {name}
-                              <button
-                                type="button"
-                                className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
-                                onClick={() =>
-                                  removeProponentSelection("faculty_team", name)
-                                }
-                                aria-label={`Remove ${name}`}
-                              >
-                                x
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      </CardContent>
-                    </Card>
-                    <p className="text-xs text-slate-500">
-                      Type to search and select one or more CKAN users.
-                    </p>
-                  </label>
-                </div>
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Research team (students)
-                  </span>
-                  <Input
-                    placeholder="Comma-separated names (optional)"
-                    value={form.student_team}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        student_team: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">Project Context</p>
-                </div>
-                <div className="form-fields-grid form-fields-grid-2">
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Project year
+                      Project title
                     </span>
                     <Input
-                      type="number"
-                      min="2000"
-                      max="2100"
-                      inputMode="numeric"
-                      placeholder="e.g. 2026"
+                      placeholder="e.g. AI Mentorship in Public Schools"
                       required
-                      value={form.year}
+                      value={form.title}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, title: e.target.value }))
+                      }
+                    />
+                    <p className="text-xs text-slate-500">
+                      Use a concise, descriptive title that will appear in
+                      reports.
+                    </p>
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Project abstract/summary
+                    </span>
+                    <Textarea
+                      className="min-h-24"
+                      placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
+                      value={form.abstract}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, abstract: e.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">Research Team</p>
+                  </div>
+                  <div className="form-fields-grid form-fields-grid-2">
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Lead researcher
+                      </span>
+                      <div ref={leadFieldRef} className="relative space-y-2">
+                        <Input
+                          placeholder="Type a Lead Researcher name"
+                          value={leadSearch}
+                          onFocus={() =>
+                            setLeadDropdownOpen(Boolean(leadSearch.trim()))
+                          }
+                          onChange={(e) => {
+                            setLeadSearch(e.target.value);
+                            setLeadDropdownOpen(Boolean(e.target.value.trim()));
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && leadSuggestions[0]) {
+                              e.preventDefault();
+                              setLeadResearcherSelection(leadSuggestions[0]);
+                              setLeadSearch("");
+                              setLeadDropdownOpen(false);
+                            }
+                          }}
+                        />
+                        {leadDropdownOpen && leadSuggestions.length > 0 ? (
+                          <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
+                            {leadSuggestions.map((ckanUser) => (
+                              <button
+                                key={`lead-option-${ckanUser.id}`}
+                                type="button"
+                                className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
+                                onClick={() => {
+                                  setLeadResearcherSelection(ckanUser);
+                                  setLeadSearch("");
+                                  setLeadDropdownOpen(false);
+                                }}
+                              >
+                                {ckanUser.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      <Card className="bg-muted/30 shadow-none">
+                        <CardContent className="p-3">
+                          {!selectedLeadResearcher ? (
+                            <p className="text-xs text-slate-500">
+                              No Lead Researcher selected yet.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              <span
+                                key={`lead-chip-${selectedLeadResearcher}`}
+                                className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
+                              >
+                                {selectedLeadResearcher}
+                                <button
+                                  type="button"
+                                  className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
+                                  onClick={() =>
+                                    setLeadResearcherSelection(null)
+                                  }
+                                  aria-label={`Remove ${selectedLeadResearcher}`}
+                                >
+                                  x
+                                </button>
+                              </span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      <p className="text-xs text-slate-500">
+                        Type to search and select one Lead Researcher only.
+                      </p>
+                    </label>
+                    <label className="block space-y-1 text-sm lg:col-span-1">
+                      <span className="font-semibold text-slate-700">
+                        Research team (faculty)
+                      </span>
+                      <div ref={facultyFieldRef} className="relative space-y-2">
+                        <Input
+                          placeholder="Type a Faculty name"
+                          value={facultySearch}
+                          onFocus={() =>
+                            setFacultyDropdownOpen(
+                              Boolean(facultySearch.trim()),
+                            )
+                          }
+                          onChange={(e) => {
+                            setFacultySearch(e.target.value);
+                            setFacultyDropdownOpen(
+                              Boolean(e.target.value.trim()),
+                            );
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && facultySuggestions[0]) {
+                              e.preventDefault();
+                              addProponentSelection(
+                                "faculty_team",
+                                facultySuggestions[0],
+                              );
+                              setFacultySearch("");
+                              setFacultyDropdownOpen(false);
+                            }
+                          }}
+                        />
+                        {facultyDropdownOpen &&
+                        facultySuggestions.length > 0 ? (
+                          <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
+                            {facultySuggestions.map((ckanUser) => (
+                              <button
+                                key={`faculty-option-${ckanUser.id}`}
+                                type="button"
+                                className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
+                                onClick={() => {
+                                  addProponentSelection(
+                                    "faculty_team",
+                                    ckanUser,
+                                  );
+                                  setFacultySearch("");
+                                  setFacultyDropdownOpen(false);
+                                }}
+                              >
+                                {ckanUser.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      <Card className="bg-muted/30 shadow-none">
+                        <CardContent className="p-3">
+                          {facultyTeamSelections.length === 0 ? (
+                            <p className="text-xs text-slate-500">
+                              No Faculty selected yet.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {facultyTeamSelections.map((name) => (
+                                <span
+                                  key={`faculty-chip-${name}`}
+                                  className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium text-[var(--brand)]"
+                                >
+                                  {name}
+                                  <button
+                                    type="button"
+                                    className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
+                                    onClick={() =>
+                                      removeProponentSelection(
+                                        "faculty_team",
+                                        name,
+                                      )
+                                    }
+                                    aria-label={`Remove ${name}`}
+                                  >
+                                    x
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      <p className="text-xs text-slate-500">
+                        Type to search and select one or more Faculty.
+                      </p>
+                    </label>
+                  </div>
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Research team (students)
+                    </span>
+                    <Input
+                      placeholder="Comma-separated names (optional)"
+                      value={form.student_team}
                       onChange={(e) =>
                         setForm((p) => ({
                           ...p,
-                          year: sanitizeDigits(e.target.value, 4),
+                          student_team: e.target.value,
                         }))
                       }
                     />
                   </label>
+                </div>
+
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">Project Context</p>
+                  </div>
+                  <div className="form-fields-grid form-fields-grid-2">
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Project year
+                      </span>
+                      <Input
+                        type="number"
+                        min="2000"
+                        max="2100"
+                        inputMode="numeric"
+                        placeholder="e.g. 2026"
+                        required
+                        value={form.year}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            year: sanitizeDigits(e.target.value, 4),
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Research center
+                      </span>
+                      <Input
+                        value={
+                          centerName === "-"
+                            ? form.research_center_id ||
+                              profile?.ckan_org_id ||
+                              ""
+                            : centerName
+                        }
+                        readOnly
+                        disabled
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 1 ? (
+              <div className="form-section">
+                <div className="form-section-head">
+                  <p className="form-section-title">Classification Details</p>
+                  <p className="form-section-note">
+                    Classify the project for reporting, routing, and review.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
-                      Research center
+                      Project classification
+                    </span>
+                    <Select
+                      value={form.classification || "academic"}
+                      onValueChange={(value) =>
+                        setForm((p) => ({ ...p, classification: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select classification" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="academic">Academic</SelectItem>
+                        <SelectItem value="industry">Industry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">Status</span>
+                    <Select
+                      value={form.status || "proposal"}
+                      onValueChange={(value) =>
+                        setForm((p) => ({ ...p, status: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="proposal">Proposal</SelectItem>
+                        <SelectItem value="ongoing">On-going</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Research agenda
+                    </span>
+                    <Select
+                      value={form.research_agenda_id || "__none__"}
+                      disabled={effectiveAgendas.length === 0}
+                      onValueChange={(value) =>
+                        setForm((p) => ({
+                          ...p,
+                          research_agenda_id: value === "__none__" ? "" : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select research agenda" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          Select research agenda
+                        </SelectItem>
+                        {effectiveAgendas.map((a) => (
+                          <SelectItem key={a.id} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {effectiveAgendas.length === 0 ? (
+                      <p className="text-xs text-amber-700">
+                        No research agenda found in your organization custom
+                        fields.
+                      </p>
+                    ) : null}
+                  </label>
+
+                  <label className="block space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Department
                     </span>
                     <Input
-                      value={
-                        centerName === "-"
-                          ? form.research_center_id ||
-                            profile?.ckan_org_id ||
-                            ""
-                          : centerName
-                      }
+                      value={departmentName === "-" ? "" : departmentName}
                       readOnly
                       disabled
                     />
                   </label>
+                  <label className="block space-y-1 text-sm sm:col-span-2">
+                    <span className="font-semibold text-slate-700">
+                      Scholarly type
+                    </span>
+                    <Input
+                      placeholder="e.g. Industry-based, Other Scholarly"
+                      value={form.scholarly_type}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          scholarly_type: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
                 </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {step === 1 ? (
-            <div className="form-section">
-              <div className="form-section-head">
-                <p className="form-section-title">Classification Details</p>
-                <p className="form-section-note">
-                  Classify the project for reporting, routing, and review.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Project classification
-                  </span>
-                  <Select
-                    value={form.classification || "academic"}
-                    onValueChange={(value) =>
-                      setForm((p) => ({ ...p, classification: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select classification" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="academic">Academic</SelectItem>
-                      <SelectItem value="industry">Industry</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Status</span>
-                  <Select
-                    value={form.status || "proposal"}
-                    onValueChange={(value) => setForm((p) => ({ ...p, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="proposal">Proposal</SelectItem>
-                      <SelectItem value="ongoing">On-going</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Research agenda
-                  </span>
-                  <Select
-                    value={form.research_agenda_id || "__none__"}
-                    disabled={effectiveAgendas.length === 0}
-                    onValueChange={(value) =>
-                      setForm((p) => ({
-                        ...p,
-                        research_agenda_id: value === "__none__" ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select research agenda" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Select research agenda</SelectItem>
-                      {effectiveAgendas.map((a) => (
-                        <SelectItem key={a.id} value={String(a.id)}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {effectiveAgendas.length === 0 ? (
-                    <p className="text-xs text-amber-700">
-                      No research agenda found in your organization custom
-                      fields (CKAN extras).
+            {step === 2 ? (
+              <div className="space-y-5">
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">Funding Details</p>
+                    <p className="form-section-note">
+                      Enter funding values and source details as accurately as
+                      possible.
                     </p>
-                  ) : null}
-                </label>
-
-                <label className="block space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Department
-                  </span>
-                  <Input
-                    value={departmentName === "-" ? "" : departmentName}
-                    readOnly
-                    disabled
-                  />
-                </label>
-                <label className="block space-y-1 text-sm sm:col-span-2">
-                  <span className="font-semibold text-slate-700">
-                    Scholarly type
-                  </span>
-                  <Input
-                    placeholder="e.g. Industry-based, Other Scholarly"
-                    value={form.scholarly_type}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        scholarly_type: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="space-y-5">
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">Funding Details</p>
-                  <p className="form-section-note">
-                    Enter funding values and source details as accurately as
-                    possible.
-                  </p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Funding type
+                      </span>
+                      <Select
+                        value={form.funding_type || "none"}
+                        onValueChange={(value) =>
+                          setForm((p) => ({ ...p, funding_type: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select funding type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="internal">Internal</SelectItem>
+                          <SelectItem value="external">External</SelectItem>
+                          <SelectItem value="self_funded">
+                            Self Funded
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Funding category
+                      </span>
+                      <Input
+                        placeholder="e.g. External (Industry-Sponsored)"
+                        value={form.funding_category}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            funding_category: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Funding source
+                      </span>
+                      <Input
+                        placeholder="e.g. ARMS Grants Office"
+                        value={form.funding_source}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            funding_source: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Funding amount
+                      </span>
+                      <Input
+                        placeholder="e.g. 50000"
+                        type="number"
+                        min="0"
+                        inputMode="decimal"
+                        step="0.01"
+                        value={form.funding_amount}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            funding_amount: sanitizeDecimal(e.target.value),
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Funding type
-                    </span>
-                    <Select
-                      value={form.funding_type || "none"}
-                      onValueChange={(value) =>
-                        setForm((p) => ({ ...p, funding_type: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select funding type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="internal">Internal</SelectItem>
-                        <SelectItem value="external">External</SelectItem>
-                        <SelectItem value="self_funded">Self Funded</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Funding category
-                    </span>
-                    <Input
-                      placeholder="e.g. External (Industry-Sponsored)"
-                      value={form.funding_category}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          funding_category: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Funding source
-                    </span>
-                    <Input
-                      placeholder="e.g. ARMS Grants Office"
-                      value={form.funding_source}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          funding_source: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Funding amount
-                    </span>
-                    <Input
-                      placeholder="e.g. 50000"
-                      type="number"
-                      min="0"
-                      inputMode="decimal"
-                      step="0.01"
-                      value={form.funding_amount}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          funding_amount: sanitizeDecimal(e.target.value),
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
 
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">MOA and Timeline</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Industry/Agency partner
-                    </span>
-                    <Input
-                      placeholder="e.g. PNP, DA-BAFE"
-                      value={form.industry_partner}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          industry_partner: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <div className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Signed MOA reference
-                    </span>
-                    <div className="upload-field">
-                      <div className="upload-picker">
-                        <div className="upload-picker-info">
-                          <FileText
-                            size={16}
-                            className="mt-0.5 text-slate-500"
-                            aria-hidden="true"
-                          />
-                          <div className="space-y-0.5">
-                            <p className="upload-picker-name">
-                              {moaFile?.name || "No file selected"}
-                            </p>
-                            <p className="upload-picker-sub">
-                              Size: {formatFileSize(moaFile?.size)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button asChild variant="outline" className="upload-trigger">
-                          <label>
-                            <Upload size={14} aria-hidden="true" />
-                            <span>{moaFile ? "Replace" : "Choose File"}</span>
-                            <input
-                              className="sr-only"
-                              type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                              onChange={(e) => {
-                                const nextFile = e.target.files?.[0] || null;
-                                if (!nextFile) {
-                                  setMoaFile(null);
-                                  return;
-                                }
-                                if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
-                                  setError("MOA file must be 25MB or smaller.");
-                                  e.target.value = "";
-                                  return;
-                                }
-                                setError("");
-                                setMoaFile(nextFile);
-                              }}
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">MOA and Timeline</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Industry/Agency partner
+                      </span>
+                      <Input
+                        placeholder="e.g. PNP, DA-BAFE"
+                        value={form.industry_partner}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            industry_partner: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <div className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Signed MOA reference
+                      </span>
+                      <div className="upload-field">
+                        <div className="upload-picker">
+                          <div className="upload-picker-info">
+                            <FileText
+                              size={16}
+                              className="mt-0.5 text-slate-500"
+                              aria-hidden="true"
                             />
-                          </label>
-                        </Button>
-                      </div>
-                      <div className="upload-field-preview">
-                        <p className="upload-field-preview-text">
-                          Current reference: {form.signed_moa_reference || "-"}
-                        </p>
-                        <p className="upload-field-hint">
-                          Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          Upload is saved when you submit/save revision.
-                        </p>
+                            <div className="space-y-0.5">
+                              <p className="upload-picker-name">
+                                {moaFile?.name || "No file selected"}
+                              </p>
+                              <p className="upload-picker-sub">
+                                Size: {formatFileSize(moaFile?.size)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="upload-trigger"
+                          >
+                            <label>
+                              <Upload size={14} aria-hidden="true" />
+                              <span>{moaFile ? "Replace" : "Choose File"}</span>
+                              <input
+                                className="sr-only"
+                                type="file"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                onChange={(e) => {
+                                  const nextFile = e.target.files?.[0] || null;
+                                  if (!nextFile) {
+                                    setMoaFile(null);
+                                    return;
+                                  }
+                                  if (nextFile.size > MAX_MOA_FILE_SIZE_BYTES) {
+                                    setError(
+                                      "MOA file must be 25MB or smaller.",
+                                    );
+                                    e.target.value = "";
+                                    return;
+                                  }
+                                  setError("");
+                                  setMoaFile(nextFile);
+                                }}
+                              />
+                            </label>
+                          </Button>
+                        </div>
+                        <div className="upload-field-preview">
+                          <p className="upload-field-preview-text">
+                            Current reference:{" "}
+                            {form.signed_moa_reference || "-"}
+                          </p>
+                          <p className="upload-field-hint">
+                            Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            Upload is saved when you submit/save revision.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Start date
-                    </span>
-                    <Input
-                      type="date"
-                      value={form.start_date}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          start_date: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="block space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      End date (due date)
-                    </span>
-                    <Input
-                      type="date"
-                      value={form.end_date}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          end_date: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Start date
+                      </span>
+                      <Input
+                        type="date"
+                        value={form.start_date}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            start_date: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        End date (due date)
+                      </span>
+                      <Input
+                        type="date"
+                        value={form.end_date}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            end_date: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {step === 3 ? (
-            <div className="space-y-5">
-              <Card className="bg-muted/30 shadow-none">
-                <CardContent className="p-4 text-sm text-slate-700">
-                  <p className="font-semibold text-slate-900">
-                    Submission checklist
-                  </p>
-                  <ul className="mt-1 list-disc pl-4">
-                    <li>Title and center are filled.</li>
-                    <li>Classification and year are valid.</li>
-                    <li>Dates and funding values are logically consistent.</li>
-                  </ul>
-                </CardContent>
-              </Card>
+            {step === 3 ? (
+              <div className="space-y-5">
+                <Card className="bg-muted/30 shadow-none">
+                  <CardContent className="p-4 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">
+                      Submission checklist
+                    </p>
+                    <ul className="mt-1 list-disc pl-4">
+                      <li>Title and center are filled.</li>
+                      <li>Classification and year are valid.</li>
+                      <li>
+                        Dates and funding values are logically consistent.
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
 
-              <div className="form-section">
-                <div className="form-section-head">
-                  <p className="form-section-title">Outputs and Resources</p>
-                  <p className="form-section-note">
-                    Optional step: add outputs now, or add them later in
-                    Research Outputs.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-slate-700">
-                      Expected research outputs
-                    </span>
-                    <Button type="button" variant="outline" onClick={openAddOutputModal}>
-                      Add Output
-                    </Button>
+                <div className="form-section">
+                  <div className="form-section-head">
+                    <p className="form-section-title">Outputs and Resources</p>
+                    <p className="form-section-note">
+                      Optional step: add outputs now, or add them later in
+                      Research Outputs.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Rows are finalized in database when you submit/save
-                    revision.
-                  </p>
-                  <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
-                    <Table className="min-w-[680px]">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Output Type</TableHead>
-                          <TableHead>Target</TableHead>
-                          <TableHead>Notes</TableHead>
-                          <TableHead>File</TableHead>
-                          <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {expectedOutputRows.length === 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-700">
+                        Expected research outputs
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openAddOutputModal}
+                      >
+                        Add Output
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Rows are finalized in database when you submit/save
+                      revision.
+                    </p>
+                    <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
+                      <Table className="min-w-[680px]">
+                        <TableHeader>
                           <TableRow>
-                            <TableCell
-                              colSpan={5}
-                              className="px-3 py-4 text-center text-xs text-slate-500"
-                            >
-                              No expected outputs added yet.
-                            </TableCell>
+                            <TableHead>Output Type</TableHead>
+                            <TableHead>Target</TableHead>
+                            <TableHead>Notes</TableHead>
+                            <TableHead>File</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
                           </TableRow>
-                        ) : (
-                          paginatedExpectedOutputRows.map((row) => (
-                            <TableRow key={row.client_id}>
-                              <TableCell>
-                                {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
-                                  (item) => item.value === row.output_type,
-                                )?.label ||
-                                  row.output_type ||
-                                  "-"}
-                                {String(row.specific_output || "").trim() ? (
-                                  <p className="text-xs text-slate-500">
-                                    Specific: {row.specific_output}
-                                  </p>
-                                ) : null}
-                              </TableCell>
-                              <TableCell className="text-slate-600">
-                                {Math.max(1, Number(row.target_count) || 1)}
-                              </TableCell>
-                              <TableCell className="text-slate-600">
-                                {row.notes || "-"}
-                                {row.needs_file_reselect ? (
-                                  <p className="text-xs text-amber-700">
-                                    File needs re-attach after refresh.
-                                  </p>
-                                ) : null}
-                              </TableCell>
-                              <TableCell className="break-all text-slate-600">
-                                {row.file_name ||
-                                  row.file?.name ||
-                                  row.file_path ||
-                                  "-"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => openEditOutputModal(row)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="border-destructive text-destructive hover:bg-destructive/10"
-                                    onClick={() =>
-                                      deleteExpectedOutputRow(row.client_id)
-                                    }
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
+                        </TableHeader>
+                        <TableBody>
+                          {expectedOutputRows.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="px-3 py-4 text-center text-xs text-slate-500"
+                              >
+                                No expected outputs added yet.
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  {expectedOutputRows.length > 0 ? (
-                    <PaginationControls
-                      page={expectedOutputsPage}
-                      totalPages={expectedOutputsTotalPages}
-                      onPageChange={setExpectedOutputsPage}
-                    />
-                  ) : null}
-                </div>
-                <label className="block space-y-1 text-sm sm:max-w-2xl">
-                  <span className="font-semibold text-slate-700">
-                    Supporting MOV link (optional)
-                  </span>
-                  <Input
-                    placeholder="Google Drive link or repository of supporting MOVs"
-                    value={form.supporting_mov_link}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        supporting_mov_link: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3 text-sm sm:max-w-2xl">
-                  <input
-                    className="mt-1 h-4 w-4"
-                    type="checkbox"
-                    checked={Boolean(form.public_visible)}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        public_visible: e.target.checked,
-                      }))
-                    }
-                  />
-                  <span className="space-y-1">
-                    <span className="block font-semibold text-slate-700">
-                      Make project publicly visible after submission
-                    </span>
-                    <span className="block text-xs text-slate-500">
-                      Turn this on if the dataset can be visible outside your
-                      private workspace.
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 4 ? (
-            <div className="space-y-4">
-              <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--brand-soft)] p-3 text-sm text-[var(--brand-strong)]">
-                <p className="font-semibold">Final Review</p>
-                <p className="mt-1">
-                  Review the form details below. If something is incorrect, go
-                  back and edit before final submission.
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                <Card>
-                  <CardContent className="p-5">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-                    Step 1: Project
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Project Title
-                      </span>
-                      <Input
-                        value={form.title || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Lead Researcher
-                      </span>
-                      <Input
-                        value={form.lead_researcher || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Project Year
-                      </span>
-                      <Input
-                        value={form.year || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Research Center
-                      </span>
-                      <Input
-                        value={centerName}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Faculty Team
-                      </span>
-                      <Textarea
-                        className="min-h-20"
-                        value={form.faculty_team || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Student Team
-                      </span>
-                      <Textarea
-                        className="min-h-20"
-                        value={form.student_team || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Abstract
-                      </span>
-                      <Textarea
-                        className="min-h-24"
-                        value={form.abstract || "-"}
-                        readOnly
-                      />
-                    </label>
-                  </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-5">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-                    Step 2: Classification
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Status
-                      </span>
-                      <Input
-                        value={form.status || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Classification
-                      </span>
-                      <Input
-                        value={form.classification || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Scholarly Type
-                      </span>
-                      <Input
-                        value={form.scholarly_type || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Research Agenda
-                      </span>
-                      <Input
-                        value={agendaName}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Department
-                      </span>
-                      <Input
-                        value={departmentName}
-                        readOnly
-                      />
-                    </label>
-                  </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-5">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-                    Step 3: Funding & Timeline
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Funding Type
-                      </span>
-                      <Input
-                        value={form.funding_type || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Funding Category
-                      </span>
-                      <Input
-                        value={form.funding_category || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Funding Source
-                      </span>
-                      <Input
-                        value={form.funding_source || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Funding Amount
-                      </span>
-                      <Input
-                        value={form.funding_amount || "0"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Industry/Agency Partner
-                      </span>
-                      <Input
-                        value={form.industry_partner || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Signed MOA Reference
-                      </span>
-                      <Input
-                        value={
-                          moaFile?.name || form.signed_moa_reference || "-"
-                        }
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        Start Date
-                      </span>
-                      <Input
-                        value={form.start_date || "-"}
-                        readOnly
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
-                        End Date
-                      </span>
-                      <Input
-                        value={form.end_date || "-"}
-                        readOnly
-                      />
-                    </label>
-                  </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-5">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-                    Step 4: Outputs & Visibility
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Expected Outputs
-                      </span>
-                      <div className="space-y-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3">
-                        {expectedOutputRows.length === 0 ? (
-                          <p className="text-sm text-slate-600">-</p>
-                        ) : (
-                          expectedOutputRows.map((row) => (
-                            <Card
-                              key={`review-output-${row.client_id}`}
-                              className="shadow-none"
-                            >
-                              <CardContent className="p-3 text-sm">
-                                <p className="font-semibold text-slate-800">
+                          ) : (
+                            paginatedExpectedOutputRows.map((row) => (
+                              <TableRow key={row.client_id}>
+                                <TableCell>
                                   {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
                                     (item) => item.value === row.output_type,
                                   )?.label ||
                                     row.output_type ||
                                     "-"}
-                                </p>
-                                {String(row.specific_output || "").trim() ? (
-                                  <p className="text-slate-600">
-                                    Specific: {row.specific_output}
-                                  </p>
-                                ) : null}
-                                <p className="text-slate-600">
-                                  Target:{" "}
-                                  {Math.max(1, Number(row.target_count) || 1)} |{" "}
-                                  Notes: {row.notes || "-"}
-                                </p>
-                                <p className="text-slate-600 break-all">
-                                  File:{" "}
-                                  {row.file?.name ||
-                                    row.file_name ||
+                                  {String(row.specific_output || "").trim() ? (
+                                    <p className="text-xs text-slate-500">
+                                      Specific: {row.specific_output}
+                                    </p>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell className="text-slate-600">
+                                  {Math.max(1, Number(row.target_count) || 1)}
+                                </TableCell>
+                                <TableCell className="text-slate-600">
+                                  {row.notes || "-"}
+                                  {row.needs_file_reselect ? (
+                                    <p className="text-xs text-amber-700">
+                                      File needs re-attach after refresh.
+                                    </p>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell className="break-all text-slate-600">
+                                  {row.file_name ||
+                                    row.file?.name ||
                                     row.file_path ||
                                     "-"}
-                                </p>
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </label>
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Supporting MOV Link
-                      </span>
-                      <Input
-                        value={form.supporting_mov_link || "-"}
-                        readOnly
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => openEditOutputModal(row)}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="border-destructive text-destructive hover:bg-destructive/10"
+                                      onClick={() =>
+                                        deleteExpectedOutputRow(row.client_id)
+                                      }
+                                    >
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {expectedOutputRows.length > 0 ? (
+                      <PaginationControls
+                        page={expectedOutputsPage}
+                        totalPages={expectedOutputsTotalPages}
+                        onPageChange={setExpectedOutputsPage}
                       />
-                    </label>
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="font-semibold text-slate-700">
-                        Visibility
-                      </span>
-                      <Input
-                        value={
-                          form.public_visible ? "Publicly visible" : "Private"
-                        }
-                        readOnly
-                      />
-                    </label>
+                    ) : null}
                   </div>
-                  </CardContent>
-                </Card>
+                  <label className="block space-y-1 text-sm sm:max-w-2xl">
+                    <span className="font-semibold text-slate-700">
+                      Supporting MOV link (optional)
+                    </span>
+                    <Input
+                      placeholder="Google Drive link or repository of supporting MOVs"
+                      value={form.supporting_mov_link}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          supporting_mov_link: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3 text-sm sm:max-w-2xl">
+                    <input
+                      className="mt-1 h-4 w-4"
+                      type="checkbox"
+                      checked={Boolean(form.public_visible)}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          public_visible: e.target.checked,
+                        }))
+                      }
+                    />
+                    <span className="space-y-1">
+                      <span className="block font-semibold text-slate-700">
+                        Make project publicly visible after submission
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Turn this on if the dataset can be visible outside your
+                        private workspace.
+                      </span>
+                    </span>
+                  </label>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {step > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(disabledOutlineButtonClass)}
-                onClick={() => moveStep(-1)}
-              >
-                Previous
-              </Button>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-2">
-              {step < SUBMISSION_STEPS.length - 1 ? (
+            {step === 4 ? (
+              <div className="space-y-4">
+                <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--brand-soft)] p-3 text-sm text-[var(--brand-strong)]">
+                  <p className="font-semibold">Final Review</p>
+                  <p className="mt-1">
+                    Review the form details below. If something is incorrect, go
+                    back and edit before final submission.
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+                        Step 1: Project
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Project Title
+                          </span>
+                          <Input value={form.title || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Lead Researcher
+                          </span>
+                          <Input value={form.lead_researcher || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Project Year
+                          </span>
+                          <Input value={form.year || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Research Center
+                          </span>
+                          <Input value={centerName} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Faculty Team
+                          </span>
+                          <Textarea
+                            className="min-h-20"
+                            value={form.faculty_team || "-"}
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Student Team
+                          </span>
+                          <Textarea
+                            className="min-h-20"
+                            value={form.student_team || "-"}
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Abstract
+                          </span>
+                          <Textarea
+                            className="min-h-24"
+                            value={form.abstract || "-"}
+                            readOnly
+                          />
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+                        Step 2: Classification
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Status
+                          </span>
+                          <Input value={form.status || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Classification
+                          </span>
+                          <Input value={form.classification || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Scholarly Type
+                          </span>
+                          <Input value={form.scholarly_type || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Research Agenda
+                          </span>
+                          <Input value={agendaName} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Department
+                          </span>
+                          <Input value={departmentName} readOnly />
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+                        Step 3: Funding & Timeline
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Funding Type
+                          </span>
+                          <Input value={form.funding_type || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Funding Category
+                          </span>
+                          <Input
+                            value={form.funding_category || "-"}
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Funding Source
+                          </span>
+                          <Input value={form.funding_source || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Funding Amount
+                          </span>
+                          <Input value={form.funding_amount || "0"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Industry/Agency Partner
+                          </span>
+                          <Input
+                            value={form.industry_partner || "-"}
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Signed MOA Reference
+                          </span>
+                          <Input
+                            value={
+                              moaFile?.name || form.signed_moa_reference || "-"
+                            }
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            Start Date
+                          </span>
+                          <Input value={form.start_date || "-"} readOnly />
+                        </label>
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold text-slate-700">
+                            End Date
+                          </span>
+                          <Input value={form.end_date || "-"} readOnly />
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+                        Step 4: Outputs & Visibility
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Expected Outputs
+                          </span>
+                          <div className="space-y-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3">
+                            {expectedOutputRows.length === 0 ? (
+                              <p className="text-sm text-slate-600">-</p>
+                            ) : (
+                              expectedOutputRows.map((row) => (
+                                <Card
+                                  key={`review-output-${row.client_id}`}
+                                  className="shadow-none"
+                                >
+                                  <CardContent className="p-3 text-sm">
+                                    <p className="font-semibold text-slate-800">
+                                      {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
+                                        (item) =>
+                                          item.value === row.output_type,
+                                      )?.label ||
+                                        row.output_type ||
+                                        "-"}
+                                    </p>
+                                    {String(
+                                      row.specific_output || "",
+                                    ).trim() ? (
+                                      <p className="text-slate-600">
+                                        Specific: {row.specific_output}
+                                      </p>
+                                    ) : null}
+                                    <p className="text-slate-600">
+                                      Target:{" "}
+                                      {Math.max(
+                                        1,
+                                        Number(row.target_count) || 1,
+                                      )}{" "}
+                                      | Notes: {row.notes || "-"}
+                                    </p>
+                                    <p className="text-slate-600 break-all">
+                                      File:{" "}
+                                      {row.file?.name ||
+                                        row.file_name ||
+                                        row.file_path ||
+                                        "-"}
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            )}
+                          </div>
+                        </label>
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Supporting MOV Link
+                          </span>
+                          <Input
+                            value={form.supporting_mov_link || "-"}
+                            readOnly
+                          />
+                        </label>
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-semibold text-slate-700">
+                            Visibility
+                          </span>
+                          <Input
+                            value={
+                              form.public_visible
+                                ? "Publicly visible"
+                                : "Private"
+                            }
+                            readOnly
+                          />
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {step > 0 ? (
                 <Button
                   type="button"
-                  className={cn(disabledButtonClass)}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    moveStep(1);
-                  }}
-                  disabled={Boolean(
-                    validateSubmissionStep(form, step, expectedOutputRows),
-                  )}
+                  variant="outline"
+                  className={cn(disabledOutlineButtonClass)}
+                  onClick={() => moveStep(-1)}
                 >
-                  Next
+                  Previous
                 </Button>
               ) : (
-                <Button
-                  type="submit"
-                  className={cn(disabledButtonClass)}
-                  disabled={Boolean(getSubmissionValidationError())}
-                >
-                  {editId ? "Save Revision" : "Submit Research Project"}
-                </Button>
+                <span />
               )}
+              <div className="flex gap-2">
+                {step < SUBMISSION_STEPS.length - 1 ? (
+                  <Button
+                    type="button"
+                    className={cn(disabledButtonClass)}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      moveStep(1);
+                    }}
+                    disabled={Boolean(
+                      validateSubmissionStep(form, step, expectedOutputRows),
+                    )}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className={cn(disabledButtonClass)}
+                    disabled={Boolean(getSubmissionValidationError())}
+                  >
+                    {editId ? "Save Revision" : "Submit Research Project"}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
+          </CardContent>
         </Card>
       </form>
 
@@ -2330,7 +2330,11 @@ export default function SubmitAffiliationPage() {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={closeAddOutputModal}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeAddOutputModal}
+            >
               Cancel
             </Button>
             <Button type="button" onClick={saveNewExpectedOutput}>
