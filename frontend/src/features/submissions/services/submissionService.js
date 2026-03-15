@@ -89,6 +89,63 @@ export async function saveSubmission({ userId, editId, form, expectedOutputs }) 
   }
 }
 
+function serializeDraftExpectedOutputs(rows = []) {
+  const allowed = new Set([
+    "publication",
+    "patent_ip",
+    "people_services",
+    "places_partnerships",
+    "policies",
+    "product_software",
+    "others",
+  ]);
+
+  return (rows || [])
+    .map((row) => ({
+      id: row.id || null,
+      client_id: row.client_id || null,
+      output_type: row.output_type || "",
+      target_count: Math.max(1, Number(row.target_count) || 1),
+      specific_output: row.specific_output || "",
+      notes: row.notes || "",
+      file_path: row.file_path || "",
+      file_name: row.file_name || row.file?.name || "",
+      file_size: Number(row.file_size || row.file?.size || 0) || null,
+      mime_type: row.mime_type || row.file?.type || "",
+    }))
+    .filter((row) => allowed.has(row.output_type));
+}
+
+export async function saveDraftSubmission({
+  userId,
+  editId,
+  form,
+  expectedOutputs,
+  draftStep,
+}) {
+  const payload = buildProjectPayload(form, userId);
+
+  try {
+    const result = await apiFetch("/submissions/draft", {
+      method: "POST",
+      body: JSON.stringify({
+        form: payload,
+        dataset_id: editId || null,
+        expected_outputs: serializeDraftExpectedOutputs(expectedOutputs),
+        draft_step: Number(draftStep || 0) || 0,
+      }),
+    });
+
+    return {
+      mode: editId ? "update" : "create",
+      data: result?.data || null,
+      error: null,
+    };
+  } catch (error) {
+    return { mode: editId ? "update" : "create", data: null, error };
+  }
+}
+
 export async function fetchProjectExpectedOutputs({ projectId }) {
   try {
     const payload = await apiFetch(
