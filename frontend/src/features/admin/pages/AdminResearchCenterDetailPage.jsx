@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Link,
-  Navigate,
   useNavigate,
   useParams,
   useSearchParams,
@@ -9,7 +8,6 @@ import {
 import PageHeader from "@/shared/components/layout/PageHeader";
 import EmptyState from "@/shared/components/feedback/EmptyState";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
-import { useAuth } from "@/app/providers/AuthProvider";
 import { useToast } from "@/app/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +19,22 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -34,8 +48,23 @@ import {
   fetchReferenceData,
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
+  updateReference,
 } from "@/features/admin/services";
-import { Building2, ChevronLeft, FolderKanban, Users } from "lucide-react";
+import { fetchAffiliateRegistry, updateAffiliateProfile } from "@/features/admin/services";
+import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
+import { validateCenterForm } from "@/features/admin/utils";
+import {
+  Building2,
+  ChevronLeft,
+  Eye,
+  FolderKanban,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -48,7 +77,6 @@ function normalizeTab(value) {
 }
 
 export default function AdminResearchCenterDetailPage() {
-  const { profile } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const params = useParams();
@@ -56,26 +84,10 @@ export default function AdminResearchCenterDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = normalizeTab(searchParams.get("tab"));
 
-  const isAdmin =
-    String(profile?.role || "")
-      .trim()
-      .toLowerCase() === "admin";
-  const isScopedCenterChief =
-    String(profile?.role || "")
-      .trim()
-      .toLowerCase() === "faculty" &&
-    profile?.is_center_chief === true &&
-    Boolean(profile?.managed_center_id);
-
-  const canAccess =
-    Boolean(centerId) &&
-    (isAdmin ||
-      (isScopedCenterChief &&
-        String(profile?.managed_center_id || "").trim() === centerId));
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [center, setCenter] = useState(null);
+  const [chiefUsers, setChiefUsers] = useState([]);
   const [usage, setUsage] = useState({
     projectCount: 0,
     profileCount: 0,
@@ -95,6 +107,24 @@ export default function AdminResearchCenterDetailPage() {
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    code: "",
+    centerChiefId: "",
+    agendaInput: "",
+    researchAgendas: [],
+  });
+
+  const [linkAffiliateOpen, setLinkAffiliateOpen] = useState(false);
+  const [linkAffiliateLoading, setLinkAffiliateLoading] = useState(false);
+  const [linkAffiliateSaving, setLinkAffiliateSaving] = useState(false);
+  const [affiliateSearch, setAffiliateSearch] = useState("");
+  const [affiliateRegistry, setAffiliateRegistry] = useState([]);
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState("");
+  const [unlinkTarget, setUnlinkTarget] = useState(null);
+
   useEffect(() => {
     setAffiliatesPage(1);
   }, [centerId]);
@@ -103,7 +133,6 @@ export default function AdminResearchCenterDetailPage() {
   }, [centerId]);
 
   useEffect(() => {
-    if (!canAccess) return;
     let cancelled = false;
     const load = async () => {
       setLoading(true);
@@ -121,6 +150,27 @@ export default function AdminResearchCenterDetailPage() {
         const centerRow = centersData.find(
           (row) => String(row?.id || "").trim() === centerId,
         );
+
+        const chiefOptions = (ckanUsersData || [])
+          .filter(
+            (row) =>
+              String(row?.state || "").toLowerCase() !== "deleted" &&
+              String(row?.role || "").toLowerCase() === "faculty",
+          )
+          .map((row) => ({
+            id: String(row?.id || "").trim(),
+            name:
+              String(
+                row?.name ||
+                  row?.fullname ||
+                  row?.display_name ||
+                  row?.username ||
+                  row?.email ||
+                  "",
+              ).trim() || "Unnamed User",
+          }))
+          .filter((row) => row.id)
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         const centerChiefId = String(centerRow?.center_chief_id || "").trim();
         const centerChiefNameFromMeta = String(
@@ -143,6 +193,7 @@ export default function AdminResearchCenterDetailPage() {
           : [];
 
         if (cancelled) return;
+        setChiefUsers(chiefOptions);
         setCenter(
           centerRow
             ? {
@@ -155,6 +206,13 @@ export default function AdminResearchCenterDetailPage() {
               }
             : null,
         );
+        setEditForm({
+          name: String(centerRow?.name || "").trim(),
+          code: String(centerRow?.code || "").trim() || String(centerId || ""),
+          centerChiefId: centerChiefId || "",
+          agendaInput: "",
+          researchAgendas: agendaNames,
+        });
         setUsage({
           projectCount: Number(usagePayload?.projectCount || 0),
           profileCount: Number(usagePayload?.profileCount || 0),
@@ -189,7 +247,7 @@ export default function AdminResearchCenterDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [canAccess, centerId]);
+  }, [centerId]);
 
   const deleteGuard = useMemo(() => {
     const projectCount = Number(usage?.projectCount || 0);
@@ -228,12 +286,268 @@ export default function AdminResearchCenterDetailPage() {
     [links.projects.length],
   );
 
+  const editErrors = useMemo(
+    () =>
+      validateCenterForm({
+        name: editForm.name,
+        code: editForm.code,
+        centerChiefId: editForm.centerChiefId,
+        researchAgendas: editForm.researchAgendas,
+      }),
+    [editForm],
+  );
+  const isEditValid = Object.keys(editErrors).length === 0;
+
   const setTab = (tab) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("tab", tab);
       return next;
     });
+  };
+
+  const addEditAgenda = () => {
+    const next = String(editForm.agendaInput || "").trim();
+    if (!next) return;
+    if (editForm.researchAgendas.includes(next)) {
+      setEditForm((prev) => ({ ...prev, agendaInput: "" }));
+      return;
+    }
+    setEditForm((prev) => ({
+      ...prev,
+      agendaInput: "",
+      researchAgendas: [...prev.researchAgendas, next],
+    }));
+  };
+
+  const removeEditAgenda = (agendaName) => {
+    setEditForm((prev) => ({
+      ...prev,
+      researchAgendas: prev.researchAgendas.filter((item) => item !== agendaName),
+    }));
+  };
+
+  const handleSaveCenter = async () => {
+    if (!centerId || editSaving) return;
+    if (!isEditValid) {
+      toast.error("Validation failed", "Please fix the form errors first.");
+      return;
+    }
+
+    setEditSaving(true);
+    try {
+      const { error: updateError } = await updateReference({
+        type: "center",
+        id: centerId,
+        name: String(editForm.name || "").trim(),
+        code: String(editForm.code || "").trim(),
+        center_chief_id: String(editForm.centerChiefId || "").trim(),
+        research_agendas: Array.isArray(editForm.researchAgendas)
+          ? editForm.researchAgendas
+          : [],
+      });
+      if (updateError) throw updateError;
+      toast.success("Research center updated", "Changes were saved.");
+      setEditOpen(false);
+
+      // Refresh the view.
+      setLoading(true);
+      const [referencePayload, usagePayload, linksPayload] = await Promise.all([
+        fetchReferenceData(),
+        fetchReferenceUsageCounts({ type: "center", id: centerId }),
+        fetchReferenceLinks({ type: "center", id: centerId }),
+      ]);
+
+      const centersData = referencePayload?.centersRes?.data || [];
+      const ckanUsersData = referencePayload?.ckanUsersRes?.data || [];
+      const centerRow = centersData.find(
+        (row) => String(row?.id || "").trim() === centerId,
+      );
+
+      const centerChiefId = String(centerRow?.center_chief_id || "").trim();
+      const centerChiefNameFromMeta = String(
+        centerRow?.center_chief_name || "",
+      ).trim();
+      const centerChiefNameFromId = ckanUsersData.find(
+        (ckanUser) => String(ckanUser?.id || "").trim() === centerChiefId,
+      )?.name;
+      const centerChiefName =
+        centerChiefNameFromMeta || centerChiefNameFromId || "";
+
+      const agendaNames = Array.isArray(linksPayload?.agendas)
+        ? [
+            ...new Set(
+              linksPayload.agendas
+                .map((agenda) => String(agenda?.name || "").trim())
+                .filter(Boolean),
+            ),
+          ].sort((a, b) => a.localeCompare(b))
+        : [];
+
+      setCenter(
+        centerRow
+          ? {
+              id: centerId,
+              name: centerRow?.name || "-",
+              code: String(centerRow?.code || "").trim() || centerId,
+              centerChiefId: centerChiefId || null,
+              centerChiefName: centerChiefName || "-",
+              agendaNames,
+            }
+          : null,
+      );
+      setUsage({
+        projectCount: Number(usagePayload?.projectCount || 0),
+        profileCount: Number(usagePayload?.profileCount || 0),
+        memberBreakdown: usagePayload?.memberBreakdown || {
+          adminCount: 0,
+          editorCount: 0,
+          memberCount: 0,
+          totalCount: 0,
+        },
+      });
+      setLinks({
+        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
+        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
+        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+      });
+      setError("");
+    } catch (e) {
+      toast.error(
+        "Update failed",
+        String(e?.message || "Unable to update research center."),
+      );
+    } finally {
+      setLoading(false);
+      setEditSaving(false);
+    }
+  };
+
+  const openLinkAffiliate = async () => {
+    setAffiliateSearch("");
+    setSelectedAffiliateId("");
+    setLinkAffiliateOpen(true);
+
+    if (affiliateRegistry.length > 0) return;
+
+    setLinkAffiliateLoading(true);
+    try {
+      const payload = await fetchAffiliateRegistry();
+      const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+      setAffiliateRegistry(rows);
+    } catch (e) {
+      toast.error(
+        "Unable to load affiliates",
+        String(e?.message || "Please try again."),
+      );
+    } finally {
+      setLinkAffiliateLoading(false);
+    }
+  };
+
+  const linkCandidateRows = useMemo(() => {
+    const keyword = String(affiliateSearch || "").trim().toLowerCase();
+    const linkedIds = new Set(
+      (links.profiles || []).map((row) => String(row?.id || "").trim()),
+    );
+
+    return (affiliateRegistry || [])
+      .filter((row) => {
+        const id = String(row?.id || "").trim();
+        if (!id) return false;
+        if (linkedIds.has(id)) return false;
+        if (String(row?.ckan_org_id || "").trim() === centerId) return false;
+        if (!keyword) return true;
+        const haystack = [
+          row?.full_name,
+          row?.email,
+          row?.role,
+          row?.department,
+          row?.ckan_username,
+          row?.id,
+        ]
+          .map((v) => String(v || "").toLowerCase())
+          .join(" ");
+        return haystack.includes(keyword);
+      })
+      .slice(0, 20);
+  }, [affiliateRegistry, affiliateSearch, centerId, links.profiles]);
+
+  const handleLinkAffiliate = async () => {
+    const userId = String(selectedAffiliateId || "").trim();
+    if (!userId || linkAffiliateSaving) return;
+
+    setLinkAffiliateSaving(true);
+    try {
+      await updateAffiliateProfile(userId, { ckan_org_id: centerId });
+      toast.success("Affiliate linked", "Affiliate was added to this center.");
+      setLinkAffiliateOpen(false);
+
+      // Reload center links.
+      const linksPayload = await fetchReferenceLinks({ type: "center", id: centerId });
+      setLinks((prev) => ({
+        ...prev,
+        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
+        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
+        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+      }));
+
+      const usagePayload = await fetchReferenceUsageCounts({ type: "center", id: centerId });
+      setUsage((prev) => ({
+        ...prev,
+        projectCount: Number(usagePayload?.projectCount || 0),
+        profileCount: Number(usagePayload?.profileCount || 0),
+        memberBreakdown: usagePayload?.memberBreakdown || prev.memberBreakdown,
+      }));
+    } catch (e) {
+      toast.error("Link failed", String(e?.message || "Unable to link affiliate."));
+    } finally {
+      setLinkAffiliateSaving(false);
+    }
+  };
+
+  const handleUnlinkAffiliate = async () => {
+    const userId = String(unlinkTarget?.id || "").trim();
+    if (!userId || linkAffiliateSaving) return;
+
+    setLinkAffiliateSaving(true);
+    try {
+      await updateAffiliateProfile(userId, { ckan_org_id: null });
+      toast.success(
+        "Affiliate unlinked",
+        "Affiliate was removed from this center.",
+      );
+      setUnlinkTarget(null);
+
+      const linksPayload = await fetchReferenceLinks({ type: "center", id: centerId });
+      setLinks((prev) => ({
+        ...prev,
+        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
+        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
+        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+      }));
+
+      const usagePayload = await fetchReferenceUsageCounts({ type: "center", id: centerId });
+      setUsage((prev) => ({
+        ...prev,
+        projectCount: Number(usagePayload?.projectCount || 0),
+        profileCount: Number(usagePayload?.profileCount || 0),
+        memberBreakdown: usagePayload?.memberBreakdown || prev.memberBreakdown,
+      }));
+    } catch (e) {
+      toast.error(
+        "Unlink failed",
+        String(e?.message || "Unable to unlink affiliate."),
+      );
+    } finally {
+      setLinkAffiliateSaving(false);
+    }
+  };
+
+  const goToProject = (row) => {
+    const id = String(row?.ckan_dataset_id || row?.id || "").trim();
+    if (!id) return;
+    navigate(`/submit-project/${encodeURIComponent(id)}`);
   };
 
   const handleDelete = async () => {
@@ -265,8 +579,6 @@ export default function AdminResearchCenterDetailPage() {
     }
   };
 
-  if (!canAccess) return <Navigate to="/unauthorized" replace />;
-
   const title = center?.name
     ? `Research Center: ${center.name}`
     : "Research Center";
@@ -286,7 +598,15 @@ export default function AdminResearchCenterDetailPage() {
           </Link>
         </Button>
 
-        {isAdmin ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={loading || !center}
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
           <Button
             variant="destructive"
             disabled={deleting || loading || deleteGuard.blocked}
@@ -299,7 +619,7 @@ export default function AdminResearchCenterDetailPage() {
           >
             Delete
           </Button>
-        ) : null}
+        </div>
       </div>
 
       <Card className="overflow-hidden">
@@ -439,83 +759,131 @@ export default function AdminResearchCenterDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="affiliates" className="mt-4 space-y-3">
-                  {links.profiles.length === 0 ? (
-                    <EmptyState
-                      title="No affiliates"
-                      description="No linked affiliates found for this research center."
-                    />
-                  ) : (
-                    <Card className="overflow-hidden">
-                      <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <CardTitle className="text-base font-bold text-slate-900">
-                          Linked Affiliates
-                        </CardTitle>
-                        <CardDescription>
-                          Showing {links.profiles.length} affiliate(s).
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                          <Table className="min-w-[980px]">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>No.</TableHead>
-                                <TableHead>Full Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>User ID</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {paginatedAffiliates.map((row, idx) => (
-                                <TableRow key={row?.id || `${idx}`}>
-                                  <TableCell>
-                                    {(affiliatesPage - 1) * PAGE_SIZE + idx + 1}
-                                  </TableCell>
-                                  <TableCell className="font-medium text-slate-900">
-                                    {row?.full_name || row?.name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.email || "-"}
-                                  </TableCell>
-                                  <TableCell className="capitalize text-slate-700">
-                                    {row?.role || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.department || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge
-                                      variant={
-                                        row?.is_active === false
-                                          ? "destructive"
-                                          : "secondary"
-                                      }
-                                    >
-                                      {row?.is_active === false
-                                        ? "Inactive"
-                                        : "Active"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="font-mono text-xs text-slate-600">
-                                    {row?.id || "-"}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                  <Card className="overflow-hidden">
+                    <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <CardTitle className="text-base font-bold text-slate-900">
+                            Linked Affiliates
+                          </CardTitle>
+                          <CardDescription>
+                            Showing {links.profiles.length} affiliate(s).
+                          </CardDescription>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={openLinkAffiliate}
+                          disabled={loading}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Link Affiliate
+                        </Button>
+                      </div>
+                    </CardHeader>
+
+                    {links.profiles.length === 0 ? (
+                      <CardContent className="p-6">
+                        <EmptyState
+                          title="No affiliates"
+                          description="No linked affiliates found for this research center."
+                        />
                       </CardContent>
-                      <PaginationControls
-                        page={affiliatesPage}
-                        totalPages={affiliatesTotalPages}
-                        onPageChange={setAffiliatesPage}
-                        className="rounded-none border-0 border-t border-[var(--border)]"
-                      />
-                    </Card>
-                  )}
+                    ) : (
+                      <>
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <Table className="min-w-[980px]">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>No.</TableHead>
+                                  <TableHead>Full Name</TableHead>
+                                  <TableHead>Email</TableHead>
+                                  <TableHead>Role</TableHead>
+                                  <TableHead>Department</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>User ID</TableHead>
+                                  <TableHead className="text-right">
+                                    Actions
+                                  </TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {paginatedAffiliates.map((row, idx) => {
+                                  const rowId = String(row?.id || "").trim();
+                                  const centerChiefId = String(
+                                    center?.centerChiefId || "",
+                                  ).trim();
+                                  const isChief = rowId && centerChiefId && rowId === centerChiefId;
+                                  return (
+                                    <TableRow key={row?.id || `${idx}`}>
+                                      <TableCell>
+                                        {(affiliatesPage - 1) * PAGE_SIZE +
+                                          idx +
+                                          1}
+                                      </TableCell>
+                                      <TableCell className="font-medium text-slate-900">
+                                        {row?.full_name || row?.name || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-slate-700">
+                                        {row?.email || "-"}
+                                      </TableCell>
+                                      <TableCell className="capitalize text-slate-700">
+                                        {row?.role || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-slate-700">
+                                        {row?.department || "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant={
+                                            row?.is_active === false
+                                              ? "destructive"
+                                              : "secondary"
+                                          }
+                                        >
+                                          {row?.is_active === false
+                                            ? "Inactive"
+                                            : "Active"}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="font-mono text-xs text-slate-600">
+                                        {row?.id || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                          disabled={isChief}
+                                          onClick={() => setUnlinkTarget(row)}
+                                          aria-label={`Unlink ${row?.full_name || "affiliate"}`}
+                                          title={
+                                            isChief
+                                              ? "Change Center Chief first"
+                                              : "Unlink"
+                                          }
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                        <PaginationControls
+                          page={affiliatesPage}
+                          totalPages={affiliatesTotalPages}
+                          onPageChange={setAffiliatesPage}
+                          className="rounded-none border-0 border-t border-[var(--border)]"
+                        />
+                      </>
+                    )}
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-4 space-y-3">
@@ -546,6 +914,9 @@ export default function AdminResearchCenterDetailPage() {
                                 <TableHead>Lead Researcher</TableHead>
                                 <TableHead>Department</TableHead>
                                 <TableHead>Agendum</TableHead>
+                                <TableHead className="text-right">
+                                  Actions
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -572,6 +943,19 @@ export default function AdminResearchCenterDetailPage() {
                                   <TableCell className="text-slate-700">
                                     {row?.agenda_name || "-"}
                                   </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => goToProject(row)}
+                                      aria-label={`View ${row?.title || "project"}`}
+                                      title="View project"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -592,6 +976,274 @@ export default function AdminResearchCenterDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => !editSaving && setEditOpen(open)}
+      >
+        <DialogContent
+          className="max-w-2xl"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Edit Research Center</DialogTitle>
+            <DialogDescription>
+              Update research center information.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-1 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">Name</span>
+              <Input
+                value={editForm.name}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    name: event.target.value,
+                  }))
+                }
+              />
+              {editErrors.name ? (
+                <p className="field-error">{editErrors.name}</p>
+              ) : null}
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Code</span>
+              <Input
+                value={editForm.code}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    code: event.target.value,
+                  }))
+                }
+              />
+              {editErrors.code ? (
+                <p className="field-error">{editErrors.code}</p>
+              ) : null}
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Center Chief</span>
+              <Select
+                value={String(editForm.centerChiefId || "")}
+                onValueChange={(value) =>
+                  setEditForm((prev) => ({ ...prev, centerChiefId: value }))
+                }
+              >
+                <SelectTrigger
+                  className={editErrors.centerChiefId ? "input-error" : ""}
+                >
+                  <SelectValue placeholder="Select center chief" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chiefUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {editErrors.centerChiefId ? (
+                <p className="field-error">{editErrors.centerChiefId}</p>
+              ) : null}
+            </label>
+
+            <div className="space-y-2 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">
+                Research Agendas
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {editForm.researchAgendas.map((agenda) => (
+                  <button
+                    key={agenda}
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-muted"
+                    onClick={() => removeEditAgenda(agenda)}
+                    title="Remove"
+                  >
+                    <span className="truncate">{agenda}</span>
+                    <X className="h-3.5 w-3.5 text-slate-500" />
+                  </button>
+                ))}
+                {editForm.researchAgendas.length === 0 ? (
+                  <p className="text-xs text-slate-500">No agendas yet.</p>
+                ) : null}
+              </div>
+              {editErrors.researchAgendas ? (
+                <p className="field-error">{editErrors.researchAgendas}</p>
+              ) : null}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add research agendum"
+                  value={editForm.agendaInput}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      agendaInput: event.target.value,
+                    }))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    event.preventDefault();
+                    addEditAgenda();
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addEditAgenda}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={editSaving}
+              onClick={() => setEditOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={editSaving || !isEditValid}
+              onClick={handleSaveCenter}
+            >
+              {editSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={linkAffiliateOpen}
+        onOpenChange={(open) =>
+          !linkAffiliateSaving && setLinkAffiliateOpen(open)
+        }
+      >
+        <DialogContent
+          className="max-w-3xl"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Link Affiliate</DialogTitle>
+            <DialogDescription>
+              Search an affiliate and link them to this research center.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={affiliateSearch}
+                  onChange={(event) => setAffiliateSearch(event.target.value)}
+                  placeholder="Search name, email, role, department..."
+                  className="pl-9"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={linkAffiliateSaving || !selectedAffiliateId}
+                onClick={handleLinkAffiliate}
+              >
+                {linkAffiliateSaving ? "Linking..." : "Link"}
+              </Button>
+            </div>
+
+            {linkAffiliateLoading ? (
+              <p className="text-sm text-slate-600">Loading affiliates...</p>
+            ) : linkCandidateRows.length === 0 ? (
+              <EmptyState
+                title="No candidates"
+                description="No eligible affiliates matched your search."
+              />
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead />
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {linkCandidateRows.map((row) => {
+                      const id = String(row?.id || "").trim();
+                      const isSelected =
+                        id && id === String(selectedAffiliateId || "").trim();
+                      return (
+                        <TableRow
+                          key={id}
+                          className={isSelected ? "bg-muted/40" : ""}
+                          onClick={() => setSelectedAffiliateId(id)}
+                        >
+                          <TableCell className="w-10">
+                            <input type="radio" checked={isSelected} readOnly />
+                          </TableCell>
+                          <TableCell className="font-medium text-slate-900">
+                            {row?.full_name || row?.email || id}
+                          </TableCell>
+                          <TableCell className="text-slate-700">
+                            {row?.email || "-"}
+                          </TableCell>
+                          <TableCell className="capitalize text-slate-700">
+                            {row?.role || "-"}
+                          </TableCell>
+                          <TableCell className="text-slate-700">
+                            {row?.department || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                row?.is_active === false
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                            >
+                              {row?.is_active === false ? "Inactive" : "Active"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={linkAffiliateSaving}
+              onClick={() => setLinkAffiliateOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmActionModal
+        open={Boolean(unlinkTarget)}
+        title="Unlink Affiliate"
+        message={`Remove \"${unlinkTarget?.full_name || unlinkTarget?.email || unlinkTarget?.id || "this affiliate"}\" from this research center?`}
+        confirmLabel="Unlink"
+        loading={linkAffiliateSaving}
+        onCancel={() => setUnlinkTarget(null)}
+        onConfirm={handleUnlinkAffiliate}
+      />
     </section>
   );
 }
