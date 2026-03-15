@@ -146,3 +146,35 @@ export async function updateGroupMetadata({ groupId, title, extras = [] }) {
     return ckanAction("group_update", payload);
   }
 }
+
+/**
+ * Updates group title/description/extras metadata.
+ *
+ * Note:
+ * - CKAN supports `description` on groups. We keep this separate so existing callers
+ *   that only manage extras/title stay unchanged.
+ */
+export async function updateGroupMetadataWithDescription({
+  groupId,
+  title,
+  description = null,
+  extras = [],
+}) {
+  const id = String(groupId || "").trim();
+  if (!id) throw new Error("Group id is required.");
+
+  const payload = {
+    id,
+    title: String(title || "").trim() || id,
+    extras: Array.isArray(extras) ? extras : [],
+  };
+  if (description != null) {
+    payload.description = String(description || "").trim();
+  }
+
+  try {
+    return await ckanAction("group_patch", payload);
+  } catch {
+    return ckanAction("group_update", payload);
+  }
+}
