@@ -155,6 +155,10 @@ export default function AppShell() {
   );
 
   const workspaceCoreLinks = useMemo(() => {
+    const role = String(profile?.role || "").trim().toLowerCase();
+    const isAdmin = role === "admin";
+    const isFaculty = role === "faculty";
+
     const links = [
       {
         to: "/dashboard",
@@ -165,14 +169,14 @@ export default function AppShell() {
     ];
 
     const canAccessResearchCenters =
-      profile?.role === "admin" ||
-      (profile?.role === "faculty" &&
+      isAdmin ||
+      (isFaculty &&
         profile?.is_center_chief === true &&
         Boolean(profile?.managed_center_id));
 
     const canAccessDepartments =
-      profile?.role === "admin" ||
-      (profile?.role === "faculty" &&
+      isAdmin ||
+      (isFaculty &&
         profile?.is_chairperson === true &&
         Boolean(profile?.managed_department_id));
 
@@ -180,13 +184,13 @@ export default function AppShell() {
       const managedCenterId = String(profile?.managed_center_id || "").trim();
       links.push({
         to:
-          profile?.role === "admin"
+          isAdmin
             ? "/admin/research-center"
             : managedCenterId
               ? `/admin/research-center/${encodeURIComponent(managedCenterId)}`
               : "/admin/research-center",
         label:
-          profile?.role === "admin" ? "Research Centers" : "My Research Center",
+          isAdmin ? "Research Centers" : "My Research Center",
         icon: Building2,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
@@ -196,18 +200,18 @@ export default function AppShell() {
       const managedDepartmentId = String(profile?.managed_department_id || "").trim();
       links.push({
         to:
-          profile?.role === "admin"
+          isAdmin
             ? "/admin/departments"
             : managedDepartmentId
               ? `/admin/departments/${encodeURIComponent(managedDepartmentId)}`
               : "/admin/departments",
-        label: profile?.role === "admin" ? "Departments" : "My Department",
+        label: isAdmin ? "Departments" : "My Department",
         icon: FolderTree,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
     }
 
-    if (profile?.role === "admin") {
+    if (isAdmin) {
       links.push({
         to: "/admin/affiliates",
         label: "Affiliates",
