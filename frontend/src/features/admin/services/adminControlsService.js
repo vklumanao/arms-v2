@@ -20,6 +20,7 @@ export async function createReference({
   type,
   name,
   code,
+  description,
   center_chief_id,
   chairperson_id,
   research_agendas,
@@ -49,6 +50,7 @@ export async function createReference({
           ? {
               name: payload,
               code: finalCode || null,
+              description: String(description || "").trim() || null,
               center_chief_id: center_chief_id || null,
               research_agendas: Array.isArray(research_agendas)
                 ? research_agendas
@@ -58,6 +60,7 @@ export async function createReference({
             ? {
                 name: payload,
                 code: finalCode || null,
+                description: String(description || "").trim() || null,
                 chairperson_id: chairperson_id || null,
               }
             : { name: payload },
@@ -86,6 +89,7 @@ export async function updateReference({
   id,
   name,
   code,
+  description,
   center_chief_id,
   chairperson_id,
   research_agendas,
@@ -114,6 +118,7 @@ export async function updateReference({
           ? {
               name: payload,
               code: centerCode,
+              description: String(description || "").trim() || null,
               center_chief_id: center_chief_id || null,
               research_agendas: Array.isArray(research_agendas)
                 ? research_agendas
@@ -123,6 +128,7 @@ export async function updateReference({
             ? {
                 name: payload,
                 code: departmentCode,
+                description: String(description || "").trim() || null,
                 chairperson_id: chairperson_id || null,
               }
             : { name: payload },
