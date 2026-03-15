@@ -23,15 +23,19 @@ import { DashboardPage } from "@/features/dashboard";
 import {
   AffiliateProfilePage,
   AwardsRecognitionPage,
+  ResearchProjectDetailPage,
   ResearchOutputsPage,
   ResearchProjectsHubPage,
   SubmitAffiliationPage,
   SubmitAwardRecognitionPage,
 } from "@/features/submissions";
 import {
+  AdminAffiliateDetailPage,
   AdminAffiliatesModulePage,
   AdminControlsPage,
+  AdminDepartmentDetailPage,
   AdminDepartmentPage,
+  AdminResearchCenterDetailPage,
   AdminResearchCenterPage,
   AdminUsersPage,
 } from "@/features/admin";
@@ -88,6 +92,13 @@ export default function AppRoutes() {
               )}
             />
             <Route
+              path="/submit-project/:id"
+              element={withPermission(
+                PERMISSIONS.AFFILIATIONS_MANAGE,
+                <ResearchProjectDetailPage />,
+              )}
+            />
+            <Route
               path="/submit-project/submit"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
@@ -130,6 +141,10 @@ export default function AppRoutes() {
               path="/admin/research-center"
               element={withBoundary(<AdminResearchCenterPage />)}
             />
+            <Route
+              path="/admin/research-center/:id"
+              element={withBoundary(<AdminResearchCenterDetailPage />)}
+            />
           </Route>
 
           <Route element={<RoleRoute allow={["admin"]} />}>
@@ -155,8 +170,19 @@ export default function AppRoutes() {
               )}
             />
             <Route
+              path="/admin/affiliates/:id"
+              element={withPermission(
+                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+                <AdminAffiliateDetailPage />,
+              )}
+            />
+            <Route
               path="/admin/departments"
               element={withBoundary(<AdminDepartmentPage />)}
+            />
+            <Route
+              path="/admin/departments/:id"
+              element={withBoundary(<AdminDepartmentDetailPage />)}
             />
           </Route>
         </Route>
