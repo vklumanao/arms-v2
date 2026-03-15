@@ -1,6 +1,9 @@
 export { default as AdminAffiliatesModulePage } from "./pages/AdminAffiliatesModulePage";
+export { default as AdminAffiliateDetailPage } from "./pages/AdminAffiliateDetailPage";
 export { default as AdminControlsPage } from "./pages/AdminControlsPage";
+export { default as AdminDepartmentDetailPage } from "./pages/AdminDepartmentDetailPage";
 export { default as AdminDepartmentPage } from "./pages/AdminDepartmentPage";
+export { default as AdminResearchCenterDetailPage } from "./pages/AdminResearchCenterDetailPage";
 export { default as AdminResearchCenterPage } from "./pages/AdminResearchCenterPage";
 export { default as AdminUsersPage } from "./pages/AdminUsersPage";
 export * from "./services";
