@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Eye,
-  Pencil,
-  Search,
-} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, Pencil, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -35,13 +32,11 @@ import EmptyState from "@/shared/components/feedback/EmptyState";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
-import { fetchCkanDatasets } from "@/shared/api/ckanApi";
 import {
   buildAffiliateExportRows,
   buildCenterNameById,
   createAffiliateEditForm,
   createAffiliateModuleFilters,
-  filterAffiliateRelatedDatasets,
   filterAndSortAffiliates,
   listAffiliateDepartments,
   paginateItemsWithMeta,
@@ -52,6 +47,7 @@ import {
 } from "@/features/admin/services";
 
 export default function AdminAffiliatesModulePage() {
+  const navigate = useNavigate();
   const PAGE_SIZE = 10;
   const sanitizeDigits = (value, maxLength = null) => {
     const digitsOnly = String(value || "").replace(/\D+/g, "");
@@ -63,17 +59,11 @@ export default function AdminAffiliatesModulePage() {
   const [rows, setRows] = useState([]);
   const [centers, setCenters] = useState([]);
   const [filters, setFilters] = useState(createAffiliateModuleFilters());
-  const [viewAffiliateId, setViewAffiliateId] = useState(null);
   const [exportingType, setExportingType] = useState("");
   const [editingAffiliate, setEditingAffiliate] = useState(null);
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
   const [savingEdit, setSavingEdit] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [affiliateProjectsPanel, setAffiliateProjectsPanel] = useState({
-    loading: false,
-    error: "",
-    rows: [],
-  });
   const toast = useToast();
   const { departments: referenceDepartments } = useReferenceData();
 
@@ -156,64 +146,11 @@ export default function AdminAffiliatesModulePage() {
     setCurrentPage((prev) => Math.min(prev, pagination.totalPages));
   }, [pagination.totalPages]);
 
-  const selectedAffiliate = useMemo(
-    () => filteredRows.find((row) => row.id === viewAffiliateId) || null,
-    [filteredRows, viewAffiliateId],
-  );
-
-  useEffect(() => {
-    if (!selectedAffiliate?.id) {
-      setAffiliateProjectsPanel({
-        loading: false,
-        error: "",
-        rows: [],
-      });
-      return;
-    }
-
-    let cancelled = false;
-    setAffiliateProjectsPanel({
-      loading: true,
-      error: "",
-      rows: [],
-    });
-
-    fetchCkanDatasets({ limit: 200 })
-      .then((payload) => {
-        if (cancelled) return;
-        const datasets = Array.isArray(payload?.data) ? payload.data : [];
-        const filtered = filterAffiliateRelatedDatasets(
-          datasets,
-          selectedAffiliate,
-        );
-
-        setAffiliateProjectsPanel({
-          loading: false,
-          error: "",
-          rows: filtered,
-        });
-      })
-      .catch((loadError) => {
-        if (cancelled) return;
-        setAffiliateProjectsPanel({
-          loading: false,
-          error:
-            loadError?.message ||
-            "Unable to load related projects for this affiliate.",
-          rows: [],
-        });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    selectedAffiliate?.ckan_user_id,
-    selectedAffiliate?.ckan_username,
-    selectedAffiliate?.email,
-    selectedAffiliate?.full_name,
-    selectedAffiliate?.id,
-  ]);
+  const goToAffiliateDetail = (row) => {
+    const id = String(row?.id || "").trim();
+    if (!id) return;
+    navigate(`/admin/affiliates/${encodeURIComponent(id)}`);
+  };
 
   const openEditModal = (row) => {
     if (row.source === "ckan_only") {
@@ -227,7 +164,9 @@ export default function AdminAffiliatesModulePage() {
       departmentOptions.find(
         (option) =>
           option.name.toLowerCase() ===
-          String(row.department || "").trim().toLowerCase(),
+          String(row.department || "")
+            .trim()
+            .toLowerCase(),
       ) ||
       null;
     setEditingAffiliate(row);
@@ -485,8 +424,12 @@ export default function AdminAffiliatesModulePage() {
                 <SelectContent>
                   <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
                   <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
-                  <SelectItem value="recent_desc">Sort: Recently updated</SelectItem>
-                  <SelectItem value="recent_asc">Sort: Least recently updated</SelectItem>
+                  <SelectItem value="recent_desc">
+                    Sort: Recently updated
+                  </SelectItem>
+                  <SelectItem value="recent_asc">
+                    Sort: Least recently updated
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -552,7 +495,9 @@ export default function AdminAffiliatesModulePage() {
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={row.is_active ? "secondary" : "destructive"}>
+                        <Badge
+                          variant={row.is_active ? "secondary" : "destructive"}
+                        >
                           {row.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
@@ -581,7 +526,7 @@ export default function AdminAffiliatesModulePage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setViewAffiliateId(row.id)}
+                            onClick={() => goToAffiliateDetail(row)}
                             aria-label={`View ${row?.full_name || "affiliate"}`}
                             title="View"
                           >
@@ -595,7 +540,11 @@ export default function AdminAffiliatesModulePage() {
                             disabled={row.source === "ckan_only"}
                             onClick={() => openEditModal(row)}
                             aria-label={`Edit ${row?.full_name || "affiliate"}`}
-                            title={row.source === "ckan_only" ? "Edit disabled (CKAN only)" : "Edit"}
+                            title={
+                              row.source === "ckan_only"
+                                ? "Edit disabled (CKAN only)"
+                                : "Edit"
+                            }
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -617,211 +566,12 @@ export default function AdminAffiliatesModulePage() {
         />
       ) : null}
 
-      {selectedAffiliate ? (
-        <Dialog
-          open={Boolean(selectedAffiliate)}
-          onOpenChange={(open) => !open && setViewAffiliateId(null)}
-        >
-          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-6xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
-            <DialogHeader className="border-b border-border px-5 py-4 text-left">
-              <DialogTitle>Affiliate Details</DialogTitle>
-              <DialogDescription>
-                Review affiliate profile details and related projects.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-5 py-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Full Name
-                </p>
-                <p className="text-sm font-semibold text-slate-900">
-                  {selectedAffiliate.full_name || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Email
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.email || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Role
-                </p>
-                <p className="text-sm capitalize text-slate-800">
-                  {selectedAffiliate.role || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Department
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.department || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Research Center
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.ckan_org_id
-                    ? centerNameById[selectedAffiliate.ckan_org_id] || "-"
-                    : "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Status
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.is_active ? "Active" : "Inactive"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  GS Faculty
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.is_gs_faculty ? "Yes" : "No"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Google Scholar
-                </p>
-                <p className="text-sm break-all text-slate-800">
-                  {selectedAffiliate.google_scholar_link || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Designation
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.designation || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Employment Status
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.employment_status || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Publications
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.publication_count || 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Projects
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.research_project_count || 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Creative Works
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.creative_work_count || 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  Awards
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.awards_count || 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  IPs
-                </p>
-                <p className="text-sm text-slate-800">
-                  {selectedAffiliate.ip_count || 0}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-                  Related Projects ({affiliateProjectsPanel.rows.length})
-                </p>
-                <Card className="overflow-hidden">
-                  <div className="max-h-[320px] overflow-auto">
-                    {affiliateProjectsPanel.loading ? (
-                      <p className="p-3 text-sm text-slate-600">
-                        Loading related projects...
-                      </p>
-                    ) : affiliateProjectsPanel.error ? (
-                      <p className="p-3 text-sm text-red-700">
-                        {affiliateProjectsPanel.error}
-                      </p>
-                    ) : affiliateProjectsPanel.rows.length === 0 ? (
-                      <p className="p-3 text-sm text-slate-600">
-                        No related projects found for this affiliate.
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No.</TableHead>
-                            <TableHead>Project Title</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Year</TableHead>
-                            <TableHead>Organization</TableHead>
-                            <TableHead>Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {affiliateProjectsPanel.rows.map((project, index) => (
-                            <TableRow key={project.id}>
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell>{project.title}</TableCell>
-                              <TableCell className="capitalize">{project.status}</TableCell>
-                              <TableCell>{project.year}</TableCell>
-                              <TableCell>{project.organization}</TableCell>
-                              <TableCell>
-                                {project.updatedAt
-                                  ? new Date(project.updatedAt).toLocaleString()
-                                  : "-"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </Card>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                  User ID
-                </p>
-                <code className="text-xs text-slate-700">
-                  {selectedAffiliate.id}
-                </code>
-              </div>
-            </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
       {editingAffiliate ? (
         <Dialog
           open={Boolean(editingAffiliate)}
-          onOpenChange={(open) => !open && !savingEdit && setEditingAffiliate(null)}
+          onOpenChange={(open) =>
+            !open && !savingEdit && setEditingAffiliate(null)
+          }
         >
           <DialogContent className="max-w-4xl">
             <DialogHeader>
