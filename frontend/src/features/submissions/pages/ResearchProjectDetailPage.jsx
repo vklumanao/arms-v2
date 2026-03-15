@@ -311,7 +311,7 @@ export default function ResearchProjectDetailPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <CardTitle className="text-base font-bold text-slate-900">
-                        Linked CKAN Resources
+                        Linked Resources
                       </CardTitle>
                       <CardDescription>
                         Files/resources synced from CKAN (if enabled).
@@ -337,7 +337,7 @@ export default function ResearchProjectDetailPage() {
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
                     <p className="text-sm text-slate-600">
-                      No linked CKAN resources found for this project.
+                      No linked resources found for this project.
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
