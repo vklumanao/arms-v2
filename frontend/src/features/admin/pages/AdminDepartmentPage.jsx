@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -70,6 +71,7 @@ const EMPTY_EDITING = {
   id: null,
   name: "",
   code: "",
+  description: "",
   chairpersonId: "",
 };
 
@@ -119,6 +121,7 @@ export default function AdminDepartmentPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [newDepartmentCode, setNewDepartmentCode] = useState("");
+  const [newDepartmentDescription, setNewDepartmentDescription] = useState("");
   const [newChairpersonId, setNewChairpersonId] = useState("");
   const [chairpersonUsers, setChairpersonUsers] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
@@ -190,6 +193,7 @@ export default function AdminDepartmentPage() {
             id: orgId,
             code: String(item?.code || "").trim() || String(orgId || "-"),
             name: item.title || item.display_name || item.name || "-",
+            description: String(item?.description || "").trim(),
             type: "Department",
             tag: "department",
             chairpersonId,
@@ -369,6 +373,7 @@ export default function AdminDepartmentPage() {
       id: row.id,
       name: row.name === "-" ? "" : row.name,
       code: row.code === "-" ? "" : row.code,
+      description: String(row?.description || "").trim(),
       chairpersonId: row.chairpersonId || "",
     });
     setEditLoading(false);
@@ -402,6 +407,7 @@ export default function AdminDepartmentPage() {
       id: editing.id,
       name: nextName,
       code: nextCode,
+      description: editing.description,
       chairperson_id: editing.chairpersonId,
     });
 
@@ -471,6 +477,7 @@ export default function AdminDepartmentPage() {
       type: "department",
       name,
       code,
+      description: newDepartmentDescription,
       chairperson_id: newChairpersonId,
     });
 
@@ -486,6 +493,7 @@ export default function AdminDepartmentPage() {
     setCreateErrors({});
     setNewDepartmentName("");
     setNewDepartmentCode("");
+    setNewDepartmentDescription("");
     setNewChairpersonId("");
     await loadDepartmentRows();
   };
@@ -1122,6 +1130,22 @@ export default function AdminDepartmentPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Description
+                    </label>
+                    <Textarea
+                      value={editing.description}
+                      placeholder="Optional short description about the department..."
+                      onChange={(event) =>
+                        setEditing((prev) => ({
+                          ...prev,
+                          description: event.target.value,
+                        }))
+                      }
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Chairperson *
                     </label>
                     <Select
@@ -1236,6 +1260,19 @@ export default function AdminDepartmentPage() {
               {createErrors.code ? (
                 <p className="field-error">{createErrors.code}</p>
               ) : null}
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Description
+              </label>
+              <Textarea
+                value={newDepartmentDescription}
+                placeholder="Optional short description about the department..."
+                onChange={(event) =>
+                  setNewDepartmentDescription(event.target.value)
+                }
+                rows={4}
+              />
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
