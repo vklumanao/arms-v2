@@ -17,6 +17,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -169,22 +170,44 @@ export default function AppShell() {
         profile?.is_center_chief === true &&
         Boolean(profile?.managed_center_id));
 
+    const canAccessDepartments =
+      profile?.role === "admin" ||
+      (profile?.role === "faculty" &&
+        profile?.is_chairperson === true &&
+        Boolean(profile?.managed_department_id));
+
     if (canAccessResearchCenters) {
+      const managedCenterId = String(profile?.managed_center_id || "").trim();
       links.push({
-        to: "/admin/research-center",
-        label: "Research Centers",
+        to:
+          profile?.role === "admin"
+            ? "/admin/research-center"
+            : managedCenterId
+              ? `/admin/research-center/${encodeURIComponent(managedCenterId)}`
+              : "/admin/research-center",
+        label:
+          profile?.role === "admin" ? "Research Centers" : "My Research Center",
         icon: Building2,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
     }
 
-    if (profile?.role === "admin") {
+    if (canAccessDepartments) {
+      const managedDepartmentId = String(profile?.managed_department_id || "").trim();
       links.push({
-        to: "/admin/departments",
-        label: "Departments",
+        to:
+          profile?.role === "admin"
+            ? "/admin/departments"
+            : managedDepartmentId
+              ? `/admin/departments/${encodeURIComponent(managedDepartmentId)}`
+              : "/admin/departments",
+        label: profile?.role === "admin" ? "Departments" : "My Department",
         icon: FolderTree,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
+    }
+
+    if (profile?.role === "admin") {
       links.push({
         to: "/admin/affiliates",
         label: "Affiliates",
@@ -194,7 +217,13 @@ export default function AppShell() {
     }
 
     return links;
-  }, [profile?.is_center_chief, profile?.managed_center_id, profile?.role]);
+  }, [
+    profile?.is_center_chief,
+    profile?.is_chairperson,
+    profile?.managed_center_id,
+    profile?.managed_department_id,
+    profile?.role,
+  ]);
 
   const workspaceResearchLinks = useMemo(
     () => [
@@ -252,11 +281,19 @@ export default function AppShell() {
     if (isAcademicRole || isAdminRole) {
       groups.push(
         { key: "core", title: "Core Modules", links: workspaceCoreLinks },
-        { key: "research", title: "Research Modules", links: workspaceResearchLinks },
+        {
+          key: "research",
+          title: "Research Modules",
+          links: workspaceResearchLinks,
+        },
         { key: "profile", title: "Profile", links: workspaceProfileLinks },
       );
     } else {
-      groups.push({ key: "workspace", title: "Workspace", links: workspaceLinks });
+      groups.push({
+        key: "workspace",
+        title: "Workspace",
+        links: workspaceLinks,
+      });
     }
 
     if (profile.role === "admin") {
@@ -284,8 +321,9 @@ export default function AppShell() {
       navGroups
         .map((group) => ({
           ...group,
-          items: group.links
-            .filter((item) => hasPermission(profile?.role, item.permission))
+          items: group.links.filter((item) =>
+            hasPermission(profile?.role, item.permission),
+          ),
         }))
         .filter((group) => group.items.length > 0),
     [navGroups, profile?.role],
@@ -317,10 +355,12 @@ export default function AppShell() {
 
   useLayoutEffect(() => {
     if (desktopSidebarScrollRef.current) {
-      desktopSidebarScrollRef.current.scrollTop = desktopSidebarScrollTopRef.current;
+      desktopSidebarScrollRef.current.scrollTop =
+        desktopSidebarScrollTopRef.current;
     }
     if (mobileSidebarScrollRef.current) {
-      mobileSidebarScrollRef.current.scrollTop = mobileSidebarScrollTopRef.current;
+      mobileSidebarScrollRef.current.scrollTop =
+        mobileSidebarScrollTopRef.current;
     }
   }, [location.pathname]);
 
@@ -399,66 +439,97 @@ export default function AppShell() {
           <p className="text-sm font-semibold text-slate-700">
             Sign in to access your workspace.
           </p>
-          <Button asChild variant="outline" className="w-full" onClick={onNavigate}>
+          <Button
+            asChild
+            variant="outline"
+            className="w-full"
+            onClick={onNavigate}
+          >
             <Link to="/login">Login</Link>
           </Button>
         </div>
       );
     }
 
-    const initials = getInitials(profile.full_name);
+    const displayName = String(profile.full_name || "").trim() || "User";
+    const roleLabel = String(profile.role || "").trim() || "Member";
+    const initials = getInitials(displayName);
 
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
-            variant="outline"
-            className="w-full justify-start gap-3 px-3 py-2.5"
+            variant="ghost"
+            className={cn(
+              "group w-full justify-between gap-3 rounded-lg border border-border/60 bg-white/60 px-3 py-2.5 text-left shadow-sm shadow-black/5",
+              "hover:border-border hover:bg-white",
+              "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
+            )}
           >
-            <Avatar className="h-9 w-9">
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-sm font-bold text-slate-900">
-                {profile.full_name}
-              </span>
-              <span className="block truncate text-xs text-slate-600">
-                {profile.role}
+            <span className="flex min-w-0 items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-slate-900">
+                  {displayName}
+                </span>
+                <span className="block truncate text-xs text-slate-600">
+                  {roleLabel}
+                </span>
               </span>
             </span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="top" className="w-60">
-          <DropdownMenuLabel className="space-y-0.5">
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {profile.full_name}
-            </p>
-            <p className="truncate text-xs font-normal text-slate-600">
-              {profile.role}
-            </p>
+        <DropdownMenuContent
+          align="start"
+          side="top"
+          className="w-[--radix-dropdown-menu-trigger-width] min-w-64 p-1"
+        >
+          <DropdownMenuLabel className="px-2 py-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {displayName}
+                </p>
+                <p className="truncate text-xs font-normal text-slate-600">
+                  {roleLabel}
+                </p>
+              </div>
+            </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link to="/my-profile" onClick={onNavigate}>
-              <span className="flex w-full items-center gap-2">
-                <User className="h-4 w-4" />
-                My Profile
-              </span>
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/my-profile"
+                onClick={onNavigate}
+                className="flex w-full items-center gap-2"
+              >
+                <User className="h-4 w-4 text-slate-500" />
+                <span className="min-w-0 flex-1 truncate">My Profile</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            className="text-red-700 focus:bg-red-50 focus:text-red-700"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
             }}
           >
-            <span className="flex w-full items-center gap-2 text-red-700">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </span>
+            <LogOut className="h-4 w-4" />
+            <span className="min-w-0 flex-1 truncate">Logout</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -466,24 +537,23 @@ export default function AppShell() {
   };
 
   const SidebarContent = ({ variant }) => {
-    const onNavigate = variant === "mobile" ? () => setMobileNavOpen(false) : undefined;
+    const onNavigate =
+      variant === "mobile" ? () => setMobileNavOpen(false) : undefined;
 
     const scrollRef =
       variant === "mobile" ? mobileSidebarScrollRef : desktopSidebarScrollRef;
     const scrollTopRef =
-      variant === "mobile" ? mobileSidebarScrollTopRef : desktopSidebarScrollTopRef;
+      variant === "mobile"
+        ? mobileSidebarScrollTopRef
+        : desktopSidebarScrollTopRef;
 
     return (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/70 p-3">
+      <div className="flex h-full min-h-0 flex-col gap-4">
+        <div className="rounded-[var(--radius-lg)] border border-border/70 bg-white/70 p-3 shadow-sm shadow-black/5">
           <div className="flex items-center justify-between gap-2">
-            <Link
-              to="/home"
-              className="min-w-0 flex-1"
-              onClick={onNavigate}
-            >
-              <div className="leading-tight">
-                <div className="truncate text-lg font-extrabold tracking-tight text-slate-900">
+            <Link to="/home" className="min-w-0 flex-1" onClick={onNavigate}>
+              <div className="min-w-0 leading-tight">
+                <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
                   ARMS
                 </div>
                 <div className="truncate text-xs font-medium text-slate-500">
@@ -497,9 +567,14 @@ export default function AppShell() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Hide sidebar"
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
                 onClick={() => setDesktopSidebarOpen(false)}
-                className="shrink-0"
+                className={cn(
+                  "h-9 w-9 rounded-md",
+                  "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                )}
               >
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
@@ -507,43 +582,50 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div
-          ref={scrollRef}
-          className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1"
-          onScroll={(event) => {
-            scrollTopRef.current = event.currentTarget.scrollTop;
-          }}
-        >
-          {visibleGroups.length === 0 ? (
-            <div className="rounded-md border border-dashed border-[var(--border)] bg-white/60 p-4">
-              <p className="text-sm font-semibold text-slate-800">
-                No navigation items available.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {visibleGroups.map((group, groupIndex) => (
-                <div key={group.key}>
-                  <div className="flex items-center justify-between gap-2 px-1">
-                    <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                      {group.title}
-                    </h3>
+        <div className="min-h-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/60 shadow-sm shadow-black/5">
+          <div
+            ref={scrollRef}
+            className="h-full min-h-0 overflow-y-auto p-3 pr-2"
+            onScroll={(event) => {
+              scrollTopRef.current = event.currentTarget.scrollTop;
+            }}
+          >
+            {visibleGroups.length === 0 ? (
+              <div className="rounded-md border border-dashed border-[var(--border)] bg-white/70 p-4">
+                <p className="text-sm font-semibold text-slate-800">
+                  No navigation items available.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {visibleGroups.map((group) => (
+                  <div key={group.key}>
+                    <div className="flex items-center gap-2 px-1">
+                      <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                        {group.title}
+                      </h3>
+                      <div
+                        className="h-px flex-1 bg-border/60"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {group.items.map((item) => (
+                        <NavItem
+                          key={item.to}
+                          item={item}
+                          onNavigate={onNavigate}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-2 space-y-1">
-                    {group.items.map((item) => (
-                      <NavItem key={item.to} item={item} onNavigate={onNavigate} />
-                    ))}
-                  </div>
-                  {groupIndex < visibleGroups.length - 1 ? (
-                    <Separator className="my-4" />
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4">
+        <div className="border-t border-border/60 pt-3">
           <SidebarAccount onNavigate={onNavigate} />
         </div>
       </div>
