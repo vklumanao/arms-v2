@@ -21,6 +21,8 @@ function mockAuthPayload() {
       is_center_chief: false,
       managed_center_id: null,
       managed_center_name: null,
+      is_chairperson: false,
+      managed_department_id: null,
     },
   };
 }
