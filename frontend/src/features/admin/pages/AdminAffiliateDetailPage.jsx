@@ -155,7 +155,7 @@ export default function AdminAffiliateDetailPage() {
             onClick={() =>
               toast.error(
                 "Read-only record",
-                "CKAN-only users must be edited directly in CKAN.",
+                "Users must be edited directly in CKAN.",
               )
             }
           >
