@@ -415,7 +415,7 @@ export default function SubmitAwardRecognitionPage() {
         title={editId ? "Edit Award or Recognition" : "Add Award or Recognition"}
         description={
           editId
-            ? "Update the CKAN-backed award record and replace its MOV attachment if needed."
+            ? "Update the award record and replace its MOV attachment if needed."
             : "Create a new award record for your research-related accomplishments."
         }
         actions={
@@ -523,7 +523,7 @@ export default function SubmitAwardRecognitionPage() {
                     addRecipientUser(filteredRecipientOptions[0]);
                   }
                 }}
-                placeholder="Type a name to search CKAN users"
+                placeholder="Type a name to search Faculty"
               />
               <div className="flex flex-wrap gap-2">
                 {(form.recipient_users || []).length ? (
@@ -551,7 +551,7 @@ export default function SubmitAwardRecognitionPage() {
                 )}
               </div>
               {loadingRecipients ? (
-                <p className="text-sm text-slate-500">Loading CKAN users...</p>
+                <p className="text-sm text-slate-500">Loading users...</p>
               ) : recipientSearch.trim() ? (
                 <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
                   {filteredRecipientOptions.length ? (
@@ -574,13 +574,13 @@ export default function SubmitAwardRecognitionPage() {
                     ))
                   ) : (
                     <p className="text-sm text-slate-500">
-                      No matching CKAN users found.
+                      No matching Faculty found.
                     </p>
                   )}
                 </div>
               ) : (
                 <p className="text-sm text-slate-500">
-                  Start typing a recipient name to search CKAN users.
+                  Start typing a recipient name to search Faculty.
                 </p>
               )}
             </div>
@@ -661,8 +661,8 @@ export default function SubmitAwardRecognitionPage() {
                     {movFile
                       ? `${formatFileSize(movFile.size)} selected for upload`
                       : existingMov?.filePath
-                        ? "Current CKAN resource attached to this award record"
-                        : "Upload a file to store the supporting MOV as a CKAN resource"}
+                        ? "Current Faculty resource attached to this award record"
+                        : "Upload a file to store the supporting MOV as a Faculty resource"}
                   </p>
                 </div>
                 <Button variant="outline" asChild>
