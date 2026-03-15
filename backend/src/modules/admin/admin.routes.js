@@ -457,8 +457,25 @@ export function registerAdminRoutes(app, deps) {
       : "";
   }
 
+  function getManagedDepartmentId(user) {
+    if (
+      String(user?.role || "")
+        .trim()
+        .toLowerCase() === "admin"
+    )
+      return "";
+    const managedDepartmentId = String(user?.managed_department_id || "").trim();
+    return Boolean(user?.is_chairperson) && managedDepartmentId
+      ? managedDepartmentId
+      : "";
+  }
+
   function isCenterChiefScopedUser(user) {
     return Boolean(getManagedCenterId(user));
+  }
+
+  function isChairpersonScopedUser(user) {
+    return Boolean(getManagedDepartmentId(user));
   }
 
   function ensureCenterScope(res, user, centerId) {
@@ -478,6 +495,26 @@ export function registerAdminRoutes(app, deps) {
     return false;
   }
 
+  function ensureDepartmentScope(res, user, departmentId) {
+    if (
+      String(user?.role || "")
+        .trim()
+        .toLowerCase() === "admin"
+    )
+      return true;
+    const managedDepartmentId = getManagedDepartmentId(user);
+    if (
+      managedDepartmentId &&
+      managedDepartmentId === String(departmentId || "").trim()
+    ) {
+      return true;
+    }
+    res.status(403).json({
+      error: "You can only access the Department assigned to you.",
+    });
+    return false;
+  }
+
   function ensureAdminOrCenterChief(res, user) {
     const role = String(user?.role || "")
       .trim()
@@ -486,6 +523,17 @@ export function registerAdminRoutes(app, deps) {
     res
       .status(403)
       .json({ error: "Admin or Center Chief access is required." });
+    return false;
+  }
+
+  function ensureAdminOrChairperson(res, user) {
+    const role = String(user?.role || "")
+      .trim()
+      .toLowerCase();
+    if (role === "admin" || isChairpersonScopedUser(user)) return true;
+    res
+      .status(403)
+      .json({ error: "Admin or Chairperson access is required." });
     return false;
   }
 
@@ -1001,7 +1049,8 @@ export function registerAdminRoutes(app, deps) {
           });
         }
         if (type === "center" && !ensureCenterScope(res, req.user, id)) return;
-        if (type === "department" && !ensureAdminOnly(res, req.user)) return;
+        if (type === "department" && !ensureDepartmentScope(res, req.user, id))
+          return;
 
         const [members, datasets, centerOrg] =
           type === "center"
@@ -1331,7 +1380,7 @@ export function registerAdminRoutes(app, deps) {
           });
         }
         if (type === "department" && id) {
-          if (!ensureAdminOnly(res, req.user)) return;
+          if (!ensureDepartmentScope(res, req.user, id)) return;
           const [members, datasets, centers, departmentGroup] =
             await Promise.all([
               listGroupMembers(id),
@@ -1830,7 +1879,8 @@ export function registerAdminRoutes(app, deps) {
               "Only center and department update are implemented in this backend.",
           });
         }
-        if (type === "department" && !ensureAdminOnly(res, req.user)) return;
+        if (type === "department" && !ensureDepartmentScope(res, req.user, id))
+          return;
         if (type === "center" && !ensureCenterScope(res, req.user, id)) return;
 
         if (type === "department") {
@@ -2106,7 +2156,6 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
-        if (!ensureAdminOnly(res, req.user)) return;
         const type = String(req.params?.type || "")
           .trim()
           .toLowerCase();
@@ -2115,6 +2164,7 @@ export function registerAdminRoutes(app, deps) {
           return badRequest(res, "Reference id is required.");
         }
         if (type === "proponent") {
+          if (!ensureAdminOnly(res, req.user)) return;
           const updated = await updateUser(id, { is_active: false });
           if (!updated) {
             return res.status(404).json({ error: "Proponent was not found." });
@@ -2123,6 +2173,7 @@ export function registerAdminRoutes(app, deps) {
         }
 
         if (type === "department") {
+          if (!ensureDepartmentScope(res, req.user, id)) return;
           const [members, datasets, departmentGroup] = await Promise.all([
             listGroupMembers(id),
             listAllDatasetsAcrossCkan(),
@@ -2202,6 +2253,7 @@ export function registerAdminRoutes(app, deps) {
         }
 
         if (type === "center") {
+          if (!ensureCenterScope(res, req.user, id)) return;
           const [members, datasets] = await Promise.all([
             listOrganizationMembers(id),
             listDatasets({ orgId: id, page: 1, limit: 100 }),
