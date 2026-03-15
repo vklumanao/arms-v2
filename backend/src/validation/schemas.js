@@ -284,6 +284,14 @@ export const projectSubmissionPublishSchema = z.object({
   expected_outputs: z.array(submissionExpectedOutputSchema).optional().default([]),
 });
 
+// Draft saves are intentionally permissive. Validation is deferred until publish.
+export const projectSubmissionDraftSchema = z.object({
+  dataset_id: z.string().trim().optional().nullable(),
+  draft_step: z.coerce.number().int().min(0).max(10).optional().nullable(),
+  form: z.any().optional().default({}),
+  expected_outputs: z.array(z.any()).optional().default([]),
+});
+
 /**
  * Parses input with a given Zod schema or throws a user-facing error.
  *
