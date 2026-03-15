@@ -51,6 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/shared/components/layout/PageHeader";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
@@ -89,6 +90,7 @@ const EMPTY_EDITING = {
   researchAgendas: [],
 };
 export default function AdminResearchCenterPage() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const toast = useToast();
   const PAGE_SIZE = 10;
@@ -98,7 +100,6 @@ export default function AdminResearchCenterPage() {
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rows, setRows] = useState([]);
-  const [viewRow, setViewRow] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
   const [editLoading, setEditLoading] = useState(false);
@@ -106,13 +107,6 @@ export default function AdminResearchCenterPage() {
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
-  const [viewError, setViewError] = useState("");
-  const [viewProfiles, setViewProfiles] = useState([]);
-  const [projectLinksRow, setProjectLinksRow] = useState(null);
-  const [projectLinksLoading, setProjectLinksLoading] = useState(false);
-  const [projectLinksError, setProjectLinksError] = useState("");
-  const [projectLinks, setProjectLinks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [agendaCurrentPage, setAgendaCurrentPage] = useState(1);
   const [expandedAgendaRows, setExpandedAgendaRows] = useState({});
@@ -399,7 +393,9 @@ export default function AdminResearchCenterPage() {
         !(
           row.name.toLowerCase().includes(keyword) ||
           row.code.toLowerCase().includes(keyword) ||
-          String(row.centerChiefName || "").toLowerCase().includes(keyword) ||
+          String(row.centerChiefName || "")
+            .toLowerCase()
+            .includes(keyword) ||
           agendaNames.includes(keyword) ||
           row.type.toLowerCase().includes(keyword) ||
           row.id.toLowerCase().includes(keyword)
@@ -804,36 +800,11 @@ export default function AdminResearchCenterPage() {
     setDeletingRow(null);
   };
 
-  const openView = async (row) => {
-    setViewRow(row);
-    setViewLoading(true);
-    setViewError("");
-    setViewProfiles([]);
-    try {
-      const result = await fetchReferenceLinks({ type: "center", id: row.id });
-      setViewProfiles(result?.profiles || []);
-    } catch (loadError) {
-      setViewError(loadError.message || "Unable to load linked profiles.");
-    } finally {
-      setViewLoading(false);
-    }
-  };
-
-  const openProjectLinks = async (row) => {
-    setProjectLinksRow(row);
-    setProjectLinksLoading(true);
-    setProjectLinksError("");
-    setProjectLinks([]);
-    try {
-      const result = await fetchReferenceLinks({ type: "center", id: row.id });
-      setProjectLinks(result?.projects || []);
-    } catch (loadError) {
-      setProjectLinksError(
-        loadError.message || "Unable to load linked projects.",
-      );
-    } finally {
-      setProjectLinksLoading(false);
-    }
+  const goToCenterDetail = (row, tab = null) => {
+    const id = String(row?.id || "").trim();
+    if (!id) return;
+    const query = tab ? `?tab=${encodeURIComponent(tab)}` : "";
+    navigate(`/admin/research-center/${encodeURIComponent(id)}${query}`);
   };
 
   const createResearchCenter = async () => {
@@ -1059,7 +1030,9 @@ export default function AdminResearchCenterPage() {
                     Center Chief
                   </p>
                   <p className="mt-2 text-lg font-bold text-slate-900">
-                    {scopedCenterRow.centerChiefName || profile?.full_name || "-"}
+                    {scopedCenterRow.centerChiefName ||
+                      profile?.full_name ||
+                      "-"}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
                     Active Members: {scopedSummary.activeMembers}
@@ -1068,30 +1041,30 @@ export default function AdminResearchCenterPage() {
               </Card>
               <Card>
                 <CardContent className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Linked Affiliates
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {scopedSummary.totalMembers}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0}{" "}
-                  Editor: {scopedCenterRow.memberBreakdown?.editorCount || 0}{" "}
-                  Member: {scopedCenterRow.memberBreakdown?.memberCount || 0}
-                </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Linked Affiliates
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                    {scopedSummary.totalMembers}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0}{" "}
+                    Editor: {scopedCenterRow.memberBreakdown?.editorCount || 0}{" "}
+                    Member: {scopedCenterRow.memberBreakdown?.memberCount || 0}
+                  </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Linked Projects
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {scopedSummary.linkedProjects}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Agendas: {scopedSummary.agendas}
-                </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Linked Projects
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                    {scopedSummary.linkedProjects}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Agendas: {scopedSummary.agendas}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -1200,56 +1173,70 @@ export default function AdminResearchCenterPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                {scopedLinksLoading ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    Loading affiliated members...
-                  </p>
-                ) : scopedLinksError ? (
-                  <p className="p-4 text-sm text-red-700">{scopedLinksError}</p>
-                ) : filteredScopedMembers.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    No members matched the current filters.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>No.</TableHead>
-                        <TableHead>Full Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>User ID</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedScopedMembers.map((member, index) => (
-                        <TableRow key={member.id || `${member.email}-${index}`}>
-                          <TableCell>
-                            {(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}
-                          </TableCell>
-                          <TableCell>{member.full_name || "Unnamed user"}</TableCell>
-                          <TableCell>{member.email || "-"}</TableCell>
-                          <TableCell className="capitalize">{member.role || "-"}</TableCell>
-                          <TableCell>{member.department || "-"}</TableCell>
-                          <TableCell>
-                            <Badge variant={member.is_active !== false ? "secondary" : "destructive"}>
-                              {member.is_active !== false
-                                ? "Active"
-                                : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <code>{member.id || "-"}</code>
-                          </TableCell>
+                <div className="overflow-x-auto">
+                  {scopedLinksLoading ? (
+                    <p className="p-4 text-sm text-slate-600">
+                      Loading affiliated members...
+                    </p>
+                  ) : scopedLinksError ? (
+                    <p className="p-4 text-sm text-red-700">
+                      {scopedLinksError}
+                    </p>
+                  ) : filteredScopedMembers.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-600">
+                      No members matched the current filters.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>No.</TableHead>
+                          <TableHead>Full Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Department</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>User ID</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedScopedMembers.map((member, index) => (
+                          <TableRow
+                            key={member.id || `${member.email}-${index}`}
+                          >
+                            <TableCell>
+                              {(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}
+                            </TableCell>
+                            <TableCell>
+                              {member.full_name || "Unnamed user"}
+                            </TableCell>
+                            <TableCell>{member.email || "-"}</TableCell>
+                            <TableCell className="capitalize">
+                              {member.role || "-"}
+                            </TableCell>
+                            <TableCell>{member.department || "-"}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  member.is_active !== false
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                              >
+                                {member.is_active !== false
+                                  ? "Active"
+                                  : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <code>{member.id || "-"}</code>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
               </CardContent>
               <PaginationControls
                 page={memberPage}
@@ -1350,50 +1337,60 @@ export default function AdminResearchCenterPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                {scopedLinksLoading ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    Loading linked projects...
-                  </p>
-                ) : scopedLinksError ? (
-                  <p className="p-4 text-sm text-red-700">{scopedLinksError}</p>
-                ) : filteredScopedProjects.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-600">
-                    No linked projects matched the current filters.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>No.</TableHead>
-                        <TableHead>Project Title</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Year</TableHead>
-                        <TableHead>Lead Researcher</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Agendum</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedScopedProjects.map((project, index) => (
-                        <TableRow key={project.id || `${project.title}-${index}`}>
-                          <TableCell>
-                            {(projectPage - 1) * PROJECT_PAGE_SIZE + index + 1}
-                          </TableCell>
-                          <TableCell>{project.title || "-"}</TableCell>
-                          <TableCell className="capitalize">
-                            {project.status || "-"}
-                          </TableCell>
-                          <TableCell>{project.year || "-"}</TableCell>
-                          <TableCell>{project.lead_researcher || "-"}</TableCell>
-                          <TableCell>{project.department_name || "-"}</TableCell>
-                          <TableCell>{project.agenda_name || "-"}</TableCell>
+                <div className="overflow-x-auto">
+                  {scopedLinksLoading ? (
+                    <p className="p-4 text-sm text-slate-600">
+                      Loading linked projects...
+                    </p>
+                  ) : scopedLinksError ? (
+                    <p className="p-4 text-sm text-red-700">
+                      {scopedLinksError}
+                    </p>
+                  ) : filteredScopedProjects.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-600">
+                      No linked projects matched the current filters.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>No.</TableHead>
+                          <TableHead>Project Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Year</TableHead>
+                          <TableHead>Lead Researcher</TableHead>
+                          <TableHead>Department</TableHead>
+                          <TableHead>Agendum</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedScopedProjects.map((project, index) => (
+                          <TableRow
+                            key={project.id || `${project.title}-${index}`}
+                          >
+                            <TableCell>
+                              {(projectPage - 1) * PROJECT_PAGE_SIZE +
+                                index +
+                                1}
+                            </TableCell>
+                            <TableCell>{project.title || "-"}</TableCell>
+                            <TableCell className="capitalize">
+                              {project.status || "-"}
+                            </TableCell>
+                            <TableCell>{project.year || "-"}</TableCell>
+                            <TableCell>
+                              {project.lead_researcher || "-"}
+                            </TableCell>
+                            <TableCell>
+                              {project.department_name || "-"}
+                            </TableCell>
+                            <TableCell>{project.agenda_name || "-"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
               </CardContent>
               <PaginationControls
                 page={projectPage}
@@ -1580,8 +1577,12 @@ export default function AdminResearchCenterPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge variant="secondary">Agenda: {row.agendaCount || 0}</Badge>
-                      <Badge variant="secondary">Links: {row.totalLinks || 0}</Badge>
+                      <Badge variant="secondary">
+                        Agenda: {row.agendaCount || 0}
+                      </Badge>
+                      <Badge variant="secondary">
+                        Links: {row.totalLinks || 0}
+                      </Badge>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
@@ -1591,7 +1592,7 @@ export default function AdminResearchCenterPage() {
                           "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
                           "hover:bg-muted/50",
                         )}
-                        onClick={() => openView(row)}
+                        onClick={() => goToCenterDetail(row, "affiliates")}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -1615,7 +1616,7 @@ export default function AdminResearchCenterPage() {
                           "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
                           "hover:bg-muted/50",
                         )}
-                        onClick={() => openProjectLinks(row)}
+                        onClick={() => goToCenterDetail(row, "projects")}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -1637,7 +1638,7 @@ export default function AdminResearchCenterPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => openView(row)}
+                          onClick={() => goToCenterDetail(row)}
                         >
                           <Eye className="h-4 w-4" />
                           View
@@ -1663,7 +1664,7 @@ export default function AdminResearchCenterPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => openView(row)}
+                          onClick={() => goToCenterDetail(row)}
                         >
                           <Eye className="h-4 w-4" />
                           View
@@ -1676,169 +1677,209 @@ export default function AdminResearchCenterPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-[var(--border)] bg-white">
-                <Table className="min-w-[980px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No.</TableHead>
-                      <TableHead>
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("code")}
+                      >
+                        Code{" "}
+                        <span
+                          className={
+                            sortConfig.key === "code"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("code")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("name")}
+                      >
+                        Research Center{" "}
+                        <span
+                          className={
+                            sortConfig.key === "name"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("name")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "centerChiefName" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("centerChiefName")}
+                      >
+                        Center Chief{" "}
+                        <span
+                          className={
+                            sortConfig.key === "centerChiefName"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("centerChiefName")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "agendaCount" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("agendaCount")}
+                      >
+                        Agenda{" "}
+                        <span
+                          className={
+                            sortConfig.key === "agendaCount"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("agendaCount")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("profileCount")}
+                      >
+                        Affiliates{" "}
+                        <span
+                          className={
+                            sortConfig.key === "profileCount"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("profileCount")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
+                        onClick={() => toggleSort("projectCount")}
+                      >
+                        Projects{" "}
+                        <span
+                          className={
+                            sortConfig.key === "projectCount"
+                              ? "text-[var(--brand)]"
+                              : "text-slate-400"
+                          }
+                        >
+                          {getSortIndicator("projectCount")}
+                        </span>
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedRows.map((row, index) => (
+                    <TableRow key={`${row.tag}-${row.id}`}>
+                      <TableCell>
+                        {(currentPage - 1) * PAGE_SIZE + index + 1}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {row.code}
+                      </TableCell>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.centerChiefName || "-"}</TableCell>
+                      <TableCell>{row.agendaCount || 0}</TableCell>
+                      <TableCell>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("code")}
+                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                          onClick={() => goToCenterDetail(row, "affiliates")}
                         >
-                          Code{" "}
-                          <span className={sortConfig.key === "code" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("code")}
-                          </span>
+                          {row.profileCount}
                         </Button>
-                      </TableHead>
-                      <TableHead>
+                      </TableCell>
+                      <TableCell>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("name")}
+                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                          onClick={() => goToCenterDetail(row, "projects")}
                         >
-                          Research Center{" "}
-                          <span className={sortConfig.key === "name" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("name")}
-                          </span>
+                          {row.projectCount}
                         </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "centerChiefName" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("centerChiefName")}
-                        >
-                          Center Chief{" "}
-                          <span className={sortConfig.key === "centerChiefName" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("centerChiefName")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "agendaCount" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("agendaCount")}
-                        >
-                          Agenda{" "}
-                          <span className={sortConfig.key === "agendaCount" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("agendaCount")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("profileCount")}
-                        >
-                          Affiliates{" "}
-                          <span className={sortConfig.key === "profileCount" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("profileCount")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
-                          onClick={() => toggleSort("projectCount")}
-                        >
-                          Projects{" "}
-                          <span className={sortConfig.key === "projectCount" ? "text-[var(--brand)]" : "text-slate-400"}>
-                            {getSortIndicator("projectCount")}
-                          </span>
-                        </Button>
-                      </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => goToCenterDetail(row)}
+                            aria-label={`View ${row?.name || "research center"}`}
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {!isScopedCenterChief ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => startEdit(row)}
+                                aria-label={`Edit ${row?.name || "research center"}`}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                onClick={() => setDeletingRow(row)}
+                                aria-label={`Delete ${row?.name || "research center"}`}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedRows.map((row, index) => (
-                      <TableRow key={`${row.tag}-${row.id}`}>
-                        <TableCell>{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
-                        <TableCell className="font-mono text-xs">{row.code}</TableCell>
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell>{row.centerChiefName || "-"}</TableCell>
-                        <TableCell>{row.agendaCount || 0}</TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                            onClick={() => openView(row)}
-                          >
-                            {row.profileCount}
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                            onClick={() => openProjectLinks(row)}
-                          >
-                            {row.projectCount}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => openView(row)}
-                              aria-label={`View ${row?.name || "research center"}`}
-                              title="View"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {!isScopedCenterChief ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => startEdit(row)}
-                                  aria-label={`Edit ${row?.name || "research center"}`}
-                                  title="Edit"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
-                                  onClick={() => setDeletingRow(row)}
-                                  aria-label={`Delete ${row?.name || "research center"}`}
-                                  title="Delete"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -1890,55 +1931,55 @@ export default function AdminResearchCenterPage() {
                 return (
                   <Card key={`agenda-group-${row.id}`}>
                     <CardContent className="p-4">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">
-                          {row.code || "-"}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {row.name || "-"}
-                        </p>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">
+                            {row.code || "-"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {row.name || "-"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {agendaNames.length}{" "}
+                          {agendaNames.length === 1 ? "Agendum" : "Agenda"}
+                        </span>
                       </div>
-                      <span className="text-xs text-slate-500">
-                        {agendaNames.length}{" "}
-                        {agendaNames.length === 1 ? "Agendum" : "Agenda"}
-                      </span>
-                    </div>
 
-                    <div className="relative pl-6">
-                      <span className="absolute left-2 top-0 h-full w-px bg-[var(--border)]" />
-                      <ul className="space-y-1.5">
-                        {displayAgendas.map((agendaName) => (
-                          <li
-                            key={`${row.id}-${agendaName}`}
-                            className="relative rounded-md bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700"
+                      <div className="relative pl-6">
+                        <span className="absolute left-2 top-0 h-full w-px bg-[var(--border)]" />
+                        <ul className="space-y-1.5">
+                          {displayAgendas.map((agendaName) => (
+                            <li
+                              key={`${row.id}-${agendaName}`}
+                              className="relative rounded-md bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700"
+                            >
+                              <span className="absolute -left-4 top-1/2 h-px w-4 -translate-y-1/2 bg-[var(--border)]" />
+                              <span className="absolute -left-[18px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[var(--border-strong)]" />
+                              {agendaName}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {hasOverflow ? (
+                        <div className="mt-2 pl-6">
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
+                            onClick={() =>
+                              setExpandedAgendaRows((prev) => ({
+                                ...prev,
+                                [row.id]: !isExpanded,
+                              }))
+                            }
                           >
-                            <span className="absolute -left-4 top-1/2 h-px w-4 -translate-y-1/2 bg-[var(--border)]" />
-                            <span className="absolute -left-[18px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[var(--border-strong)]" />
-                            {agendaName}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {hasOverflow ? (
-                      <div className="mt-2 pl-6">
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
-                          onClick={() =>
-                            setExpandedAgendaRows((prev) => ({
-                              ...prev,
-                              [row.id]: !isExpanded,
-                            }))
-                          }
-                        >
-                          {isExpanded
-                            ? "Show less"
-                            : `Show ${agendaNames.length - AGENDA_PREVIEW_COUNT} more`}
-                        </button>
-                      </div>
-                    ) : null}
+                            {isExpanded
+                              ? "Show less"
+                              : `Show ${agendaNames.length - AGENDA_PREVIEW_COUNT} more`}
+                          </button>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 );
@@ -1954,182 +1995,6 @@ export default function AdminResearchCenterPage() {
         />
       </Card>
 
-      {viewRow ? (
-        <Dialog open={Boolean(viewRow)} onOpenChange={(open) => !open && setViewRow(null)}>
-          <DialogContent className="max-w-5xl" onOpenAutoFocus={(event) => event.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>{viewRow.name}</DialogTitle>
-              <DialogDescription>
-                Research center details and linked affiliates.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5">
-              <dl className="grid gap-3 text-sm md:grid-cols-4">
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Center Code</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.code}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Type</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.type}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Center Chief</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.centerChiefName || "-"}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Research Agenda</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.agendaCount || 0}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Affiliates</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.profileCount || 0}</dd>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/40">
-                  <CardContent className="p-4">
-                    <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">Linked Projects</dt>
-                    <dd className="mt-1 font-semibold text-slate-800">{viewRow.projectCount || 0}</dd>
-                  </CardContent>
-                </Card>
-              </dl>
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3">
-                  <CardTitle className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
-                    Linked Affiliates ({viewProfiles.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="max-h-80 overflow-auto">
-                    {viewLoading ? (
-                      <p className="p-4 text-sm text-slate-600">Loading linked records...</p>
-                    ) : viewError ? (
-                      <p className="p-4 text-sm text-red-700">{viewError}</p>
-                    ) : viewProfiles.length === 0 ? (
-                      <p className="p-4 text-sm text-slate-600">
-                        No affiliates are currently linked to this research center.
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No.</TableHead>
-                            <TableHead>Full Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Department</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>User ID</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {viewProfiles.map((profile, index) => (
-                            <TableRow key={profile.id}>
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell>{profile.full_name || "Unnamed user"}</TableCell>
-                              <TableCell>{profile.email || "-"}</TableCell>
-                              <TableCell className="capitalize">{profile.role || "-"}</TableCell>
-                              <TableCell>{profile.department || "-"}</TableCell>
-                              <TableCell>
-                                <Badge variant={profile.is_active ? "secondary" : "destructive"}>
-                                  {profile.is_active ? "Active" : "Inactive"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <code>{profile.id}</code>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
-      {projectLinksRow ? (
-        <Dialog
-          open={Boolean(projectLinksRow)}
-          onOpenChange={(open) => !open && setProjectLinksRow(null)}
-        >
-          <DialogContent className="max-w-6xl" onOpenAutoFocus={(event) => event.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>{projectLinksRow.name}</DialogTitle>
-              <DialogDescription>
-                Projects linked to this research center.
-              </DialogDescription>
-            </DialogHeader>
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="max-h-[560px] overflow-auto">
-                  {projectLinksLoading ? (
-                    <p className="p-4 text-sm text-slate-600">Loading linked projects...</p>
-                  ) : projectLinksError ? (
-                    <p className="p-4 text-sm text-red-700">{projectLinksError}</p>
-                  ) : projectLinks.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-600">
-                      No linked projects found for this research center.
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>No.</TableHead>
-                          <TableHead>Project Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Year</TableHead>
-                          <TableHead>Lead Researcher</TableHead>
-                          <TableHead>Department</TableHead>
-                          <TableHead>Agendum</TableHead>
-                          <TableHead>Start Date</TableHead>
-                          <TableHead>End Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {projectLinks.map((project, index) => (
-                          <TableRow key={project.id}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{project.title || "-"}</TableCell>
-                            <TableCell className="capitalize">{project.status || "-"}</TableCell>
-                            <TableCell>{project.year || "-"}</TableCell>
-                            <TableCell>{project.lead_researcher || "-"}</TableCell>
-                            <TableCell>{project.department_name || "-"}</TableCell>
-                            <TableCell>{project.agenda_name || "-"}</TableCell>
-                            <TableCell>
-                              {project.start_date
-                                ? new Date(project.start_date).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {project.end_date
-                                ? new Date(project.end_date).toLocaleDateString()
-                                : "-"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
       <ConfirmActionModal
         open={Boolean(deletingRow)}
         title="Delete Research Center"
@@ -2138,12 +2003,20 @@ export default function AdminResearchCenterPage() {
         align="center"
         loading={deleteGuard.blocked ? false : actionLoading}
         onCancel={() => setDeletingRow(null)}
-        onConfirm={deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete}
+        onConfirm={
+          deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete
+        }
       />
 
       {editModalOpen ? (
-        <Dialog open={editModalOpen} onOpenChange={(open) => !open && cancelEdit()}>
-          <DialogContent className="max-w-2xl" onOpenAutoFocus={(event) => event.preventDefault()}>
+        <Dialog
+          open={editModalOpen}
+          onOpenChange={(open) => !open && cancelEdit()}
+        >
+          <DialogContent
+            className="max-w-2xl"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Edit Research Center</DialogTitle>
               <DialogDescription>
@@ -2218,7 +2091,11 @@ export default function AdminResearchCenterPage() {
                         }));
                       }}
                     >
-                      <SelectTrigger className={editErrors.centerChiefId ? "input-error" : ""}>
+                      <SelectTrigger
+                        className={
+                          editErrors.centerChiefId ? "input-error" : ""
+                        }
+                      >
                         <SelectValue placeholder="Select Center Chief" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2241,7 +2118,9 @@ export default function AdminResearchCenterPage() {
                   </label>
                   <div className="flex gap-2">
                     <Input
-                      className={editErrors.researchAgendas ? "input-error" : ""}
+                      className={
+                        editErrors.researchAgendas ? "input-error" : ""
+                      }
                       placeholder="Add research agendum"
                       value={editing.agendaInput}
                       onChange={(event) =>
@@ -2319,7 +2198,10 @@ export default function AdminResearchCenterPage() {
             }
           }}
         >
-          <DialogContent className="max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogContent
+            className="max-w-md"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Create Research Center</DialogTitle>
               <DialogDescription>
@@ -2375,7 +2257,9 @@ export default function AdminResearchCenterPage() {
                   setCreateErrors((prev) => ({ ...prev, centerChiefId: "" }));
                 }}
               >
-                <SelectTrigger className={createErrors.centerChiefId ? "input-error" : ""}>
+                <SelectTrigger
+                  className={createErrors.centerChiefId ? "input-error" : ""}
+                >
                   <SelectValue placeholder="Select Center Chief" />
                 </SelectTrigger>
                 <SelectContent>
