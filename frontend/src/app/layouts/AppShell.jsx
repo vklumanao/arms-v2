@@ -39,6 +39,7 @@ import {
   Database,
   FolderOpen,
   FolderTree,
+  LogIn,
   LogOut,
   Menu,
   Settings,
@@ -49,6 +50,7 @@ import {
 } from "lucide-react";
 
 const DESKTOP_SIDEBAR_BREAKPOINT = 1100;
+const SIDEBAR_COLLAPSE_STORAGE_KEY = "arms:desktopSidebarCollapsed";
 
 function getInitials(value) {
   const name = String(value || "").trim();
@@ -63,7 +65,12 @@ export default function AppShell() {
   const location = useLocation();
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
+    return stored === "true";
+  });
+  const [hoverExpanded, setHoverExpanded] = useState(false);
 
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" && typeof window.matchMedia === "function"
@@ -130,11 +137,13 @@ export default function AppShell() {
 
   const handleNavToggle = () => {
     if (isDesktop) {
-      setDesktopSidebarOpen((prev) => !prev);
+      setDesktopSidebarCollapsed((prev) => !prev);
       return;
     }
     setMobileNavOpen(true);
   };
+
+  const isDesktopSidebarCollapsed = desktopSidebarCollapsed && !hoverExpanded;
 
   const adminGovernanceLinks = useMemo(
     () => [
@@ -359,6 +368,20 @@ export default function AppShell() {
   }, [isDesktop]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SIDEBAR_COLLAPSE_STORAGE_KEY,
+      desktopSidebarCollapsed ? "true" : "false",
+    );
+  }, [desktopSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!desktopSidebarCollapsed) {
+      setHoverExpanded(false);
+    }
+  }, [desktopSidebarCollapsed]);
+
+  useEffect(() => {
     const handlePermissionsUpdated = () => {
       setPermissionVersion((prev) => prev + 1);
     };
@@ -374,42 +397,72 @@ export default function AppShell() {
     };
   }, []);
 
-  const NavItem = ({ item, onNavigate }) => {
+  const NavItem = ({ item, onNavigate, collapsed = false }) => {
     const Icon = item.icon;
     return (
       <NavLink
         to={item.to}
         onClick={onNavigate}
+        aria-label={collapsed ? item.label : undefined}
+        title={collapsed ? item.label : undefined}
         className={({ isActive }) =>
           cn(
-            "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition-colors",
+            "group relative flex items-center rounded-md text-sm font-medium text-slate-700 transition-colors",
             "hover:bg-muted hover:text-slate-900",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            collapsed
+              ? "mx-auto h-10 w-10 justify-center px-0"
+              : "gap-3 px-3 py-2",
             isActive && "bg-muted text-slate-900",
           )
         }
       >
         {({ isActive }) => (
           <>
-            <span
+            {!collapsed ? (
+              <span
+                className={cn(
+                  "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-transparent transition",
+                  "group-hover:bg-slate-200",
+                  isActive && "bg-[var(--brand)]",
+                )}
+                aria-hidden="true"
+              />
+            ) : null}
+            <Icon
               className={cn(
-                "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-transparent transition",
-                "group-hover:bg-slate-200",
-                isActive && "bg-[var(--brand)]",
+                "shrink-0 text-slate-500 group-hover:text-slate-700",
+                collapsed ? "h-5 w-5" : "h-4 w-4",
               )}
-              aria-hidden="true"
             />
-            <Icon className="h-4 w-4 shrink-0 text-slate-500 group-hover:text-slate-700" />
-            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {collapsed ? (
+              <span className="sr-only">{item.label}</span>
+            ) : (
+              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            )}
           </>
         )}
       </NavLink>
     );
   };
 
-  const SidebarAccount = ({ onNavigate }) => {
+  const SidebarAccount = ({ onNavigate, collapsed = false }) => {
     if (!profile) {
-      return (
+      return collapsed ? (
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="w-full"
+          title="Login"
+          aria-label="Login"
+          onClick={onNavigate}
+        >
+          <Link to="/login">
+            <LogIn className="h-4 w-4" />
+          </Link>
+        </Button>
+      ) : (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-slate-700">
             Sign in to access your workspace.
@@ -433,32 +486,53 @@ export default function AppShell() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            className={cn(
-              "group w-full justify-between gap-3 rounded-lg border border-border/60 bg-white/60 px-3 py-2.5 text-left shadow-sm shadow-black/5",
-              "hover:border-border hover:bg-white",
-              "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
-            )}
-          >
-            <span className="flex min-w-0 items-center gap-3">
+          {collapsed ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={displayName}
+              aria-label="Account menu"
+              className={cn(
+                "w-full rounded-lg border border-border/60 bg-white/60 shadow-sm shadow-black/5",
+                "hover:border-border hover:bg-white",
+                "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
+              )}
+            >
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-slate-900">
-                  {displayName}
-                </span>
-                <span className="block truncate text-xs text-slate-600">
-                  {roleLabel}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(
+                "group w-full justify-between gap-3 rounded-lg border border-border/60 bg-white/60 px-3 py-2.5 text-left shadow-sm shadow-black/5",
+                "hover:border-border hover:bg-white",
+                "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
+              )}
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-slate-900">
+                    {displayName}
+                  </span>
+                  <span className="block truncate text-xs text-slate-600">
+                    {roleLabel}
+                  </span>
                 </span>
               </span>
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-          </Button>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
@@ -511,7 +585,7 @@ export default function AppShell() {
     );
   };
 
-  const SidebarContent = ({ variant }) => {
+  const SidebarContent = ({ variant, collapsed = false }) => {
     const onNavigate =
       variant === "mobile" ? () => setMobileNavOpen(false) : undefined;
 
@@ -523,18 +597,38 @@ export default function AppShell() {
         : desktopSidebarScrollTopRef;
 
     return (
-      <div className="flex h-full min-h-0 flex-col gap-4">
-        <div className="rounded-[var(--radius-lg)] border border-border/70 bg-white/70 p-3 shadow-sm shadow-black/5">
-          <div className="flex items-center justify-between gap-2">
-            <Link to="/home" className="min-w-0 flex-1" onClick={onNavigate}>
-              <div className="min-w-0 leading-tight">
-                <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
-                  ARMS
+      <div className={cn("flex h-full min-h-0 flex-col", collapsed ? "gap-3" : "gap-4")}>
+        <div
+          className={cn(
+            "rounded-[var(--radius-lg)] border border-border/70 bg-white/70 shadow-sm shadow-black/5",
+            collapsed ? "p-2" : "p-3",
+          )}
+        >
+          <div
+            className={cn(
+              "flex items-center justify-between gap-2",
+              collapsed && "flex-col",
+            )}
+          >
+            <Link
+              to="/home"
+              className={cn(
+                collapsed
+                  ? "flex w-full items-center justify-center"
+                  : "min-w-0 flex-1",
+              )}
+              onClick={onNavigate}
+            >
+              {!collapsed ? (
+                <div className="min-w-0 leading-tight">
+                  <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
+                    ARMS
+                  </div>
+                  <div className="truncate text-xs font-medium text-slate-500">
+                    Affiliation and Research Management
+                  </div>
                 </div>
-                <div className="truncate text-xs font-medium text-slate-500">
-                  Affiliation and Research Management
-                </div>
-              </div>
+              ) : null}
             </Link>
 
             {variant === "desktop" ? (
@@ -542,16 +636,20 @@ export default function AppShell() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Collapse sidebar"
-                title="Collapse sidebar"
-                onClick={() => setDesktopSidebarOpen(false)}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                onClick={handleNavToggle}
                 className={cn(
                   "h-9 w-9 rounded-md",
                   "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 )}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                {collapsed ? (
+                  <ChevronsRight className="h-4 w-4" />
+                ) : (
+                  <ChevronsLeft className="h-4 w-4" />
+                )}
               </Button>
             ) : null}
           </div>
@@ -560,7 +658,10 @@ export default function AppShell() {
         <div className="min-h-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/60 shadow-sm shadow-black/5">
           <div
             ref={scrollRef}
-            className="h-full min-h-0 overflow-y-auto p-3 pr-2"
+            className={cn(
+              "h-full min-h-0 overflow-y-auto pr-2",
+              collapsed ? "p-2" : "p-3",
+            )}
             onScroll={(event) => {
               scrollTopRef.current = event.currentTarget.scrollTop;
             }}
@@ -572,23 +673,26 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className={cn("space-y-5", collapsed && "space-y-3")}>
                 {visibleGroups.map((group) => (
                   <div key={group.key}>
-                    <div className="flex items-center gap-2 px-1">
-                      <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        {group.title}
-                      </h3>
-                      <div
-                        className="h-px flex-1 bg-border/60"
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <div className="mt-2 space-y-1">
+                    {!collapsed ? (
+                      <div className="flex items-center gap-2 px-1">
+                        <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
+                          {group.title}
+                        </h3>
+                        <div
+                          className="h-px flex-1 bg-border/60"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    ) : null}
+                    <div className={cn("space-y-1", !collapsed && "mt-2")}>
                       {group.items.map((item) => (
                         <NavItem
                           key={item.to}
                           item={item}
+                          collapsed={collapsed}
                           onNavigate={onNavigate}
                         />
                       ))}
@@ -600,8 +704,8 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className="border-t border-border/60 pt-3">
-          <SidebarAccount onNavigate={onNavigate} />
+        <div className={cn("border-t border-border/60 pt-3", collapsed && "flex justify-center")}>
+          <SidebarAccount onNavigate={onNavigate} collapsed={collapsed} />
         </div>
       </div>
     );
@@ -664,13 +768,27 @@ export default function AppShell() {
     <div
       className={cn(
         "app-shell",
-        (!shouldShowSidebar || !isDesktop || !desktopSidebarOpen) &&
-          "app-shell-no-sidebar",
+        !shouldShowSidebar || !isDesktop
+          ? "app-shell-no-sidebar"
+          : isDesktopSidebarCollapsed
+            ? "app-shell-sidebar-collapsed"
+            : null,
       )}
     >
-      {shouldShowSidebar && isDesktop && desktopSidebarOpen ? (
-        <aside className="sidebar-shell">
-          <SidebarContent variant="desktop" />
+      {shouldShowSidebar && isDesktop ? (
+        <aside
+          className={cn("sidebar-shell", isDesktopSidebarCollapsed && "sidebar-shell-collapsed")}
+          onMouseEnter={() => {
+            if (desktopSidebarCollapsed) setHoverExpanded(true);
+          }}
+          onMouseLeave={() => {
+            if (desktopSidebarCollapsed) setHoverExpanded(false);
+          }}
+        >
+          <SidebarContent
+            variant="desktop"
+            collapsed={isDesktopSidebarCollapsed}
+          />
         </aside>
       ) : null}
 
@@ -687,18 +805,14 @@ export default function AppShell() {
               </Link>
             ) : null}
 
-            {shouldShowSidebar && (!isDesktop || !desktopSidebarOpen) ? (
+            {shouldShowSidebar && !isDesktop ? (
               <Button
                 type="button"
-                aria-label={isDesktop ? "Show navigation" : "Open navigation"}
+                aria-label="Open navigation"
                 variant="outline"
                 onClick={handleNavToggle}
               >
-                {isDesktop ? (
-                  <ChevronsRight className="h-4 w-4" />
-                ) : (
-                  <Menu size={16} />
-                )}
+                <Menu size={16} />
               </Button>
             ) : null}
 
