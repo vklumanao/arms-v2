@@ -174,12 +174,6 @@ export default function AppShell() {
         profile?.is_center_chief === true &&
         Boolean(profile?.managed_center_id));
 
-    const canAccessDepartments =
-      isAdmin ||
-      (isFaculty &&
-        profile?.is_chairperson === true &&
-        Boolean(profile?.managed_department_id));
-
     if (canAccessResearchCenters) {
       const managedCenterId = String(profile?.managed_center_id || "").trim();
       links.push({
@@ -196,16 +190,10 @@ export default function AppShell() {
       });
     }
 
-    if (canAccessDepartments) {
-      const managedDepartmentId = String(profile?.managed_department_id || "").trim();
+    if (isAdmin) {
       links.push({
-        to:
-          isAdmin
-            ? "/admin/departments"
-            : managedDepartmentId
-              ? `/admin/departments/${encodeURIComponent(managedDepartmentId)}`
-              : "/admin/departments",
-        label: isAdmin ? "Departments" : "My Department",
+        to: "/admin/departments",
+        label: "Departments",
         icon: FolderTree,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
@@ -223,9 +211,7 @@ export default function AppShell() {
     return links;
   }, [
     profile?.is_center_chief,
-    profile?.is_chairperson,
     profile?.managed_center_id,
-    profile?.managed_department_id,
     profile?.role,
   ]);
 
