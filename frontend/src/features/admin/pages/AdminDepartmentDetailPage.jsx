@@ -52,7 +52,10 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/features/admin/services";
-import { fetchAffiliateRegistry, updateAffiliateProfile } from "@/features/admin/services";
+import {
+  fetchAffiliateRegistry,
+  updateAffiliateProfile,
+} from "@/features/admin/services";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import {
   Building2,
@@ -195,8 +198,11 @@ export default function AdminDepartmentDetailPage() {
             : null,
         );
         setEditForm({
-          name: String(deptRow?.title || deptRow?.display_name || deptRow?.name || "").trim(),
-          code: String(deptRow?.code || "").trim() || String(departmentId || ""),
+          name: String(
+            deptRow?.title || deptRow?.display_name || deptRow?.name || "",
+          ).trim(),
+          code:
+            String(deptRow?.code || "").trim() || String(departmentId || ""),
           description: String(deptRow?.description || "").trim(),
           chairpersonId: chairpersonId || "",
         });
@@ -305,8 +311,12 @@ export default function AdminDepartmentDetailPage() {
       memberBreakdown: usagePayload?.memberBreakdown || prev.memberBreakdown,
     }));
     setLinks({
-      profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
-      projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
+      profiles: Array.isArray(linksPayload?.profiles)
+        ? linksPayload.profiles
+        : [],
+      projects: Array.isArray(linksPayload?.projects)
+        ? linksPayload.projects
+        : [],
     });
   };
 
@@ -393,7 +403,9 @@ export default function AdminDepartmentDetailPage() {
   };
 
   const linkCandidateRows = useMemo(() => {
-    const keyword = String(affiliateSearch || "").trim().toLowerCase();
+    const keyword = String(affiliateSearch || "")
+      .trim()
+      .toLowerCase();
     const linkedIds = new Set(
       (links.profiles || []).map((row) => String(row?.id || "").trim()),
     );
@@ -403,7 +415,8 @@ export default function AdminDepartmentDetailPage() {
         const id = String(row?.id || "").trim();
         if (!id) return false;
         if (linkedIds.has(id)) return false;
-        if (String(row?.ckan_group_id || "").trim() === departmentId) return false;
+        if (String(row?.ckan_group_id || "").trim() === departmentId)
+          return false;
         if (!keyword) return true;
         const haystack = [
           row?.full_name,
@@ -430,11 +443,17 @@ export default function AdminDepartmentDetailPage() {
         ckan_group_id: departmentId,
         department: String(department?.name || "").trim() || null,
       });
-      toast.success("Affiliate linked", "Affiliate was added to this department.");
+      toast.success(
+        "Affiliate linked",
+        "Affiliate was added to this department.",
+      );
       setLinkAffiliateOpen(false);
       await refreshLinksAndUsage();
     } catch (e) {
-      toast.error("Link failed", String(e?.message || "Unable to link affiliate."));
+      toast.error(
+        "Link failed",
+        String(e?.message || "Unable to link affiliate."),
+      );
     } finally {
       setLinkAffiliateSaving(false);
     }
@@ -506,11 +525,6 @@ export default function AdminDepartmentDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title={title}
-        description="Dedicated view for department information, affiliates, and linked projects."
-      />
-
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button asChild variant="outline">
           <Link to="/admin/departments">
@@ -891,7 +905,9 @@ export default function AdminDepartmentDetailPage() {
         >
           <DialogHeader>
             <DialogTitle>Edit Department</DialogTitle>
-            <DialogDescription>Update department information.</DialogDescription>
+            <DialogDescription>
+              Update department information.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 md:grid-cols-2">
