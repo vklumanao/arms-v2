@@ -205,31 +205,29 @@ export default function ResearchOutputsPage() {
     };
   }, [missingAffiliation, profile?.id]);
 
-  if (missingAffiliation) {
-    return (
-      <section className="page-stack-lg">
-        <PageHeader
-          title="Research Outputs"
-          description={
-            isAdmin
-              ? "All linked resource files from submitted project datasets."
-              : "Your submitted resource files from project expected outputs."
-          }
-        />
-        <Card>
-          <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) and Department in
-              My Profile first before accessing Research Outputs.
-            </p>
-            <Button asChild>
-              <Link to="/my-profile">Go to My Profile</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
+  const missingAffiliationContent = (
+    <section className="page-stack-lg">
+      <PageHeader
+        title="Research Outputs"
+        description={
+          isAdmin
+            ? "All linked resource files from submitted project datasets."
+            : "Your submitted resource files from project expected outputs."
+        }
+      />
+      <Card>
+        <CardContent className="space-y-3 p-5">
+          <p className="text-sm text-amber-700">
+            Please set your Organization (Research Center) and Department in My
+            Profile first before accessing Research Outputs.
+          </p>
+          <Button asChild>
+            <Link to="/my-profile">Go to My Profile</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </section>
+  );
 
   const sortedRows = useMemo(
     () =>
@@ -962,6 +960,10 @@ export default function ResearchOutputsPage() {
     setShowAddOutputModal(false);
     toast.success("Output added", "Research output was added successfully.");
   };
+
+  if (missingAffiliation) {
+    return missingAffiliationContent;
+  }
 
   return (
     <section className="page-stack-lg">
