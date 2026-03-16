@@ -253,25 +253,12 @@ export default function AppShell() {
     [],
   );
 
-  const workspaceProfileLinks = useMemo(
-    () => [
-      {
-        to: "/my-profile",
-        label: "My Profile",
-        icon: UserCircle,
-        permission: PERMISSIONS.AFFILIATE_PROFILE_VIEW,
-      },
-    ],
-    [],
-  );
-
   const workspaceLinks = useMemo(
     () => [
       ...workspaceCoreLinks,
       ...workspaceResearchLinks,
-      ...workspaceProfileLinks,
     ],
-    [workspaceCoreLinks, workspaceResearchLinks, workspaceProfileLinks],
+    [workspaceCoreLinks, workspaceResearchLinks],
   );
 
   const isAcademicRole = ["student", "faculty"].includes(profile?.role || "");
@@ -290,7 +277,6 @@ export default function AppShell() {
           title: "Research Modules",
           links: workspaceResearchLinks,
         },
-        { key: "profile", title: "Profile", links: workspaceProfileLinks },
       );
     } else {
       groups.push({
@@ -316,7 +302,6 @@ export default function AppShell() {
     profile,
     workspaceCoreLinks,
     workspaceLinks,
-    workspaceProfileLinks,
     workspaceResearchLinks,
   ]);
 
