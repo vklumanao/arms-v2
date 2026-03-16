@@ -146,6 +146,16 @@ export default function SubmitAffiliationPage() {
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
+  const fileToBase64 = async (file) => {
+    if (!file) return "";
+    const arrayBuffer = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  };
 
   const draftKey = useMemo(
     () => getSubmissionDraftKey(user?.id, editId),
@@ -219,56 +229,63 @@ export default function SubmitAffiliationPage() {
     if (Array.isArray(parsed?.expectedOutputRows)) {
       hasDraftExpectedOutputsRef.current = parsed.expectedOutputRows.length > 0;
       setExpectedOutputRows(
-        parsed.expectedOutputRows.map((row) => ({
-          ...createLocalOutputRow(),
-          ...row,
-          target_count: Math.max(1, Number(row.target_count) || 1),
-          specific_output: String(row?.specific_output || "").trim(),
-          file: null,
-          needs_file_reselect: Boolean(
-            !row.file_path && row.needs_file_reselect,
-          ),
-        })),
-      );
+          parsed.expectedOutputRows.map((row) => ({
+            ...createLocalOutputRow(),
+            ...row,
+            target_count: Math.max(1, Number(row.target_count) || 1),
+            specific_output: String(row?.specific_output || "").trim(),
+            file: null,
+            file_base64: String(row?.file_base64 || "").trim(),
+            needs_file_reselect: Boolean(
+              !row.file_path && row.needs_file_reselect,
+            ),
+          })),
+        );
     } else {
       hasDraftExpectedOutputsRef.current = false;
     }
     setDraftHydrated(true);
   }, [draftKey, editId]);
 
-  useEffect(() => {
-    if (editId) return;
-    if (!draftKey) return;
-    if (!draftHydrated) return;
-    if (skipNextAutosaveRef.current) {
-      skipNextAutosaveRef.current = false;
-      return;
-    }
-    localStorage.setItem(
-      draftKey,
-      JSON.stringify({
-        step,
-        form,
-        expectedOutputRows: expectedOutputRows.map((row) => ({
-          id: row.id,
-          client_id: row.client_id,
-          output_type: row.output_type,
-          target_count: Math.max(1, Number(row.target_count) || 1),
-          specific_output: row.specific_output || "",
-          notes: row.notes,
-          file_path: row.file_path,
-          file_name: row.file_name,
-          mime_type: row.mime_type,
-          file_size: row.file_size,
-          is_saved: row.is_saved,
-          needs_file_reselect: Boolean(
-            !row.file_path && !row.file_name && Boolean(row.file),
-          ),
-        })),
-        savedAt: new Date().toISOString(),
-      }),
-    );
-  }, [draftKey, step, form, draftHydrated, expectedOutputRows, editId]);
+    useEffect(() => {
+      if (editId) return;
+      if (!draftKey) return;
+      if (!draftHydrated) return;
+      if (skipNextAutosaveRef.current) {
+        skipNextAutosaveRef.current = false;
+        return;
+      }
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            step,
+            form,
+            expectedOutputRows: expectedOutputRows.map((row) => ({
+              id: row.id,
+              client_id: row.client_id,
+              output_type: row.output_type,
+              target_count: Math.max(1, Number(row.target_count) || 1),
+              specific_output: row.specific_output || "",
+              notes: row.notes,
+              file_path: row.file_path,
+              file_name: row.file_name,
+              mime_type: row.mime_type,
+              file_size: row.file_size,
+              // Never persist base64 in localStorage to avoid quota issues.
+              file_base64: "",
+              is_saved: row.is_saved,
+              needs_file_reselect: Boolean(
+                !row.file_path && !row.file_name && Boolean(row.file),
+              ),
+            })),
+            savedAt: new Date().toISOString(),
+          }),
+        );
+      } catch (error) {
+        console.warn("Draft autosave failed", error);
+      }
+    }, [draftKey, step, form, draftHydrated, expectedOutputRows, editId]);
 
   useEffect(() => {
     const orgId = String(profile?.ckan_org_id || "").trim();
@@ -578,15 +595,15 @@ export default function SubmitAffiliationPage() {
     localStorage.removeItem(draftKey);
     skipNextAutosaveRef.current = !editId;
     hasDraftExpectedOutputsRef.current = false;
-    if (!editId) {
-      setForm({
-        ...INITIAL_SUBMISSION_FORM,
-        research_center_id: profile?.ckan_org_id || "",
-        department_id: defaultDepartmentId,
-      });
-      setExpectedOutputRows([]);
-      setStep(0);
-    }
+      if (!editId) {
+        setForm({
+          ...INITIAL_SUBMISSION_FORM,
+          research_center_id: profile?.ckan_org_id || "",
+          department_id: defaultDepartmentId,
+        });
+        setExpectedOutputRows([]);
+        setStep(0);
+      }
     setMoaFile(null);
     setError("");
     setMessage("Draft cleared.");
@@ -709,6 +726,7 @@ export default function SubmitAffiliationPage() {
       ...row,
       target_count: Math.max(1, Number(row.target_count) || 1),
       file: null,
+      file_base64: String(row?.file_base64 || "").trim(),
     });
     setShowAddOutputModal(true);
   };
@@ -749,15 +767,31 @@ export default function SubmitAffiliationPage() {
           (row) => row.client_id === editingOutputClientId,
         )
       : null;
+    const existingFilePath = String(
+      existingRow?.file_path || newOutputDraft.file_path || "",
+    ).trim();
+    const existingFileName = String(
+      newOutputDraft.file_name || existingRow?.file_name || "",
+    ).trim();
+    const existingFileBase64 = String(
+      newOutputDraft.file_base64 || existingRow?.file_base64 || "",
+    ).trim();
 
     setError("");
     setMessage("");
+    if (!selectedFile && existingFileName && !existingFilePath && !existingFileBase64) {
+      setError("Please re-attach the output file before saving this entry.");
+      return;
+    }
     if (selectedFile) {
       if (selectedFile.size > MAX_OUTPUT_FILE_SIZE_BYTES) {
         setError("Each expected output file must be 25MB or smaller.");
         return;
       }
     }
+    const nextFileBase64 = selectedFile
+      ? await fileToBase64(selectedFile)
+      : existingFileBase64;
     const nextRow = {
       ...newOutputDraft,
       output_type: normalizedType,
@@ -766,16 +800,15 @@ export default function SubmitAffiliationPage() {
         normalizedType === "product_software" ? normalizedSpecificOutput : "",
       notes: String(newOutputDraft.notes || "").trim(),
       file: selectedFile || null,
-      file_path: selectedFile ? "" : newOutputDraft.file_path || "",
-      file_name: selectedFile
-        ? selectedFile.name || ""
-        : newOutputDraft.file_name || "",
+      file_path: selectedFile ? "" : existingFilePath,
+      file_name: selectedFile ? selectedFile.name || "" : existingFileName,
       mime_type: selectedFile
         ? selectedFile.type || ""
-        : newOutputDraft.mime_type || "",
+        : String(newOutputDraft.mime_type || existingRow?.mime_type || "").trim(),
       file_size: selectedFile
         ? selectedFile.size || null
-        : newOutputDraft.file_size || null,
+        : newOutputDraft.file_size || existingRow?.file_size || null,
+      file_base64: nextFileBase64,
       is_saved: true,
     };
 
@@ -827,6 +860,27 @@ export default function SubmitAffiliationPage() {
       uploadedMoaPath = moaReference;
     }
 
+    const expectedOutputsForSave = await Promise.all(
+      expectedOutputRows.map(async (row) => {
+        const file = row?.file || null;
+        if (file) {
+          const base64 = await fileToBase64(file);
+          return {
+            ...row,
+            file_base64: base64,
+            file_name: file?.name || row.file_name || "",
+            mime_type: file?.type || row.mime_type || "",
+            file_size: file?.size || row.file_size || null,
+            file_path: "",
+          };
+        }
+        if (row?.file_base64) {
+          return row;
+        }
+        return row;
+      }),
+    );
+
     const formForSave = {
       ...form,
       expected_outputs: summaryText,
@@ -845,7 +899,7 @@ export default function SubmitAffiliationPage() {
       userId: user.id,
       editId,
       form: formForSave,
-      expectedOutputs: expectedOutputRows,
+      expectedOutputs: expectedOutputsForSave,
     });
 
     if (mode === "revise") {
@@ -2385,33 +2439,37 @@ export default function SubmitAffiliationPage() {
                       <span>
                         {newOutputDraft.file ? "Replace" : "Choose File"}
                       </span>
-                      <input
-                        className="sr-only"
-                        type="file"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                        onChange={(e) => {
-                          const selectedFile = e.target.files?.[0] || null;
-                          if (
-                            selectedFile &&
-                            selectedFile.size > MAX_OUTPUT_FILE_SIZE_BYTES
-                          ) {
-                            setError(
-                              "Each expected output file must be 25MB or smaller.",
-                            );
-                            e.target.value = "";
-                            return;
-                          }
-                          setError("");
-                          setNewOutputDraft((prev) => ({
-                            ...prev,
-                            file: selectedFile,
-                            file_name: selectedFile?.name || "",
-                            mime_type: selectedFile?.type || "",
-                            file_size: selectedFile?.size || null,
-                            file_path: "",
-                            needs_file_reselect: false,
-                          }));
-                        }}
+                        <input
+                          className="sr-only"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          onChange={async (e) => {
+                            const selectedFile = e.target.files?.[0] || null;
+                            if (
+                              selectedFile &&
+                              selectedFile.size > MAX_OUTPUT_FILE_SIZE_BYTES
+                            ) {
+                              setError(
+                                "Each expected output file must be 25MB or smaller.",
+                              );
+                              e.target.value = "";
+                              return;
+                            }
+                            setError("");
+                            const base64 = selectedFile
+                              ? await fileToBase64(selectedFile)
+                              : "";
+                            setNewOutputDraft((prev) => ({
+                              ...prev,
+                              file: selectedFile,
+                              file_name: selectedFile?.name || "",
+                              mime_type: selectedFile?.type || "",
+                              file_size: selectedFile?.size || null,
+                              file_base64: base64,
+                              file_path: "",
+                              needs_file_reselect: false,
+                            }));
+                          }}
                       />
                     </label>
                   </Button>
