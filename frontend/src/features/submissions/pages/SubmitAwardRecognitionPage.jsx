@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   createAwardRecognitionRecord,
   fetchAwardRecognitionRecord,
+  fetchUserProjects,
   listAwardRecipientOptions,
   updateAwardRecognitionRecord,
   uploadAwardRecognitionMovFile,
@@ -53,6 +54,9 @@ export default function SubmitAwardRecognitionPage() {
   const [recipientOptions, setRecipientOptions] = useState([]);
   const [loadingRecipients, setLoadingRecipients] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [projectOptions, setProjectOptions] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [form, setForm] = useState({
     work_title: "",
     award_recognition: "",
@@ -115,6 +119,17 @@ export default function SubmitAwardRecognitionPage() {
       return haystack.includes(query);
     });
   }, [form.recipient_users, recipientOptions, recipientSearch]);
+  const normalizedProjectOptions = useMemo(() => {
+    const normalized = (Array.isArray(projectOptions) ? projectOptions : [])
+      .map((item) => ({
+        id: String(item?.id || item?.ckan_dataset_id || "").trim(),
+        title: String(item?.title || "").trim(),
+        year: String(item?.year || "").trim(),
+      }))
+      .filter((item) => item.id && item.title);
+    normalized.sort((a, b) => a.title.localeCompare(b.title));
+    return normalized;
+  }, [projectOptions]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -215,6 +230,51 @@ export default function SubmitAwardRecognitionPage() {
       cancelled = true;
     };
   }, [editId, form.research_center_id, profile?.email, profile?.full_name, user?.email, user?.full_name]);
+
+  useEffect(() => {
+    const userId = profile?.id || user?.id;
+    if (!userId) {
+      setProjectOptions([]);
+      return () => {};
+    }
+    let cancelled = false;
+    setLoadingProjects(true);
+    fetchUserProjects({ userId })
+      .then(({ data, error: loadError }) => {
+        if (cancelled) return;
+        if (loadError) {
+          setProjectOptions([]);
+          setLoadingProjects(false);
+          return;
+        }
+        setProjectOptions(Array.isArray(data) ? data : []);
+        setLoadingProjects(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProjectOptions([]);
+        setLoadingProjects(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, user?.id]);
+
+  useEffect(() => {
+    const currentTitle = String(form.work_title || "").trim();
+    if (!currentTitle) {
+      setSelectedProjectId("");
+      return;
+    }
+    const match = normalizedProjectOptions.find(
+      (item) => item.title.toLowerCase() === currentTitle.toLowerCase(),
+    );
+    if (match) {
+      setSelectedProjectId(match.id);
+      return;
+    }
+    setSelectedProjectId("__custom__");
+  }, [form.work_title, normalizedProjectOptions]);
 
   useEffect(() => {
     if (!editId) return;
@@ -441,11 +501,50 @@ export default function SubmitAwardRecognitionPage() {
             <span className="text-sm font-semibold text-slate-700">
               Title of Research / Work
             </span>
-            <Input
-              value={form.work_title}
-              onChange={(event) => updateField("work_title", event.target.value)}
-              placeholder="Enter the title of the recognized work"
-            />
+            <Select
+              value={selectedProjectId || "__none__"}
+              onValueChange={(value) => {
+                if (value === "__none__") {
+                  setSelectedProjectId("");
+                  updateField("work_title", "");
+                  return;
+                }
+                if (value === "__custom__") return;
+                const selected = normalizedProjectOptions.find(
+                  (item) => item.id === value,
+                );
+                setSelectedProjectId(value);
+                updateField("work_title", selected?.title || "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    loadingProjects ? "Loading projects..." : "Select project"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select project</SelectItem>
+                {selectedProjectId === "__custom__" && form.work_title ? (
+                  <SelectItem value="__custom__">
+                    Current entry: {form.work_title}
+                  </SelectItem>
+                ) : null}
+                {normalizedProjectOptions.length ? (
+                  normalizedProjectOptions.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.title}
+                      {project.year ? ` (${project.year})` : ""}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__empty__" disabled>
+                    No project entries found
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </label>
 
           <label className="space-y-2">
