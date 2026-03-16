@@ -1119,7 +1119,7 @@ export default function AdminDepartmentDetailPage() {
       <ConfirmActionModal
         open={Boolean(unlinkTarget)}
         title="Unlink Affiliate"
-        message={`Remove \"${unlinkTarget?.full_name || unlinkTarget?.email || unlinkTarget?.id || "this affiliate"}\" from this department?`}
+        message={`Remove "${unlinkTarget?.full_name || unlinkTarget?.email || unlinkTarget?.id || "this affiliate"}" from this department?`}
         confirmLabel="Unlink"
         loading={linkAffiliateSaving}
         onCancel={() => setUnlinkTarget(null)}
