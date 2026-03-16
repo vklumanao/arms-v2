@@ -56,6 +56,7 @@ import PaginationControls from "@/shared/components/navigation/PaginationControl
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   Download,
+  ExternalLink,
   Eye,
   EyeOff,
   FileText,
@@ -82,6 +83,8 @@ export default function ResearchOutputsPage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { centers } = useReferenceData();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
   const missingAffiliation =
     !isAdmin &&
@@ -769,7 +772,8 @@ export default function ResearchOutputsPage() {
     const payload = {
       file_name: String(editForm.file_name || "").trim(),
       notes: String(editForm.notes || "").trim(),
-      file_path: String(editForm.file_path || "").trim(),
+      // File uploads should create real CKAN resources via Add Output.
+      // Prevent editing file_path here to avoid non-file placeholder URLs.
       mime_type: String(editForm.mime_type || "").trim(),
     };
 
@@ -1198,6 +1202,45 @@ export default function ResearchOutputsPage() {
                             <FileText className="h-4 w-4" />
                           </Button>
                         ) : null}
+                        {!row.isPlaceholder &&
+                        !row.isPendingOutput &&
+                        row.resourceId &&
+                        /\/resource\/.+\/download\//i.test(
+                          String(row.resourceUrl || ""),
+                        ) ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={`Open ${row?.title || "resource"}`}
+                              title="Open"
+                              onClick={() => {
+                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                  row.resourceId,
+                                )}/download`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={`Download ${row?.title || "resource"}`}
+                              title="Download"
+                              onClick={() => {
+                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                  row.resourceId,
+                                )}/download?download=1`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : null}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1473,18 +1516,12 @@ export default function ResearchOutputsPage() {
 
             <label className="block space-y-1">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                File URL / Path
+                File URL / Path (read-only)
               </span>
-              <Input
-                type="text"
-                value={editForm.file_path}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    file_path: event.target.value,
-                  }))
-                }
-              />
+              <Input type="text" value={editForm.file_path} readOnly />
+              <p className="text-xs text-slate-500">
+                To attach a new file, use Add Output.
+              </p>
             </label>
 
             <div className="grid gap-3 md:grid-cols-2">
