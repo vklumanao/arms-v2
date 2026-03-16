@@ -57,9 +57,6 @@ function sanitizeProfile(user) {
     is_center_chief: Boolean(user.is_center_chief),
     managed_center_id: user.managed_center_id || null,
     managed_center_name: user.managed_center_name || null,
-    is_chairperson: Boolean(user.is_chairperson),
-    managed_department_id: user.managed_department_id || null,
-    managed_department_name: user.managed_department_name || null,
   };
 }
 
