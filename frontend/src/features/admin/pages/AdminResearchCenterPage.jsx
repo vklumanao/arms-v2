@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Building2,
   Download,
@@ -155,7 +155,7 @@ export default function AdminResearchCenterPage() {
     [isScopedCenterChief, managedCenterId, rows],
   );
 
-  const loadResearchCenterRows = async () => {
+  const loadResearchCenterRows = useCallback(async () => {
     setDataLoading(true);
     setAgendaMatrixLoading(true);
     setDataError("");
@@ -365,11 +365,11 @@ export default function AdminResearchCenterPage() {
       setDataLoading(false);
       setAgendaMatrixLoading(false);
     }
-  };
+  }, [isScopedCenterChief, managedCenterId]);
 
   useEffect(() => {
     loadResearchCenterRows();
-  }, [isScopedCenterChief, managedCenterId]);
+  }, [loadResearchCenterRows]);
 
   useEffect(() => {
     if (!dataError) return;
@@ -1567,7 +1567,7 @@ export default function AdminResearchCenterPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          #{(currentPage - 1) * PAGE_SIZE + index + 1} Â·{" "}
+                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
                           {row.type}
                         </p>
                         <h3 className="mt-1 truncate text-base font-bold text-slate-900">
@@ -1613,8 +1613,8 @@ export default function AdminResearchCenterPage() {
                           {row.profileCount}
                         </p>
                         <p className="mt-1 text-xs text-slate-600">
-                          Admin {row.memberBreakdown?.adminCount || 0} Â· Editor{" "}
-                          {row.memberBreakdown?.editorCount || 0} Â· Member{" "}
+                          Admin {row.memberBreakdown?.adminCount || 0} · Editor{" "}
+                          {row.memberBreakdown?.editorCount || 0} · Member{" "}
                           {row.memberBreakdown?.memberCount || 0}
                         </p>
                       </button>
@@ -2391,3 +2391,6 @@ export default function AdminResearchCenterPage() {
     </section>
   );
 }
+
+
+
