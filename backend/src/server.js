@@ -233,50 +233,6 @@ async function resolveCenterChiefContext(user) {
   }
 }
 
-async function resolveChairpersonContext(user) {
-  const base = {
-    ...(user || {}),
-    is_chairperson: false,
-    managed_department_id: null,
-    managed_department_name: null,
-  };
-
-  if (!user || String(user?.role || "").trim().toLowerCase() !== "faculty") {
-    return base;
-  }
-
-  const candidateIds = new Set(
-    [user?.ckan_user_id, user?.id]
-      .map((value) => asTrimmedString(value))
-      .filter(Boolean),
-  );
-  if (candidateIds.size === 0) return base;
-
-  try {
-    const groups = await listGroups();
-    const managedDepartment = (groups || []).find((group) => {
-      const chairpersonId = asTrimmedString(
-        getExtraByKey(group?.extras, "chairperson_id"),
-      );
-      return chairpersonId && candidateIds.has(chairpersonId);
-    });
-    if (!managedDepartment) return base;
-
-    return {
-      ...base,
-      is_chairperson: true,
-      managed_department_id: managedDepartment?.name || managedDepartment?.id || null,
-      managed_department_name:
-        managedDepartment?.title ||
-        managedDepartment?.display_name ||
-        managedDepartment?.name ||
-        null,
-    };
-  } catch {
-    return base;
-  }
-}
-
 /**
  * Authenticates requests using either bearer tokens or the session cookie.
  *
@@ -303,8 +259,7 @@ async function authMiddleware(req, res, next) {
     const payload = jwt.verify(token, config.jwtSecret);
     const user = await findUserById(payload.sub);
     if (!user || user.is_active === false) return unauthorized(res);
-    const withCenter = await resolveCenterChiefContext(user);
-    req.user = await resolveChairpersonContext(withCenter);
+    req.user = await resolveCenterChiefContext(user);
     req.auth = payload;
     return next();
   } catch {
@@ -639,7 +594,6 @@ registerAuthRoutes(app, {
   hashPassword,
   toAuthPayload,
   resolveCenterChiefContext,
-  resolveChairpersonContext,
   signSession,
   setSessionCookie,
   clearSessionCookie,
