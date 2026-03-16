@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import http from "node:http";
+import https from "node:https";
+import path from "node:path";
+import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
 
 /**
  * Registers submission routes for research outputs and CKAN publishing.
@@ -10,14 +14,14 @@ import crypto from "node:crypto";
  * Dependency pattern:
  * - Route logic is composed with injected helpers and CKAN client calls.
  */
-export function registerSubmissionsRoutes(app, deps) {
-  const {
-    authMiddleware,
-    badRequest,
-    parseOrThrow,
-    projectSubmissionPublishSchema,
-    projectSubmissionDraftSchema,
-    config,
+  export function registerSubmissionsRoutes(app, deps) {
+    const {
+      authMiddleware,
+      badRequest,
+      parseOrThrow,
+      projectSubmissionPublishSchema,
+      projectSubmissionDraftSchema,
+      config,
     asTrimmedString,
     asNumber,
     listDatasets,
@@ -31,7 +35,149 @@ export function registerSubmissionsRoutes(app, deps) {
     updateDatasetResource,
     deleteDatasetResource,
     getExtraByKey,
-  } = deps;
+    } = deps;
+
+    function resolveCkanResourceUrl(resourceUrl) {
+      const raw = asTrimmedString(resourceUrl);
+      if (!raw) return "";
+      if (raw.startsWith("http://") || raw.startsWith("https://")) {
+        try {
+          const parsed = new URL(raw);
+          const ckanBase = new URL(`${config.ckanBaseUrl}/`);
+          const isLocalHost =
+            parsed.hostname === "localhost" ||
+            parsed.hostname === "127.0.0.1" ||
+            parsed.hostname === "ckan";
+          if (isLocalHost) {
+            return new URL(
+              `${parsed.pathname}${parsed.search}`,
+              `${ckanBase.origin}/`,
+            ).toString();
+          }
+        } catch {
+          return raw;
+        }
+        return raw;
+      }
+      if (raw.startsWith("/")) {
+        return new URL(raw, `${config.ckanBaseUrl}/`).toString();
+      }
+      return new URL(raw, `${config.ckanBaseUrl}/`).toString();
+    }
+
+    function isPlaceholderResourceUrl(url) {
+      const raw = asTrimmedString(url);
+      if (!raw) return false;
+      if (raw.includes("/resource/")) return false;
+      return raw.includes("/dataset");
+    }
+
+    function buildDownloadFilename(resource = {}, fallbackUrl = "") {
+      const name = asTrimmedString(resource?.name);
+      if (name) return name.replace(/["\\]/g, "_");
+      try {
+        const url = new URL(fallbackUrl);
+        const basename = path.basename(url.pathname || "");
+        return basename || "resource.bin";
+      } catch {
+        return "resource.bin";
+      }
+    }
+
+    function proxyDownload({ sourceUrl, res, inline, filename, mimeType }) {
+      const maxRedirects = 5;
+      const requestUrl = (url, redirectsLeft) =>
+        new Promise((resolve, reject) => {
+          const parsed = new URL(url);
+          const transport = parsed.protocol === "https:" ? https : http;
+          const options = {
+            protocol: parsed.protocol,
+            hostname: parsed.hostname,
+            port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+            path: `${parsed.pathname}${parsed.search}`,
+            method: "GET",
+            headers: {
+              Accept: "*/*",
+              Authorization: config.ckanApiKey,
+              "X-CKAN-API-Key": config.ckanApiKey,
+            },
+          };
+
+          if (parsed.protocol === "https:") {
+            options.rejectUnauthorized = config.ckanVerifyTls;
+          }
+
+          const req = transport.request(options, (upstream) => {
+            const status = upstream.statusCode || 0;
+            const location = upstream.headers?.location;
+            if (
+              status >= 300 &&
+              status < 400 &&
+              location &&
+              redirectsLeft > 0
+            ) {
+              upstream.resume();
+              const nextUrl = new URL(location, url).toString();
+              resolve(requestUrl(nextUrl, redirectsLeft - 1));
+              return;
+            }
+
+            if (status >= 400) {
+              const chunks = [];
+              upstream.on("data", (chunk) => chunks.push(chunk));
+              upstream.on("end", () => {
+                const message =
+                  Buffer.concat(chunks).toString("utf8") ||
+                  `Upstream download failed with status ${status}`;
+                if (!res.headersSent) {
+                  res
+                    .status(status)
+                    .json({ error: message.slice(0, 300) });
+                }
+                resolve();
+              });
+              upstream.on("error", reject);
+              return;
+            }
+
+            if (!res.headersSent) {
+              const dispositionType = inline ? "inline" : "attachment";
+              const safeName = filename || "resource.bin";
+              res.setHeader(
+                "Content-Disposition",
+                `${dispositionType}; filename="${safeName}"`,
+              );
+              if (mimeType) {
+                res.setHeader("Content-Type", mimeType);
+              } else if (upstream.headers?.["content-type"]) {
+                res.setHeader("Content-Type", upstream.headers["content-type"]);
+              }
+              if (upstream.headers?.["content-length"]) {
+                res.setHeader(
+                  "Content-Length",
+                  upstream.headers["content-length"],
+                );
+              }
+              if (upstream.headers?.etag) {
+                res.setHeader("ETag", upstream.headers.etag);
+              }
+              if (upstream.headers?.["last-modified"]) {
+                res.setHeader("Last-Modified", upstream.headers["last-modified"]);
+              }
+            }
+
+            res.status(status || 200);
+            upstream.pipe(res);
+            upstream.on("end", resolve);
+            upstream.on("error", reject);
+          });
+
+          req.on("error", reject);
+          req.end();
+        });
+
+      return requestUrl(sourceUrl, maxRedirects);
+    }
 
   const ALLOWED_OUTPUT_TYPES = new Set([
     "publication",
@@ -195,15 +341,44 @@ export function registerSubmissionsRoutes(app, deps) {
    * Edge case:
    * - Generates timestamp-based fallback when slug would be empty.
    */
-  function toCkanName(value) {
-    const base = asTrimmedString(value)
-      .toLowerCase()
-      .replace(/[^a-z0-9_\-]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 80);
-    if (base) return base;
-    return `dataset-${Date.now()}`;
-  }
+    function toCkanName(value) {
+      const base = asTrimmedString(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9_\-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (base) return base;
+      return `dataset-${Date.now()}`;
+    }
+
+    function buildUniqueCkanName(baseName) {
+      const safeBase = asTrimmedString(baseName) || "dataset";
+      const suffix = crypto.randomUUID().slice(0, 8);
+      const maxBaseLength = Math.max(1, 80 - suffix.length - 1);
+      const trimmedBase = safeBase.slice(0, maxBaseLength);
+      return `${trimmedBase}-${suffix}`;
+    }
+
+    async function createDatasetWithUniqueName(payload) {
+      const baseName = asTrimmedString(payload?.name) || toCkanName(payload?.title);
+      let attemptName = baseName;
+      let lastError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          return await createDataset({ ...payload, name: attemptName });
+        } catch (error) {
+          lastError = error;
+          const message = String(error?.message || "").toLowerCase();
+          const urlConflict =
+            message.includes("already in use") ||
+            message.includes("validation error") ||
+            message.includes("url");
+          if (!urlConflict) throw error;
+          attemptName = buildUniqueCkanName(baseName);
+        }
+      }
+      throw lastError || new Error("Unable to create dataset.");
+    }
 
   /**
    * Builds a display name for each expected output resource.
@@ -868,11 +1043,11 @@ export function registerSubmissionsRoutes(app, deps) {
     },
   );
 
-  app.get(
-    "/api/submissions/:projectId/expected-outputs",
-    authMiddleware,
-    async (req, res) => {
-      try {
+    app.get(
+      "/api/submissions/:projectId/expected-outputs",
+      authMiddleware,
+      async (req, res) => {
+        try {
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) return badRequest(res, "Project id is required.");
 
@@ -899,14 +1074,114 @@ export function registerSubmissionsRoutes(app, deps) {
           }
         }
 
-        return res.json({ data: mapResourcesToExpectedOutputs(dataset) });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(error?.message || "Failed to load expected outputs."),
-        });
-      }
-    },
-  );
+          return res.json({ data: mapResourcesToExpectedOutputs(dataset) });
+        } catch (error) {
+          return res.status(500).json({
+            error: String(error?.message || "Failed to load expected outputs."),
+          });
+        }
+      },
+    );
+
+    app.get(
+      "/api/submissions/:projectId/resources",
+      authMiddleware,
+      async (req, res) => {
+        try {
+          const projectId = asTrimmedString(req.params?.projectId);
+          if (!projectId) return badRequest(res, "Project id is required.");
+
+          const dataset = await getDataset(projectId);
+          if (!dataset) {
+            return res.status(404).json({ error: "Project dataset not found." });
+          }
+
+          const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+            return res.status(403).json({
+              error: "You are not allowed to view this project resources.",
+            });
+          }
+
+          return res.json({
+            data: {
+              dataset,
+              resources: Array.isArray(dataset?.resources)
+                ? dataset.resources
+                : [],
+            },
+            syncEnabled: true,
+          });
+        } catch (error) {
+          return res.status(500).json({
+            error: String(error?.message || "Failed to load project resources."),
+          });
+        }
+      },
+    );
+
+    app.get(
+      "/api/submissions/resources/:resourceId/download",
+      authMiddleware,
+      async (req, res) => {
+        try {
+          const resourceId = asTrimmedString(req.params?.resourceId);
+          if (!resourceId) return badRequest(res, "Resource id is required.");
+
+          const located = await findDatasetByResourceId(resourceId, req.user);
+          if (!located?.dataset || !located?.resource) {
+            return res.status(404).json({ error: "Resource not found." });
+          }
+
+          const ckanResource = await ckanAction("resource_show", {
+            id: resourceId,
+          });
+          const datasetId =
+            asTrimmedString(ckanResource?.package_id) ||
+            asTrimmedString(located.dataset?.id) ||
+            asTrimmedString(located.dataset?.name) ||
+            "";
+          const resourceUrlRaw = resolveCkanResourceUrl(ckanResource?.url);
+          const resourceName = buildDownloadFilename(
+            ckanResource,
+            resourceUrlRaw,
+          );
+          const resourceMimeType = asTrimmedString(ckanResource?.mimetype);
+          const hasDownloadUrl = /\/resource\/.+\/download\//i.test(
+            String(resourceUrlRaw || ""),
+          );
+          const resourceUrl =
+            hasDownloadUrl && resourceUrlRaw
+              ? resourceUrlRaw
+              : datasetId && resourceId
+                ? `${config.ckanBaseUrl}/dataset/${datasetId}/resource/${resourceId}/download/${encodeURIComponent(
+                    resourceName,
+                  )}`
+                : resourceUrlRaw;
+          if (!resourceUrl) {
+            return res.status(404).json({ error: "Resource URL is missing." });
+          }
+
+          const isDownload =
+            String(req.query?.download || "").toLowerCase() === "1" ||
+            String(req.query?.download || "").toLowerCase() === "true";
+          const filename = resourceName;
+
+          await proxyDownload({
+            sourceUrl: resourceUrl,
+            res,
+            inline: !isDownload,
+            filename,
+            mimeType: resourceMimeType || null,
+          });
+        } catch (error) {
+          if (res.headersSent) return;
+          return res.status(500).json({
+            error: String(error?.message || "Failed to download resource."),
+          });
+        }
+      },
+    );
 
   app.post("/api/submissions/draft", authMiddleware, async (req, res) => {
     let parsedRequest;
@@ -1053,9 +1328,9 @@ export function registerSubmissionsRoutes(app, deps) {
         extras,
       };
 
-      const dataset = datasetId
-        ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
-        : await createDataset(baseDatasetPayload);
+        const dataset = datasetId
+          ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+          : await createDatasetWithUniqueName(baseDatasetPayload);
 
       return res.status(datasetId ? 200 : 201).json({
         data: {
@@ -1195,9 +1470,9 @@ export function registerSubmissionsRoutes(app, deps) {
       };
 
       // Update existing dataset when dataset id is supplied, otherwise create new one.
-      dataset = datasetId
-        ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
-        : await createDataset(baseDatasetPayload);
+        dataset = datasetId
+          ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+          : await createDatasetWithUniqueName(baseDatasetPayload);
 
       if (datasetId) {
         const current = await getDataset(
@@ -1213,38 +1488,73 @@ export function registerSubmissionsRoutes(app, deps) {
         }
       }
 
-      const createdResources = [];
-      for (let i = 0; i < expectedOutputs.length; i += 1) {
-        const row = expectedOutputs[i] || {};
-        const name = formatOutputResourceName(row, i);
-        const description = asTrimmedString(row.notes);
-        const fileName =
-          asTrimmedString(row.file_name) || asTrimmedString(row.fileName) || "";
-        const mimeType =
-          asTrimmedString(row.mime_type) || asTrimmedString(row.mimeType) || "";
-        const fileSize = Number(row.file_size || row.fileSize || 0);
-        const filePath =
-          asTrimmedString(row.file_path) || asTrimmedString(row.filePath) || "";
-        const url =
-          /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
-            ? filePath
-            : fallbackResourceUrl;
-        // Infer format from filename extension when explicit format is missing.
-        const format = fileName.includes(".")
-          ? fileName.split(".").pop()?.toUpperCase() || ""
-          : "";
+        const createdResources = [];
+        for (let i = 0; i < expectedOutputs.length; i += 1) {
+          const row = expectedOutputs[i] || {};
+          const name = formatOutputResourceName(row, i);
+          const description = asTrimmedString(row.notes);
+          const fileName =
+            asTrimmedString(row.file_name) || asTrimmedString(row.fileName) || "";
+          const mimeType =
+            asTrimmedString(row.mime_type) || asTrimmedString(row.mimeType) || "";
+          const fileSize = Number(row.file_size || row.fileSize || 0);
+          const filePath =
+            asTrimmedString(row.file_path) || asTrimmedString(row.filePath) || "";
+          const fileBase64 =
+            asTrimmedString(row.file_base64) ||
+            asTrimmedString(row.fileBase64) ||
+            "";
+          const hasRemoteFile =
+            /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:");
+          const url =
+            hasRemoteFile
+              ? filePath
+              : `${fallbackResourceUrl}?expected_output=${i + 1}&dataset=${
+                  dataset.id || dataset.name || "unknown"
+                }`;
+          // Infer format from filename extension when explicit format is missing.
+          const format = fileName.includes(".")
+            ? fileName.split(".").pop()?.toUpperCase() || ""
+            : "";
 
-        const resource = await createDatasetResource({
-          package_id: dataset.id || dataset.name,
-          name,
-          description: description || null,
-          url,
-          format: format || null,
-          mimetype: mimeType || null,
-          size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
-        });
-        createdResources.push(resource);
-      }
+          let resource;
+          if (fileBase64) {
+            const { buffer, mimeType: mimeTypeFromData } =
+              decodeBase64File(fileBase64);
+              if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
+                const resolvedMimeType =
+                  mimeType || mimeTypeFromData || "application/octet-stream";
+                const uploadName = fileName || name;
+                resource = await createDatasetResourceUpload({
+                  fields: {
+                    package_id: dataset.id || dataset.name,
+                    name: uploadName,
+                    description: description || null,
+                    format: format || null,
+                    mimetype: resolvedMimeType,
+                    size: String(buffer.length),
+                  },
+                  fileBuffer: buffer,
+                  fileName: uploadName || "research-output.bin",
+                  mimeType: resolvedMimeType,
+                });
+              }
+          }
+
+          if (!resource) {
+            resource = await createDatasetResource({
+              package_id: dataset.id || dataset.name,
+              name,
+              description: description || null,
+              url,
+              format: format || null,
+              mimetype: mimeType || null,
+              size:
+                Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+            });
+          }
+          createdResources.push(resource);
+        }
 
       return res.status(createdNow ? 201 : 200).json({
         data: {
@@ -1594,11 +1904,11 @@ export function registerSubmissionsRoutes(app, deps) {
           });
         }
 
-        const outputType = normalizeOutputType(req.body?.output_type);
-        const targetCount = Math.max(
-          1,
-          Number(req.body?.target_count || 1) || 1,
-        );
+          const outputType = normalizeOutputType(req.body?.output_type);
+          const targetCount = Math.max(
+            1,
+            Number(req.body?.target_count || 1) || 1,
+          );
         const notes = asTrimmedString(req.body?.notes);
         const filePath = asTrimmedString(req.body?.file_path);
         const fileName = asTrimmedString(req.body?.file_name);
@@ -1612,21 +1922,42 @@ export function registerSubmissionsRoutes(app, deps) {
           asTrimmedString(
             getExtraByKey(dataset?.extras, "supporting_mov_link"),
           ) || `${config.ckanBaseUrl}/dataset`;
-        const url =
-          /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
-            ? filePath
-            : fallbackResourceUrl;
-        const resource = await createDatasetResource({
-          package_id: dataset?.id || projectId,
-          name: formatOutputResourceName(
+          const url =
+            /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
+              ? filePath
+              : `${fallbackResourceUrl}?output_type=${encodeURIComponent(
+                  outputType || "resource",
+                )}&ts=${Date.now()}`;
+          const targetName = formatOutputResourceName(
             { output_type: outputType, target_count: targetCount },
             0,
-          ),
-          description: notes || null,
-          url,
-          format: outputType,
-          mimetype: mimeType || null,
-          size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+          );
+          const existingResources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+          const placeholderResource = existingResources.find((resource) => {
+            if (!resource) return false;
+            const name = asTrimmedString(resource?.name);
+            const normalized = normalizeOutputType(
+              asTrimmedString(resource?.format) || name,
+            );
+            if (name && name === targetName) return isPlaceholderResourceUrl(resource?.url);
+            return (
+              normalized === outputType && isPlaceholderResourceUrl(resource?.url)
+            );
+          });
+          if (placeholderResource?.id) {
+            await deleteDatasetResource(placeholderResource.id);
+          }
+
+          const resource = await createDatasetResource({
+            package_id: dataset?.id || projectId,
+            name: targetName,
+            description: notes || null,
+            url,
+            format: outputType,
+            mimetype: mimeType || null,
+            size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
         });
 
         return res.status(201).json({
@@ -1655,10 +1986,10 @@ export function registerSubmissionsRoutes(app, deps) {
   );
 
   app.post(
-    "/api/submissions/:projectId/resources/upload",
-    authMiddleware,
-    async (req, res) => {
-      try {
+      "/api/submissions/:projectId/resources/upload",
+      authMiddleware,
+      async (req, res) => {
+        try {
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) return badRequest(res, "Project id is required.");
 
@@ -1674,11 +2005,11 @@ export function registerSubmissionsRoutes(app, deps) {
           });
         }
 
-        const outputType = normalizeOutputType(req.body?.output_type);
-        const targetCount = Math.max(
-          1,
-          Number(req.body?.target_count || 1) || 1,
-        );
+          const outputType = normalizeOutputType(req.body?.output_type);
+          const targetCount = Math.max(
+            1,
+            Number(req.body?.target_count || 1) || 1,
+          );
         const notes = asTrimmedString(req.body?.notes);
         const fileName =
           asTrimmedString(req.body?.file_name) || "research-output.bin";
@@ -1699,22 +2030,42 @@ export function registerSubmissionsRoutes(app, deps) {
 
         const mimeType =
           mimeTypeFromBody || mimeTypeFromData || "application/octet-stream";
-        const resource = await createDatasetResourceUpload({
-          fields: {
-            package_id: dataset?.id || projectId,
-            name: formatOutputResourceName(
-              { output_type: outputType, target_count: targetCount },
-              0,
-            ),
-            description: notes || null,
-            format: outputType,
-            mimetype: mimeType,
-            size: String(buffer.length),
-          },
-          fileBuffer: buffer,
-          fileName,
-          mimeType,
-        });
+          const targetName = formatOutputResourceName(
+            { output_type: outputType, target_count: targetCount },
+            0,
+          );
+          const existingResources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+          const placeholderResource = existingResources.find((resource) => {
+            if (!resource) return false;
+            const name = asTrimmedString(resource?.name);
+            const normalized = normalizeOutputType(
+              asTrimmedString(resource?.format) || name,
+            );
+            if (name && name === targetName) return isPlaceholderResourceUrl(resource?.url);
+            return (
+              normalized === outputType && isPlaceholderResourceUrl(resource?.url)
+            );
+          });
+          if (placeholderResource?.id) {
+            await deleteDatasetResource(placeholderResource.id);
+          }
+
+          const uploadName = fileName || targetName;
+          const resource = await createDatasetResourceUpload({
+            fields: {
+              package_id: dataset?.id || projectId,
+              name: uploadName,
+              description: notes || null,
+              format: outputType,
+              mimetype: mimeType,
+              size: String(buffer.length),
+            },
+            fileBuffer: buffer,
+            fileName: uploadName || "research-output.bin",
+            mimeType,
+          });
 
         return res.status(201).json({
           data: {
