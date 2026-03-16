@@ -178,6 +178,16 @@ h6,
   padding: var(--space-4) var(--space-2);
 }
 
+.sidebar-shell.sidebar-shell-hover-expanded {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 296px;
+  height: 100vh;
+  z-index: 40;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 18px 30px rgba(15, 23, 42, 0.15);
+}
+
 .sidebar-brand-panel {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
