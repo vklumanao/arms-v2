@@ -143,7 +143,7 @@ export default function AppShell() {
     setMobileNavOpen(true);
   };
 
-  const isDesktopSidebarCollapsed = desktopSidebarCollapsed && !hoverExpanded;
+  const isDesktopSidebarCollapsed = desktopSidebarCollapsed;
 
   const adminGovernanceLinks = useMemo(
     () => [
@@ -777,9 +777,17 @@ export default function AppShell() {
     >
       {shouldShowSidebar && isDesktop ? (
         <aside
-          className={cn("sidebar-shell", isDesktopSidebarCollapsed && "sidebar-shell-collapsed")}
-          onMouseEnter={() => {
-            if (desktopSidebarCollapsed) setHoverExpanded(true);
+          className={cn(
+            "sidebar-shell",
+            isDesktopSidebarCollapsed && "sidebar-shell-collapsed",
+            hoverExpanded && "sidebar-shell-hover-expanded",
+          )}
+          onMouseEnter={(event) => {
+            if (desktopSidebarCollapsed) {
+              // Avoid expanding when hovering only over the collapse/expand toggle button
+              if (collapseToggleRef.current?.contains(event.target)) return;
+              setHoverExpanded(true);
+            }
           }}
           onMouseLeave={() => {
             if (desktopSidebarCollapsed) setHoverExpanded(false);
@@ -787,7 +795,7 @@ export default function AppShell() {
         >
           <SidebarContent
             variant="desktop"
-            collapsed={isDesktopSidebarCollapsed}
+            collapsed={desktopSidebarCollapsed}
           />
         </aside>
       ) : null}
