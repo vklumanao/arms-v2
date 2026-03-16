@@ -120,13 +120,7 @@ export default function AdminAffiliateDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [
-    affiliate?.ckan_user_id,
-    affiliate?.ckan_username,
-    affiliate?.email,
-    affiliate?.full_name,
-    affiliate?.id,
-  ]);
+  }, [affiliate]);
 
   useEffect(() => {
     if (!error) return;
