@@ -896,9 +896,10 @@ export default function SubmitAffiliationPage() {
     });
     setExpectedOutputRows([]);
     setStep(0);
-    setShowSubmitConfirm(false);
-    setSubmitting(false);
-  };
+      setShowSubmitConfirm(false);
+      setSubmitting(false);
+      navigate("/submit-project");
+    };
 
   const handleSaveDraft = async () => {
     if (!user?.id) return;
