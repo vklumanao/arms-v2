@@ -44,7 +44,6 @@ export function registerAuthRoutes(app, deps) {
     hashPassword,
     toAuthPayload,
     resolveCenterChiefContext,
-    resolveChairpersonContext,
     signSession,
     setSessionCookie,
     clearSessionCookie,
@@ -170,10 +169,7 @@ export function registerAuthRoutes(app, deps) {
         },
       });
 
-      const withCenterChief = await resolveCenterChiefContext(created);
-      const authUser = resolveChairpersonContext
-        ? await resolveChairpersonContext(withCenterChief)
-        : withCenterChief;
+      const authUser = await resolveCenterChiefContext(created);
       const token = signSession(authUser);
       setSessionCookie(res, token);
       return res.status(201).json(toAuthPayload(authUser, null));
@@ -266,10 +262,7 @@ export function registerAuthRoutes(app, deps) {
       });
 
       setSessionCookie(res, token);
-      const withCenterChief = await resolveCenterChiefContext(latest);
-      const authUser = resolveChairpersonContext
-        ? await resolveChairpersonContext(withCenterChief)
-        : withCenterChief;
+      const authUser = await resolveCenterChiefContext(latest);
       return res.json(toAuthPayload(authUser, null));
     } catch (error) {
       return res
