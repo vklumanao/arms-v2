@@ -143,7 +143,7 @@ export default function AppShell() {
     setMobileNavOpen(true);
   };
 
-  const isDesktopSidebarCollapsed = desktopSidebarCollapsed;
+  const isDesktopSidebarCollapsed = desktopSidebarCollapsed && !hoverExpanded;
 
   const adminGovernanceLinks = useMemo(
     () => [
@@ -795,7 +795,7 @@ export default function AppShell() {
         >
           <SidebarContent
             variant="desktop"
-            collapsed={desktopSidebarCollapsed}
+            collapsed={isDesktopSidebarCollapsed}
           />
         </aside>
       ) : null}
