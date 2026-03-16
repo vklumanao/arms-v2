@@ -21,15 +21,16 @@ export default function NotificationPanel() {
       : false,
   );
 
-  if (!user) return null;
-
   useEffect(() => {
+    if (!user || typeof window === "undefined") return undefined;
     const media = window.matchMedia("(max-width: 767px)");
     const handleChange = (event) => setIsCompact(Boolean(event.matches));
     setIsCompact(Boolean(media.matches));
     media.addEventListener("change", handleChange);
     return () => media.removeEventListener("change", handleChange);
-  }, []);
+  }, [user]);
+
+  if (!user) return null;
 
   return (
     <Sheet>
