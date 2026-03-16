@@ -458,25 +458,8 @@ export function registerAdminRoutes(app, deps) {
       : "";
   }
 
-  function getManagedDepartmentId(user) {
-    if (
-      String(user?.role || "")
-        .trim()
-        .toLowerCase() === "admin"
-    )
-      return "";
-    const managedDepartmentId = String(user?.managed_department_id || "").trim();
-    return Boolean(user?.is_chairperson) && managedDepartmentId
-      ? managedDepartmentId
-      : "";
-  }
-
   function isCenterChiefScopedUser(user) {
     return Boolean(getManagedCenterId(user));
-  }
-
-  function isChairpersonScopedUser(user) {
-    return Boolean(getManagedDepartmentId(user));
   }
 
   function ensureCenterScope(res, user, centerId) {
@@ -497,23 +480,9 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function ensureDepartmentScope(res, user, departmentId) {
-    if (
-      String(user?.role || "")
-        .trim()
-        .toLowerCase() === "admin"
-    )
-      return true;
-    const managedDepartmentId = getManagedDepartmentId(user);
-    if (
-      managedDepartmentId &&
-      managedDepartmentId === String(departmentId || "").trim()
-    ) {
-      return true;
-    }
-    res.status(403).json({
-      error: "You can only access the Department assigned to you.",
-    });
-    return false;
+    void departmentId;
+    // Departments admin APIs are admin-only (chairperson does not grant managed access).
+    return ensureAdminOnly(res, user);
   }
 
   function ensureAdminOrCenterChief(res, user) {
@@ -524,17 +493,6 @@ export function registerAdminRoutes(app, deps) {
     res
       .status(403)
       .json({ error: "Admin or Center Chief access is required." });
-    return false;
-  }
-
-  function ensureAdminOrChairperson(res, user) {
-    const role = String(user?.role || "")
-      .trim()
-      .toLowerCase();
-    if (role === "admin" || isChairpersonScopedUser(user)) return true;
-    res
-      .status(403)
-      .json({ error: "Admin or Chairperson access is required." });
     return false;
   }
 
