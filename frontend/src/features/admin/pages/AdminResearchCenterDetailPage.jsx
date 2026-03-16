@@ -51,7 +51,10 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/features/admin/services";
-import { fetchAffiliateRegistry, updateAffiliateProfile } from "@/features/admin/services";
+import {
+  fetchAffiliateRegistry,
+  updateAffiliateProfile,
+} from "@/features/admin/services";
 import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal";
 import { validateCenterForm } from "@/features/admin/utils";
 import {
@@ -327,7 +330,9 @@ export default function AdminResearchCenterDetailPage() {
   const removeEditAgenda = (agendaName) => {
     setEditForm((prev) => ({
       ...prev,
-      researchAgendas: prev.researchAgendas.filter((item) => item !== agendaName),
+      researchAgendas: prev.researchAgendas.filter(
+        (item) => item !== agendaName,
+      ),
     }));
   };
 
@@ -421,9 +426,15 @@ export default function AdminResearchCenterDetailPage() {
         },
       });
       setLinks({
-        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
-        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
-        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+        profiles: Array.isArray(linksPayload?.profiles)
+          ? linksPayload.profiles
+          : [],
+        projects: Array.isArray(linksPayload?.projects)
+          ? linksPayload.projects
+          : [],
+        agendas: Array.isArray(linksPayload?.agendas)
+          ? linksPayload.agendas
+          : [],
       });
       setError("");
     } catch (e) {
@@ -460,7 +471,9 @@ export default function AdminResearchCenterDetailPage() {
   };
 
   const linkCandidateRows = useMemo(() => {
-    const keyword = String(affiliateSearch || "").trim().toLowerCase();
+    const keyword = String(affiliateSearch || "")
+      .trim()
+      .toLowerCase();
     const linkedIds = new Set(
       (links.profiles || []).map((row) => String(row?.id || "").trim()),
     );
@@ -498,15 +511,27 @@ export default function AdminResearchCenterDetailPage() {
       setLinkAffiliateOpen(false);
 
       // Reload center links.
-      const linksPayload = await fetchReferenceLinks({ type: "center", id: centerId });
+      const linksPayload = await fetchReferenceLinks({
+        type: "center",
+        id: centerId,
+      });
       setLinks((prev) => ({
         ...prev,
-        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
-        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
-        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+        profiles: Array.isArray(linksPayload?.profiles)
+          ? linksPayload.profiles
+          : [],
+        projects: Array.isArray(linksPayload?.projects)
+          ? linksPayload.projects
+          : [],
+        agendas: Array.isArray(linksPayload?.agendas)
+          ? linksPayload.agendas
+          : [],
       }));
 
-      const usagePayload = await fetchReferenceUsageCounts({ type: "center", id: centerId });
+      const usagePayload = await fetchReferenceUsageCounts({
+        type: "center",
+        id: centerId,
+      });
       setUsage((prev) => ({
         ...prev,
         projectCount: Number(usagePayload?.projectCount || 0),
@@ -514,7 +539,10 @@ export default function AdminResearchCenterDetailPage() {
         memberBreakdown: usagePayload?.memberBreakdown || prev.memberBreakdown,
       }));
     } catch (e) {
-      toast.error("Link failed", String(e?.message || "Unable to link affiliate."));
+      toast.error(
+        "Link failed",
+        String(e?.message || "Unable to link affiliate."),
+      );
     } finally {
       setLinkAffiliateSaving(false);
     }
@@ -533,15 +561,27 @@ export default function AdminResearchCenterDetailPage() {
       );
       setUnlinkTarget(null);
 
-      const linksPayload = await fetchReferenceLinks({ type: "center", id: centerId });
+      const linksPayload = await fetchReferenceLinks({
+        type: "center",
+        id: centerId,
+      });
       setLinks((prev) => ({
         ...prev,
-        profiles: Array.isArray(linksPayload?.profiles) ? linksPayload.profiles : [],
-        projects: Array.isArray(linksPayload?.projects) ? linksPayload.projects : [],
-        agendas: Array.isArray(linksPayload?.agendas) ? linksPayload.agendas : [],
+        profiles: Array.isArray(linksPayload?.profiles)
+          ? linksPayload.profiles
+          : [],
+        projects: Array.isArray(linksPayload?.projects)
+          ? linksPayload.projects
+          : [],
+        agendas: Array.isArray(linksPayload?.agendas)
+          ? linksPayload.agendas
+          : [],
       }));
 
-      const usagePayload = await fetchReferenceUsageCounts({ type: "center", id: centerId });
+      const usagePayload = await fetchReferenceUsageCounts({
+        type: "center",
+        id: centerId,
+      });
       setUsage((prev) => ({
         ...prev,
         projectCount: Number(usagePayload?.projectCount || 0),
@@ -599,11 +639,6 @@ export default function AdminResearchCenterDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title={title}
-        description="Dedicated view for research center information, affiliates, and linked projects."
-      />
-
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button asChild variant="outline">
           <Link to="/admin/research-center">
@@ -707,7 +742,8 @@ export default function AdminResearchCenterDetailPage() {
                   Description
                 </p>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                  {String(center?.description || "").trim() || "No description provided."}
+                  {String(center?.description || "").trim() ||
+                    "No description provided."}
                 </p>
               </div>
 
@@ -837,7 +873,10 @@ export default function AdminResearchCenterDetailPage() {
                                   const centerChiefId = String(
                                     center?.centerChiefId || "",
                                   ).trim();
-                                  const isChief = rowId && centerChiefId && rowId === centerChiefId;
+                                  const isChief =
+                                    rowId &&
+                                    centerChiefId &&
+                                    rowId === centerChiefId;
                                   return (
                                     <TableRow key={row?.id || `${idx}`}>
                                       <TableCell>
