@@ -498,19 +498,17 @@ export default function AdminUsersPage() {
                 Search, create, and manage account roles and access.
               </CardDescription>
             </div>
-          <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
-            <label className="relative w-full lg:min-w-[22rem]">
-              <Input
-                className="pl-8"
-                placeholder="Search user by name, email, or role"
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-              />
-            </label>
-            <Button onClick={openCreateModal}>
-              Create User
-            </Button>
-          </div>
+            <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
+              <label className="relative w-full lg:min-w-[22rem]">
+                <Input
+                  className="pl-8"
+                  placeholder="Search user by name, email, or role"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                />
+              </label>
+              <Button onClick={openCreateModal}>Create User</Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -543,14 +541,20 @@ export default function AdminUsersPage() {
                         <Select
                           value={user.role || "student"}
                           disabled={Boolean(savingUserById[user.id])}
-                          onValueChange={(value) => openRoleConfirm(user, value)}
+                          onValueChange={(value) =>
+                            openRoleConfirm(user, value)
+                          }
                         >
                           <SelectTrigger className="min-w-32 capitalize">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {ROLE_OPTIONS.map((role) => (
-                              <SelectItem key={role} value={role} className="capitalize">
+                              <SelectItem
+                                key={role}
+                                value={role}
+                                className="capitalize"
+                              >
                                 {role}
                               </SelectItem>
                             ))}
@@ -674,7 +678,9 @@ export default function AdminUsersPage() {
         >
           <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-2xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
             <DialogHeader className="border-b border-border px-6 py-5 text-left">
-              <DialogTitle>{detailUser.full_name || detailUser.email}</DialogTitle>
+              <DialogTitle>
+                {detailUser.full_name || detailUser.email}
+              </DialogTitle>
               <DialogDescription>{detailUser.email}</DialogDescription>
             </DialogHeader>
             <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-6 py-5">
@@ -684,7 +690,8 @@ export default function AdminUsersPage() {
                   onClick={async () => {
                     if (!detailUser?.id) return;
                     const latest = await loadLatestUserSnapshot(detailUser.id);
-                    if (latest) setDetailUser((prev) => ({ ...prev, ...latest }));
+                    if (latest)
+                      setDetailUser((prev) => ({ ...prev, ...latest }));
                   }}
                 >
                   Refresh User Info
@@ -692,7 +699,9 @@ export default function AdminUsersPage() {
               </div>
 
               {detailLoading ? (
-                <p className="text-sm text-slate-600">Loading user details...</p>
+                <p className="text-sm text-slate-600">
+                  Loading user details...
+                </p>
               ) : (
                 <div className="space-y-4">
                   <Card>
@@ -769,7 +778,9 @@ export default function AdminUsersPage() {
                           </dt>
                           <dd className="font-medium text-slate-800">
                             {detailUser.last_sign_in_at
-                              ? new Date(detailUser.last_sign_in_at).toLocaleString()
+                              ? new Date(
+                                  detailUser.last_sign_in_at,
+                                ).toLocaleString()
                               : "Never"}
                           </dd>
                         </div>
@@ -839,7 +850,8 @@ export default function AdminUsersPage() {
                         ) : null}
                         {detailUser?.ckan_org_id ? (
                           <Badge variant="outline">
-                            Center: {centerNameById[detailUser.ckan_org_id] || "Set"}
+                            Center:{" "}
+                            {centerNameById[detailUser.ckan_org_id] || "Set"}
                           </Badge>
                         ) : null}
                       </div>
@@ -879,7 +891,9 @@ export default function AdminUsersPage() {
                           ([status, count]) => (
                             <Card key={status}>
                               <CardContent className="p-3">
-                                <p className="capitalize text-slate-600">{status}</p>
+                                <p className="capitalize text-slate-600">
+                                  {status}
+                                </p>
                                 <p className="font-bold">{count}</p>
                               </CardContent>
                             </Card>
@@ -902,7 +916,9 @@ export default function AdminUsersPage() {
                             <li key={project.id}>
                               <Card>
                                 <CardContent className="p-3">
-                                  <p className="font-semibold">{project.title}</p>
+                                  <p className="font-semibold">
+                                    {project.title}
+                                  </p>
                                   <p className="capitalize text-slate-600">
                                     {project.status}
                                   </p>
@@ -931,10 +947,13 @@ export default function AdminUsersPage() {
                               <Card>
                                 <CardContent className="p-3">
                                   <p className="font-semibold">
-                                    {entry.old_status || "none"} {"->"} {entry.new_status}
+                                    {entry.old_status || "none"} {"->"}{" "}
+                                    {entry.new_status}
                                   </p>
                                   <p className="text-slate-600">
-                                    {new Date(entry.changed_at).toLocaleString()}
+                                    {new Date(
+                                      entry.changed_at,
+                                    ).toLocaleString()}
                                   </p>
                                 </CardContent>
                               </Card>
@@ -959,10 +978,13 @@ export default function AdminUsersPage() {
                               <Card className="bg-muted/40">
                                 <CardContent className="space-y-1 p-3">
                                   <p className="font-semibold">
-                                    {entry.old_role || "none"} {"->"} {entry.new_role}
+                                    {entry.old_role || "none"} {"->"}{" "}
+                                    {entry.new_role}
                                   </p>
                                   <p className="text-slate-600">
-                                    {new Date(entry.changed_at).toLocaleString()}
+                                    {new Date(
+                                      entry.changed_at,
+                                    ).toLocaleString()}
                                   </p>
                                   <p className="text-xs text-slate-500">
                                     Changed by:{" "}
@@ -999,13 +1021,17 @@ export default function AdminUsersPage() {
                 Add a faculty or student account with optional center and
                 department assignment.
               </DialogDescription>
+              <p className="text-xs text-slate-500 mb-3">
+                Fields marked with <span className="text-red-500">*</span> are
+                required.
+              </p>
             </DialogHeader>
             <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="grid gap-3 sm:grid-cols-3 md:col-span-2">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3 md:col-span-2">
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
-                      First Name
+                      First Name <span className="text-red-500">*</span>
                     </span>
                     <Input
                       value={createForm.first_name}
@@ -1020,7 +1046,7 @@ export default function AdminUsersPage() {
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
-                      Middle Initial
+                      Middle Initial <span className="text-red-500">*</span>
                     </span>
                     <Input
                       value={createForm.middle_initial}
@@ -1036,7 +1062,7 @@ export default function AdminUsersPage() {
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
-                      Last Name
+                      Last Name <span className="text-red-500">*</span>
                     </span>
                     <Input
                       value={createForm.last_name}
@@ -1049,98 +1075,100 @@ export default function AdminUsersPage() {
                       placeholder="Dela Cruz"
                     />
                   </label>
-                  </div>
-                  <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Email</span>
-                    <Input
-                      type="email"
-                      value={createForm.email}
-                      onChange={(e) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      placeholder="juan.delacruz@carsu.edu.ph"
-                    />
-                  </label>
-                  <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Role</span>
-                    <Select
-                      value={createForm.role}
-                      onValueChange={(value) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          role: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="faculty">Faculty</SelectItem>
-                        <SelectItem value="student">Student</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">
-                      Research Center
-                    </span>
-                    <Select
-                      value={createForm.ckan_org_id}
-                      onValueChange={(value) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          ckan_org_id: value === "__none__" ? "" : value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        {(centers || []).map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className="space-y-1 text-sm md:col-span-2">
-                    <span className="font-medium text-slate-700">
-                      Department
-                    </span>
-                    <Select
-                      value={createForm.ckan_group_id}
-                      onValueChange={(value) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          ckan_group_id: value === "__none__" ? "" : value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        {(departments || []).map((department) => (
-                          <SelectItem key={department.id} value={department.id}>
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
                 </div>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-slate-700">
+                    Email <span className="text-red-500">*</span>
+                  </span>
+                  <Input
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    placeholder="juan.delacruz@carsu.edu.ph"
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-slate-700">
+                    Role <span className="text-red-500">*</span>
+                  </span>
+                  <Select
+                    value={createForm.role}
+                    onValueChange={(value) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        role: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="faculty">Faculty</SelectItem>
+                      <SelectItem value="student">Student</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-slate-700">
+                    Research Center
+                  </span>
+                  <Select
+                    value={createForm.ckan_org_id}
+                    onValueChange={(value) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        ckan_org_id: value === "__none__" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {(centers || []).map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1 text-sm md:col-span-2">
+                  <span className="font-medium text-slate-700">Department</span>
+                  <Select
+                    value={createForm.ckan_group_id}
+                    onValueChange={(value) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        ckan_group_id: value === "__none__" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {(departments || []).map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+              </div>
 
-                {createResult?.temporary_password ? (
-                  <Card className="bg-muted/40">
-                    <CardContent className="space-y-1 p-4 text-sm text-slate-700">
+              {createResult?.temporary_password ? (
+                <Card className="bg-muted/40">
+                  <CardContent className="space-y-1 p-4 text-sm text-slate-700">
                     <p className="font-semibold text-slate-900">
                       Account created
                     </p>
@@ -1154,22 +1182,22 @@ export default function AdminUsersPage() {
                       Share this once, then require the user to change it after
                       first login.
                     </p>
-                    </CardContent>
-                  </Card>
-                ) : null}
+                  </CardContent>
+                </Card>
+              ) : null}
 
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={closeCreateModal}
-                    disabled={createSaving}
-                  >
-                    Close
-                  </Button>
-                  <Button onClick={submitCreateUser} disabled={createSaving}>
-                    {createSaving ? "Creating..." : "Create User"}
-                  </Button>
-                </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={closeCreateModal}
+                  disabled={createSaving}
+                >
+                  Close
+                </Button>
+                <Button onClick={submitCreateUser} disabled={createSaving}>
+                  {createSaving ? "Creating..." : "Create User"}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
