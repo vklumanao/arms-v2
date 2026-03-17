@@ -366,6 +366,12 @@ export default function AppShell() {
   }, [isDesktop]);
 
   useEffect(() => {
+    if (!desktopSidebarCollapsed || !isDesktop) {
+      setHoverExpanded(false);
+    }
+  }, [desktopSidebarCollapsed, isDesktop]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       SIDEBAR_COLLAPSE_STORAGE_KEY,
@@ -628,8 +634,12 @@ export default function AppShell() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-label={
+                  desktopSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                }
+                title={
+                  desktopSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                }
                 onClick={handleNavToggle}
                 className={cn(
                   "h-9 w-9 rounded-md",
@@ -637,7 +647,7 @@ export default function AppShell() {
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 )}
               >
-                {collapsed ? (
+                {desktopSidebarCollapsed ? (
                   <ChevronsRight className="h-4 w-4" />
                 ) : (
                   <ChevronsLeft className="h-4 w-4" />
@@ -769,11 +779,28 @@ export default function AppShell() {
     >
       {shouldShowSidebar && isDesktop ? (
         <aside
-          className={cn("sidebar-shell", desktopSidebarCollapsed && "sidebar-shell-collapsed")}
+          className={cn(
+            "sidebar-shell",
+            desktopSidebarCollapsed && hoverExpanded && "sidebar-shell-hover-expanded",
+            desktopSidebarCollapsed && !hoverExpanded && "sidebar-shell-collapsed",
+          )}
+          onMouseEnter={() => {
+            if (desktopSidebarCollapsed) setHoverExpanded(true);
+          }}
+          onMouseLeave={() => setHoverExpanded(false)}
+          onFocusCapture={() => {
+            if (desktopSidebarCollapsed) setHoverExpanded(true);
+          }}
+          onBlurCapture={(event) => {
+            if (!desktopSidebarCollapsed) return;
+            const nextFocus = event.relatedTarget;
+            if (nextFocus instanceof Node && event.currentTarget.contains(nextFocus)) return;
+            setHoverExpanded(false);
+          }}
         >
           <SidebarContent
             variant="desktop"
-            collapsed={desktopSidebarCollapsed}
+            collapsed={desktopSidebarCollapsed && !hoverExpanded}
           />
         </aside>
       ) : null}

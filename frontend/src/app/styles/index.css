@@ -167,11 +167,22 @@ h6,
   height: 100vh;
   display: flex;
   flex-direction: column;
+  z-index: 30;
   overflow: hidden;
+  width: 100%;
   border-right: 1px solid var(--border);
   background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
   padding: var(--space-6) var(--space-4);
   box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.06);
+  transition: width 160ms ease, box-shadow 160ms ease;
+  will-change: width;
+}
+
+.sidebar-shell.sidebar-shell-hover-expanded {
+  width: 296px;
+  box-shadow:
+    inset -1px 0 0 rgba(15, 23, 42, 0.06),
+    18px 0 28px rgba(16, 34, 57, 0.14);
 }
 
 .sidebar-shell.sidebar-shell-collapsed {
