@@ -534,7 +534,12 @@ export default function AwardsRecognitionPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
-                        {isAdmin ? (
+                        {(() => {
+                          const ownerKey = String(row?.submitted_by_user_id || "").trim();
+                          const currentUserKey = String(profile?.id || "").trim();
+                          const canManage =
+                            isAdmin || (ownerKey && currentUserKey && ownerKey === currentUserKey);
+                          return canManage ? (
                           <>
                             <Button
                               variant="ghost"
@@ -557,7 +562,8 @@ export default function AwardsRecognitionPage() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
-                        ) : null}
+                          ) : null;
+                        })()}
                       </div>
                     </TableCell>
                   </TableRow>
