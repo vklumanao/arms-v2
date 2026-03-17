@@ -188,10 +188,23 @@ export default function AdminAffiliatesModulePage() {
     setSavingEdit(true);
     setError("");
     setMessage("");
+    if (!String(editForm.first_name || "").trim()) {
+      setError("First name is required.");
+      setSavingEdit(false);
+      return;
+    }
+    if (!String(editForm.last_name || "").trim()) {
+      setError("Last name is required.");
+      setSavingEdit(false);
+      return;
+    }
     const payload = {
       ...editForm,
       ckan_group_id: editForm.ckan_group_id || null,
       ckan_org_id: editForm.ckan_org_id || null,
+      first_name: String(editForm.first_name || "").trim() || null,
+      middle_initial: String(editForm.middle_initial || "").trim() || null,
+      last_name: String(editForm.last_name || "").trim() || null,
       publication_count: Number(editForm.publication_count || 0),
       research_project_count: Number(editForm.research_project_count || 0),
       creative_work_count: Number(editForm.creative_work_count || 0),
@@ -200,8 +213,9 @@ export default function AdminAffiliatesModulePage() {
     };
 
     try {
-      await updateAffiliateProfile(editingAffiliate.id, payload);
-      updateRowById(editingAffiliate.id, payload);
+      const response = await updateAffiliateProfile(editingAffiliate.id, payload);
+      const updated = response?.data || response || payload;
+      updateRowById(editingAffiliate.id, updated);
       setMessage(
         `Affiliate updated: ${editingAffiliate.full_name || editingAffiliate.email || editingAffiliate.id}`,
       );
@@ -581,6 +595,51 @@ export default function AdminAffiliatesModulePage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    First name
+                  </span>
+                  <Input
+                    value={editForm.first_name || ""}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        first_name: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Middle initial
+                  </span>
+                  <Input
+                    maxLength={2}
+                    value={editForm.middle_initial || ""}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        middle_initial: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Last name
+                  </span>
+                  <Input
+                    value={editForm.last_name || ""}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        last_name: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Department</span>
                 <Select
