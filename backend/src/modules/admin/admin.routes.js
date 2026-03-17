@@ -318,6 +318,21 @@ export function registerAdminRoutes(app, deps) {
       .replace(/^_+|_+$/g, "");
   }
 
+  function formatFullName({ first_name, middle_initial, last_name }) {
+    const first = String(first_name || "").trim();
+    const last = String(last_name || "").trim();
+    const middleRaw = String(middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const parts = [
+      `${last.toUpperCase()},`,
+      first.toUpperCase(),
+      middle ? `${middle}.` : "",
+    ].filter(Boolean);
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  }
+
   async function listProponentAccounts() {
     const result = await query(`
         SELECT
@@ -756,6 +771,19 @@ export function registerAdminRoutes(app, deps) {
           }
         }
 
+        const hasNameParts =
+          "first_name" in req.body ||
+          "middle_initial" in req.body ||
+          "last_name" in req.body;
+        const firstName = String(req.body?.first_name || "").trim();
+        const lastName = String(req.body?.last_name || "").trim();
+        if (hasNameParts && (!firstName || !lastName)) {
+          return badRequest(
+            res,
+            "First name and last name are required to update the name.",
+          );
+        }
+
         const patch = {
           department:
             selectedGroup?.title ||
@@ -787,6 +815,13 @@ export function registerAdminRoutes(app, deps) {
           awards_count: Math.max(0, Number(req.body?.awards_count || 0) || 0),
           ip_count: Math.max(0, Number(req.body?.ip_count || 0) || 0),
         };
+        if (hasNameParts) {
+          patch.full_name = formatFullName({
+            first_name: firstName,
+            middle_initial: req.body?.middle_initial || "",
+            last_name: lastName,
+          });
+        }
 
         const updated = await updateUser(userId, patch);
         if (!updated) {
@@ -1503,7 +1538,7 @@ export function registerAdminRoutes(app, deps) {
           "Invalid proponent account payload.",
         );
 
-        const full_name = String(parsed.full_name || "").trim();
+        const full_name = formatFullName(parsed);
         const email = String(parsed.email || "")
           .trim()
           .toLowerCase();
