@@ -118,8 +118,47 @@ export function filterAffiliateRelatedDatasets(datasets, affiliate) {
     );
 }
 
-export function createAffiliateEditForm(row) {
+function parseNameParts(fullName = "") {
+  const raw = String(fullName || "").trim();
+  if (!raw) return { first_name: "", middle_initial: "", last_name: "" };
+
+  if (raw.includes(",")) {
+    const [lastPart = "", givenPart = ""] = raw.split(",", 2);
+    const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
+    const first = givenTokens[0] || "";
+    const middleToken = givenTokens[1] || "";
+    const middle = middleToken.replace(/\./g, "").charAt(0) || "";
+    return {
+      first_name: first,
+      middle_initial: middle,
+      last_name: lastPart.trim(),
+    };
+  }
+
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length === 1) {
+    return { first_name: tokens[0], middle_initial: "", last_name: "" };
+  }
+  const first = tokens[0];
+  const middleCandidate = tokens[1] || "";
+  const isMiddleInitial = /^[A-Za-z](\.)?$/.test(middleCandidate);
+  const middle = isMiddleInitial
+    ? middleCandidate.replace(/\./g, "").charAt(0)
+    : "";
+  const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(" ");
   return {
+    first_name: first,
+    middle_initial: middle,
+    last_name: last,
+  };
+}
+
+export function createAffiliateEditForm(row) {
+  const nameParts = parseNameParts(row.full_name || "");
+  return {
+    first_name: nameParts.first_name || "",
+    middle_initial: nameParts.middle_initial || "",
+    last_name: nameParts.last_name || "",
     department: row.department || "",
     ckan_group_id: row.ckan_group_id || "",
     ckan_org_id: row.ckan_org_id || "",
