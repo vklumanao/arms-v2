@@ -163,23 +163,6 @@ export default function StepOutputs({
             onChange={(e) => setField("supporting_mov_link", e.target.value)}
           />
         </label>
-        <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-3 text-sm sm:max-w-2xl">
-          <input
-            className="mt-1 h-4 w-4"
-            type="checkbox"
-            checked={Boolean(form.public_visible)}
-            onChange={(e) => setField("public_visible", e.target.checked)}
-          />
-          <span className="space-y-1">
-            <span className="block font-semibold text-slate-700">
-              Make project publicly visible after submission
-            </span>
-            <span className="block text-xs text-slate-500">
-              Turn this on if the dataset can be visible outside your private
-              workspace.
-            </span>
-          </span>
-        </label>
       </div>
     </div>
   );
