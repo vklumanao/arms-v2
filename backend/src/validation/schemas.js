@@ -144,13 +144,14 @@ const submissionExpectedOutputSchema = z
       .number()
       .int()
       .min(1, "Each expected output must have a target count of at least 1."),
-    notes: z.string().trim().optional().nullable(),
-    file_path: z.string().trim().optional().nullable(),
-    file_name: z.string().trim().optional().nullable(),
-    file_size: z.coerce.number().min(0).optional().nullable(),
-    mime_type: z.string().trim().optional().nullable(),
-    specific_output: z.string().trim().optional().nullable(),
-  })
+      notes: z.string().trim().optional().nullable(),
+      file_path: z.string().trim().optional().nullable(),
+      file_name: z.string().trim().optional().nullable(),
+      file_base64: z.string().trim().optional().nullable(),
+      file_size: z.coerce.number().min(0).optional().nullable(),
+      mime_type: z.string().trim().optional().nullable(),
+      specific_output: z.string().trim().optional().nullable(),
+    })
   .superRefine((value, ctx) => {
     if (
       value.output_type === "product_software" &&

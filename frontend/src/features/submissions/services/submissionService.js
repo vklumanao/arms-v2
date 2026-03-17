@@ -63,6 +63,7 @@ function serializeExpectedOutputs(rows = []) {
     file_name: row.file_name || row.file?.name || "",
     file_size: Number(row.file_size || row.file?.size || 0) || null,
     mime_type: row.mime_type || row.file?.type || "",
+    file_base64: row.file_base64 || row.fileBase64 || "",
   }));
 }
 

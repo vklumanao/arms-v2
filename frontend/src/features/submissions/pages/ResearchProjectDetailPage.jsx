@@ -34,6 +34,8 @@ export default function ResearchProjectDetailPage() {
   const params = useParams();
   const projectId = String(params?.id || "").trim();
   const { centers } = useReferenceData();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
 
   const isAdmin =
     String(profile?.role || user?.role || "")
@@ -116,27 +118,28 @@ export default function ResearchProjectDetailPage() {
 
     let cancelled = false;
     setResourcePanel((prev) => ({ ...prev, loading: true, error: "" }));
-    fetchProjectResources({ projectId: project.id })
-      .then(({ data, error: loadError, syncEnabled }) => {
-        if (cancelled) return;
-        if (loadError) {
+      fetchProjectResources({ projectId: project.id })
+        .then(({ data, error: loadError, syncEnabled }) => {
+          const resolvedSyncEnabled = syncEnabled ?? true;
+          if (cancelled) return;
+          if (loadError) {
+            setResourcePanel({
+              loading: false,
+              error: loadError.message || "Unable to load linked resources.",
+              dataset: null,
+              resources: [],
+              syncEnabled: resolvedSyncEnabled,
+            });
+            return;
+          }
           setResourcePanel({
             loading: false,
-            error: loadError.message || "Unable to load linked resources.",
-            dataset: null,
-            resources: [],
-            syncEnabled: Boolean(syncEnabled),
+            error: "",
+            dataset: data?.dataset || null,
+            resources: Array.isArray(data?.resources) ? data.resources : [],
+            syncEnabled: resolvedSyncEnabled,
           });
-          return;
-        }
-        setResourcePanel({
-          loading: false,
-          error: "",
-          dataset: data?.dataset || null,
-          resources: Array.isArray(data?.resources) ? data.resources : [],
-          syncEnabled: Boolean(syncEnabled),
-        });
-      })
+        })
       .catch((e) => {
         if (cancelled) return;
         setResourcePanel({
@@ -363,28 +366,49 @@ export default function ResearchProjectDetailPage() {
                               <FileText className="h-5 w-5 text-slate-400" />
                             </div>
 
-                            {resource.url ? (
+                            {resource.id ? (
                               <div className="mt-2 flex flex-wrap gap-2">
-                                <Button asChild variant="outline" size="sm">
-                                  <a
-                                    href={resource.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    <ExternalLink className="h-4 w-4" />
-                                    Open
-                                  </a>
-                                </Button>
-                                <Button asChild variant="outline" size="sm">
-                                  <a
-                                    href={resource.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    <Download className="h-4 w-4" />
-                                    Download
-                                  </a>
-                                </Button>
+                                {(() => {
+                                  const resourceUrl = String(resource.url || "").trim();
+                                  const isDownloadable = /\/resource\/.+\/download\//i.test(
+                                    resourceUrl,
+                                  );
+                                  if (!isDownloadable) {
+                                    return (
+                                      <p className="text-sm text-slate-500">
+                                        No file attached yet.
+                                      </p>
+                                    );
+                                  }
+                                  return (
+                                    <>
+                                      <Button asChild variant="outline" size="sm">
+                                        <a
+                                          href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                            resource.id,
+                                          )}/download`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <ExternalLink className="h-4 w-4" />
+                                          Open
+                                        </a>
+                                      </Button>
+                                      <Button asChild variant="outline" size="sm">
+                                        <a
+                                          href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                            resource.id,
+                                          )}/download?download=1`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <Download className="h-4 w-4" />
+                                          Download
+                                        </a>
+                                      </Button>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             ) : (
                               <p className="mt-2 text-sm text-slate-500">

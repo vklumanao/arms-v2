@@ -56,6 +56,7 @@ import PaginationControls from "@/shared/components/navigation/PaginationControl
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   Download,
+  ExternalLink,
   Eye,
   EyeOff,
   FileText,
@@ -82,6 +83,8 @@ export default function ResearchOutputsPage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { centers } = useReferenceData();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
   const missingAffiliation =
     !isAdmin &&
@@ -127,6 +130,23 @@ export default function ResearchOutputsPage() {
       return;
     }
     navigate(`/submit-project/${encodeURIComponent(datasetId)}`);
+  };
+  const openAddOutputForProject = (project, options = {}) => {
+    const projectId = String(project?.id || "").trim();
+    if (!projectId) {
+      toast.error("Unable to add output", "Project id is missing.");
+      return;
+    }
+    const outputType = String(options?.output_type || "").trim();
+    const targetCount = Number(options?.target_count || 0);
+    setAddOutputForm((prev) => ({
+      ...prev,
+      project_id: projectId,
+      output_type: outputType || prev.output_type,
+      target_count: targetCount > 0 ? targetCount : prev.target_count,
+    }));
+    setAddOutputFile(null);
+    setShowAddOutputModal(true);
   };
 
   useEffect(() => {
@@ -185,31 +205,29 @@ export default function ResearchOutputsPage() {
     };
   }, [missingAffiliation, profile?.id]);
 
-  if (missingAffiliation) {
-    return (
-      <section className="page-stack-lg">
-        <PageHeader
-          title="Research Outputs"
-          description={
-            isAdmin
-              ? "All linked resource files from submitted project datasets."
-              : "Your submitted resource files from project expected outputs."
-          }
-        />
-        <Card>
-          <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) and Department in
-              My Profile first before accessing Research Outputs.
-            </p>
-            <Button asChild>
-              <Link to="/my-profile">Go to My Profile</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
+  const missingAffiliationContent = (
+    <section className="page-stack-lg">
+      <PageHeader
+        title="Research Outputs"
+        description={
+          isAdmin
+            ? "All linked resource files from submitted project datasets."
+            : "Your submitted resource files from project expected outputs."
+        }
+      />
+      <Card>
+        <CardContent className="space-y-3 p-5">
+          <p className="text-sm text-amber-700">
+            Please set your Organization (Research Center) and Department in My
+            Profile first before accessing Research Outputs.
+          </p>
+          <Button asChild>
+            <Link to="/my-profile">Go to My Profile</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </section>
+  );
 
   const sortedRows = useMemo(
     () =>
@@ -264,25 +282,35 @@ export default function ResearchOutputsPage() {
     [outputTypeLabelByValue],
   );
 
-  const tableRows = useMemo(
+  const baseRows = useMemo(
     () =>
       sortedRows.map((row) => {
         const outputTypeRaw = String(row?.output_type || "").trim();
+        const normalizedOutputType = outputTypeRaw.replace(/_/g, "/");
         const outputType =
           outputTypeLabelByValue[outputTypeRaw] ||
-          outputTypeRaw.replace(/_/g, "/");
+          normalizedOutputType;
         const orgRef = String(row?.project_ckan_org_id || "").trim();
         const orgLabel =
           String(row?.project_org_name || "").trim() ||
           centerNameById[orgRef] ||
           orgRef ||
           "-";
-        const resourceName = normalizeResourceName(row?.file_name);
+        const rawFileName = String(row?.file_name || "").trim();
+        const resourceName = normalizeResourceName(rawFileName);
+        const targetMatch = rawFileName.match(/\(target:\s*(\d+)\)/i);
+        const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
         const projectTitle = String(row?.project_title || "").trim();
         const datasetName =
           String(row?.ckan_dataset_name || "").trim() ||
           String(row?.ckan_dataset_id || "").trim() ||
           "-";
+        const resourceUrl = String(row?.file_path || "").trim();
+        const resourceMime = String(row?.mime_type || "").trim();
+        const resourceSize = Number(row?.file_size || 0) || null;
+        const isFallbackUrl = /\/dataset\/?$/.test(resourceUrl);
+        const isPendingOutput =
+          isFallbackUrl && !resourceSize && !resourceMime;
 
         return {
           id: row.id,
@@ -295,18 +323,140 @@ export default function ResearchOutputsPage() {
           datasetId: row?.ckan_dataset_id || null,
           resourceId: row?.ckan_resource_id || null,
           outputType: outputType || "-",
-          resourceUrl: row?.file_path || null,
-          mimeType: row?.mime_type || null,
-          fileSize: Number(row?.file_size || 0) || null,
+          outputTypeValue: outputTypeRaw || normalizedOutputType,
+          targetCount,
+          resourceUrl: resourceUrl || null,
+          mimeType: resourceMime || null,
+          fileSize: resourceSize,
           notes: row?.notes || null,
           organization: orgLabel,
           private: !row?.project_public_visible,
           state: row?.ckan_sync_status || row?.project_status || "-",
           metadataModified:
             row?.updated_at || row?.created_at || row?.ckan_last_synced_at,
+          isPendingOutput,
         };
       }),
     [centerNameById, normalizeResourceName, outputTypeLabelByValue, sortedRows],
+  );
+  const pendingOutputRows = useMemo(() => {
+    const expectedByKey = new Map();
+    const uploadedCountByKey = new Map();
+    const projectMetaById = new Map();
+
+    baseRows.forEach((row) => {
+      const datasetId = String(row?.datasetId || "").trim();
+      if (!datasetId) return;
+      const outputTypeValue = String(row?.outputTypeValue || "").trim();
+      const key = `${datasetId}|${outputTypeValue}`;
+      const currentExpected = expectedByKey.get(key) || 0;
+      expectedByKey.set(key, Math.max(currentExpected, row.targetCount || 1));
+
+      if (!projectMetaById.has(datasetId)) {
+        projectMetaById.set(datasetId, {
+          title: row.subtitle || row.datasetName || datasetId,
+          datasetName: row.datasetName || row.subtitle || datasetId,
+          organization: row.organization || "-",
+          private: row.private,
+          metadataModified: row.metadataModified,
+        });
+      }
+
+      if (!row.isPendingOutput) {
+        uploadedCountByKey.set(key, (uploadedCountByKey.get(key) || 0) + 1);
+      }
+    });
+
+    const rows = [];
+    expectedByKey.forEach((expectedTarget, key) => {
+      const [datasetId, outputTypeValue] = key.split("|");
+      if (!datasetId) return;
+      const uploadedCount = uploadedCountByKey.get(key) || 0;
+      const remainingCount = Math.max(0, expectedTarget - uploadedCount);
+      if (remainingCount <= 0) return;
+
+      const label =
+        outputTypeLabelByValue[outputTypeValue] ||
+        String(outputTypeValue || "").replace(/_/g, "/") ||
+        "-";
+      const meta = projectMetaById.get(datasetId) || {};
+      rows.push({
+        id: `pending-${datasetId}-${outputTypeValue || "output"}`,
+        title: `${label} (Pending)`,
+        subtitle: meta.title || datasetId,
+        datasetName: meta.datasetName || meta.title || datasetId,
+        datasetId,
+        resourceId: null,
+        outputType: label,
+        outputTypeValue,
+        targetCount: expectedTarget,
+        remainingCount,
+        resourceUrl: null,
+        mimeType: null,
+        fileSize: null,
+        notes: null,
+        organization: meta.organization || "-",
+        private: Boolean(meta.private),
+        state: "No file",
+        metadataModified: meta.metadataModified || null,
+        isPendingOutput: true,
+        isPlaceholder: false,
+        projectTitle: meta.title || datasetId,
+      });
+    });
+
+    return rows;
+  }, [baseRows, outputTypeLabelByValue]);
+  const actualOutputRows = useMemo(
+    () => baseRows.filter((row) => !row.isPendingOutput),
+    [baseRows],
+  );
+  const placeholderRows = useMemo(() => {
+    const projectsWithExpected = new Set(
+      pendingOutputRows.map((row) => String(row?.datasetId || "").trim()),
+    );
+    const withOutputs = new Set(
+      actualOutputRows
+        .map((row) => String(row?.datasetId || "").trim())
+        .filter(Boolean),
+    );
+    return (projectOptions || [])
+      .map((project) => {
+        const id = String(project?.id || "").trim();
+        if (!id || withOutputs.has(id) || projectsWithExpected.has(id)) {
+          return null;
+        }
+        return {
+          id: `placeholder-${id}`,
+          title: "Pending Output",
+          subtitle: String(project?.title || "").trim() || id,
+          datasetName: String(project?.title || "").trim() || id,
+          datasetId: id,
+          resourceId: null,
+          outputType: "-",
+          resourceUrl: null,
+          mimeType: null,
+          fileSize: null,
+          notes: null,
+          organization:
+            String(project?.research_center_name || "").trim() ||
+            String(project?.project_org_name || "").trim() ||
+            centerNameById[String(project?.project_ckan_org_id || "").trim()] ||
+            centerNameById[String(project?.research_center_id || "").trim()] ||
+            "-",
+          private: Boolean(project?.private),
+          state: "No file",
+          metadataModified:
+            project?.updated_at || project?.created_at || project?.submitted_at,
+          isPlaceholder: true,
+          projectTitle: String(project?.title || "").trim() || id,
+        };
+      })
+      .filter(Boolean);
+  }, [actualOutputRows, centerNameById, pendingOutputRows, projectOptions]);
+  const tableRows = useMemo(
+    () => [...actualOutputRows, ...pendingOutputRows, ...placeholderRows],
+    [actualOutputRows, pendingOutputRows, placeholderRows],
   );
 
   const projectOptionsFromRows = useMemo(() => {
@@ -620,7 +770,8 @@ export default function ResearchOutputsPage() {
     const payload = {
       file_name: String(editForm.file_name || "").trim(),
       notes: String(editForm.notes || "").trim(),
-      file_path: String(editForm.file_path || "").trim(),
+      // File uploads should create real CKAN resources via Add Output.
+      // Prevent editing file_path here to avoid non-file placeholder URLs.
       mime_type: String(editForm.mime_type || "").trim(),
     };
 
@@ -810,6 +961,10 @@ export default function ResearchOutputsPage() {
     toast.success("Output added", "Research output was added successfully.");
   };
 
+  if (missingAffiliation) {
+    return missingAffiliationContent;
+  }
+
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -932,129 +1087,217 @@ export default function ResearchOutputsPage() {
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
-                        <TableHead>Project</TableHead>
-                        <TableHead>Research Center</TableHead>
-                        <TableHead>Visibility</TableHead>
-                        <TableHead>Updated</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                          <TableHead>Project</TableHead>
+                          <TableHead>Research Center</TableHead>
+                          <TableHead>Visibility</TableHead>
+                          <TableHead>Remaining</TableHead>
+                          <TableHead>Updated</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {paginatedRows.map((row, index) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          {(currentPage - 1) * pageSize + index + 1}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{row.title}</div>
-                          {row.subtitle ? (
-                            <div className="text-xs text-slate-500">
-                              {row.subtitle}
+                {paginatedRows.map((row, index) => (
+                  <TableRow key={row.id}>
+                    <TableCell>
+                      {(currentPage - 1) * pageSize + index + 1}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{row.title}</div>
+                      {row.subtitle ? (
+                        <div className="text-xs text-slate-500">
+                          {row.subtitle}
+                        </div>
+                      ) : null}
+                      {row.isPlaceholder || row.isPendingOutput ? (
+                        <div className="space-y-1 text-xs text-amber-700">
+                          <div>No file attached yet.</div>
+                          {Number(row.remainingCount || 0) > 0 ? (
+                            <div>
+                              Remaining: {row.remainingCount} of{" "}
+                              {row.targetCount || 1}
                             </div>
                           ) : null}
-                        </TableCell>
-                        <TableCell>{row.datasetName || "-"}</TableCell>
-                        <TableCell>{row.organization || "-"}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              variant={row.private ? "destructive" : "secondary"}
-                            >
-                              {row.private ? "Private" : "Public"}
-                            </Badge>
-                            {isAdmin ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                disabled={
-                                  !row.datasetId ||
-                                  Boolean(
-                                    visibilitySavingByDataset[row.datasetId],
-                                  )
-                                }
-                                onClick={() => handleToggleVisibility(row)}
-                                aria-label={
-                                  visibilitySavingByDataset[row.datasetId]
-                                    ? "Saving visibility..."
-                                    : row.private
-                                      ? "Make public"
-                                      : "Make private"
-                                }
-                                title={
-                                  visibilitySavingByDataset[row.datasetId]
-                                    ? "Saving..."
-                                    : row.private
-                                      ? "Make Public"
-                                      : "Make Private"
-                                }
-                              >
-                                {visibilitySavingByDataset[row.datasetId] ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : row.private ? (
-                                  <Eye className="h-4 w-4" />
-                                ) : (
-                                  <EyeOff className="h-4 w-4" />
-                                )}
-                              </Button>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {row.metadataModified
-                            ? new Date(row.metadataModified).toLocaleString()
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex items-center justify-end gap-1">
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{row.datasetName || "-"}</TableCell>
+                    <TableCell>{row.organization || "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={row.private ? "destructive" : "secondary"}
+                        >
+                          {row.private ? "Private" : "Public"}
+                        </Badge>
+                        {row.isPlaceholder || row.isPendingOutput ? (
+                          <Badge variant="outline">Pending</Badge>
+                        ) : null}
+                        {isAdmin ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={
+                              !row.datasetId ||
+                              Boolean(
+                                visibilitySavingByDataset[row.datasetId],
+                              )
+                            }
+                            onClick={() => handleToggleVisibility(row)}
+                            aria-label={
+                              visibilitySavingByDataset[row.datasetId]
+                                ? "Saving visibility..."
+                                : row.private
+                                  ? "Make public"
+                                  : "Make private"
+                            }
+                            title={
+                              visibilitySavingByDataset[row.datasetId]
+                                ? "Saving..."
+                                : row.private
+                                  ? "Make Public"
+                                  : "Make Private"
+                            }
+                          >
+                            {visibilitySavingByDataset[row.datasetId] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : row.private ? (
+                              <Eye className="h-4 w-4" />
+                            ) : (
+                              <EyeOff className="h-4 w-4" />
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {Number(row.remainingCount || 0) > 0
+                        ? `${row.remainingCount} of ${row.targetCount || 1}`
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {row.metadataModified
+                        ? new Date(row.metadataModified).toLocaleString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex items-center justify-end gap-1">
+                        {row.isPlaceholder || row.isPendingOutput ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              openAddOutputForProject({
+                                id: row.datasetId,
+                                title: row.projectTitle || row.subtitle,
+                              }, row.isPlaceholder
+                                ? {}
+                                : {
+                                    output_type: row.outputTypeValue,
+                                    target_count: row.targetCount,
+                                  })
+                            }
+                            aria-label={`Add output for ${row?.subtitle || "project"}`}
+                            title="Add Output"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                        {!row.isPlaceholder &&
+                        !row.isPendingOutput &&
+                        row.resourceId &&
+                        /\/resource\/.+\/download\//i.test(
+                          String(row.resourceUrl || ""),
+                        ) ? (
+                          <>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => goToOutputProject(row)}
-                              aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
-                              title="Open project"
+                              aria-label={`Open ${row?.title || "resource"}`}
+                              title="Open"
+                              onClick={() => {
+                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                  row.resourceId,
+                                )}/download`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              }}
                             >
-                              <Eye className="h-4 w-4" />
+                              <ExternalLink className="h-4 w-4" />
                             </Button>
-                            {isAdmin ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={Boolean(
-                                    deletingByResource[row.resourceId],
-                                  )}
-                                  onClick={() => handleOpenEdit(row)}
-                                  aria-label={`Edit ${row?.title || "research output"}`}
-                                  title="Edit"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
-                                  disabled={Boolean(
-                                    deletingByResource[row.resourceId],
-                                  )}
-                                  onClick={() => setDeleteTarget(row)}
-                                  aria-label={`Delete ${row?.title || "research output"}`}
-                                  title={deletingByResource[row.resourceId] ? "Deleting..." : "Delete"}
-                                >
-                                  {deletingByResource[row.resourceId] ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={`Download ${row?.title || "resource"}`}
+                              title="Download"
+                              onClick={() => {
+                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                  row.resourceId,
+                                )}/download?download=1`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : null}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => goToOutputProject(row)}
+                          aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
+                          title="Open project"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {isAdmin ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={Boolean(
+                                deletingByResource[row.resourceId],
+                              ) || row.isPlaceholder}
+                              onClick={() => handleOpenEdit(row)}
+                              aria-label={`Edit ${row?.title || "research output"}`}
+                              title={row.isPlaceholder ? "Edit unavailable" : "Edit"}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                              disabled={
+                                Boolean(deletingByResource[row.resourceId]) ||
+                                row.isPlaceholder
+                              }
+                              onClick={() => setDeleteTarget(row)}
+                              aria-label={`Delete ${row?.title || "research output"}`}
+                              title={
+                                row.isPlaceholder
+                                  ? "Delete unavailable"
+                                  : deletingByResource[row.resourceId]
+                                    ? "Deleting..."
+                                    : "Delete"
+                              }
+                            >
+                              {deletingByResource[row.resourceId] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -1275,18 +1518,12 @@ export default function ResearchOutputsPage() {
 
             <label className="block space-y-1">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                File URL / Path
+                File URL / Path (read-only)
               </span>
-              <Input
-                type="text"
-                value={editForm.file_path}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    file_path: event.target.value,
-                  }))
-                }
-              />
+              <Input type="text" value={editForm.file_path} readOnly />
+              <p className="text-xs text-slate-500">
+                To attach a new file, use Add Output.
+              </p>
             </label>
 
             <div className="grid gap-3 md:grid-cols-2">

@@ -208,15 +208,16 @@ export function createLocalOutputRow() {
     target_count: 1,
     specific_output: "",
     notes: "",
-    file_path: "",
-    file_name: "",
-    mime_type: "",
-    file_size: null,
-    file: null,
-    needs_file_reselect: false,
-    is_saved: false,
-  };
-}
+      file_path: "",
+      file_name: "",
+      mime_type: "",
+      file_size: null,
+      file_base64: "",
+      file: null,
+      needs_file_reselect: false,
+      is_saved: false,
+    };
+  }
 
 export function mapDbOutputToLocalRow(row) {
   return {
@@ -226,15 +227,16 @@ export function mapDbOutputToLocalRow(row) {
     target_count: Math.max(1, Number(row.target_count) || 1),
     specific_output: row.specific_output || "",
     notes: row.notes || "",
-    file_path: row.file_path || "",
-    file_name: row.file_name || "",
-    mime_type: row.mime_type || "",
-    file_size: row.file_size ?? null,
-    file: null,
-    needs_file_reselect: false,
-    is_saved: true,
-  };
-}
+      file_path: row.file_path || "",
+      file_name: row.file_name || "",
+      mime_type: row.mime_type || "",
+      file_size: row.file_size ?? null,
+      file_base64: "",
+      file: null,
+      needs_file_reselect: false,
+      is_saved: true,
+    };
+  }
 
 export function buildExpectedOutputsSummary(rows) {
   const labelsByValue = EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {

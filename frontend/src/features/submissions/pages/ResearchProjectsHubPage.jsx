@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useReferenceData } from "@/shared/hooks/useReferenceData";
@@ -164,17 +164,20 @@ export default function ResearchProjectsHubPage() {
       }, {}),
     [centers],
   );
-  const getProjectOrganization = (project) => {
-    const submittedOrgName = String(
-      project?.submitted_by_org_name || "",
-    ).trim();
-    if (submittedOrgName) return submittedOrgName;
-    const submittedOrgId = String(project?.submitted_by_org_id || "").trim();
-    if (submittedOrgId) return centerById[submittedOrgId] || submittedOrgId;
-    const projectOrgId = String(project?.project_ckan_org_id || "").trim();
-    if (projectOrgId) return centerById[projectOrgId] || projectOrgId;
-    return centerById[project?.research_center_id] || "-";
-  };
+  const getProjectOrganization = useCallback(
+    (project) => {
+      const submittedOrgName = String(
+        project?.submitted_by_org_name || "",
+      ).trim();
+      if (submittedOrgName) return submittedOrgName;
+      const submittedOrgId = String(project?.submitted_by_org_id || "").trim();
+      if (submittedOrgId) return centerById[submittedOrgId] || submittedOrgId;
+      const projectOrgId = String(project?.project_ckan_org_id || "").trim();
+      if (projectOrgId) return centerById[projectOrgId] || projectOrgId;
+      return centerById[project?.research_center_id] || "-";
+    },
+    [centerById],
+  );
 
   const analytics = useMemo(() => {
     const base = {

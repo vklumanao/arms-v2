@@ -43,11 +43,13 @@ export async function fetchProjectResources({ projectId }) {
         resources: [],
         syncEnabled: true,
       },
+      syncEnabled: payload?.syncEnabled ?? payload?.data?.syncEnabled ?? true,
       error: null,
     };
   } catch (error) {
     return {
       data: { dataset: null, resources: [], syncEnabled: true },
+      syncEnabled: true,
       error,
     };
   }
