@@ -28,6 +28,21 @@ export function registerProfileRoutes(app, deps) {
     logAuditEvent,
   } = deps;
 
+  const formatFullName = ({ first_name, middle_initial, last_name }) => {
+    const first = String(first_name || "").trim();
+    const last = String(last_name || "").trim();
+    const middleRaw = String(middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const parts = [
+      `${last.toUpperCase()},`,
+      first.toUpperCase(),
+      middle ? `${middle}.` : "",
+    ].filter(Boolean);
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  };
+
   // Returns current user's profile view model with live research metrics.
   app.get("/api/affiliate-profile/me", authMiddleware, async (req, res) => {
     try {
@@ -101,7 +116,15 @@ export function registerProfileRoutes(app, deps) {
 
       const patch = {};
       // Build sparse patch so omitted fields are not overwritten.
-      if ("full_name" in parsed) patch.full_name = parsed.full_name || null;
+      const hasNameParts =
+        "first_name" in parsed ||
+        "middle_initial" in parsed ||
+        "last_name" in parsed;
+      if (hasNameParts) {
+        patch.full_name = formatFullName(parsed) || null;
+      } else if ("full_name" in parsed) {
+        patch.full_name = parsed.full_name || null;
+      }
       if ("department" in parsed) patch.department = parsed.department || null;
       if ("ckan_org_id" in parsed) {
         patch.ckan_org_id =
