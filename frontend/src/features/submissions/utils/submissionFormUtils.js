@@ -100,57 +100,176 @@ export function clampSubmissionStep(
   return Math.max(0, Math.min(maxStep, step));
 }
 
-export function validateSubmissionStep(form, step, expectedOutputRows = []) {
-  if (step === 0) {
-    if (!form.title.trim()) return "Project title is required.";
-    if (!form.lead_researcher.trim()) return "Lead researcher is required.";
-    if (!form.faculty_team.trim())
-      return "Research team (faculty) is required.";
-    if (!form.research_center_id) return "Research center is required.";
-    if (!form.year || Number(form.year) < 2000 || Number(form.year) > 2100) {
-      return "Project year must be between 2000 and 2100.";
-    }
-  }
-  if (step === 1) {
-    if (!form.classification) return "Classification is required.";
-    if (!form.status) return "Status is required.";
-    if (!form.research_agenda_id) return "Research agenda is required.";
-    if (!form.department_id) return "Department is required.";
-    if (!form.scholarly_type.trim()) return "Scholarly type is required.";
-  }
-  if (step === 2) {
-    if (form.funding_amount && Number(form.funding_amount) < 0) {
-      return "Funding amount cannot be negative.";
-    }
-    if (!form.start_date) return "Start date is required.";
-    if (!form.end_date) return "End date is required.";
-    if (form.start_date && form.end_date && form.start_date > form.end_date) {
-      return "End date cannot be earlier than start date.";
-    }
-  }
-  if (step === 3) {
-    if (!expectedOutputRows.length) return "";
-    const validTypeSet = new Set(
-      EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => item.value),
-    );
-    for (const row of expectedOutputRows) {
-      if (!row.output_type || !validTypeSet.has(row.output_type)) {
-        return "Each expected output must have a valid type.";
-      }
-      const targetCount = Number(row.target_count);
-      if (!Number.isFinite(targetCount) || targetCount < 1) {
-        return "Each expected output must have a target count of at least 1.";
-      }
-      if (
-        String(row.output_type || "").trim() === "product_software" &&
-        !String(row.specific_output || "").trim()
-      ) {
-        return "Specific output is required for Product/Software Application.";
+export function validateSubmissionFields(form, step, expectedOutputRows = []) {
+  const errors = {};
+  const stepRules = SUBMISSION_STEP_RULES[step] || [];
+  for (const rule of stepRules) {
+    if (!rule.check(form, expectedOutputRows)) {
+      if (!errors[rule.field]) {
+        errors[rule.field] = rule.message;
       }
     }
   }
-  return "";
+  return errors;
 }
+
+export function validateSubmissionStep(form, step, expectedOutputRows = []) {
+  const errors = validateSubmissionFields(form, step, expectedOutputRows);
+  const firstKey = Object.keys(errors)[0];
+  return firstKey ? errors[firstKey] : "";
+}
+
+const SUBMISSION_STEP_RULES = {
+  0: [
+    {
+      field: "title",
+      message: "Project title is required.",
+      check: (form) => Boolean(form.title?.trim()),
+    },
+    {
+      field: "abstract",
+      message: "Abstract is required.",
+      check: (form) => Boolean(form.abstract?.trim()),
+    },
+    {
+      field: "lead_researcher",
+      message: "Lead researcher is required.",
+      check: (form) => Boolean(form.lead_researcher?.trim()),
+    },
+    {
+      field: "faculty_team",
+      message: "Research team (faculty) is required.",
+      check: (form) => Boolean(form.faculty_team?.trim()),
+    },
+    {
+      field: "research_center_id",
+      message: "Research center is required.",
+      check: (form) => Boolean(form.research_center_id),
+    },
+    {
+      field: "year",
+      message: "Project year must be between 2000 and 2100.",
+      check: (form) =>
+        Boolean(form.year) &&
+        Number(form.year) >= 2000 &&
+        Number(form.year) <= 2100,
+    },
+  ],
+  1: [
+    {
+      field: "classification",
+      message: "Classification is required.",
+      check: (form) => Boolean(form.classification),
+    },
+    {
+      field: "status",
+      message: "Status is required.",
+      check: (form) => Boolean(form.status),
+    },
+    {
+      field: "research_agenda_id",
+      message: "Research agenda is required.",
+      check: (form) => Boolean(form.research_agenda_id),
+    },
+    {
+      field: "department_id",
+      message: "Department is required.",
+      check: (form) => Boolean(form.department_id),
+    },
+    {
+      field: "scholarly_type",
+      message: "Scholarly type is required.",
+      check: (form) => Boolean(form.scholarly_type?.trim()),
+    },
+  ],
+  2: [
+    {
+      field: "funding_type",
+      message: "Funding type is required.",
+      check: (form) => Boolean(form.funding_type && form.funding_type !== "none"),
+    },
+    {
+      field: "funding_category",
+      message: "Funding category is required.",
+      check: (form) => Boolean(form.funding_category?.trim()),
+    },
+    {
+      field: "funding_source",
+      message: "Funding source is required.",
+      check: (form) => Boolean(form.funding_source?.trim()),
+    },
+    {
+      field: "funding_amount",
+      message: "Funding amount is required.",
+      check: (form) => String(form.funding_amount ?? "").trim() !== "",
+    },
+    {
+      field: "funding_amount",
+      message: "Funding amount cannot be negative.",
+      check: (form) => !form.funding_amount || Number(form.funding_amount) >= 0,
+    },
+    {
+      field: "industry_partner",
+      message: "Industry/Agency partner is required.",
+      check: (form) => Boolean(form.industry_partner?.trim()),
+    },
+    {
+      field: "start_date",
+      message: "Start date is required.",
+      check: (form) => Boolean(form.start_date),
+    },
+    {
+      field: "end_date",
+      message: "End date is required.",
+      check: (form) => Boolean(form.end_date),
+    },
+    {
+      field: "end_date",
+      message: "End date cannot be earlier than start date.",
+      check: (form) =>
+        !form.start_date || !form.end_date || form.start_date <= form.end_date,
+    },
+  ],
+  3: [
+    {
+      field: "expected_outputs",
+      message: "Each expected output must have a valid type.",
+      check: (form, expectedOutputRows) => {
+        if (!expectedOutputRows.length) return true;
+        const validTypeSet = new Set(
+          EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => item.value),
+        );
+        return expectedOutputRows.every(
+          (row) => row.output_type && validTypeSet.has(row.output_type),
+        );
+      },
+    },
+    {
+      field: "expected_outputs",
+      message: "Each expected output must have a target count of at least 1.",
+      check: (form, expectedOutputRows) => {
+        if (!expectedOutputRows.length) return true;
+        return expectedOutputRows.every((row) => {
+          const targetCount = Number(row.target_count);
+          return Number.isFinite(targetCount) && targetCount >= 1;
+        });
+      },
+    },
+    {
+      field: "expected_outputs",
+      message: "Specific output is required for Product/Software Application.",
+      check: (form, expectedOutputRows) => {
+        if (!expectedOutputRows.length) return true;
+        return expectedOutputRows.every((row) => {
+          if (String(row.output_type || "").trim() !== "product_software") {
+            return true;
+          }
+          return Boolean(String(row.specific_output || "").trim());
+        });
+      },
+    },
+  ],
+};
 
 export function canAccessSubmissionStep(
   form,
@@ -173,7 +292,6 @@ export function getHighestUnlockedSubmissionStep(
   }
   return 0;
 }
-
 
 export function splitCsvNames(raw) {
   const value = String(raw || "").trim();
@@ -208,16 +326,16 @@ export function createLocalOutputRow() {
     target_count: 1,
     specific_output: "",
     notes: "",
-      file_path: "",
-      file_name: "",
-      mime_type: "",
-      file_size: null,
-      file_base64: "",
-      file: null,
-      needs_file_reselect: false,
-      is_saved: false,
-    };
-  }
+    file_path: "",
+    file_name: "",
+    mime_type: "",
+    file_size: null,
+    file_base64: "",
+    file: null,
+    needs_file_reselect: false,
+    is_saved: false,
+  };
+}
 
 export function mapDbOutputToLocalRow(row) {
   return {
@@ -227,16 +345,16 @@ export function mapDbOutputToLocalRow(row) {
     target_count: Math.max(1, Number(row.target_count) || 1),
     specific_output: row.specific_output || "",
     notes: row.notes || "",
-      file_path: row.file_path || "",
-      file_name: row.file_name || "",
-      mime_type: row.mime_type || "",
-      file_size: row.file_size ?? null,
-      file_base64: "",
-      file: null,
-      needs_file_reselect: false,
-      is_saved: true,
-    };
-  }
+    file_path: row.file_path || "",
+    file_name: row.file_name || "",
+    mime_type: row.mime_type || "",
+    file_size: row.file_size ?? null,
+    file_base64: "",
+    file: null,
+    needs_file_reselect: false,
+    is_saved: true,
+  };
+}
 
 export function buildExpectedOutputsSummary(rows) {
   const labelsByValue = EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {
