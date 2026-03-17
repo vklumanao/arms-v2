@@ -134,12 +134,6 @@ export default function StepReview({
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
-                  Funding Category
-                </span>
-                <Input value={form.funding_category || "-"} readOnly />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
                   Funding Source
                 </span>
                 <Input value={form.funding_source || "-"} readOnly />
@@ -231,13 +225,6 @@ export default function StepReview({
                   Supporting MOV Link
                 </span>
                 <Input value={form.supporting_mov_link || "-"} readOnly />
-              </label>
-              <label className="space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">Visibility</span>
-                <Input
-                  value={form.public_visible ? "Publicly visible" : "Private"}
-                  readOnly
-                />
               </label>
             </div>
           </CardContent>
