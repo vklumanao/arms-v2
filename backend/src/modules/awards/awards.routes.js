@@ -305,8 +305,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.get("/api/awards/recipient-options", authMiddleware, async (req, res) => {
     try {
-      const orgId = asTrimmedString(req.query?.org_id);
-      const rows = await listEligibleRecipientUsers(orgId);
+      const rows = await listEligibleRecipientUsers("");
       return res.json({ data: rows });
     } catch (error) {
       return res.status(500).json({
