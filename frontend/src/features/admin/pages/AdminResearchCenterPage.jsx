@@ -1567,7 +1567,7 @@ export default function AdminResearchCenterPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
+                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ï¿½{" "}
                           {row.type}
                         </p>
                         <h3 className="mt-1 truncate text-base font-bold text-slate-900">
@@ -1613,8 +1613,8 @@ export default function AdminResearchCenterPage() {
                           {row.profileCount}
                         </p>
                         <p className="mt-1 text-xs text-slate-600">
-                          Admin {row.memberBreakdown?.adminCount || 0} · Editor{" "}
-                          {row.memberBreakdown?.editorCount || 0} · Member{" "}
+                          Admin {row.memberBreakdown?.adminCount || 0} ï¿½ Editor{" "}
+                          {row.memberBreakdown?.editorCount || 0} ï¿½ Member{" "}
                           {row.memberBreakdown?.memberCount || 0}
                         </p>
                       </button>
@@ -2228,7 +2228,7 @@ export default function AdminResearchCenterPage() {
           }}
         >
           <DialogContent
-            className="max-w-md"
+            className="max-w-2xl mx-auto"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
@@ -2391,6 +2391,3 @@ export default function AdminResearchCenterPage() {
     </section>
   );
 }
-
-
-
