@@ -136,10 +136,20 @@ function mockApiPayload(path, options = {}) {
       typeof options.body === "string"
         ? JSON.parse(options.body || "{}")
         : options.body || {};
+    const first = String(rawBody.first_name || "").trim();
+    const last = String(rawBody.last_name || "").trim();
+    const middleRaw = String(rawBody.middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const formatted =
+      last && first
+        ? `${last.toUpperCase()}, ${first.toUpperCase()}${middle ? ` ${middle}.` : ""}`
+        : rawBody.full_name || "Created User";
     return {
       data: {
         id: "demo-user-created",
-        full_name: rawBody.full_name || "Created User",
+        full_name: formatted,
         email: rawBody.email || "created@arms.local",
         role: rawBody.role || "faculty",
         department: rawBody.department || null,
@@ -229,11 +239,21 @@ function mockApiPayload(path, options = {}) {
       typeof options.body === "string"
         ? JSON.parse(options.body || "{}")
         : options.body || {};
+    const first = String(rawBody.first_name || "").trim();
+    const last = String(rawBody.last_name || "").trim();
+    const middleRaw = String(rawBody.middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const formatted =
+      last && first
+        ? `${last.toUpperCase()}, ${first.toUpperCase()}${middle ? ` ${middle}.` : ""}`
+        : rawBody.full_name || "Created Proponent";
     return {
       data: {
         id: "demo-proponent-created",
-        name: rawBody.full_name || "Created Proponent",
-        full_name: rawBody.full_name || "Created Proponent",
+        name: formatted,
+        full_name: formatted,
         email: rawBody.email || "created@arms.local",
         role: rawBody.role || "faculty",
         department: rawBody.department || null,
@@ -252,7 +272,46 @@ function mockApiPayload(path, options = {}) {
   }
 
   if (cleanPath === "/admin/affiliates") return { data: [] };
-  if (cleanPath.includes("/admin/affiliates/")) return { data: null };
+  if (cleanPath.includes("/admin/affiliates/")) {
+    const rawBody =
+      typeof options.body === "string"
+        ? JSON.parse(options.body || "{}")
+        : options.body || {};
+    const first = String(rawBody.first_name || "").trim();
+    const last = String(rawBody.last_name || "").trim();
+    const middleRaw = String(rawBody.middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const formatted =
+      last && first
+        ? `${last.toUpperCase()}, ${first.toUpperCase()}${middle ? ` ${middle}.` : ""}`
+        : rawBody.full_name || "Updated Affiliate";
+    return {
+      data: {
+        id: cleanPath.split("/").pop() || "demo-affiliate-id",
+        full_name: formatted,
+        email: rawBody.email || "affiliate@arms.local",
+        role: rawBody.role || "faculty",
+        department: rawBody.department || null,
+        ckan_org_id: rawBody.ckan_org_id || null,
+        ckan_group_id: rawBody.ckan_group_id || null,
+        ckan_username: "affiliate-user",
+        ckan_user_id: "ckan-affiliate-user",
+        is_active: true,
+        google_scholar_link: rawBody.google_scholar_link || null,
+        employment_status: rawBody.employment_status || null,
+        designation: rawBody.designation || null,
+        is_gs_faculty: Boolean(rawBody.is_gs_faculty),
+        publication_count: Number(rawBody.publication_count || 0),
+        research_project_count: Number(rawBody.research_project_count || 0),
+        creative_work_count: Number(rawBody.creative_work_count || 0),
+        awards_count: Number(rawBody.awards_count || 0),
+        ip_count: Number(rawBody.ip_count || 0),
+        updated_at: new Date().toISOString(),
+      },
+    };
+  }
 
   if (cleanPath === "/affiliate-profile/me") return { data: null };
   if (cleanPath === "/awards" && method === "GET") {
