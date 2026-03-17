@@ -1224,10 +1224,14 @@ export default function AdminDepartmentPage() {
               <DialogDescription>
                 Add a new department to the department registry.
               </DialogDescription>
+              <p className="text-xs text-slate-500">
+                Fields marked with <span className="text-red-500">*</span> are
+                required.
+              </p>
             </DialogHeader>
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Department Name *
+                Department Name <span className="text-red-500">*</span>
               </label>
               <Input
                 className={createErrors.name ? "input-error" : ""}
@@ -1245,7 +1249,7 @@ export default function AdminDepartmentPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Code *
+                Code <span className="text-red-500">*</span>
               </label>
               <Input
                 className={createErrors.code ? "input-error" : ""}
@@ -1265,7 +1269,7 @@ export default function AdminDepartmentPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
               <Textarea
                 value={newDepartmentDescription}
@@ -1278,7 +1282,7 @@ export default function AdminDepartmentPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Chairperson *
+                Chairperson <span className="text-red-500">*</span>
               </label>
               <Select
                 value={newChairpersonId}
