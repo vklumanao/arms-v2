@@ -189,11 +189,6 @@ const SUBMISSION_STEP_RULES = {
       check: (form) => Boolean(form.funding_type && form.funding_type !== "none"),
     },
     {
-      field: "funding_category",
-      message: "Funding category is required.",
-      check: (form) => Boolean(form.funding_category?.trim()),
-    },
-    {
       field: "funding_source",
       message: "Funding source is required.",
       check: (form) => Boolean(form.funding_source?.trim()),
