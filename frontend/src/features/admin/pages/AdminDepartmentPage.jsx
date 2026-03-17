@@ -987,7 +987,9 @@ export default function AdminDepartmentPage() {
                           variant="ghost"
                           size="sm"
                           className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                          onClick={() => goToDepartmentDetail(row, "affiliates")}
+                          onClick={() =>
+                            goToDepartmentDetail(row, "affiliates")
+                          }
                         >
                           {row.profileCount}
                         </Button>
@@ -1214,7 +1216,7 @@ export default function AdminDepartmentPage() {
           }}
         >
           <DialogContent
-            className="max-w-md"
+            className="max-w-2xl mx-auto"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
