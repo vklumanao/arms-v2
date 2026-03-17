@@ -170,59 +170,62 @@ h6,
   z-index: 30;
   overflow: hidden;
   width: 100%;
-  border-right: 1px solid var(--border);
-  background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
-  padding: var(--space-6) var(--space-4);
-  box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.06);
-  transition: width 160ms ease, box-shadow 160ms ease;
+  border-right: 1px solid #e6edf7;
+  background: #fbfcff;
+  padding: 0.85rem 0.7rem 1rem;
+  transition:
+    width 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    padding 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: width;
 }
 
 .sidebar-shell.sidebar-shell-hover-expanded {
-  width: 296px;
+  width: 280px;
   box-shadow:
     inset -1px 0 0 rgba(15, 23, 42, 0.06),
-    18px 0 28px rgba(16, 34, 57, 0.14);
+    10px 0 16px rgba(16, 34, 57, 0.1);
 }
 
 .sidebar-shell.sidebar-shell-collapsed {
-  padding: var(--space-4) var(--space-2);
+  padding: 0.9rem 0.5rem;
 }
 
-.sidebar-brand-panel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
-  padding: 0.95rem;
-  box-shadow: var(--shadow-soft);
+.sidebar-panel {
+  border-radius: 0.8rem;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0.4rem 0.35rem;
 }
 
-.sidebar-tagline {
-  margin: 0.45rem 0 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: #627593;
+.sidebar-panel.is-collapsed {
+  padding: 0.35rem;
 }
 
-.nav-section-title {
+.sidebar-nav-shell {
+  border-radius: 0.8rem;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.sidebar-section-title {
   margin: 0;
-  padding: 0 0.55rem;
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
+  padding: 0 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #607490;
+  color: #7a8ca3;
 }
 
-.sidebar-user-card {
-  margin-top: var(--space-8);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
-  padding: var(--space-3);
-  box-shadow: var(--shadow-soft);
+.sidebar-footer {
+  border-top: 1px solid #eef2f8;
+  padding-top: 0.6rem;
+}
+
+.sidebar-footer.is-collapsed {
+  display: flex;
+  justify-content: center;
 }
 
 .content-shell {
@@ -612,6 +615,93 @@ h6,
 .nav-item:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.sidebar-nav-item {
+  position: relative;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 2.15rem minmax(0, 1fr);
+  gap: 0.55rem;
+  border-radius: 0.6rem;
+  padding: 0.42rem 0.5rem;
+  color: #54657c;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.sidebar-nav-item:hover {
+  background: #f1f5fb;
+  color: #22324a;
+}
+
+.sidebar-nav-item.is-active {
+  background: #edf3ff;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.sidebar-nav-item.is-collapsed {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0.48rem;
+}
+
+.sidebar-nav-icon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  color: #6b7d94;
+  background: transparent;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.sidebar-nav-item:hover .sidebar-nav-icon {
+  color: #334965;
+  background: #eef3f9;
+}
+
+.sidebar-nav-item.is-active .sidebar-nav-icon {
+  color: var(--brand);
+  background: #e8f1ff;
+}
+
+.sidebar-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-nav-label.is-hidden {
+  display: none;
+}
+
+.sidebar-nav-rail {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 160ms ease;
+}
+
+.sidebar-nav-item:hover .sidebar-nav-rail {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-nav-rail.is-active {
+  background: var(--brand);
 }
 
 .input-error {
