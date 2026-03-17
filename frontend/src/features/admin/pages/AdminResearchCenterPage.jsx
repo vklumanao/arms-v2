@@ -2236,10 +2236,14 @@ export default function AdminResearchCenterPage() {
               <DialogDescription>
                 Add a new research center to the research center registry.
               </DialogDescription>
+              <p className="text-xs text-slate-500 mb-3">
+                Fields marked with <span className="text-red-500">*</span> are
+                required.
+              </p>
             </DialogHeader>
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Research Center Name *
+                Research Center Name <span className="text-red-500">*</span>
               </label>
               <Input
                 className={createErrors.name ? "input-error" : ""}
@@ -2257,7 +2261,7 @@ export default function AdminResearchCenterPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Code *
+                Code <span className="text-red-500">*</span>
               </label>
               <Input
                 className={createErrors.code ? "input-error" : ""}
@@ -2277,7 +2281,7 @@ export default function AdminResearchCenterPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
               <Textarea
                 value={newResearchCenterDescription}
@@ -2293,7 +2297,7 @@ export default function AdminResearchCenterPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Center Chief *
+                Center Chief <span className="text-red-500">*</span>
               </label>
               <Select
                 value={newCenterChiefId}
@@ -2322,7 +2326,7 @@ export default function AdminResearchCenterPage() {
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Research Agendum *
+                Research Agendum <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
                 <Input
