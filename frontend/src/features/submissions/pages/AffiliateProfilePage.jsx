@@ -31,7 +31,9 @@ import ConfirmActionModal from "@/shared/components/feedback/ConfirmActionModal"
 import { useToast } from "@/app/providers/ToastProvider";
 
 const INITIAL_FORM = {
-  full_name: "",
+  first_name: "",
+  middle_initial: "",
+  last_name: "",
   department: "",
   ckan_org_id: "",
   google_scholar_link: "",
@@ -68,22 +70,66 @@ export default function AffiliateProfilePage() {
   });
   const toast = useToast();
 
+  const parseNameParts = (fullName = "") => {
+    const raw = String(fullName || "").trim();
+    if (!raw) return { first_name: "", middle_initial: "", last_name: "" };
+
+    if (raw.includes(",")) {
+      const [lastPart = "", givenPart = ""] = raw.split(",", 2);
+      const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
+      const first = givenTokens[0] || "";
+      const middleToken = givenTokens[1] || "";
+      const middle = middleToken.replace(/\./g, "").charAt(0) || "";
+      return {
+        first_name: first,
+        middle_initial: middle,
+        last_name: lastPart.trim(),
+      };
+    }
+
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    if (tokens.length === 1) {
+      return { first_name: tokens[0], middle_initial: "", last_name: "" };
+    }
+    const first = tokens[0];
+    const middleCandidate = tokens[1] || "";
+    const isMiddleInitial = /^[A-Za-z](\.)?$/.test(middleCandidate);
+    const middle = isMiddleInitial
+      ? middleCandidate.replace(/\./g, "").charAt(0)
+      : "";
+    const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(" ");
+    return {
+      first_name: first,
+      middle_initial: middle,
+      last_name: last,
+    };
+  };
+
+  const buildFormFromProfile = (data) => {
+    const nameParts = parseNameParts(data?.full_name);
+    return {
+      ...INITIAL_FORM,
+      first_name: nameParts.first_name || "",
+      middle_initial: nameParts.middle_initial || "",
+      last_name: nameParts.last_name || "",
+      department: data?.department || "",
+      ckan_org_id: data?.ckan_org_id || "",
+      ckan_group_id: data?.ckan_group_id || "",
+      google_scholar_link: data?.google_scholar_link || "",
+      employment_status: data?.employment_status || "",
+      designation: data?.designation || "",
+      is_gs_faculty: Boolean(data?.is_gs_faculty),
+    };
+  };
+
   useEffect(() => {
     if (!user?.id) return;
     fetchAffiliateProfile().then((profileRes) => {
       if (profileRes.data) {
-        setForm({
-          ...INITIAL_FORM,
-          ...profileRes.data,
-        });
+        setForm(buildFormFromProfile(profileRes.data));
         setOriginalOrgId(String(profileRes.data?.ckan_org_id || "").trim());
       } else if (profile) {
-        setForm((prev) => ({
-          ...prev,
-          full_name: profile.full_name || "",
-          department: profile.department || "",
-          ckan_org_id: profile.ckan_org_id || "",
-        }));
+        setForm(buildFormFromProfile(profile));
         setOriginalOrgId(String(profile?.ckan_org_id || "").trim());
       }
       setLoading(false);
@@ -104,8 +150,13 @@ export default function AffiliateProfilePage() {
     setError("");
     setMessage("");
 
-    if (form.full_name?.trim().length < 3) {
-      setError("Full name must be at least 3 characters.");
+    if (!form.first_name?.trim()) {
+      setError("First name is required.");
+      setSaving(false);
+      return;
+    }
+    if (!form.last_name?.trim()) {
+      setError("Last name is required.");
       setSaving(false);
       return;
     }
@@ -127,7 +178,9 @@ export default function AffiliateProfilePage() {
     setSaving(true);
 
     const payload = {
-      full_name: form.full_name?.trim() || null,
+      first_name: form.first_name?.trim() || null,
+      middle_initial: form.middle_initial?.trim() || null,
+      last_name: form.last_name?.trim() || null,
       department: form.department?.trim() || null,
       ckan_org_id: form.ckan_org_id?.trim() || null,
       ckan_group_id: form.ckan_group_id?.trim() || null,
@@ -229,20 +282,51 @@ export default function AffiliateProfilePage() {
               </CardHeader>
               <CardContent className="grid gap-4 p-5">
               <div className="grid gap-2 sm:grid-cols-2">
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Full name
-                  </span>
-                  <Input
-                    value={form.full_name || ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        full_name: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
+                <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      First name
+                    </span>
+                    <Input
+                      value={form.first_name || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          first_name: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Middle initial
+                    </span>
+                    <Input
+                      maxLength={2}
+                      value={form.middle_initial || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          middle_initial: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Last name
+                    </span>
+                    <Input
+                      value={form.last_name || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          last_name: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
                     Department
