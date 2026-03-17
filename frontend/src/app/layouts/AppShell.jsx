@@ -84,7 +84,6 @@ export default function AppShell() {
   const mobileSidebarScrollRef = useRef(null);
   const desktopSidebarScrollTopRef = useRef(0);
   const mobileSidebarScrollTopRef = useRef(0);
-  const collapseToggleRef = useRef(null);
 
   const isAuthPage = [
     "/login",
@@ -143,8 +142,6 @@ export default function AppShell() {
     }
     setMobileNavOpen(true);
   };
-
-  const isDesktopSidebarCollapsed = desktopSidebarCollapsed && !hoverExpanded;
 
   const adminGovernanceLinks = useMemo(
     () => [
@@ -374,12 +371,6 @@ export default function AppShell() {
       SIDEBAR_COLLAPSE_STORAGE_KEY,
       desktopSidebarCollapsed ? "true" : "false",
     );
-  }, [desktopSidebarCollapsed]);
-
-  useEffect(() => {
-    if (!desktopSidebarCollapsed) {
-      setHoverExpanded(false);
-    }
   }, [desktopSidebarCollapsed]);
 
   useEffect(() => {
@@ -634,7 +625,6 @@ export default function AppShell() {
 
             {variant === "desktop" ? (
               <Button
-                ref={collapseToggleRef}
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -772,32 +762,18 @@ export default function AppShell() {
         "app-shell",
         !shouldShowSidebar || !isDesktop
           ? "app-shell-no-sidebar"
-          : isDesktopSidebarCollapsed
+          : desktopSidebarCollapsed
             ? "app-shell-sidebar-collapsed"
             : null,
       )}
     >
       {shouldShowSidebar && isDesktop ? (
         <aside
-          className={cn(
-            "sidebar-shell",
-            isDesktopSidebarCollapsed && "sidebar-shell-collapsed",
-            hoverExpanded && "sidebar-shell-hover-expanded",
-          )}
-          onMouseEnter={(event) => {
-            if (desktopSidebarCollapsed) {
-              // Avoid expanding when hovering only over the collapse/expand toggle button
-              if (collapseToggleRef.current?.contains(event.target)) return;
-              setHoverExpanded(true);
-            }
-          }}
-          onMouseLeave={() => {
-            if (desktopSidebarCollapsed) setHoverExpanded(false);
-          }}
+          className={cn("sidebar-shell", desktopSidebarCollapsed && "sidebar-shell-collapsed")}
         >
           <SidebarContent
             variant="desktop"
-            collapsed={isDesktopSidebarCollapsed}
+            collapsed={desktopSidebarCollapsed}
           />
         </aside>
       ) : null}
