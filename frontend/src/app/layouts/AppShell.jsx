@@ -84,6 +84,7 @@ export default function AppShell() {
   const mobileSidebarScrollRef = useRef(null);
   const desktopSidebarScrollTopRef = useRef(0);
   const mobileSidebarScrollTopRef = useRef(0);
+  const collapseToggleRef = useRef(null);
 
   const isAuthPage = [
     "/login",
@@ -633,6 +634,7 @@ export default function AppShell() {
 
             {variant === "desktop" ? (
               <Button
+                ref={collapseToggleRef}
                 type="button"
                 variant="ghost"
                 size="icon"
