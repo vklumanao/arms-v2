@@ -54,6 +54,21 @@ export function registerAuthRoutes(app, deps) {
     logAuditEvent,
   } = deps;
 
+  const formatFullName = ({ first_name, middle_initial, last_name }) => {
+    const first = String(first_name || "").trim();
+    const last = String(last_name || "").trim();
+    const middleRaw = String(middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const parts = [
+      `${last.toUpperCase()},`,
+      first.toUpperCase(),
+      middle ? `${middle}.` : "",
+    ].filter(Boolean);
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  };
+
   app.get("/api/health", (req, res) => {
     res.json({ ok: true, service: "arms-backend" });
   });
@@ -71,7 +86,7 @@ export function registerAuthRoutes(app, deps) {
         "Invalid registration payload.",
       );
 
-      const full_name = parsed.full_name.trim();
+      const full_name = formatFullName(parsed);
       const email = parsed.email.trim().toLowerCase();
       const password = parsed.password;
       const role = normalizeRole(parsed.role);
