@@ -63,6 +63,21 @@ export function registerAdminUserRoutes(app, deps) {
     logAuditEvent,
   } = deps;
 
+  const formatFullName = ({ first_name, middle_initial, last_name }) => {
+    const first = String(first_name || "").trim();
+    const last = String(last_name || "").trim();
+    const middleRaw = String(middle_initial || "")
+      .replace(/\./g, "")
+      .trim();
+    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
+    const parts = [
+      `${last.toUpperCase()},`,
+      first.toUpperCase(),
+      middle ? `${middle}.` : "",
+    ].filter(Boolean);
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  };
+
   /**
    * Middleware guard for `admin.users.manage` permission.
    */
@@ -103,7 +118,7 @@ export function registerAdminUserRoutes(app, deps) {
           "Invalid user payload.",
         );
 
-        const full_name = String(parsed.full_name || "").trim();
+        const full_name = formatFullName(parsed);
         const email = String(parsed.email || "")
           .trim()
           .toLowerCase();
