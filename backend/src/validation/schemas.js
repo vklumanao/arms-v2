@@ -8,6 +8,15 @@ const optionalEmail = z.preprocess((value) => {
   const normalized = String(value).trim();
   return normalized ? normalized : null;
 }, z.string().email().nullable().optional());
+const optionalMiddleInitial = z.preprocess((value) => {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized : null;
+}, z.string()
+  .max(2)
+  .regex(/^[A-Za-z](\.)?$/, "Middle initial must be 1 letter.")
+  .nullable()
+  .optional());
 
 /**
  * Registration payload validator.
@@ -15,7 +24,9 @@ const optionalEmail = z.preprocess((value) => {
  * Expected by `/api/auth/register` route.
  */
 export const registerSchema = z.object({
-  full_name: z.string().trim().min(3),
+  first_name: z.string().trim().min(1, "First name is required."),
+  middle_initial: optionalMiddleInitial,
+  last_name: z.string().trim().min(1, "Last name is required."),
   email,
   password: z.string().min(8),
   role,
@@ -69,16 +80,42 @@ export const changePasswordSchema = z.object({
  *
  * Expected by `/api/affiliate-profile/me` PATCH route.
  */
-export const affiliateProfileUpdateSchema = z.object({
-  full_name: z.string().trim().min(3).optional().nullable(),
-  department: z.string().trim().max(160).optional().nullable(),
-  ckan_org_id: z.string().trim().optional().nullable(),
-  ckan_group_id: z.string().trim().optional().nullable(),
-  google_scholar_link: z.string().trim().url().optional().nullable(),
-  employment_status: z.string().trim().max(160).optional().nullable(),
-  designation: z.string().trim().max(160).optional().nullable(),
-  is_gs_faculty: z.boolean().optional(),
-});
+export const affiliateProfileUpdateSchema = z
+  .object({
+    full_name: z.string().trim().min(3).optional().nullable(),
+    first_name: z.string().trim().min(1).optional().nullable(),
+    middle_initial: optionalMiddleInitial,
+    last_name: z.string().trim().min(1).optional().nullable(),
+    department: z.string().trim().max(160).optional().nullable(),
+    ckan_org_id: z.string().trim().optional().nullable(),
+    ckan_group_id: z.string().trim().optional().nullable(),
+    google_scholar_link: z.string().trim().url().optional().nullable(),
+    employment_status: z.string().trim().max(160).optional().nullable(),
+    designation: z.string().trim().max(160).optional().nullable(),
+    is_gs_faculty: z.boolean().optional(),
+  })
+  .superRefine((value, ctx) => {
+    const hasAnyNamePart =
+      "first_name" in value ||
+      "middle_initial" in value ||
+      "last_name" in value;
+    if (!hasAnyNamePart) return;
+
+    if (!String(value.first_name || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "First name is required.",
+        path: ["first_name"],
+      });
+    }
+    if (!String(value.last_name || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Last name is required.",
+        path: ["last_name"],
+      });
+    }
+  });
 
 export const awardRecognitionSchema = z.object({
   work_title: z.string().trim().min(1),
@@ -109,7 +146,9 @@ export const awardRecognitionSchema = z.object({
 });
 
 export const adminCreateProponentSchema = z.object({
-  full_name: z.string().trim().min(3),
+  first_name: z.string().trim().min(1, "First name is required."),
+  middle_initial: optionalMiddleInitial,
+  last_name: z.string().trim().min(1, "Last name is required."),
   email,
   role: z.enum(["student", "faculty"]),
   ckan_org_id: z.string().trim().optional().nullable(),
