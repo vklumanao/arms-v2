@@ -65,7 +65,9 @@ export default function AdminUsersPage() {
   const PAGE_SIZE = 10;
   const { centers, departments } = useReferenceData();
   const EMPTY_CREATE_FORM = {
-    full_name: "",
+    first_name: "",
+    middle_initial: "",
+    last_name: "",
     email: "",
     role: "faculty",
     ckan_org_id: "",
@@ -381,7 +383,9 @@ export default function AdminUsersPage() {
   };
 
   const submitCreateUser = async () => {
-    const full_name = String(createForm.full_name || "").trim();
+    const first_name = String(createForm.first_name || "").trim();
+    const middle_initial = String(createForm.middle_initial || "").trim();
+    const last_name = String(createForm.last_name || "").trim();
     const email = String(createForm.email || "")
       .trim()
       .toLowerCase();
@@ -389,8 +393,12 @@ export default function AdminUsersPage() {
     setError("");
     setMessage("");
 
-    if (full_name.length < 3) {
-      setError("Full name must be at least 3 characters.");
+    if (!first_name) {
+      setError("First name is required.");
+      return;
+    }
+    if (!last_name) {
+      setError("Last name is required.");
       return;
     }
     if (!isValidEmail(email)) {
@@ -401,7 +409,9 @@ export default function AdminUsersPage() {
     setCreateSaving(true);
     try {
       const created = await createAdminUser({
-        full_name,
+        first_name,
+        middle_initial: middle_initial || null,
+        last_name,
         email,
         role: createForm.role,
         ckan_org_id: createForm.ckan_org_id || null,
@@ -992,21 +1002,54 @@ export default function AdminUsersPage() {
             </DialogHeader>
             <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-3 md:col-span-2">
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">
-                      Full Name
+                      First Name
                     </span>
                     <Input
-                      value={createForm.full_name}
+                      value={createForm.first_name}
                       onChange={(e) =>
                         setCreateForm((prev) => ({
                           ...prev,
-                          full_name: e.target.value,
+                          first_name: e.target.value,
                         }))
                       }
-                      placeholder="e.g. DELA CRUZ, JUAN A."
+                      placeholder="Juan"
                     />
                   </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">
+                      Middle Initial
+                    </span>
+                    <Input
+                      value={createForm.middle_initial}
+                      maxLength={2}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          middle_initial: e.target.value,
+                        }))
+                      }
+                      placeholder="M"
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">
+                      Last Name
+                    </span>
+                    <Input
+                      value={createForm.last_name}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          last_name: e.target.value,
+                        }))
+                      }
+                      placeholder="Dela Cruz"
+                    />
+                  </label>
+                  </div>
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Email</span>
                     <Input
