@@ -20,12 +20,7 @@ function matchesReferenceValue(row, rawValue) {
     .trim()
     .toLowerCase();
   if (!value) return false;
-  return [
-    row?.id,
-    row?.name,
-    row?.title,
-    row?.display_name,
-  ].some(
+  return [row?.id, row?.name, row?.title, row?.display_name].some(
     (candidate) =>
       String(candidate || "")
         .trim()
@@ -141,8 +136,8 @@ export function registerAdminUserRoutes(app, deps) {
 
         if (requestedOrgId) {
           const organizations = await listOrganizations();
-          selectedOrg = (organizations || []).find(
-            (row) => matchesReferenceValue(row, requestedOrgId),
+          selectedOrg = (organizations || []).find((row) =>
+            matchesReferenceValue(row, requestedOrgId),
           );
           if (!selectedOrg) {
             return res.status(400).json({
@@ -153,8 +148,8 @@ export function registerAdminUserRoutes(app, deps) {
 
         if (requestedGroupId) {
           const groups = await listGroups();
-          selectedGroup = (groups || []).find(
-            (row) => matchesReferenceValue(row, requestedGroupId),
+          selectedGroup = (groups || []).find((row) =>
+            matchesReferenceValue(row, requestedGroupId),
           );
           if (!selectedGroup) {
             return res.status(400).json({
