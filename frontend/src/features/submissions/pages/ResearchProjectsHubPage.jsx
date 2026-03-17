@@ -704,6 +704,8 @@ export default function ResearchProjectsHubPage() {
                     const currentUserKey = String(
                       profile?.id || user?.id || "",
                     ).trim();
+                    const isOwner =
+                      ownerKey && currentUserKey && ownerKey === currentUserKey;
                     const canContinueDraft =
                       isDraft &&
                       ownerKey &&
@@ -713,7 +715,8 @@ export default function ResearchProjectsHubPage() {
                     const canToggleVisibility =
                       isAdmin && Boolean(project?.ckan_dataset_id);
                     const canEdit =
-                      isAdmin && Boolean(project?.ckan_dataset_id);
+                      (isAdmin || isOwner) &&
+                      Boolean(project?.ckan_dataset_id || project?.id);
                     return (
                       <TableRow key={project.id} className="align-top">
                         <TableCell>
