@@ -51,20 +51,6 @@ export default function StepFundingTimeline({
             ) : null}
           </label>
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
-              Funding category
-            </span>
-            <Input
-              placeholder="e.g. External (Industry-Sponsored)"
-              value={form.funding_category}
-              onChange={(e) => setField("funding_category", e.target.value)}
-              className={errors?.funding_category ? "input-error" : ""}
-            />
-            {errors?.funding_category ? (
-              <p className="field-error">{errors.funding_category}</p>
-            ) : null}
-          </label>
-          <label className="block space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Funding source</span>
             <Input
               placeholder="e.g. ARMS Grants Office"
