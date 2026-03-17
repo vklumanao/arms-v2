@@ -163,9 +163,7 @@ export default function SubmitAwardRecognitionPage() {
     let cancelled = false;
     const loadRecipients = async () => {
       setLoadingRecipients(true);
-      const { data, error: loadError } = await listAwardRecipientOptions({
-        orgId: form.research_center_id,
-      });
+      const { data, error: loadError } = await listAwardRecipientOptions();
       if (cancelled) return;
       if (loadError) {
         setRecipientOptions([]);
@@ -342,43 +340,65 @@ export default function SubmitAwardRecognitionPage() {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const validate = () => {
+  const validateFields = () => {
+    const errors = {};
     if (!String(form.work_title || "").trim()) {
-      return "Title of research/work is required.";
+      errors.work_title = "Title of research/work is required.";
     }
     if (!String(form.award_recognition || "").trim()) {
-      return "Award or recognition name is required.";
+      errors.award_recognition = "Award or recognition name is required.";
     }
     if (!String(form.awarding_body || "").trim()) {
-      return "Awarding body is required.";
+      errors.awarding_body = "Awarding body is required.";
     }
     if (!String(form.year_received || "").trim()) {
-      return "Year received is required.";
+      errors.year_received = "Year received is required.";
     }
-    if (!/^\d{4}$/.test(String(form.year_received || "").trim())) {
-      return "Year received must be a 4-digit year.";
+    if (
+      String(form.year_received || "").trim() &&
+      !/^\d{4}$/.test(String(form.year_received || "").trim())
+    ) {
+      errors.year_received = "Year received must be a 4-digit year.";
     }
     if (!String(form.level || "").trim()) {
-      return "Level is required.";
+      errors.level = "Level is required.";
     }
     if (!Array.isArray(form.recipient_users) || !form.recipient_users.length) {
-      return "At least one recipient is required.";
+      errors.recipients = "At least one recipient is required.";
     }
     if (movFile && Number(movFile.size || 0) > MAX_MOV_FILE_SIZE_BYTES) {
-      return "MOV file must be 25MB or smaller.";
+      errors.supporting_movs = "MOV file must be 25MB or smaller.";
     }
-    if (!isAdmin && !String(form.research_center_id || "").trim()) {
-      return "Research center is required.";
+    if (!String(form.research_center_id || "").trim()) {
+      errors.research_center_id = "Research center is required.";
     }
-    return "";
+    if (!String(effectiveDepartmentId || "").trim()) {
+      errors.department_id = "Department is required.";
+    }
+    return errors;
   };
+  const fieldErrors = useMemo(
+    () => validateFields(),
+    [
+      effectiveDepartmentId,
+      form.award_recognition,
+      form.awarding_body,
+      form.level,
+      form.recipient_users,
+      form.research_center_id,
+      form.work_title,
+      form.year_received,
+      movFile,
+    ],
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      toast.error("Unable to save award record", validationError);
+    const errors = validateFields();
+    const firstError = errors[Object.keys(errors)[0]] || "";
+    if (firstError) {
+      setError(firstError);
+      toast.error("Unable to save award record", firstError);
       return;
     }
 
@@ -517,7 +537,7 @@ export default function SubmitAwardRecognitionPage() {
                 updateField("work_title", selected?.title || "");
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className={fieldErrors.work_title ? "input-error" : ""}>
                 <SelectValue
                   placeholder={
                     loadingProjects ? "Loading projects..." : "Select project"
@@ -545,6 +565,9 @@ export default function SubmitAwardRecognitionPage() {
                 )}
               </SelectContent>
             </Select>
+            {fieldErrors.work_title ? (
+              <p className="field-error">{fieldErrors.work_title}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -557,7 +580,11 @@ export default function SubmitAwardRecognitionPage() {
                 updateField("award_recognition", event.target.value)
               }
               placeholder="Best Paper Award, Recognition for Innovation, etc."
+              className={fieldErrors.award_recognition ? "input-error" : ""}
             />
+            {fieldErrors.award_recognition ? (
+              <p className="field-error">{fieldErrors.award_recognition}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -570,7 +597,11 @@ export default function SubmitAwardRecognitionPage() {
                 updateField("awarding_body", event.target.value)
               }
               placeholder="Conference organizer, institution, agency"
+              className={fieldErrors.awarding_body ? "input-error" : ""}
             />
+            {fieldErrors.awarding_body ? (
+              <p className="field-error">{fieldErrors.awarding_body}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -586,7 +617,11 @@ export default function SubmitAwardRecognitionPage() {
                 updateField("year_received", sanitizeDigits(event.target.value, 4))
               }
               placeholder="2026"
+              className={fieldErrors.year_received ? "input-error" : ""}
             />
+            {fieldErrors.year_received ? (
+              <p className="field-error">{fieldErrors.year_received}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -595,7 +630,7 @@ export default function SubmitAwardRecognitionPage() {
               value={form.level}
               onValueChange={(value) => updateField("level", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className={fieldErrors.level ? "input-error" : ""}>
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
@@ -606,6 +641,9 @@ export default function SubmitAwardRecognitionPage() {
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.level ? (
+              <p className="field-error">{fieldErrors.level}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2 md:col-span-2">
@@ -623,6 +661,7 @@ export default function SubmitAwardRecognitionPage() {
                   }
                 }}
                 placeholder="Type a name to search Faculty"
+                className={fieldErrors.recipients ? "input-error" : ""}
               />
               <div className="flex flex-wrap gap-2">
                 {(form.recipient_users || []).length ? (
@@ -683,6 +722,9 @@ export default function SubmitAwardRecognitionPage() {
                 </p>
               )}
             </div>
+            {fieldErrors.recipients ? (
+              <p className="field-error">{fieldErrors.recipients}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -696,7 +738,9 @@ export default function SubmitAwardRecognitionPage() {
               }
               disabled={!isAdmin}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                className={fieldErrors.research_center_id ? "input-error" : ""}
+              >
                 <SelectValue placeholder="Select research center" />
               </SelectTrigger>
               <SelectContent>
@@ -707,6 +751,9 @@ export default function SubmitAwardRecognitionPage() {
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.research_center_id ? (
+              <p className="field-error">{fieldErrors.research_center_id}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2">
@@ -718,7 +765,7 @@ export default function SubmitAwardRecognitionPage() {
               onValueChange={(value) => updateField("department_id", value)}
               disabled={!isAdmin && Boolean(defaultDepartmentId)}
             >
-              <SelectTrigger>
+              <SelectTrigger className={fieldErrors.department_id ? "input-error" : ""}>
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
@@ -729,6 +776,9 @@ export default function SubmitAwardRecognitionPage() {
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.department_id ? (
+              <p className="field-error">{fieldErrors.department_id}</p>
+            ) : null}
           </label>
 
           <label className="space-y-2 md:col-span-2">
@@ -789,6 +839,9 @@ export default function SubmitAwardRecognitionPage() {
                 </a>
               ) : null}
             </div>
+            {fieldErrors.supporting_movs ? (
+              <p className="field-error">{fieldErrors.supporting_movs}</p>
+            ) : null}
           </div>
 
           <label className="space-y-2 md:col-span-2">
