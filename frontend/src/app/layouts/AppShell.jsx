@@ -71,6 +71,7 @@ export default function AppShell() {
     return stored === "true";
   });
   const [hoverExpanded, setHoverExpanded] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" && typeof window.matchMedia === "function"
@@ -368,8 +369,12 @@ export default function AppShell() {
   useEffect(() => {
     if (!desktopSidebarCollapsed || !isDesktop) {
       setHoverExpanded(false);
+      return;
     }
-  }, [desktopSidebarCollapsed, isDesktop]);
+    if (accountMenuOpen) {
+      setHoverExpanded(true);
+    }
+  }, [desktopSidebarCollapsed, isDesktop, accountMenuOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -405,13 +410,10 @@ export default function AppShell() {
         title={collapsed ? item.label : undefined}
         className={({ isActive }) =>
           cn(
-            "group relative flex items-center rounded-md text-sm font-medium text-slate-700 transition-colors",
-            "hover:bg-muted hover:text-slate-900",
+            "sidebar-nav-item",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            collapsed
-              ? "mx-auto h-10 w-10 justify-center px-0"
-              : "gap-3 px-3 py-2",
-            isActive && "bg-muted text-slate-900",
+            collapsed ? "is-collapsed" : "is-expanded",
+            isActive && "is-active",
           )
         }
       >
@@ -420,24 +422,18 @@ export default function AppShell() {
             {!collapsed ? (
               <span
                 className={cn(
-                  "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-transparent transition",
-                  "group-hover:bg-slate-200",
-                  isActive && "bg-[var(--brand)]",
+                  "sidebar-nav-rail",
+                  isActive && "is-active",
                 )}
                 aria-hidden="true"
               />
             ) : null}
-            <Icon
-              className={cn(
-                "shrink-0 text-slate-500 group-hover:text-slate-700",
-                collapsed ? "h-5 w-5" : "h-4 w-4",
-              )}
-            />
-            {collapsed ? (
-              <span className="sr-only">{item.label}</span>
-            ) : (
-              <span className="min-w-0 flex-1 truncate">{item.label}</span>
-            )}
+            <span className="sidebar-nav-icon">
+              <Icon className={cn("h-4 w-4", collapsed && "h-5 w-5")} />
+            </span>
+            <span className={cn("sidebar-nav-label", collapsed && "is-hidden")}>
+              {item.label}
+            </span>
           </>
         )}
       </NavLink>
@@ -482,7 +478,10 @@ export default function AppShell() {
     const initials = getInitials(displayName);
 
     return (
-      <DropdownMenu>
+      <DropdownMenu
+        open={accountMenuOpen}
+        onOpenChange={(open) => setAccountMenuOpen(open)}
+      >
         <DropdownMenuTrigger asChild>
           {collapsed ? (
             <Button
@@ -556,7 +555,7 @@ export default function AppShell() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild>
               <Link
                 to="/my-profile"
                 onClick={onNavigate}
@@ -598,8 +597,8 @@ export default function AppShell() {
       <div className={cn("flex h-full min-h-0 flex-col", collapsed ? "gap-3" : "gap-4")}>
         <div
           className={cn(
-            "rounded-[var(--radius-lg)] border border-border/70 bg-white/70 shadow-sm shadow-black/5",
-            collapsed ? "p-2" : "p-3",
+            "sidebar-panel",
+            collapsed ? "is-collapsed" : "is-expanded",
           )}
         >
           <div
@@ -657,7 +656,7 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/60 shadow-sm shadow-black/5">
+        <div className="sidebar-nav-shell min-h-0 flex-1">
           <div
             ref={scrollRef}
             className={cn(
@@ -675,16 +674,16 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-              <div className={cn("space-y-5", collapsed && "space-y-3")}>
-                {visibleGroups.map((group) => (
-                  <div key={group.key}>
-                    {!collapsed ? (
-                      <div className="flex items-center gap-2 px-1">
-                        <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                          {group.title}
-                        </h3>
-                        <div
-                          className="h-px flex-1 bg-border/60"
+                <div className={cn("space-y-5", collapsed && "space-y-3")}>
+                  {visibleGroups.map((group) => (
+                    <div key={group.key}>
+                      {!collapsed ? (
+                        <div className="flex items-center gap-2 px-1">
+                          <h3 className="sidebar-section-title">
+                            {group.title}
+                          </h3>
+                          <div
+                            className="h-px flex-1 bg-border/60"
                           aria-hidden="true"
                         />
                       </div>
@@ -706,7 +705,7 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className={cn("border-t border-border/60 pt-3", collapsed && "flex justify-center")}>
+        <div className={cn("sidebar-footer", collapsed && "is-collapsed")}>
           <SidebarAccount onNavigate={onNavigate} collapsed={collapsed} />
         </div>
       </div>
@@ -787,7 +786,10 @@ export default function AppShell() {
           onMouseEnter={() => {
             if (desktopSidebarCollapsed) setHoverExpanded(true);
           }}
-          onMouseLeave={() => setHoverExpanded(false)}
+          onMouseLeave={() => {
+            if (accountMenuOpen) return;
+            setHoverExpanded(false);
+          }}
           onFocusCapture={() => {
             if (desktopSidebarCollapsed) setHoverExpanded(true);
           }}
@@ -795,6 +797,7 @@ export default function AppShell() {
             if (!desktopSidebarCollapsed) return;
             const nextFocus = event.relatedTarget;
             if (nextFocus instanceof Node && event.currentTarget.contains(nextFocus)) return;
+            if (accountMenuOpen) return;
             setHoverExpanded(false);
           }}
         >
