@@ -27,7 +27,9 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
-    full_name: "",
+    first_name: "",
+    middle_initial: "",
+    last_name: "",
     email: "",
     password: "",
     role: "student",
@@ -129,8 +131,13 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-    if (form.full_name.trim().length < 3) {
-      setError("Full name must be at least 3 characters.");
+    if (!form.first_name.trim()) {
+      setError("First name is required.");
+      setLoading(false);
+      return;
+    }
+    if (!form.last_name.trim()) {
+      setError("Last name is required.");
       setLoading(false);
       return;
     }
@@ -142,7 +149,9 @@ export default function RegisterPage() {
     }
     try {
       await register({
-        full_name: form.full_name.trim(),
+        first_name: form.first_name.trim(),
+        middle_initial: form.middle_initial.trim() || null,
+        last_name: form.last_name.trim(),
         email: normalizedEmail,
         password: form.password,
         role: form.role,
@@ -183,17 +192,41 @@ export default function RegisterPage() {
       </CardHeader>
       <CardContent>
       <form className="space-y-3" onSubmit={onSubmit}>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Full name</span>
-          <Input
-            placeholder="Enter your full name"
-            required
-            value={form.full_name}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, full_name: e.target.value }))
-            }
-          />
-        </label>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">First name</span>
+            <Input
+              placeholder="Juan"
+              required
+              value={form.first_name}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, first_name: e.target.value }))
+              }
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Middle initial</span>
+            <Input
+              placeholder="M"
+              maxLength={2}
+              value={form.middle_initial}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, middle_initial: e.target.value }))
+              }
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Last name</span>
+            <Input
+              placeholder="Dela Cruz"
+              required
+              value={form.last_name}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, last_name: e.target.value }))
+              }
+            />
+          </label>
+        </div>
         <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">Email</span>
           <Input
