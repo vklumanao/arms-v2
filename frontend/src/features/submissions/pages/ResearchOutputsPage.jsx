@@ -1253,7 +1253,9 @@ export default function ResearchOutputsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {isAdmin ? (
+                        {(!row.isPlaceholder &&
+                          !row.isPendingOutput &&
+                          Boolean(row.resourceId)) ? (
                           <>
                             <Button
                               variant="ghost"
