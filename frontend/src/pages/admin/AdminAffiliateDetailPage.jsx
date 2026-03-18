@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import PageHeader from "@/components/layout/PageHeader";
 import EmptyState from "@/components/feedback/EmptyState";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -13,6 +18,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,14 +40,16 @@ import {
   filterAffiliateRelatedDatasets,
 } from "@/utils/admin";
 import { fetchAffiliateRegistry } from "@/services/admin";
-import { ChevronLeft, FolderKanban, Users } from "lucide-react";
+import { ChevronLeft, FolderKanban, Search, Users } from "lucide-react";
 
 export default function AdminAffiliateDetailPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const affiliateId = String(params?.id || "").trim();
   const { departments: referenceDepartments } = useReferenceData();
+  const projectParamsKey = searchParams.toString();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,6 +60,16 @@ export default function AdminAffiliateDetailPage() {
     error: "",
     rows: [],
   });
+  const [projectSearch, setProjectSearch] = useState(() =>
+    String(searchParams.get("projectSearch") || "").trim(),
+  );
+  const [projectStatus, setProjectStatus] = useState(
+    () => String(searchParams.get("projectStatus") || "all").trim() || "all",
+  );
+  const [projectYear, setProjectYear] = useState(
+    () => String(searchParams.get("projectYear") || "all").trim() || "all",
+  );
+  const prevAffiliateId = useRef(affiliateId);
 
   const centerNameById = useMemo(() => buildCenterNameById(centers), [centers]);
 
@@ -66,6 +91,99 @@ export default function AdminAffiliateDetailPage() {
     if (byId?.name) return byId.name;
     return affiliate.department || "-";
   }, [affiliate, referenceDepartments]);
+
+  const initials = useMemo(() => {
+    const name = String(affiliate?.full_name || "").trim();
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || "";
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : "";
+      return `${first}${last}`.toUpperCase() || "A";
+    }
+    const email = String(affiliate?.email || "").trim();
+    if (email) return email[0].toUpperCase();
+    return "A";
+  }, [affiliate]);
+
+  useEffect(() => {
+    const nextSearch = String(searchParams.get("projectSearch") || "").trim();
+    const nextStatus =
+      String(searchParams.get("projectStatus") || "all").trim() || "all";
+    const nextYear =
+      String(searchParams.get("projectYear") || "all").trim() || "all";
+
+    if (nextSearch !== projectSearch) setProjectSearch(nextSearch);
+    if (nextStatus !== projectStatus) setProjectStatus(nextStatus);
+    if (nextYear !== projectYear) setProjectYear(nextYear);
+  }, [projectParamsKey]);
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (projectSearch) {
+          next.set("projectSearch", projectSearch);
+        } else {
+          next.delete("projectSearch");
+        }
+        if (projectStatus && projectStatus !== "all") {
+          next.set("projectStatus", projectStatus);
+        } else {
+          next.delete("projectStatus");
+        }
+        if (projectYear && projectYear !== "all") {
+          next.set("projectYear", projectYear);
+        } else {
+          next.delete("projectYear");
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [projectSearch, projectStatus, projectYear, setSearchParams]);
+
+  const filteredProjects = useMemo(() => {
+    const query = String(projectSearch || "")
+      .trim()
+      .toLowerCase();
+    const statusFilter = String(projectStatus || "all").toLowerCase();
+    const yearFilter = String(projectYear || "all").toLowerCase();
+    return projectsPanel.rows.filter((project) => {
+      const status = String(project?.status || "").toLowerCase();
+      const year = String(project?.year || "").toLowerCase();
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (yearFilter !== "all" && year !== yearFilter) return false;
+      const haystack = [
+        project?.title,
+        project?.status,
+        project?.year,
+        project?.organization,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return haystack.includes(query);
+    });
+  }, [projectSearch, projectStatus, projectYear, projectsPanel.rows]);
+
+  const projectStatusOptions = useMemo(() => {
+    const unique = new Set();
+    projectsPanel.rows.forEach((project) => {
+      const value = String(project?.status || "")
+        .trim()
+        .toLowerCase();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort()];
+  }, [projectsPanel.rows]);
+
+  const projectYearOptions = useMemo(() => {
+    const unique = new Set();
+    projectsPanel.rows.forEach((project) => {
+      const value = String(project?.year || "").trim();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort((a, b) => b.localeCompare(a))];
+  }, [projectsPanel.rows]);
 
   useEffect(() => {
     if (!affiliateId) return;
@@ -90,6 +208,29 @@ export default function AdminAffiliateDetailPage() {
       cancelled = true;
     };
   }, [affiliateId]);
+  const clearProjectFilters = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("projectSearch");
+        next.delete("projectStatus");
+        next.delete("projectYear");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  useEffect(() => {
+    if (
+      prevAffiliateId.current &&
+      prevAffiliateId.current !== affiliateId &&
+      (projectSearch || projectStatus !== "all" || projectYear !== "all")
+    ) {
+      clearProjectFilters();
+    }
+    prevAffiliateId.current = affiliateId;
+  }, [affiliateId, projectSearch, projectStatus, projectYear]);
 
   useEffect(() => {
     if (!affiliate?.id) {
@@ -136,64 +277,8 @@ export default function AdminAffiliateDetailPage() {
         description="Dedicated view for affiliate profile information and related projects."
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="outline">
-          <Link to="/admin/affiliates">
-            <ChevronLeft className="h-4 w-4" />
-            Back to Affiliates
-          </Link>
-        </Button>
-        {affiliate?.source === "ckan_only" ? (
-          <Button
-            variant="outline"
-            onClick={() =>
-              toast.error(
-                "Read-only record",
-                "Users must be edited directly in CKAN.",
-              )
-            }
-          >
-            Edit (CKAN)
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            onClick={() => navigate("/admin/affiliates")}
-          >
-            Edit
-          </Button>
-        )}
-      </div>
-
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                {affiliate?.full_name || "-"}
-              </CardTitle>
-              <CardDescription>{affiliate?.email || "-"}</CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="gap-2 capitalize">
-                <Users className="h-4 w-4" />
-                {affiliate?.role || "role"}
-              </Badge>
-              <Badge
-                variant={affiliate?.is_active ? "secondary" : "destructive"}
-                className="gap-2"
-              >
-                {affiliate?.is_active ? "Active" : "Inactive"}
-              </Badge>
-              <Badge variant="secondary" className="gap-2">
-                <FolderKanban className="h-4 w-4" />
-                {Number(affiliate?.research_project_count || 0)} projects
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6 p-6">
           {loading ? (
             <p className="text-sm text-slate-600">Loading affiliate...</p>
           ) : error ? (
@@ -205,7 +290,92 @@ export default function AdminAffiliateDetailPage() {
             />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    clearProjectFilters();
+                    navigate("/admin/affiliates");
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back to Affiliates
+                </Button>
+                {affiliate?.source === "ckan_only" ? (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      toast.error(
+                        "Read-only record",
+                        "Users must be edited directly in CKAN.",
+                      )
+                    }
+                  >
+                    Edit in CKAN
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      clearProjectFilters();
+                      navigate("/admin/affiliates");
+                    }}
+                  >
+                    Edit Affiliate
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+                    {initials}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold text-slate-900">
+                      {affiliate?.full_name || "-"}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {affiliate?.email || "-"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="gap-2 capitalize">
+                        <Users className="h-4 w-4" />
+                        {affiliate?.role || "role"}
+                      </Badge>
+                      <Badge
+                        variant={
+                          affiliate?.is_active ? "secondary" : "destructive"
+                        }
+                        className="gap-2"
+                      >
+                        {affiliate?.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="secondary" className="gap-2">
+                        <FolderKanban className="h-4 w-4" />
+                        {Number(affiliate?.research_project_count || 0)}{" "}
+                        projects
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span className="rounded-full border border-border bg-white px-3 py-1">
+                    ID: {affiliate?.id || "-"}
+                  </span>
+                  <span className="rounded-full border border-border bg-white px-3 py-1">
+                    Source: {affiliate?.source || "internal"}
+                  </span>
+                  <span className="rounded-full border border-border bg-white px-3 py-1">
+                    Updated:{" "}
+                    {affiliate?.updated_at
+                      ? new Date(affiliate.updated_at).toLocaleString()
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="bg-muted/30">
                   <CardContent className="p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -269,10 +439,15 @@ export default function AdminAffiliateDetailPage() {
                   </CardContent>
                 </Card>
               </div>
-
+            </>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6 p-6">
+          {!loading && !error && affiliate ? (
+            <>
               <Card className="overflow-hidden">
                 <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="space-y-1">
                       <CardTitle className="text-base font-bold text-slate-900">
                         Related Projects
@@ -281,9 +456,67 @@ export default function AdminAffiliateDetailPage() {
                         Projects linked to this affiliate.
                       </CardDescription>
                     </div>
-                    <span className="text-sm text-slate-600">
-                      {projectsPanel.rows.length} row(s)
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-slate-600">
+                        {filteredProjects.length} row(s)
+                      </span>
+                      <label className="relative w-full min-w-[14rem] md:w-auto">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Input
+                          className="pl-8"
+                          placeholder="Search projects"
+                          value={projectSearch}
+                          onChange={(event) =>
+                            setProjectSearch(event.target.value)
+                          }
+                        />
+                      </label>
+                      <Select
+                        value={projectStatus}
+                        onValueChange={setProjectStatus}
+                      >
+                        <SelectTrigger className="w-full md:w-[12rem] capitalize">
+                          <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projectStatusOptions.map((status) => (
+                            <SelectItem
+                              key={status}
+                              value={status}
+                              className="capitalize"
+                            >
+                              {status === "all" ? "All statuses" : status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={projectYear}
+                        onValueChange={setProjectYear}
+                      >
+                        <SelectTrigger className="w-full md:w-[10rem]">
+                          <SelectValue placeholder="All years" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projectYearOptions.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year === "all" ? "All years" : year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setProjectSearch("");
+                          setProjectStatus("all");
+                          setProjectYear("all");
+                        }}
+                      >
+                        Reset filters
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -296,10 +529,13 @@ export default function AdminAffiliateDetailPage() {
                       <p className="p-4 text-sm text-red-700">
                         {projectsPanel.error}
                       </p>
-                    ) : projectsPanel.rows.length === 0 ? (
-                      <p className="p-4 text-sm text-slate-600">
-                        No related projects found for this affiliate.
-                      </p>
+                    ) : filteredProjects.length === 0 ? (
+                      <div className="p-6">
+                        <EmptyState
+                          title="No related projects found"
+                          description="Try adjusting the search or filters to find matching projects."
+                        />
+                      </div>
                     ) : (
                       <Table className="min-w-[980px]">
                         <TableHeader>
@@ -313,7 +549,7 @@ export default function AdminAffiliateDetailPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {projectsPanel.rows.map((project, index) => (
+                          {filteredProjects.map((project, index) => (
                             <TableRow key={project.id || index}>
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium text-slate-900">
@@ -341,17 +577,8 @@ export default function AdminAffiliateDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card className="bg-muted/20">
-                <CardContent className="p-4 text-sm text-slate-700">
-                  <p className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                    User ID
-                  </p>
-                  <code className="text-xs">{affiliate?.id || "-"}</code>
-                </CardContent>
-              </Card>
             </>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </section>
