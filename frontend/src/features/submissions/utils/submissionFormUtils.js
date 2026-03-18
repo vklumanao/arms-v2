@@ -29,7 +29,7 @@ export const INITIAL_SUBMISSION_FORM = {
   research_agenda_id: "",
   department_id: "",
   scholarly_type: "",
-  funding_type: "none",
+  funding_type: "",
   funding_category: "",
   industry_partner: "",
   funding_source: "",
@@ -65,7 +65,7 @@ export function mapProjectToSubmissionForm(project) {
     research_agenda_id: project?.research_agenda_id || "",
     department_id: project?.department_id || "",
     scholarly_type: project?.scholarly_type || "",
-    funding_type: project?.funding_type || "none",
+    funding_type: project?.funding_type || "",
     funding_category: project?.funding_category || "",
     industry_partner: project?.industry_partner || "",
     funding_source: project?.funding_source || "",
@@ -186,7 +186,7 @@ const SUBMISSION_STEP_RULES = {
     {
       field: "funding_type",
       message: "Funding type is required.",
-      check: (form) => Boolean(form.funding_type && form.funding_type !== "none"),
+      check: (form) => Boolean(form.funding_type && form.funding_type !== ""),
     },
     {
       field: "funding_source",
