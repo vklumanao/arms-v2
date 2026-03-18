@@ -270,6 +270,27 @@ h6,
   max-width: 1280px;
 }
 
+.public-layout-inner {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 72rem;
+}
+
+.public-layout-main {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 90rem;
+  flex: 1 1 auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .public-layout-main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .public-records-filter {
     position: sticky;
