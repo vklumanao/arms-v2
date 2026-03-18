@@ -11,6 +11,7 @@ import {
 import PageHeader from "@/shared/components/layout/PageHeader";
 import PaginationControls from "@/shared/components/navigation/PaginationControls";
 import { useToast } from "@/app/providers/ToastProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,7 @@ export default function PublicRecordsPage() {
   const [activePreset, setActivePreset] = useState("all");
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const toast = useToast();
 
   useEffect(() => {
@@ -222,6 +224,10 @@ export default function PublicRecordsPage() {
 
   const openDetails = (projectId) => {
     if (!projectId) return;
+    if (user || profile) {
+      navigate(`/submit-project/${encodeURIComponent(projectId)}`);
+      return;
+    }
     navigate(`/public-records/${encodeURIComponent(projectId)}`);
   };
 
@@ -501,7 +507,7 @@ export default function PublicRecordsPage() {
                           openDetails(record.id);
                         }}
                       >
-                        View Details
+                        {user || profile ? "View Project" : "View Details"}
                       </Button>
                     </div>
                   </CardContent>
