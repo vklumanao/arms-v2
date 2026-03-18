@@ -30,3 +30,16 @@ export async function fetchPublicRecordTimeline(projectId) {
   }
 }
 
+export async function fetchPublicRecordResources(projectId) {
+  try {
+    const payload = await apiFetch(`/public-records/${projectId}/resources`);
+    return {
+      data: payload?.data || { dataset: null, resources: [] },
+      syncEnabled: payload?.syncEnabled ?? payload?.data?.syncEnabled ?? true,
+      error: null,
+    };
+  } catch (error) {
+    return { data: { dataset: null, resources: [] }, syncEnabled: true, error };
+  }
+}
+
