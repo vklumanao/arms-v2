@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { fetchPublicRecordsDataset } from "@/features/public-records/services";
 import {
-  fetchPublicRecordsDataset,
-  fetchPublicRecordTimeline,
-} from "@/features/public-records/services";
-import {
-  buildApaCitation,
-  buildMlaCitation,
   highlightText,
   INITIAL_PUBLIC_RECORD_FILTERS,
   normalizeForCompare,
@@ -18,12 +14,6 @@ import { useToast } from "@/app/providers/ToastProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -39,29 +29,20 @@ export default function PublicRecordsPage() {
   const [records, setRecords] = useState([]);
   const [centers, setCenters] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [timelineByProjectId, setTimelineByProjectId] = useState({});
-  const [timelineExists, setTimelineExists] = useState({});
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(INITIAL_PUBLIC_RECORD_FILTERS);
   const [activePreset, setActivePreset] = useState("all");
   const [page, setPage] = useState(1);
-  const [detailProjectId, setDetailProjectId] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const navigate = useNavigate();
   const toast = useToast();
 
   useEffect(() => {
     if (error) toast.error("Public records load issue", error);
   }, [error, toast]);
 
-  useEffect(() => {
-    if (message) toast.success("Done", message);
-  }, [message, toast]);
-
   const load = async () => {
     setError("");
-    setMessage("");
     setLoading(true);
 
     const result = await fetchPublicRecordsDataset();
@@ -72,7 +53,6 @@ export default function PublicRecordsPage() {
       setRecords(result.records || []);
       setCenters(result.centers || []);
       setDepartments(result.departments || []);
-      setTimelineExists(result.timelineExists || {});
     }
 
     setLoading(false);
@@ -183,7 +163,6 @@ export default function PublicRecordsPage() {
           if (record.abstract) score += 1;
           if (record.expected_outputs) score += 1;
           if (record.start_date && record.end_date) score += 1;
-          if (timelineExists[record.id]) score += 1;
           return score;
         };
         return completeScore(b) - completeScore(a);
@@ -200,7 +179,7 @@ export default function PublicRecordsPage() {
     });
 
     return { rows, terms };
-  }, [records, filters, centerById, departmentById, timelineExists]);
+  }, [records, filters, centerById, departmentById]);
 
   const pagedRows = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -241,51 +220,9 @@ export default function PublicRecordsPage() {
     setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
   };
 
-  const openDetails = async (projectId) => {
-    setDetailProjectId(projectId);
-    if (timelineByProjectId[projectId]) return;
-    setDetailLoading(true);
-    const result = await fetchPublicRecordTimeline(projectId);
-    if (result.error) {
-      setError(result.error.message || "Unable to load project timeline.");
-      setDetailLoading(false);
-      return;
-    }
-    setTimelineByProjectId((prev) => ({
-      ...prev,
-      [projectId]: result.timeline || [],
-    }));
-    setDetailLoading(false);
-  };
-  const selectedRecord = detailProjectId
-    ? records.find((record) => record.id === detailProjectId) || null
-    : null;
-
-  const selectedTimeline = detailProjectId
-    ? timelineByProjectId[detailProjectId] || []
-    : [];
-
-  const selectedCenter = selectedRecord
-    ? centerById[selectedRecord.research_center_id] || "-"
-    : "-";
-  const selectedDepartment = selectedRecord
-    ? departmentById[selectedRecord.department_id] || "-"
-    : "-";
-
-  const apaCitation = selectedRecord
-    ? buildApaCitation(selectedRecord, selectedCenter, selectedDepartment)
-    : "";
-  const mlaCitation = selectedRecord
-    ? buildMlaCitation(selectedRecord, selectedCenter, selectedDepartment)
-    : "";
-
-  const copyCitation = async (text, label) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setMessage(`${label} citation copied.`);
-    } catch {
-      setError("Unable to copy citation.");
-    }
+  const openDetails = (projectId) => {
+    if (!projectId) return;
+    navigate(`/public-records/${encodeURIComponent(projectId)}`);
   };
 
   return (
@@ -296,7 +233,7 @@ export default function PublicRecordsPage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
-        <aside className="h-fit lg:sticky lg:top-5">
+        <aside className="public-records-filter h-fit">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -304,147 +241,150 @@ export default function PublicRecordsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-            <Input
-              placeholder="Search title or abstract (supports year:2025 status:completed)"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, search: event.target.value }))
-              }
-            />
-            <p className="text-xs text-slate-500">
-              Token search: <code>year:</code>, <code>status:</code>,{" "}
-              <code>center:</code>, <code>department:</code>,{" "}
-              <code>classification:</code>
-            </p>
-
-            <Select
-              value={filters.status || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  status: value === NONE_SELECT_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
-                <SelectItem value="ongoing">Ongoing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.classification || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  classification: value === NONE_SELECT_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All classification" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>
-                  All classification
-                </SelectItem>
-                <SelectItem value="academic">Academic</SelectItem>
-                <SelectItem value="industry">Industry</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              placeholder="Year"
-              value={filters.year}
-              onChange={(event) =>
-                setFilters((prev) => ({ ...prev, year: event.target.value }))
-              }
-            />
-
-            <Select
-              value={filters.center || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  center: value === NONE_SELECT_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All centers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.name}>
-                    {center.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.department || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  department: value === NONE_SELECT_VALUE ? "" : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All departments" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>
-                  All departments
-                </SelectItem>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.name}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
-                setActivePreset("all");
-              }}
-            >
-              Reset Filters
-            </Button>
-
-            <div className="space-y-2 pt-2">
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
-                Presets
+              <Input
+                placeholder="Search title or abstract (supports year:2025 status:completed)"
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: event.target.value,
+                  }))
+                }
+              />
+              <p className="text-xs text-slate-500">
+                Token search: <code>year:</code>, <code>status:</code>,{" "}
+                <code>center:</code>, <code>department:</code>,{" "}
+                <code>classification:</code>
               </p>
-              <div className="flex flex-wrap gap-2">
-                {PUBLIC_RECORD_PRESETS.map((preset) => (
-                  <Button
-                    key={preset.id}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={
-                      activePreset === preset.id
-                        ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
-                        : ""
-                    }
-                    onClick={() => applyPreset(preset.id)}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
+
+              <Select
+                value={filters.status || NONE_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    status: value === NONE_SELECT_VALUE ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
+                  <SelectItem value="ongoing">Ongoing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.classification || NONE_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    classification: value === NONE_SELECT_VALUE ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All classification" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_SELECT_VALUE}>
+                    All classification
+                  </SelectItem>
+                  <SelectItem value="academic">Academic</SelectItem>
+                  <SelectItem value="industry">Industry</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder="Year"
+                value={filters.year}
+                onChange={(event) =>
+                  setFilters((prev) => ({ ...prev, year: event.target.value }))
+                }
+              />
+
+              <Select
+                value={filters.center || NONE_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    center: value === NONE_SELECT_VALUE ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All centers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
+                  {centers.map((center) => (
+                    <SelectItem key={center.id} value={center.name}>
+                      {center.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.department || NONE_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    department: value === NONE_SELECT_VALUE ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_SELECT_VALUE}>
+                    All departments
+                  </SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.name}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
+                  setActivePreset("all");
+                }}
+              >
+                Reset Filters
+              </Button>
+
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Presets
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PUBLIC_RECORD_PRESETS.map((preset) => (
+                    <Button
+                      key={preset.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={
+                        activePreset === preset.id
+                          ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
+                          : ""
+                      }
+                      onClick={() => applyPreset(preset.id)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
         </aside>
@@ -474,7 +414,9 @@ export default function PublicRecordsPage() {
                     <SelectValue placeholder="Sort" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="most_recent">Sort: Most Recent</SelectItem>
+                    <SelectItem value="most_recent">
+                      Sort: Most Recent
+                    </SelectItem>
                     <SelectItem value="a_z">Sort: A-Z</SelectItem>
                     <SelectItem value="most_complete">
                       Sort: Most Complete Metadata
@@ -505,7 +447,7 @@ export default function PublicRecordsPage() {
               {pagedRows.map((record) => (
                 <Card
                   key={record.id}
-                  className="cursor-pointer border-l-4 border-l-border transition hover:border-l-primary hover:shadow-sm"
+                  className="cursor-pointer transition hover:shadow-sm"
                   role="button"
                   tabIndex={0}
                   onClick={() => openDetails(record.id)}
@@ -516,33 +458,25 @@ export default function PublicRecordsPage() {
                     }
                   }}
                 >
-                  <CardContent className="space-y-3 p-5">
+                  <CardContent className="space-y-2 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="text-lg font-semibold text-slate-900">
+                      <div className="min-w-0 space-y-1">
+                        <h3 className="text-base font-semibold text-slate-900">
                           {highlightText(record.title, filtered.terms)}
                         </h3>
-                        <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
+                        <p className="text-xs text-slate-500">
                           {[
                             record.year || "-",
                             centerById[record.research_center_id] ||
                               "Unknown Center",
                             departmentById[record.department_id] ||
                               "Unknown Department",
-                            record.classification || "unspecified",
-                            record.status || "-",
                           ].join(" | ")}
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        <Badge
-                          variant={
-                            normalizeForCompare(record.status) === "completed"
-                              ? "secondary"
-                              : "outline"
-                          }
-                        >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">
                           {record.status || "unknown"}
                         </Badge>
                         <Badge variant="outline">
@@ -551,78 +485,11 @@ export default function PublicRecordsPage() {
                       </div>
                     </div>
 
-                    <p className="text-sm leading-relaxed text-slate-700">
+                    <p className="line-clamp-2 text-sm text-slate-700">
                       {record.abstract
                         ? highlightText(record.abstract, filtered.terms)
                         : "No abstract available for this record."}
                     </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        {record.abstract ? "Has abstract" : "No abstract"}
-                      </Badge>
-                      <Badge variant="outline">
-                        {timelineExists[record.id]
-                          ? "Has timeline"
-                          : "No timeline"}
-                      </Badge>
-                      <Badge variant="outline">
-                        {record.expected_outputs ? "Has outputs" : "No outputs"}
-                      </Badge>
-                      <Badge
-                        variant={
-                          record.abstract && record.expected_outputs
-                            ? "secondary"
-                            : "destructive"
-                        }
-                      >
-                        {record.abstract && record.expected_outputs
-                          ? "Public-ready"
-                          : "Needs enrichment"}
-                      </Badge>
-                    </div>
-
-                    <dl className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2">
-                        <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                          Research Center
-                        </dt>
-                        <dd className="font-medium text-slate-800">
-                          {centerById[record.research_center_id] || "-"}
-                        </dd>
-                      </div>
-
-                      <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2">
-                        <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                          Department
-                        </dt>
-                        <dd className="font-medium text-slate-800">
-                          {departmentById[record.department_id] || "-"}
-                        </dd>
-                      </div>
-
-                      <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2">
-                        <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                          Start Date
-                        </dt>
-                        <dd className="font-medium text-slate-800">
-                          {record.start_date
-                            ? new Date(record.start_date).toLocaleDateString()
-                            : "-"}
-                        </dd>
-                      </div>
-
-                      <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2">
-                        <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                          End Date
-                        </dt>
-                        <dd className="font-medium text-slate-800">
-                          {record.end_date
-                            ? new Date(record.end_date).toLocaleDateString()
-                            : "-"}
-                        </dd>
-                      </div>
-                    </dl>
 
                     <div className="flex justify-end">
                       <Button
@@ -652,180 +519,6 @@ export default function PublicRecordsPage() {
           ) : null}
         </div>
       </section>
-
-      <Dialog
-        open={Boolean(selectedRecord)}
-        onOpenChange={(open) => (!open ? setDetailProjectId(null) : null)}
-      >
-        <DialogContent className="right-0 top-0 h-screen w-full max-w-2xl translate-x-0 translate-y-0 rounded-none sm:rounded-l-lg">
-          <DialogHeader className="pr-10">
-            <div className="flex items-center justify-between gap-3">
-              <DialogTitle>Record Details</DialogTitle>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setDetailProjectId(null)}
-              >
-                Close
-              </Button>
-            </div>
-          </DialogHeader>
-
-          {selectedRecord ? (
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="space-y-1 p-4">
-                  <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                    Title
-                  </p>
-                  <p className="text-base font-semibold text-slate-900">
-                    {selectedRecord.title}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-2 p-4">
-                  <p className="text-sm font-semibold">Tags</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={
-                        normalizeForCompare(selectedRecord.status) === "completed"
-                          ? "secondary"
-                          : "outline"
-                      }
-                    >
-                      {selectedRecord.status || "unknown"}
-                    </Badge>
-                    <Badge variant="outline">
-                      {selectedRecord.classification || "unspecified"}
-                    </Badge>
-                    <Badge variant="outline">
-                      {selectedRecord.year || "No year"}
-                    </Badge>
-                    <Badge variant="outline">{selectedCenter}</Badge>
-                    <Badge variant="outline">{selectedDepartment}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-2 p-4">
-                  <p className="text-sm font-semibold">Full Abstract</p>
-                  <p className="text-sm text-slate-700">
-                    {selectedRecord.abstract || "No abstract available."}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-2 p-4">
-                  <p className="text-sm font-semibold">Related Outputs</p>
-                  <div className="flex flex-wrap gap-2">
-                    {String(selectedRecord.expected_outputs || "")
-                      .split(",")
-                      .map((value) => value.trim())
-                      .filter(Boolean).length === 0 ? (
-                      <span className="text-sm text-slate-600">
-                        No related outputs listed.
-                      </span>
-                    ) : (
-                      String(selectedRecord.expected_outputs || "")
-                        .split(",")
-                        .map((value) => value.trim())
-                        .filter(Boolean)
-                        .map((output) => (
-                          <Badge key={output} variant="outline">
-                            {output}
-                          </Badge>
-                        ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-2 p-4">
-                  <p className="text-sm font-semibold">Timeline</p>
-                  {detailLoading ? (
-                    <p className="text-sm text-slate-600">Loading timeline...</p>
-                  ) : selectedTimeline.length === 0 ? (
-                    <p className="text-sm text-slate-600">
-                      No timeline entries available.
-                    </p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {selectedTimeline.map((entry) => (
-                        <li key={entry.id}>
-                          <Card>
-                            <CardContent className="space-y-1 p-3">
-                              <p className="font-semibold text-slate-900">
-                                {entry.old_status || "none"} -&gt;{" "}
-                                {entry.new_status}
-                              </p>
-                              <p className="text-slate-600">
-                                {new Date(entry.changed_at).toLocaleString()}
-                              </p>
-                              {entry.remarks ? (
-                                <p className="text-slate-700">{entry.remarks}</p>
-                              ) : null}
-                            </CardContent>
-                          </Card>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-3 p-4">
-                  <p className="text-sm font-semibold">Cite This Record</p>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                        APA
-                      </p>
-                      <p className="text-sm text-slate-700">{apaCitation}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => copyCitation(apaCitation, "APA")}
-                      >
-                        Copy APA
-                      </Button>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-slate-500">
-                        MLA
-                      </p>
-                      <p className="text-sm text-slate-700">{mlaCitation}</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => copyCitation(mlaCitation, "MLA")}
-                      >
-                        Copy MLA
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
-
-
-
-
-
-
