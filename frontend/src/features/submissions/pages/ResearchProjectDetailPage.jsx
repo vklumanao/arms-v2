@@ -33,7 +33,7 @@ export default function ResearchProjectDetailPage() {
   const navigate = useNavigate();
   const params = useParams();
   const projectId = String(params?.id || "").trim();
-  const { centers } = useReferenceData();
+  const { centers, departments, agendas } = useReferenceData();
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
 
@@ -89,6 +89,22 @@ export default function ResearchProjectDetailPage() {
       }, {}),
     [centers],
   );
+  const departmentById = useMemo(
+    () =>
+      (departments || []).reduce((acc, department) => {
+        acc[department.id] = department.name;
+        return acc;
+      }, {}),
+    [departments],
+  );
+  const agendaById = useMemo(
+    () =>
+      (agendas || []).reduce((acc, agenda) => {
+        acc[agenda.id] = agenda.name;
+        return acc;
+      }, {}),
+    [agendas],
+  );
 
   const project = useMemo(() => {
     const key = String(projectId || "").trim();
@@ -102,6 +118,22 @@ export default function ResearchProjectDetailPage() {
     if (fromOwned) return fromOwned;
     return linkedProjects.find(matchesKey) || null;
   }, [linkedProjects, ownedProjects, projectId]);
+
+  const facultyTeamUsers = useMemo(() => {
+    if (!Array.isArray(project?.faculty_team_users)) return [];
+    return project.faculty_team_users
+      .map((row) => row?.name || row?.email || row?.id)
+      .filter(Boolean);
+  }, [project?.faculty_team_users]);
+  const leadResearcherUser = useMemo(() => {
+    if (!project?.lead_researcher_user) return "";
+    const row = project.lead_researcher_user;
+    return row?.name || row?.email || row?.username || row?.id || "";
+  }, [project?.lead_researcher_user]);
+  const expectedOutputItems = useMemo(() => {
+    if (!Array.isArray(project?.expected_outputs_items)) return [];
+    return project.expected_outputs_items;
+  }, [project?.expected_outputs_items]);
 
   const status = normalizeStatus(project?.status);
 
@@ -118,28 +150,28 @@ export default function ResearchProjectDetailPage() {
 
     let cancelled = false;
     setResourcePanel((prev) => ({ ...prev, loading: true, error: "" }));
-      fetchProjectResources({ projectId: project.id })
-        .then(({ data, error: loadError, syncEnabled }) => {
-          const resolvedSyncEnabled = syncEnabled ?? true;
-          if (cancelled) return;
-          if (loadError) {
-            setResourcePanel({
-              loading: false,
-              error: loadError.message || "Unable to load linked resources.",
-              dataset: null,
-              resources: [],
-              syncEnabled: resolvedSyncEnabled,
-            });
-            return;
-          }
+    fetchProjectResources({ projectId: project.id })
+      .then(({ data, error: loadError, syncEnabled }) => {
+        const resolvedSyncEnabled = syncEnabled ?? true;
+        if (cancelled) return;
+        if (loadError) {
           setResourcePanel({
             loading: false,
-            error: "",
-            dataset: data?.dataset || null,
-            resources: Array.isArray(data?.resources) ? data.resources : [],
+            error: loadError.message || "Unable to load linked resources.",
+            dataset: null,
+            resources: [],
             syncEnabled: resolvedSyncEnabled,
           });
-        })
+          return;
+        }
+        setResourcePanel({
+          loading: false,
+          error: "",
+          dataset: data?.dataset || null,
+          resources: Array.isArray(data?.resources) ? data.resources : [],
+          syncEnabled: resolvedSyncEnabled,
+        });
+      })
       .catch((e) => {
         if (cancelled) return;
         setResourcePanel({
@@ -196,21 +228,7 @@ export default function ResearchProjectDetailPage() {
               <CardTitle className="text-lg font-bold text-slate-900">
                 {project?.title || "Project"}
               </CardTitle>
-              <CardDescription>
-                Submitted by{" "}
-                <span className="font-semibold text-slate-700">
-                  {project?.submitted_by_name || "Unknown user"}
-                </span>
-                {project?.submitted_by_email ? ` (${project.submitted_by_email})` : ""}
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="capitalize">
-                {status || "-"}
-              </Badge>
-              <Badge variant="secondary">
-                {project?.year || "-"}
-              </Badge>
+              <CardDescription>Project record overview.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -227,41 +245,6 @@ export default function ResearchProjectDetailPage() {
             />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Research Center
-                    </p>
-                    <p className="mt-1 font-semibold text-slate-900">
-                      {project?.ckan_org_id
-                        ? centerById[project.ckan_org_id] || "-"
-                        : project?.research_center || "-"}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Submitted
-                    </p>
-                    <p className="mt-1 font-semibold text-slate-900">
-                      {formatDate(project?.submitted_at)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Lead Researcher
-                    </p>
-                    <p className="mt-1 font-semibold text-slate-900">
-                      {project?.lead_researcher || "-"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
               <Card className="overflow-hidden">
                 <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                   <CardTitle className="text-base font-bold text-slate-900">
@@ -271,40 +254,284 @@ export default function ResearchProjectDetailPage() {
                     Full submission information.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 p-6 text-sm text-slate-700">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Abstract
-                    </p>
-                    <p className="mt-1 whitespace-pre-line">
-                      {project?.abstract || "-"}
-                    </p>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                        Faculty Team
-                      </p>
-                      <p className="mt-1 whitespace-pre-line">
-                        {project?.faculty_team || "-"}
-                      </p>
+                <CardContent className="space-y-6 p-6 text-sm text-slate-700">
+                  <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
+                    <div className="space-y-6">
+                      <section className="space-y-3 border-b border-border/60 pb-5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                            Overview
+                          </p>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Research Center
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.research_center_id
+                                ? centerById[project.research_center_id] || "-"
+                                : project?.project_ckan_org_id
+                                  ? centerById[project.project_ckan_org_id] ||
+                                    "-"
+                                  : project?.ckan_org_id
+                                    ? centerById[project.ckan_org_id] || "-"
+                                    : project?.research_center || "-"}
+                            </p>
+                            {project?.research_center_id ? (
+                              <p className="text-xs text-slate-500">
+                                ID: {project.research_center_id}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Submitted
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {formatDate(project?.submitted_at)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Submitted By
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.submitted_by_name || "Unknown user"}
+                            </p>
+                            {project?.submitted_by_email ? (
+                              <p className="text-xs text-slate-500">
+                                {project.submitted_by_email}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Visibility
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.project_public_visible
+                                ? "Public"
+                                : "Private"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Year
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.year || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Status
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900 capitalize">
+                              {project?.status || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section className="space-y-3 border-b border-border/60 pb-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Classification
+                        </p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Department
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.department_id
+                                ? departmentById[project.department_id] || "-"
+                                : "-"}
+                            </p>
+                            {project?.department_id ? (
+                              <p className="text-xs text-slate-500">
+                                ID: {project.department_id}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Research Agenda
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.research_agenda_id
+                                ? agendaById[project.research_agenda_id] || "-"
+                                : "-"}
+                            </p>
+                            {project?.research_agenda_id ? (
+                              <p className="text-xs text-slate-500">
+                                ID: {project.research_agenda_id}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Classification
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.classification || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Scholarly Type
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.scholarly_type || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          People
+                        </p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Lead Researcher
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {project?.lead_researcher || "-"}
+                            </p>
+                            {leadResearcherUser ? (
+                              <p className="text-xs text-slate-500">
+                                {leadResearcherUser}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Faculty Team
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.faculty_team || "-"}
+                            </p>
+                            {facultyTeamUsers.length ? (
+                              <p className="text-xs text-slate-500">
+                                {facultyTeamUsers.join(", ")}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Student Team
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.student_team || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                        Student Team
-                      </p>
-                      <p className="mt-1 whitespace-pre-line">
-                        {project?.student_team || "-"}
-                      </p>
+
+                    <div className="space-y-6">
+                      <section className="space-y-3 border-b border-border/60 pb-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Abstract
+                        </p>
+                        <p className="whitespace-pre-line text-sm text-slate-900">
+                          {project?.abstract || "-"}
+                        </p>
+                      </section>
+
+                      <section className="space-y-3 border-b border-border/60 pb-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Funding
+                        </p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Industry/Agency Partner
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.industry_partner || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Funding Type
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.funding_type || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Funding Source
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.funding_source || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Funding Amount
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.funding_amount || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section className="space-y-3 border-b border-border/60 pb-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Timeline & MOA
+                        </p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Start Date
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {formatDate(project?.start_date)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              End Date
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {formatDate(project?.end_date)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Supporting MOV Link
+                            </p>
+                            {project?.supporting_mov_link ? (
+                              <a
+                                className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
+                                href={project.supporting_mov_link}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {project.supporting_mov_link}
+                              </a>
+                            ) : (
+                              <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                                -
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Signed MOA Reference
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                              {project?.signed_moa_reference || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
                     </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Expected Outputs
-                    </p>
-                    <p className="mt-1 whitespace-pre-line">
-                      {project?.expected_outputs || "-"}
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -316,13 +543,7 @@ export default function ResearchProjectDetailPage() {
                       <CardTitle className="text-base font-bold text-slate-900">
                         Linked Resources
                       </CardTitle>
-                      <CardDescription>
-                        Files/resources synced from CKAN (if enabled).
-                      </CardDescription>
                     </div>
-                    <Badge variant="outline" className="font-mono">
-                      {project?.ckan_dataset_id || "-"}
-                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -369,10 +590,13 @@ export default function ResearchProjectDetailPage() {
                             {resource.id ? (
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {(() => {
-                                  const resourceUrl = String(resource.url || "").trim();
-                                  const isDownloadable = /\/resource\/.+\/download\//i.test(
-                                    resourceUrl,
-                                  );
+                                  const resourceUrl = String(
+                                    resource.url || "",
+                                  ).trim();
+                                  const isDownloadable =
+                                    /\/resource\/.+\/download\//i.test(
+                                      resourceUrl,
+                                    );
                                   if (!isDownloadable) {
                                     return (
                                       <p className="text-sm text-slate-500">
@@ -382,7 +606,11 @@ export default function ResearchProjectDetailPage() {
                                   }
                                   return (
                                     <>
-                                      <Button asChild variant="outline" size="sm">
+                                      <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                      >
                                         <a
                                           href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
                                             resource.id,
@@ -394,7 +622,11 @@ export default function ResearchProjectDetailPage() {
                                           Open
                                         </a>
                                       </Button>
-                                      <Button asChild variant="outline" size="sm">
+                                      <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                      >
                                         <a
                                           href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
                                             resource.id,
