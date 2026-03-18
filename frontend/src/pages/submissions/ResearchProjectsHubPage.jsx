@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/utils/cn";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,8 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import PageHeader from "@/components/layout/PageHeader";
-import EmptyState from "@/components/feedback/EmptyState";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -81,6 +80,7 @@ export default function ResearchProjectsHubPage() {
     search: "",
     sortBy: "submitted_desc",
   });
+  const [quickFilter, setQuickFilter] = useState("all");
   const [deletingProjectId, setDeletingProjectId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [exportingType, setExportingType] = useState("");
@@ -187,9 +187,18 @@ export default function ResearchProjectsHubPage() {
       ongoing: 0,
       completed: 0,
       rejected: 0,
+      draft: 0,
     };
 
     projects.forEach((project) => {
+      const isDraft =
+        String(project?.submission_state || "")
+          .trim()
+          .toLowerCase() === "draft";
+      if (isDraft) {
+        base.draft += 1;
+        return;
+      }
       const key = normalizeStatus(project.status);
       if (Object.prototype.hasOwnProperty.call(base, key)) {
         base[key] += 1;
@@ -199,7 +208,7 @@ export default function ResearchProjectsHubPage() {
     return base;
   }, [projects]);
 
-  const filteredProjects = useMemo(() => {
+  const baseFilteredProjects = useMemo(() => {
     const normalizedSearch = String(filters.search || "")
       .trim()
       .toLowerCase();
@@ -248,6 +257,23 @@ export default function ResearchProjectsHubPage() {
     return sorted;
   }, [filters, getProjectOrganization, projects]);
 
+  const filteredProjects = useMemo(() => {
+    if (quickFilter === "draft") {
+      return baseFilteredProjects.filter(
+        (project) =>
+          String(project?.submission_state || "")
+            .trim()
+            .toLowerCase() === "draft",
+      );
+    }
+    if (quickFilter !== "all") {
+      return baseFilteredProjects.filter(
+        (project) => normalizeStatus(project.status) === quickFilter,
+      );
+    }
+    return baseFilteredProjects;
+  }, [baseFilteredProjects, quickFilter]);
+
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(filteredProjects.length / PROJECTS_PAGE_SIZE)),
     [filteredProjects.length],
@@ -255,7 +281,7 @@ export default function ResearchProjectsHubPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [filters, quickFilter]);
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, totalPages));
@@ -510,11 +536,21 @@ export default function ResearchProjectsHubPage() {
   if (missingAffiliation) {
     return (
       <section className="page-stack-lg">
-        <PageHeader
-          title="Research Projects"
-          description="Browse all submitted projects first, then open the submission form only when needed."
-        />
-        <Card>
+        <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Research Projects
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Complete Your Profile First
+            </h1>
+            <p className="text-sm text-slate-600">
+              Add your organization and department before submitting or
+              reviewing research projects.
+            </p>
+          </div>
+        </div>
+        <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
           <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
               Please set your Organization (Research Center) and Department in
@@ -531,114 +567,113 @@ export default function ResearchProjectsHubPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Research Projects"
-        description="Browse all submitted projects first, then open the submission form only when needed."
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              ARMS Research Projects
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Research Projects Command Hub
+            </h1>
+            <p className="text-sm text-slate-600">
+              Review submissions, track status, and manage visibility for your
+              research portfolio.
+            </p>
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Card>
-          <CardContent className="p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      !filteredProjects.length || Boolean(exportingType)
+                    }
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={exportAsCsv}>
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={exportAsPdf}>
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+
+            <Button asChild>
+              <Link to="/submit-project/submit">Submit Research Project</Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <FileText size={14} />
               Total Projects
             </p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {analytics.total}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <FileText size={14} />
               Proposal
             </p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {analytics.proposal}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <Clock3 size={14} />
               Ongoing
             </p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {analytics.ongoing}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <CheckCircle2 size={14} />
               Completed
             </p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {analytics.completed}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <XCircle size={14} />
               Rejected
             </p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {analytics.rejected}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
+              <CardTitle className="text-base font-semibold text-slate-900">
                 Research Project Records
               </CardTitle>
               <CardDescription>
                 Showing {filteredProjects.length} project(s).
               </CardDescription>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {isAdmin ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={
-                        !filteredProjects.length || Boolean(exportingType)
-                      }
-                    >
-                      <Download className="h-4 w-4" />
-                      Export
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={exportAsCsv}>
-                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={exportAsPdf}>
-                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
-
-              <Button asChild>
-                <Link to="/submit-project/submit">Submit Research Project</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <label className="relative w-full md:max-w-md">
               <span className="sr-only">Search projects</span>
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -649,8 +684,7 @@ export default function ResearchProjectsHubPage() {
                 onChange={(e) => updateFilter("search", e.target.value)}
               />
             </label>
-
-            <div className="flex w-full flex-wrap gap-2 md:w-auto">
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
               <Select
                 value={filters.sortBy}
                 onValueChange={(value) => updateFilter("sortBy", value)}
@@ -671,19 +705,102 @@ export default function ResearchProjectsHubPage() {
               </Select>
             </div>
           </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Projects",
+                count: baseFilteredProjects.length,
+              },
+              {
+                key: "proposal",
+                label: "Proposal",
+                count: baseFilteredProjects.filter(
+                  (project) => normalizeStatus(project.status) === "proposal",
+                ).length,
+              },
+              {
+                key: "ongoing",
+                label: "Ongoing",
+                count: baseFilteredProjects.filter(
+                  (project) => normalizeStatus(project.status) === "ongoing",
+                ).length,
+              },
+              {
+                key: "completed",
+                label: "Completed",
+                count: baseFilteredProjects.filter(
+                  (project) => normalizeStatus(project.status) === "completed",
+                ).length,
+              },
+              {
+                key: "rejected",
+                label: "Rejected",
+                count: baseFilteredProjects.filter(
+                  (project) => normalizeStatus(project.status) === "rejected",
+                ).length,
+              },
+              {
+                key: "draft",
+                label: "Drafts",
+                count: baseFilteredProjects.filter(
+                  (project) =>
+                    String(project?.submission_state || "")
+                      .trim()
+                      .toLowerCase() === "draft",
+                ).length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  quickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    quickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
+          </div>
         </CardHeader>
         {filteredProjects.length === 0 ? (
-          <div className="p-4">
-            <EmptyState
-              title="No research projects found"
-              description="Try a different search term or submit a new research project."
-            />
-          </div>
+          <CardContent className="p-4">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              No research projects found. Try a different search term or submit
+              a new research project.
+            </div>
+          </CardContent>
         ) : (
-          <CardContent className="p-0">
-            <div className="overflow-x-hidden">
+          <CardContent className="p-4">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table className="w-full">
-                <TableHeader>
+                <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead className="w-[40px]">No.</TableHead>
                     <TableHead className="w-[320px]">Title</TableHead>
@@ -899,7 +1016,7 @@ export default function ResearchProjectsHubPage() {
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
+              <CardTitle className="text-base font-semibold text-slate-900">
                 Linked Projects
               </CardTitle>
               <CardDescription>
@@ -912,17 +1029,17 @@ export default function ResearchProjectsHubPage() {
           </div>
         </CardHeader>
         {linkedProjectRows.length === 0 ? (
-          <div className="p-4">
-            <EmptyState
-              title="No linked projects found"
-              description="Submit a research project first to populate linked project summaries."
-            />
-          </div>
+          <CardContent className="p-4">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              No linked projects found. Submit a research project first to
+              populate linked project summaries.
+            </div>
+          </CardContent>
         ) : (
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
+          <CardContent className="p-4">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader>
+                <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Project</TableHead>
