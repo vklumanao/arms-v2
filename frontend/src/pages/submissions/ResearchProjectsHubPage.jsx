@@ -29,6 +29,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -874,16 +875,25 @@ export default function ResearchProjectsHubPage() {
                     );
                   })}
                 </TableBody>
+                {totalPages > 1 ? (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={9} className="px-3 py-3">
+                        <PaginationControls
+                          page={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          className="border-0 rounded-none shadow-none bg-transparent"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                ) : null}
               </Table>
             </div>
           </CardContent>
         )}
       </Card>
-      <PaginationControls
-        page={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
