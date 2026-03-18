@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useReferenceData } from "@/hooks/useReferenceData";
-import PageHeader from "@/components/layout/PageHeader";
-import EmptyState from "@/components/feedback/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -225,331 +223,414 @@ export default function ResearchProjectDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="outline">
-          <Link to="/submit-project">
-            <ChevronLeft className="h-4 w-4" />
-            Back to Projects
-          </Link>
-        </Button>
-        {canEdit ? (
-          <Button
-            variant="outline"
-            onClick={() =>
-              navigate(
-                `/submit-project/submit?edit=${encodeURIComponent(
-                  String(project?.ckan_dataset_id || projectId || "").trim(),
-                )}`,
-              )
-            }
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-        ) : null}
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Research Project Detail
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              {project?.title || "Research Project"}
+            </h1>
+            <p className="text-sm text-slate-600">
+              Review the full submission, linked resources, and funding
+              information for this project.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/submit-project">
+                <ChevronLeft className="h-4 w-4" />
+                Back to Projects
+              </Link>
+            </Button>
+            {canEdit ? (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/submit-project/submit?edit=${encodeURIComponent(
+                      String(
+                        project?.ckan_dataset_id || projectId || "",
+                      ).trim(),
+                    )}`,
+                  )
+                }
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Status
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900 capitalize">
+              {project?.status || "Pending"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {project?.submission_state || "Submission"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Visibility
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {project?.project_public_visible ? "Public" : "Private"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Portfolio access</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Year
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {project?.year || "-"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Project cycle</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Research Center
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {project?.research_center_id
+                ? centerById[project.research_center_id] || "-"
+                : project?.project_ckan_org_id
+                  ? centerById[project.project_ckan_org_id] || "-"
+                  : project?.ckan_org_id
+                    ? centerById[project.ckan_org_id] || "-"
+                    : project?.research_center || "-"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Owning center</p>
+          </div>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+        <CardHeader className="border-b border-[var(--border)] px-5 py-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                Research Project: {project?.title || "Project"}
+              <CardTitle className="text-base font-semibold text-slate-900">
+                Project Details
               </CardTitle>
-              <CardDescription>Project record overview.</CardDescription>
+              <CardDescription>
+                Complete submission profile and classifications.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-5 p-6">
+        <CardContent className="space-y-5 p-5">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading project...</p>
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              Loading project...
+            </div>
           ) : error ? (
-            <EmptyState title="Unable to load" description={error} />
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              Unable to load. {error}
+            </div>
           ) : !project ? (
-            <EmptyState
-              title="Project not found"
-              description="This project is not available in your scope."
-            />
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              Project not found. This project is not available in your scope.
+            </div>
           ) : (
             <>
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                  <CardTitle className="text-base font-bold text-slate-900">
-                    Project Details
-                  </CardTitle>
-                  <CardDescription>
-                    Full submission information.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6 text-sm text-slate-700">
-                  <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
-                    <div className="space-y-6">
-                      <section className="space-y-3 border-b border-border/60 pb-5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                            Overview
+              <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
+                <div className="space-y-4">
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        Overview
+                      </CardTitle>
+                      <CardDescription>Submission metadata.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Research Center
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.research_center_id
+                            ? centerById[project.research_center_id] || "-"
+                            : project?.project_ckan_org_id
+                              ? centerById[project.project_ckan_org_id] || "-"
+                              : project?.ckan_org_id
+                                ? centerById[project.ckan_org_id] || "-"
+                                : project?.research_center || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Submitted
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatDate(project?.submitted_at)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Submitted By
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.submitted_by_name || "Unknown user"}
+                        </p>
+                        {project?.submitted_by_email ? (
+                          <p className="text-xs text-slate-500">
+                            {project.submitted_by_email}
                           </p>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Research Center
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.research_center_id
-                                ? centerById[project.research_center_id] || "-"
-                                : project?.project_ckan_org_id
-                                  ? centerById[project.project_ckan_org_id] ||
-                                    "-"
-                                  : project?.ckan_org_id
-                                    ? centerById[project.ckan_org_id] || "-"
-                                    : project?.research_center || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Submitted
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatDate(project?.submitted_at)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Submitted By
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.submitted_by_name || "Unknown user"}
-                            </p>
-                            {project?.submitted_by_email ? (
-                              <p className="text-xs text-slate-500">
-                                {project.submitted_by_email}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Visibility
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.project_public_visible
-                                ? "Public"
-                                : "Private"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Year
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.year || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Status
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900 capitalize">
-                              {project?.status || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
+                        ) : null}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Visibility
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.project_public_visible
+                            ? "Public"
+                            : "Private"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Year
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.year || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Status
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 capitalize">
+                          {project?.status || "-"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                      <section className="space-y-3 border-b border-border/60 pb-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        Classification
+                      </CardTitle>
+                      <CardDescription>
+                        Program and agenda mapping.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Department
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.department_id
+                            ? departmentById[project.department_id] || "-"
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Research Agenda
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.research_agenda_id
+                            ? agendaById[project.research_agenda_id] || "-"
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
                           Classification
                         </p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Department
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.department_id
-                                ? departmentById[project.department_id] || "-"
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Research Agenda
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.research_agenda_id
-                                ? agendaById[project.research_agenda_id] || "-"
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Classification
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.classification || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Scholarly Type
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.scholarly_type || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.classification || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Scholarly Type
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.scholarly_type || "-"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                      <section className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          People
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        People
+                      </CardTitle>
+                      <CardDescription>
+                        Research teams and participants.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Lead Researcher
                         </p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Lead Researcher
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.lead_researcher || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Faculty Team
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.faculty_team || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Student Team
-                            </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
-                              {project?.student_team || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
-                    </div>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.lead_researcher || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Faculty Team
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.faculty_team || "-"}
+                        </p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-semibold text-slate-500">
+                          Student Team
+                        </p>
+                        <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                          {project?.student_team || "-"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                    <div className="space-y-6">
-                      <section className="space-y-3 border-b border-border/60 pb-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          Abstract
-                        </p>
-                        <p className="whitespace-pre-line mt-1 text-sm font-semibold text-slate-900">
-                          {project?.abstract || "-"}
-                        </p>
-                      </section>
+                <div className="space-y-4">
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        Abstract
+                      </CardTitle>
+                      <CardDescription>Project summary.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4 text-sm text-slate-700">
+                      <p className="whitespace-pre-line text-sm font-semibold text-slate-900">
+                        {project?.abstract || "-"}
+                      </p>
+                    </CardContent>
+                  </Card>
 
-                      <section className="space-y-3 border-b border-border/60 pb-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          Funding
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        Funding
+                      </CardTitle>
+                      <CardDescription>
+                        Budget and funding sources.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Industry/Agency Partner
                         </p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Industry/Agency Partner
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.industry_partner || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Funding Type
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {normalizeLabel(project?.funding_type)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Funding Source
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.funding_source || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Funding Amount
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatCurrencyPHP(project?.funding_amount)}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.industry_partner || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Funding Type
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {normalizeLabel(project?.funding_type)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Funding Source
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.funding_source || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Funding Amount
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatCurrencyPHP(project?.funding_amount)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                      <section className="space-y-3 border-border/60 pb-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          Timeline & MOA
+                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                      <CardTitle className="text-sm font-semibold text-slate-900">
+                        Timeline & MOA
+                      </CardTitle>
+                      <CardDescription>
+                        Key dates and agreements.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Start Date
                         </p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Start Date
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatDate(project?.start_date)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              End Date
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatDate(project?.end_date)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Supporting MOV Link
-                            </p>
-                            {project?.supporting_mov_link ? (
-                              <a
-                                className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
-                                href={project.supporting_mov_link}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {project.supporting_mov_link}
-                              </a>
-                            ) : (
-                              <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
-                                -
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500">
-                              Signed MOA Reference
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {project?.signed_moa_reference || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatDate(project?.start_date)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          End Date
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatDate(project?.end_date)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Supporting MOV Link
+                        </p>
+                        {project?.supporting_mov_link ? (
+                          <a
+                            className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
+                            href={project.supporting_mov_link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {project.supporting_mov_link}
+                          </a>
+                        ) : (
+                          <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            -
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500">
+                          Signed MOA Reference
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {project?.signed_moa_reference || "-"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
 
               <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-bold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Linked Resources
                       </CardTitle>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   {!resourcePanel.syncEnabled ? (
                     <p className="text-sm text-slate-600">
                       CKAN sync is disabled in this environment.
@@ -563,17 +644,17 @@ export default function ResearchProjectDetailPage() {
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <p className="text-sm text-slate-600">
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
                       No linked resources found for this project.
-                    </p>
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                       {resourcePanel.resources.map((resource) => (
                         <Card
                           key={resource.id || resource.url || resource.name}
-                          className="border-slate-200 bg-slate-50/40"
+                          className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
                         >
-                          <CardContent className="p-4">
+                          <CardContent className="p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate text-base font-semibold text-slate-900">
