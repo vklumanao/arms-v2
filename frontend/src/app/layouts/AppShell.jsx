@@ -163,7 +163,9 @@ export default function AppShell() {
   );
 
   const workspaceCoreLinks = useMemo(() => {
-    const role = String(profile?.role || "").trim().toLowerCase();
+    const role = String(profile?.role || "")
+      .trim()
+      .toLowerCase();
     const isAdmin = role === "admin";
     const isFaculty = role === "faculty";
 
@@ -185,14 +187,12 @@ export default function AppShell() {
     if (canAccessResearchCenters) {
       const managedCenterId = String(profile?.managed_center_id || "").trim();
       links.push({
-        to:
-          isAdmin
-            ? "/admin/research-center"
-            : managedCenterId
-              ? `/admin/research-center/${encodeURIComponent(managedCenterId)}`
-              : "/admin/research-center",
-        label:
-          isAdmin ? "Research Centers" : "My Research Center",
+        to: isAdmin
+          ? "/admin/research-center"
+          : managedCenterId
+            ? `/admin/research-center/${encodeURIComponent(managedCenterId)}`
+            : "/admin/research-center",
+        label: isAdmin ? "Research Centers" : "My Research Center",
         icon: Building2,
         permission: PERMISSIONS.DASHBOARD_VIEW,
       });
@@ -217,11 +217,7 @@ export default function AppShell() {
     }
 
     return links;
-  }, [
-    profile?.is_center_chief,
-    profile?.managed_center_id,
-    profile?.role,
-  ]);
+  }, [profile?.is_center_chief, profile?.managed_center_id, profile?.role]);
 
   const workspaceResearchLinks = useMemo(
     () => [
@@ -248,10 +244,7 @@ export default function AppShell() {
   );
 
   const workspaceLinks = useMemo(
-    () => [
-      ...workspaceCoreLinks,
-      ...workspaceResearchLinks,
-    ],
+    () => [...workspaceCoreLinks, ...workspaceResearchLinks],
     [workspaceCoreLinks, workspaceResearchLinks],
   );
 
@@ -421,10 +414,7 @@ export default function AppShell() {
           <>
             {!collapsed ? (
               <span
-                className={cn(
-                  "sidebar-nav-rail",
-                  isActive && "is-active",
-                )}
+                className={cn("sidebar-nav-rail", isActive && "is-active")}
                 aria-hidden="true"
               />
             ) : null}
@@ -491,7 +481,7 @@ export default function AppShell() {
               title={displayName}
               aria-label="Account menu"
               className={cn(
-                "w-full rounded-lg border border-border/60 bg-white/60 shadow-sm shadow-black/5",
+                "w-full rounded-lg shadow-black/5",
                 "hover:border-border hover:bg-white",
                 "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
               )}
@@ -507,7 +497,7 @@ export default function AppShell() {
               type="button"
               variant="ghost"
               className={cn(
-                "group w-full justify-between gap-3 rounded-lg border border-border/60 bg-white/60 px-3 py-2.5 text-left shadow-sm shadow-black/5",
+                "group w-full justify-between gap-3 rounded-lg px-3 py-2.5 text-left shadow-sm shadow-black/5",
                 "hover:border-border hover:bg-white",
                 "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
               )}
@@ -555,7 +545,7 @@ export default function AppShell() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+            <DropdownMenuItem asChild>
               <Link
                 to="/my-profile"
                 onClick={onNavigate}
@@ -594,7 +584,12 @@ export default function AppShell() {
         : desktopSidebarScrollTopRef;
 
     return (
-      <div className={cn("flex h-full min-h-0 flex-col", collapsed ? "gap-3" : "gap-4")}>
+      <div
+        className={cn(
+          "flex h-full min-h-0 flex-col",
+          collapsed ? "gap-3" : "gap-4",
+        )}
+      >
         <div
           className={cn(
             "sidebar-panel",
@@ -634,10 +629,14 @@ export default function AppShell() {
                 variant="ghost"
                 size="icon"
                 aria-label={
-                  desktopSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                  desktopSidebarCollapsed
+                    ? "Expand sidebar"
+                    : "Collapse sidebar"
                 }
                 title={
-                  desktopSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                  desktopSidebarCollapsed
+                    ? "Expand sidebar"
+                    : "Collapse sidebar"
                 }
                 onClick={handleNavToggle}
                 className={cn(
@@ -674,16 +673,14 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-                <div className={cn("space-y-5", collapsed && "space-y-3")}>
-                  {visibleGroups.map((group) => (
-                    <div key={group.key}>
-                      {!collapsed ? (
-                        <div className="flex items-center gap-2 px-1">
-                          <h3 className="sidebar-section-title">
-                            {group.title}
-                          </h3>
-                          <div
-                            className="h-px flex-1 bg-border/60"
+              <div className={cn("space-y-5", collapsed && "space-y-3")}>
+                {visibleGroups.map((group) => (
+                  <div key={group.key}>
+                    {!collapsed ? (
+                      <div className="flex items-center gap-2 px-1">
+                        <h3 className="sidebar-section-title">{group.title}</h3>
+                        <div
+                          className="h-px flex-1 bg-border/60"
                           aria-hidden="true"
                         />
                       </div>
@@ -780,8 +777,12 @@ export default function AppShell() {
         <aside
           className={cn(
             "sidebar-shell",
-            desktopSidebarCollapsed && hoverExpanded && "sidebar-shell-hover-expanded",
-            desktopSidebarCollapsed && !hoverExpanded && "sidebar-shell-collapsed",
+            desktopSidebarCollapsed &&
+              hoverExpanded &&
+              "sidebar-shell-hover-expanded",
+            desktopSidebarCollapsed &&
+              !hoverExpanded &&
+              "sidebar-shell-collapsed",
           )}
           onMouseEnter={() => {
             if (desktopSidebarCollapsed) setHoverExpanded(true);
@@ -796,7 +797,11 @@ export default function AppShell() {
           onBlurCapture={(event) => {
             if (!desktopSidebarCollapsed) return;
             const nextFocus = event.relatedTarget;
-            if (nextFocus instanceof Node && event.currentTarget.contains(nextFocus)) return;
+            if (
+              nextFocus instanceof Node &&
+              event.currentTarget.contains(nextFocus)
+            )
+              return;
             if (accountMenuOpen) return;
             setHoverExpanded(false);
           }}
