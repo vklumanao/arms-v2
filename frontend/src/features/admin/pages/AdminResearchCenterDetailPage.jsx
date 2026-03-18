@@ -624,7 +624,9 @@ export default function AdminResearchCenterDetailPage() {
   const goToProject = (row) => {
     const id = String(row?.ckan_dataset_id || row?.id || "").trim();
     if (!id) return;
-    navigate(`/submit-project/${encodeURIComponent(id)}`);
+    const resolvedId = String(row?.ckan_dataset_id || id || "").trim();
+    if (!resolvedId) return;
+    navigate(`/submit-project/${encodeURIComponent(resolvedId)}`);
   };
 
   const handleDelete = async () => {
