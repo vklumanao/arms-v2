@@ -484,7 +484,7 @@ export default function ResearchProjectDetailPage() {
                         </div>
                       </section>
 
-                      <section className="space-y-3 border-b border-border/60 pb-5">
+                      <section className="space-y-3 border-border/60 pb-5">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                           Timeline & MOA
                         </p>
