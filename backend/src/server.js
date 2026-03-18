@@ -85,6 +85,7 @@ import { registerSubmissionsRoutes } from "./modules/submissions/submissions.rou
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
 import { registerAwardsRoutes } from "./modules/awards/awards.routes.js";
+import { registerPublicRecordsRoutes } from "./modules/public-records/public-records.routes.js";
 
 // Startup flow:
 // 1) Validate required environment configuration.
@@ -649,6 +650,16 @@ registerDashboardRoutes(app, {
   listDatasets,
   listGroups,
   listOrganizationAgendas,
+});
+
+registerPublicRecordsRoutes(app, {
+  listDatasets,
+  listOrganizations,
+  listGroups,
+  listOrganizationAgendas,
+  getDataset,
+  asTrimmedString,
+  getExtraByKey,
 });
 
 registerSubmissionsRoutes(app, {
