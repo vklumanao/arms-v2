@@ -15,7 +15,7 @@ export async function registerAccount(payload) {
 }
 
 export async function fetchCurrentSession() {
-  return apiFetch("/auth/me");
+  return apiFetch("/auth/me", { allowUnauthorized: true });
 }
 
 export async function requestPasswordReset(email) {
@@ -35,4 +35,3 @@ export async function resetPasswordWithToken({ token, password }) {
 export async function logoutSession() {
   return apiFetch("/auth/logout", { method: "POST" });
 }
-
