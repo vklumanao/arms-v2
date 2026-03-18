@@ -110,6 +110,7 @@ export default function AdminResearchCenterDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
+  const [agendaFilter, setAgendaFilter] = useState("");
 
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
@@ -135,6 +136,7 @@ export default function AdminResearchCenterDetailPage() {
   }, [centerId]);
   useEffect(() => {
     setProjectsPage(1);
+    setAgendaFilter("");
   }, [centerId]);
 
   useEffect(() => {
@@ -284,13 +286,23 @@ export default function AdminResearchCenterDetailPage() {
     [links.profiles.length],
   );
 
+  const filteredProjects = useMemo(() => {
+    const filterValue = String(agendaFilter || "").trim().toLowerCase();
+    if (!filterValue) return links.projects;
+    return links.projects.filter((row) => {
+      const agendaName = String(row?.agenda_name || "")
+        .trim()
+        .toLowerCase();
+      return agendaName === filterValue;
+    });
+  }, [agendaFilter, links.projects]);
   const paginatedProjects = useMemo(() => {
     const start = (projectsPage - 1) * PAGE_SIZE;
-    return links.projects.slice(start, start + PAGE_SIZE);
-  }, [projectsPage, links.projects]);
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [projectsPage, filteredProjects]);
   const projectsTotalPages = useMemo(
-    () => Math.max(1, Math.ceil(links.projects.length / PAGE_SIZE)),
-    [links.projects.length],
+    () => Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE)),
+    [filteredProjects.length],
   );
 
   const editErrors = useMemo(
@@ -311,6 +323,17 @@ export default function AdminResearchCenterDetailPage() {
       next.set("tab", tab);
       return next;
     });
+  };
+
+  const applyAgendaFilter = (agenda) => {
+    const next = String(agenda || "").trim();
+    setAgendaFilter((prev) => {
+      const normalizedPrev = String(prev || "").trim();
+      if (normalizedPrev && normalizedPrev === next) return "";
+      return next;
+    });
+    setProjectsPage(1);
+    setTab("projects");
   };
 
   const addEditAgenda = () => {
@@ -754,9 +777,15 @@ export default function AdminResearchCenterDetailPage() {
                 {center.agendaNames.length ? (
                   <div className="flex flex-wrap gap-2">
                     {center.agendaNames.map((agenda) => (
-                      <Badge key={agenda} variant="outline">
+                      <button
+                        key={agenda}
+                        type="button"
+                        className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-muted"
+                        onClick={() => applyAgendaFilter(agenda)}
+                        title="Filter linked projects by this agenda"
+                      >
                         {agenda}
-                      </Badge>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -949,10 +978,14 @@ export default function AdminResearchCenterDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-4 space-y-3">
-                  {links.projects.length === 0 ? (
+                  {filteredProjects.length === 0 ? (
                     <EmptyState
                       title="No projects"
-                      description="No linked projects found for this research center."
+                      description={
+                        agendaFilter
+                          ? "No linked projects match the selected agenda."
+                          : "No linked projects found for this research center."
+                      }
                     />
                   ) : (
                     <Card className="overflow-hidden">
@@ -961,8 +994,22 @@ export default function AdminResearchCenterDetailPage() {
                           Linked Projects
                         </CardTitle>
                         <CardDescription>
-                          Showing {links.projects.length} project(s).
+                          Showing {filteredProjects.length} project(s).
                         </CardDescription>
+                        {agendaFilter ? (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                            <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-slate-700">
+                              Agenda: {agendaFilter}
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                              onClick={() => setAgendaFilter("")}
+                            >
+                              Clear filter
+                            </button>
+                          </div>
+                        ) : null}
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="overflow-x-auto">
