@@ -234,7 +234,10 @@ function mockApiPayload(path, options = {}) {
   if (cleanPath === "/admin/controls/sync-ckan-orgs") {
     return { summary: { synced: 0 } };
   }
-  if (cleanPath === "/admin/controls/proponents/accounts" && method === "POST") {
+  if (
+    cleanPath === "/admin/controls/proponents/accounts" &&
+    method === "POST"
+  ) {
     const rawBody =
       typeof options.body === "string"
         ? JSON.parse(options.body || "{}")
@@ -751,13 +754,14 @@ export async function apiFetch(path, options = {}) {
     return mockApiPayload(path, options);
   }
 
+  const { allowUnauthorized, ...fetchOptions } = options || {};
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
   };
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
+    ...fetchOptions,
     credentials: "include",
     headers,
   });
@@ -768,6 +772,9 @@ export async function apiFetch(path, options = {}) {
   const payload = isJson ? await response.json() : null;
 
   if (!response.ok) {
+    if (response.status === 401 && allowUnauthorized) {
+      return payload;
+    }
     throw new Error(
       payload?.error || `Request failed with status ${response.status}`,
     );
