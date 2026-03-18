@@ -15,7 +15,15 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -122,6 +130,66 @@ export default function PublicRecordsPage() {
       }, {}),
     [departments],
   );
+
+  const centerCards = useMemo(() => {
+    const toTokens = (value) =>
+      String(value || "")
+        .split(/[,;\n]+/g)
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+    const includesPublicationSignal = (value) => {
+      const text = String(value || "").toLowerCase();
+      return (
+        text.includes("publication") ||
+        text.includes("journal") ||
+        text.includes("conference") ||
+        text.includes("paper")
+      );
+    };
+
+    const counts = records.reduce((acc, record) => {
+      if (record.public_visible === false) return acc;
+      const key = String(record.research_center_id || "").trim();
+      if (!key) return acc;
+      if (!acc[key]) {
+        acc[key] = {
+          projects: 0,
+          researchers: new Set(),
+          publications: 0,
+        };
+      }
+      acc[key].projects += 1;
+
+      const lead = toTokens(record.lead_researcher);
+      const faculty = toTokens(record.faculty_team);
+      const students = toTokens(record.student_team);
+      [...lead, ...faculty, ...students].forEach((name) => {
+        acc[key].researchers.add(name);
+      });
+
+      const scholarly = String(record.scholarly_type || "").toLowerCase();
+      const expected = String(record.expected_outputs || "");
+      if (
+        includesPublicationSignal(scholarly) ||
+        includesPublicationSignal(expected)
+      ) {
+        acc[key].publications += 1;
+      }
+
+      return acc;
+    }, {});
+
+    return centers
+      .map((center) => ({
+        id: center.id,
+        name: center.name,
+        count: counts[center.id]?.projects || 0,
+        researcherCount: counts[center.id]?.researchers.size || 0,
+        publicationCount: counts[center.id]?.publications || 0,
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [centers, records]);
 
   const filtered = useMemo(() => {
     const { tokens, freeText, terms } = parseSearchTokens(filters.search);
@@ -272,12 +340,79 @@ export default function PublicRecordsPage() {
     navigate(`/public-records/${encodeURIComponent(projectId)}`);
   };
 
+  const renderCenterCard = (center) => (
+    <Card className="h-full border-slate-200/70 bg-white">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-slate-900">
+          {center.name}
+        </CardTitle>
+        <p className="text-sm text-slate-600">
+          {center.description || center.summary || "Research center overview."}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Separator />
+        <div className="space-y-2 text-sm text-slate-700">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-slate-600">Projects</span>
+            <Badge variant="outline" className="px-2.5">
+              {center.count}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-slate-600">Researchers</span>
+            <Badge variant="outline" className="px-2.5">
+              {center.researcherCount}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-slate-600">Publications</span>
+            <Badge variant="outline" className="px-2.5">
+              {center.publicationCount}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <section className="page-stack-lg">
       <PageHeader
         title="Public Research Records"
         description="Scholarly index of approved public ARMS research records."
       />
+
+      <section>
+        {centerCards.length === 0 ? (
+          <Card>
+            <CardContent className="p-5 text-sm text-slate-600">
+              No public records have been assigned to research centers yet.
+            </CardContent>
+          </Card>
+        ) : centerCards.length <= 3 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {centerCards.map((center) => (
+              <div key={center.id}>{renderCenterCard(center)}</div>
+            ))}
+          </div>
+        ) : (
+          <Carousel opts={{ align: "start" }} className="relative">
+            <CarouselContent>
+              {centerCards.map((center) => (
+                <CarouselItem
+                  key={center.id}
+                  className="sm:basis-1/2 lg:basis-1/3"
+                >
+                  {renderCenterCard(center)}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-11 z-10" />
+            <CarouselNext className="-right-11 z-10" />
+          </Carousel>
+        )}
+      </section>
 
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
         <aside className="public-records-filter h-fit">
