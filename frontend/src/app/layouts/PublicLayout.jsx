@@ -20,7 +20,7 @@ export default function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <div className="public-layout-inner flex items-center justify-between gap-4">
           <Link to="/home" className="flex items-center">
             <img
               src="/arms-logo-v2.svg"
@@ -47,7 +47,7 @@ export default function PublicLayout() {
             <Link to="/login">Login</Link>
           </Button>
         </div>
-        <div className="mx-auto mt-3 flex max-w-6xl flex-wrap items-center gap-1 sm:hidden">
+        <div className="public-layout-inner mt-3 flex flex-wrap items-center gap-1 sm:hidden">
           {landingLinks.map((item) => (
             <NavLink
               key={item.to}
@@ -64,7 +64,7 @@ export default function PublicLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <main className="public-layout-main">
         <Outlet />
       </main>
 
