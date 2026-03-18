@@ -661,6 +661,7 @@ registerSubmissionsRoutes(app, {
   asNumber,
   listDatasets,
   getDataset,
+  getOrganization,
   createDataset,
   updateDataset,
   setDatasetVisibility,
