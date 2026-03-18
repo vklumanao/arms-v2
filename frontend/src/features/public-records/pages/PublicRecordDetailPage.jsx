@@ -447,7 +447,7 @@ export default function PublicRecordDetailPage() {
                         </div>
                       </section>
 
-                      <section className="space-y-3 border-b border-border/60 pb-5">
+                      <section className="space-y-3 border-border/60 pb-5">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                           Timeline & MOA
                         </p>
@@ -499,44 +499,6 @@ export default function PublicRecordDetailPage() {
                       </section>
                     </div>
                   </div>
-
-                  <section className="space-y-3 border-t border-border/60 pt-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      Timeline
-                    </p>
-                    {timelineLoading ? (
-                      <p className="text-sm text-slate-600">
-                        Loading timeline...
-                      </p>
-                    ) : timeline.length === 0 ? (
-                      <p className="text-sm text-slate-600">
-                        No timeline entries available.
-                      </p>
-                    ) : (
-                      <ul className="space-y-2 text-sm">
-                        {timeline.map((entry) => (
-                          <li key={entry.id}>
-                            <Card>
-                              <CardContent className="space-y-1 p-3">
-                                <p className="font-semibold text-slate-900">
-                                  {entry.old_status || "none"} -&gt;{" "}
-                                  {entry.new_status}
-                                </p>
-                                <p className="text-slate-600">
-                                  {new Date(entry.changed_at).toLocaleString()}
-                                </p>
-                                {entry.remarks ? (
-                                  <p className="text-slate-700">
-                                    {entry.remarks}
-                                  </p>
-                                ) : null}
-                              </CardContent>
-                            </Card>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
 
                   <section className="space-y-3 border-t border-border/60 pt-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
