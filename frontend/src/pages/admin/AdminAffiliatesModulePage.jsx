@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Search } from "lucide-react";
+import { Download, Eye, Pencil, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,6 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,6 +29,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -403,22 +410,32 @@ export default function AdminAffiliatesModulePage() {
               </label>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={exportAsCsv}
-                disabled={!filteredRows.length || Boolean(exportingType)}
-              >
-                {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={exportAsPdf}
-                disabled={!filteredRows.length || Boolean(exportingType)}
-              >
-                {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={exportAsCsv}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={exportAsPdf}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -567,18 +584,25 @@ export default function AdminAffiliatesModulePage() {
                     </TableRow>
                   ))}
                 </TableBody>
+                {pagination.totalPages > 1 ? (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={13} className="px-3 py-3">
+                        <PaginationControls
+                          page={currentPage}
+                          totalPages={pagination.totalPages}
+                          onPageChange={setCurrentPage}
+                          className="border-0 rounded-none shadow-none bg-transparent"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                ) : null}
               </Table>
             </div>
           </CardContent>
         )}
       </Card>
-      {filteredRows.length > 0 ? (
-        <PaginationControls
-          page={currentPage}
-          totalPages={pagination.totalPages}
-          onPageChange={setCurrentPage}
-        />
-      ) : null}
 
       {editingAffiliate ? (
         <Dialog
