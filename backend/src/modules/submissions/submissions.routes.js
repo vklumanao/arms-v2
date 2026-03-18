@@ -26,6 +26,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     asNumber,
     listDatasets,
     getDataset,
+    getOrganization,
     createDataset,
     updateDataset,
     setDatasetVisibility,
@@ -568,6 +569,32 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     return false;
   }
 
+  function getDatasetTagNames(dataset) {
+    const tags = Array.isArray(dataset?.tags) ? dataset.tags : [];
+    return tags
+      .map((tag) => asTrimmedString(tag?.name || tag?.display_name || tag))
+      .filter(Boolean);
+  }
+
+  async function isCenterChiefForDataset(dataset, user) {
+    const orgId =
+      asTrimmedString(dataset?.organization?.name) ||
+      asTrimmedString(dataset?.owner_org);
+    const userCkanId = asTrimmedString(user?.ckan_user_id);
+    if (!orgId || !userCkanId) return false;
+    try {
+      const org = await getOrganization(orgId);
+      const extras = Array.isArray(org?.extras) ? org.extras : [];
+      const centerChiefId = asTrimmedString(
+        getExtraByKey(extras, "center_chief_id"),
+      );
+      if (!centerChiefId) return false;
+      return centerChiefId === userCkanId;
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Adds or replaces a dataset extra value (case-insensitive key match).
    */
@@ -587,6 +614,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   function mapDatasetToEditableForm(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const submission_state = getSubmissionStateFromExtras(extras);
+    const tagNames = getDatasetTagNames(dataset);
     const yearFromExtra = asTrimmedString(
       getExtraByKey(extras, "project_year") || getExtraByKey(extras, "year"),
     );
@@ -612,6 +640,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       lead_researcher_user:
         parseSelectedUsers(getExtraByKey(extras, "lead_researcher_user"))[0] ||
         null,
+      lead_researcher_user:
+        parseSelectedUsers(getExtraByKey(extras, "lead_researcher_user"))[0] ||
+        null,
       faculty_team: asTrimmedString(getExtraByKey(extras, "faculty_team")),
       faculty_team_users: parseSelectedUsers(
         getExtraByKey(extras, "faculty_team_users"),
@@ -627,12 +658,26 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         dataset?.organization?.name || dataset?.owner_org,
       ),
       research_agenda_id: asTrimmedString(
-        getExtraByKey(extras, "research_agenda_id"),
+        getExtraByKey(extras, "research_agenda_id") ||
+          getExtraByKey(extras, "agenda_id"),
       ),
-      department_id: asTrimmedString(getExtraByKey(extras, "department_id")),
-      scholarly_type: asTrimmedString(getExtraByKey(extras, "scholarly_type")),
+      department_id: asTrimmedString(
+        getExtraByKey(extras, "department_id") ||
+          getExtraByKey(extras, "program_department") ||
+          getExtraByKey(extras, "department"),
+      ),
+      scholarly_type: asTrimmedString(
+        getExtraByKey(extras, "scholarly_type"),
+      ),
       funding_type:
-        asTrimmedString(getExtraByKey(extras, "funding_type")) || "none",
+        asTrimmedString(getExtraByKey(extras, "funding_type")) ||
+        (tagNames.includes("internal")
+          ? "internal"
+          : tagNames.includes("external")
+            ? "external"
+            : tagNames.includes("self_funded")
+              ? "self_funded"
+              : "none"),
       funding_category: asTrimmedString(
         getExtraByKey(extras, "funding_category"),
       ),
@@ -643,7 +688,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       funding_amount:
         asTrimmedString(getExtraByKey(extras, "funding_amount")) || "0",
       classification:
-        asTrimmedString(getExtraByKey(extras, "classification")) || "academic",
+        asTrimmedString(getExtraByKey(extras, "classification")) ||
+        (tagNames.includes("industry") ? "industry" : "academic"),
       status:
         asTrimmedString(
           getExtraByKey(extras, "project_status") ||
@@ -716,6 +762,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   function mapDatasetToProjectListRecord(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const submission_state = getSubmissionStateFromExtras(extras);
+    const tagNames = getDatasetTagNames(dataset);
     const metadataCreated = asTrimmedString(dataset?.metadata_created);
     const createdYear = metadataCreated
       ? new Date(metadataCreated).getFullYear()
@@ -754,9 +801,46 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       status:
         asTrimmedString(getExtraByKey(extras, "project_status")) ||
         asTrimmedString(getExtraByKey(extras, "status")) ||
-        "ongoing",
+        (tagNames.find((tag) =>
+          ["proposal", "ongoing", "completed", "rejected"].includes(tag),
+        ) ||
+          "ongoing"),
+      classification:
+        asTrimmedString(getExtraByKey(extras, "classification")) ||
+        (tagNames.includes("industry") ? "industry" : "academic"),
+      scholarly_type: asTrimmedString(getExtraByKey(extras, "scholarly_type")),
+      department_id: asTrimmedString(
+        getExtraByKey(extras, "department_id") ||
+          getExtraByKey(extras, "program_department") ||
+          getExtraByKey(extras, "department"),
+      ),
+      research_agenda_id: asTrimmedString(
+        getExtraByKey(extras, "research_agenda_id") ||
+          getExtraByKey(extras, "agenda_id"),
+      ),
+      funding_type:
+        asTrimmedString(getExtraByKey(extras, "funding_type")) ||
+        (tagNames.includes("internal")
+          ? "internal"
+          : tagNames.includes("external")
+            ? "external"
+            : tagNames.includes("self_funded")
+              ? "self_funded"
+              : "none"),
+      funding_category: asTrimmedString(
+        getExtraByKey(extras, "funding_category"),
+      ),
+      supporting_mov_link: asTrimmedString(
+        getExtraByKey(extras, "supporting_mov_link"),
+      ),
+      signed_moa_reference: asTrimmedString(
+        getExtraByKey(extras, "signed_moa_reference"),
+      ),
       expected_outputs: asTrimmedString(
         getExtraByKey(extras, "expected_outputs_summary"),
+      ),
+      expected_outputs_items: parseExpectedOutputMetadata(
+        getExtraByKey(extras, "expected_outputs_meta"),
       ),
       submitted_by_name:
         asTrimmedString(getExtraByKey(extras, "submitted_by_name")) ||
@@ -781,6 +865,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         asTrimmedString(dataset?.organization?.name) ||
         "-",
       project_public_visible: !Boolean(dataset?.private),
+      public_visible: !Boolean(dataset?.private),
       private: Boolean(dataset?.private),
       project_ckan_org_id:
         asTrimmedString(dataset?.organization?.name) ||
@@ -1097,7 +1182,12 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           }
 
           const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+          const isCenterChief = await isCenterChiefForDataset(dataset, req.user);
+          if (
+            !isAdmin &&
+            !isCenterChief &&
+            !isDatasetOwnedByUser(dataset, req.user)
+          ) {
             return res.status(403).json({
               error: "You are not allowed to view this project resources.",
             });
@@ -1131,6 +1221,20 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           const located = await findDatasetByResourceId(resourceId, req.user);
           if (!located?.dataset || !located?.resource) {
             return res.status(404).json({ error: "Resource not found." });
+          }
+          const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+          const isCenterChief = await isCenterChiefForDataset(
+            located.dataset,
+            req.user,
+          );
+          if (
+            !isAdmin &&
+            !isCenterChief &&
+            !isDatasetOwnedByUser(located.dataset, req.user)
+          ) {
+            return res.status(403).json({
+              error: "You are not allowed to download this resource.",
+            });
           }
 
           const ckanResource = await ckanAction("resource_show", {
