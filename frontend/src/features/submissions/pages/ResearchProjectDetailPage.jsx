@@ -225,11 +225,6 @@ export default function ResearchProjectDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Research Project"
-        description="Dedicated view for a single research project record."
-      />
-
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button asChild variant="outline">
           <Link to="/submit-project">
@@ -259,7 +254,7 @@ export default function ResearchProjectDetailPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
               <CardTitle className="text-lg font-bold text-slate-900">
-                {project?.title || "Project"}
+                Research Project: {project?.title || "Project"}
               </CardTitle>
               <CardDescription>Project record overview.</CardDescription>
             </div>
