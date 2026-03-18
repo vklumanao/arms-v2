@@ -211,7 +211,9 @@ export default function ResearchProjectsHubPage() {
         project.lead_researcher || "",
       ).toLowerCase();
       const year = String(project.year || "").toLowerCase();
-      const organization = String(getProjectOrganization(project) || "").toLowerCase();
+      const organization = String(
+        getProjectOrganization(project) || "",
+      ).toLowerCase();
 
       if (
         normalizedSearch &&
@@ -536,57 +538,57 @@ export default function ResearchProjectsHubPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <FileText size={14} />
-            Total Projects
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.total}
-          </p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <FileText size={14} />
+              Total Projects
+            </p>
+            <p className="mt-2 text-3xl font-black text-slate-900">
+              {analytics.total}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <FileText size={14} />
-            Proposal
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.proposal}
-          </p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <FileText size={14} />
+              Proposal
+            </p>
+            <p className="mt-2 text-3xl font-black text-slate-900">
+              {analytics.proposal}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <Clock3 size={14} />
-            Ongoing
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.ongoing}
-          </p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <Clock3 size={14} />
+              Ongoing
+            </p>
+            <p className="mt-2 text-3xl font-black text-slate-900">
+              {analytics.ongoing}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <CheckCircle2 size={14} />
-            Completed
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.completed}
-          </p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <CheckCircle2 size={14} />
+              Completed
+            </p>
+            <p className="mt-2 text-3xl font-black text-slate-900">
+              {analytics.completed}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <XCircle size={14} />
-            Rejected
-          </p>
-          <p className="mt-2 text-3xl font-black text-slate-900">
-            {analytics.rejected}
-          </p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <XCircle size={14} />
+              Rejected
+            </p>
+            <p className="mt-2 text-3xl font-black text-slate-900">
+              {analytics.rejected}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -678,19 +680,19 @@ export default function ResearchProjectsHubPage() {
           </div>
         ) : (
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table className="min-w-[980px]">
+            <div className="overflow-x-hidden">
+              <Table className="w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Submitted By</TableHead>
-                    <TableHead>Year</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="w-[40px]">No.</TableHead>
+                    <TableHead className="w-[320px]">Title</TableHead>
+                    <TableHead className="w-[60px]">Submitted By</TableHead>
+                    <TableHead className="w-[60px]">Year</TableHead>
+                    <TableHead className="w-[70px]">Status</TableHead>
+                    <TableHead className="w-[70px]">Visibility</TableHead>
+                    <TableHead className="w-[180px]">Research Center</TableHead>
+                    <TableHead className="w-[70px]">Submitted</TableHead>
+                    <TableHead className="w-[80px]">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -722,14 +724,14 @@ export default function ResearchProjectsHubPage() {
                         <TableCell>
                           {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
                         </TableCell>
-                        <TableCell className="font-medium text-slate-900">
+                        <TableCell className="whitespace-normal break-words font-medium text-slate-900">
                           {project.title || "-"}
                         </TableCell>
-                        <TableCell className="text-slate-600">
+                        <TableCell className="whitespace-normal break-words text-slate-600">
                           <p className="font-medium text-slate-900">
                             {project.submitted_by_name || "Unknown user"}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 break-words">
                             {project.submitted_by_email ||
                               project.submitted_by ||
                               "-"}
@@ -748,7 +750,11 @@ export default function ResearchProjectsHubPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant={project.private ? "destructive" : "secondary"}>
+                            <Badge
+                              variant={
+                                project.private ? "destructive" : "secondary"
+                              }
+                            >
                               {project.private ? "Private" : "Public"}
                             </Badge>
                             {canToggleVisibility ? (
@@ -784,22 +790,24 @@ export default function ResearchProjectsHubPage() {
                               >
                                 {visibilitySavingByDataset[
                                   project.ckan_dataset_id
-                                ]
-                                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                                  : project.private
-                                    ? <Eye className="h-4 w-4" />
-                                    : <EyeOff className="h-4 w-4" />}
+                                ] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : project.private ? (
+                                  <Eye className="h-4 w-4" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4" />
+                                )}
                               </Button>
                             ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="text-slate-600">
+                        <TableCell className="whitespace-normal break-words text-slate-600">
                           {getProjectOrganization(project)}
                         </TableCell>
                         <TableCell className="text-slate-600">
                           {formatDate(project.submitted_at)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <div className="inline-flex items-center justify-end gap-1">
                             <Button
                               type="button"
@@ -847,7 +855,11 @@ export default function ResearchProjectsHubPage() {
                                 onClick={() => handleDeleteProject(project)}
                                 disabled={deletingProjectId === project.id}
                                 aria-label={`Delete ${project?.title || "project"}`}
-                                title={deletingProjectId === project.id ? "Deleting..." : "Delete"}
+                                title={
+                                  deletingProjectId === project.id
+                                    ? "Deleting..."
+                                    : "Delete"
+                                }
                               >
                                 {deletingProjectId === project.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -898,70 +910,70 @@ export default function ResearchProjectsHubPage() {
           </div>
         ) : (
           <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table className="min-w-[980px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Submitted By</TableHead>
-                  <TableHead>Lead Researcher</TableHead>
-                  <TableHead>Research Center</TableHead>
-                  <TableHead>Expected Outputs</TableHead>
-                  <TableHead>Linked Files</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {linkedProjectRows.map((project, index) => (
-                  <TableRow key={`linked-${project.id}`}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium text-slate-900">
-                      {project.title}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {project.submitted_by_name}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {project.lead_researcher}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {project.research_center}
-                    </TableCell>
-                    <TableCell className="max-w-xs text-slate-600">
-                      <span className="line-clamp-2">
-                        {project.expected_outputs}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {project.linked_resources_count}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{project.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {formatDate(project.submitted_at)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => goToProjectDetail(project)}
-                        aria-label={`View ${project?.title || "project"}`}
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Submitted By</TableHead>
+                    <TableHead>Lead Researcher</TableHead>
+                    <TableHead>Research Center</TableHead>
+                    <TableHead>Expected Outputs</TableHead>
+                    <TableHead>Linked Files</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {linkedProjectRows.map((project, index) => (
+                    <TableRow key={`linked-${project.id}`}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell className="font-medium text-slate-900">
+                        {project.title}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {project.submitted_by_name}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {project.lead_researcher}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {project.research_center}
+                      </TableCell>
+                      <TableCell className="max-w-xs text-slate-600">
+                        <span className="line-clamp-2">
+                          {project.expected_outputs}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {project.linked_resources_count}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{project.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {formatDate(project.submitted_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => goToProjectDetail(project)}
+                          aria-label={`View ${project?.title || "project"}`}
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         )}
       </Card>
