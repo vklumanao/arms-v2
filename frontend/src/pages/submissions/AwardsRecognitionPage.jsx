@@ -25,6 +25,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -569,17 +570,25 @@ export default function AwardsRecognitionPage() {
                   </TableRow>
                 ))}
                 </TableBody>
+                {totalPages > 1 ? (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={10} className="px-3 py-3">
+                        <PaginationControls
+                          page={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          className="border-0 rounded-none shadow-none bg-transparent"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                ) : null}
               </Table>
             </div>
           </CardContent>
         )}
       </Card>
-
-      <PaginationControls
-        page={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
 
       <ConfirmActionModal
         open={Boolean(deleteTarget)}
