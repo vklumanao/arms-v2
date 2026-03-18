@@ -109,7 +109,7 @@ export default function ResearchProjectsHubPage() {
   }, [navigate, searchParams]);
 
   const goToProjectDetail = (project) => {
-    const id = String(project?.id || "").trim();
+    const id = String(project?.ckan_dataset_id || project?.id || "").trim();
     if (!id) return;
     navigate(`/submit-project/${encodeURIComponent(id)}`);
   };
