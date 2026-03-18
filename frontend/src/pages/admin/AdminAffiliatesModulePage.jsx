@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, Eye, Pencil, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/utils/cn";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,8 +41,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import PageHeader from "@/components/layout/PageHeader";
-import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useReferenceData } from "@/hooks/useReferenceData";
@@ -66,6 +71,7 @@ export default function AdminAffiliatesModulePage() {
   const [rows, setRows] = useState([]);
   const [centers, setCenters] = useState([]);
   const [filters, setFilters] = useState(createAffiliateModuleFilters());
+  const [quickFilter, setQuickFilter] = useState("all");
   const [exportingType, setExportingType] = useState("");
   const [editingAffiliate, setEditingAffiliate] = useState(null);
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
@@ -108,6 +114,18 @@ export default function AdminAffiliatesModulePage() {
   const centerNameById = useMemo(() => buildCenterNameById(centers), [centers]);
 
   const departments = useMemo(() => listAffiliateDepartments(rows), [rows]);
+  const affiliateMetrics = useMemo(() => {
+    const total = rows.length;
+    const active = rows.filter((row) => row.is_active).length;
+    const inactive = total - active;
+    const gsFaculty = rows.filter((row) => row.is_gs_faculty).length;
+    return {
+      total,
+      active,
+      inactive,
+      gsFaculty,
+    };
+  }, [rows]);
   const departmentOptions = useMemo(() => {
     const seen = new Set();
     const options = [];
@@ -135,10 +153,23 @@ export default function AdminAffiliatesModulePage() {
     return options.sort((a, b) => a.name.localeCompare(b.name));
   }, [departments, referenceDepartments]);
 
-  const filteredRows = useMemo(
+  const baseFilteredRows = useMemo(
     () => filterAndSortAffiliates(rows, filters),
     [rows, filters],
   );
+
+  const filteredRows = useMemo(() => {
+    if (quickFilter === "active") {
+      return baseFilteredRows.filter((row) => row.is_active);
+    }
+    if (quickFilter === "inactive") {
+      return baseFilteredRows.filter((row) => !row.is_active);
+    }
+    if (quickFilter === "gs") {
+      return baseFilteredRows.filter((row) => row.is_gs_faculty);
+    }
+    return baseFilteredRows;
+  }, [baseFilteredRows, quickFilter]);
 
   const pagination = useMemo(
     () => paginateItemsWithMeta(filteredRows, currentPage, PAGE_SIZE),
@@ -147,7 +178,7 @@ export default function AdminAffiliatesModulePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [filters, quickFilter]);
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, pagination.totalPages));
@@ -220,7 +251,10 @@ export default function AdminAffiliatesModulePage() {
     };
 
     try {
-      const response = await updateAffiliateProfile(editingAffiliate.id, payload);
+      const response = await updateAffiliateProfile(
+        editingAffiliate.id,
+        payload,
+      );
       const updated = response?.data || response || payload;
       updateRowById(editingAffiliate.id, updated);
       setMessage(
@@ -382,64 +416,118 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Affiliates"
-        description="Monitor and review affiliate records with analytics, filtering, and export-ready reports."
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              ARMS Affiliates
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Affiliate Command Hub
+            </h1>
+            <p className="text-sm text-slate-600">
+              Monitor affiliate records, verify activity, and export analytics
+              for reporting.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={exportAsCsv}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={exportAsPdf}
+                  disabled={!filteredRows.length || Boolean(exportingType)}
+                >
+                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Total Affiliates
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.total}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Active registry</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Active
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.active}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Currently active</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Inactive
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.inactive}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Needs review</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              GS Faculty
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.gsFaculty}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Scholar profiles</p>
+          </div>
+        </div>
+      </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-4 py-3 space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-                Affiliate Records ({filteredRows.length})
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base font-semibold text-slate-900">
+                Affiliate Directory
               </CardTitle>
-              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  className="pl-8"
-                  placeholder="Search name/email/id"
-                  value={filters.search}
-                  onChange={(event) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+              <CardDescription>
+                Showing {filteredRows.length} record(s).
+              </CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={exportAsCsv}
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={exportAsPdf}
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-full flex-wrap gap-2 md:w-auto">
+            <label className="relative w-full md:max-w-md">
+              <span className="sr-only">Search affiliates</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                className="pl-8"
+                placeholder="Search name, email, role, department, or id"
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
               <Select
                 value={filters.sortBy}
                 onValueChange={(value) =>
@@ -464,26 +552,79 @@ export default function AdminAffiliatesModulePage() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-sm text-slate-600">
-              Showing{" "}
-              <span className="font-semibold">{filteredRows.length}</span>{" "}
-              affiliate record(s).
-            </p>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Affiliates",
+                count: filteredRows.length,
+              },
+              {
+                key: "active",
+                label: "Active",
+                count: rows.filter((row) => row.is_active).length,
+              },
+              {
+                key: "inactive",
+                label: "Inactive",
+                count: rows.filter((row) => !row.is_active).length,
+              },
+              {
+                key: "gs",
+                label: "GS Faculty",
+                count: rows.filter((row) => row.is_gs_faculty).length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  quickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    quickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
           </div>
         </CardHeader>
 
         {filteredRows.length === 0 ? (
-          <div className="p-4">
-            <EmptyState
-              title="No affiliates found"
-              description="Try a different search term to find matching affiliate records."
-            />
-          </div>
+          <CardContent className="p-4">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              No affiliate records found.
+            </div>
+          </CardContent>
         ) : (
-          <CardContent className="space-y-3 p-0">
-            <div className="overflow-x-auto">
+          <CardContent className="space-y-3 p-4">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Name</TableHead>
