@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { isValidEmail } from "@/utils/validation";
 import PageHeader from "@/components/layout/PageHeader";
@@ -12,13 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -32,6 +26,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -39,7 +34,6 @@ import {
 import { useToast } from "@/components/providers/ToastProvider";
 import {
   createAdminUser,
-  fetchAdminUserDetail,
   fetchAdminUsers,
   sendAdminPasswordReset,
   updateAdminUserRole,
@@ -54,7 +48,6 @@ import {
   Mail,
   ShieldCheck,
   UserCheck,
-  UserCog,
   UserX,
   Users,
 } from "lucide-react";
@@ -63,6 +56,7 @@ const ROLE_OPTIONS = ["student", "faculty", "admin"];
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10;
+  const navigate = useNavigate();
   const { centers, departments } = useReferenceData();
   const EMPTY_CREATE_FORM = {
     first_name: "",
@@ -78,8 +72,6 @@ export default function AdminUsersPage() {
   const [savingUserById, setSavingUserById] = useState({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [detailUser, setDetailUser] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [pendingResetByUserId, setPendingResetByUserId] = useState({});
@@ -89,15 +81,6 @@ export default function AdminUsersPage() {
   const [createResult, setCreateResult] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const toast = useToast();
-  const [detailData, setDetailData] = useState({
-    submissionsCount: 0,
-    currentProjectsCount: 0,
-    statusCounts: { proposal: 0, ongoing: 0, completed: 0, rejected: 0 },
-    projects: [],
-    statusHistory: [],
-    roleAudit: [],
-    roleAuditActorMap: {},
-  });
 
   useEffect(() => {
     if (error) toast.error("User action failed", error);
@@ -106,31 +89,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (message) toast.success("User action completed", message);
   }, [message, toast]);
-
-  const centerNameById = useMemo(() => {
-    const map = {};
-    (centers || []).forEach((center) => {
-      map[center.id] = center.name;
-    });
-    return map;
-  }, [centers]);
-
-  const getCompleteness = (user) => {
-    const checks = {
-      contact: isValidEmail(user?.email),
-      role: Boolean(user?.role),
-      department: Boolean(String(user?.department || "").trim()),
-      center: Boolean(user?.ckan_org_id),
-    };
-    const score = Object.values(checks).filter(Boolean).length;
-    return { score, checks };
-  };
-
-  const loadLatestUserSnapshot = async (userId) => {
-    if (!userId) return null;
-    const rows = await fetchAdminUsers();
-    return rows.find((row) => row.id === userId) || null;
-  };
 
   const loadUsers = async () => {
     setError("");
@@ -183,11 +141,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, pagination.totalPages));
   }, [pagination.totalPages]);
-
-  const detailCompleteness = useMemo(
-    () => (detailUser ? getCompleteness(detailUser) : null),
-    [detailUser],
-  );
 
   const updateUserRole = async (userId, nextRole) => {
     setError("");
@@ -327,45 +280,10 @@ export default function AdminUsersPage() {
   };
 
   const openUserDetail = async (user) => {
-    setDetailLoading(true);
-    setError("");
-    try {
-      const payload = await fetchAdminUserDetail(user.id);
-      setDetailUser(payload?.user || user);
-      setDetailData(
-        payload?.detail || {
-          submissionsCount: 0,
-          currentProjectsCount: 0,
-          statusCounts: { proposal: 0, ongoing: 0, completed: 0, rejected: 0 },
-          projects: [],
-          statusHistory: [],
-          roleAudit: [],
-          roleAuditActorMap: {},
-        },
-      );
-    } catch (detailError) {
-      setDetailUser(user);
-      setError(detailError.message || "Unable to load user details.");
-    } finally {
-      setDetailLoading(false);
-    }
+    const id = String(user?.id || "").trim();
+    if (!id) return;
+    navigate(`/admin/affiliates/${encodeURIComponent(id)}`);
   };
-
-  useEffect(() => {
-    if (!detailUser?.id) return undefined;
-
-    const interval = setInterval(async () => {
-      const latest = await loadLatestUserSnapshot(detailUser.id);
-      if (latest) {
-        setDetailUser((prev) => {
-          if (!prev || prev.id !== latest.id) return prev;
-          return { ...prev, ...latest };
-        });
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [detailUser?.id]);
 
   const openCreateModal = () => {
     setError("");
@@ -487,19 +405,14 @@ export default function AdminUsersPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                Accounts Directory
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-4 py-3 space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+                Accounts Directory ({filteredUsers.length})
               </CardTitle>
-              <CardDescription>
-                Search, create, and manage account roles and access.
-              </CardDescription>
-            </div>
-            <div className="flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center">
-              <label className="relative w-full lg:min-w-[22rem]">
+              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
                 <Input
                   className="pl-8"
                   placeholder="Search user by name, email, or role"
@@ -507,12 +420,21 @@ export default function AdminUsersPage() {
                   onChange={(e) => setUserSearch(e.target.value)}
                 />
               </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <Button onClick={openCreateModal}>Create User</Button>
             </div>
           </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-slate-600">
+              Showing{" "}
+              <span className="font-semibold">{filteredUsers.length}</span>{" "}
+              account(s).
+            </p>
+          </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="max-h-[70vh] overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)]">
+        <CardContent className="space-y-3 p-0">
+          <div className="overflow-x-auto">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow>
@@ -658,356 +580,24 @@ export default function AdminUsersPage() {
                   ))
                 )}
               </TableBody>
+              {pagination.totalPages > 1 ? (
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={8} className="px-3 py-3">
+                      <PaginationControls
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={setCurrentPage}
+                        className="border-0 rounded-none shadow-none bg-transparent"
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              ) : null}
             </Table>
           </div>
-          {filteredUsers.length ? (
-            <PaginationControls
-              className="mt-4"
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={setCurrentPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
-
-      {detailUser ? (
-        <Dialog
-          open={Boolean(detailUser)}
-          onOpenChange={(open) => !open && setDetailUser(null)}
-        >
-          <DialogContent className="left-auto right-0 top-0 h-screen w-full max-w-2xl translate-x-0 translate-y-0 rounded-none border-l border-border p-0">
-            <DialogHeader className="border-b border-border px-6 py-5 text-left">
-              <DialogTitle>
-                {detailUser.full_name || detailUser.email}
-              </DialogTitle>
-              <DialogDescription>{detailUser.email}</DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto px-6 py-5">
-              <div className="mb-4 flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    if (!detailUser?.id) return;
-                    const latest = await loadLatestUserSnapshot(detailUser.id);
-                    if (latest)
-                      setDetailUser((prev) => ({ ...prev, ...latest }));
-                  }}
-                >
-                  Refresh User Info
-                </Button>
-              </div>
-
-              {detailLoading ? (
-                <p className="text-sm text-slate-600">
-                  Loading user details...
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  <Card>
-                    <CardContent className="space-y-2 p-5">
-                      <p className="text-sm font-semibold">User Information</p>
-                      <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Full Name
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.full_name || "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Email
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.email || "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Role
-                          </dt>
-                          <dd className="font-medium capitalize text-slate-800">
-                            {detailUser.role || "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Account State
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {pendingResetByUserId[detailUser.id]
-                              ? "Pending reset"
-                              : detailUser.is_active
-                                ? "Active"
-                                : "Deactivated"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Department
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.department || "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Center
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.ckan_org_id
-                              ? centerNameById[detailUser.ckan_org_id] || "-"
-                              : "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Joined
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.created_at
-                              ? new Date(detailUser.created_at).toLocaleString()
-                              : "-"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Last Sign-in
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.last_sign_in_at
-                              ? new Date(
-                                  detailUser.last_sign_in_at,
-                                ).toLocaleString()
-                              : "Never"}
-                          </dd>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <dt className="text-xs uppercase tracking-[0.06em] text-slate-500">
-                            Email Confirmed
-                          </dt>
-                          <dd className="font-medium text-slate-800">
-                            {detailUser.email_confirmed_at
-                              ? new Date(
-                                  detailUser.email_confirmed_at,
-                                ).toLocaleString()
-                              : "Not confirmed"}
-                          </dd>
-                        </div>
-                      </dl>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="space-y-3 p-5">
-                      <p className="text-sm font-semibold">Account Summary</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(() => {
-                          const state = pendingResetByUserId[detailUser.id]
-                            ? "pending_reset"
-                            : detailUser.is_active
-                              ? "active"
-                              : "deactivated";
-                          return (
-                            <Badge
-                              variant={
-                                state === "active"
-                                  ? "secondary"
-                                  : state === "pending_reset"
-                                    ? "outline"
-                                    : "destructive"
-                              }
-                            >
-                              {state === "active"
-                                ? "Active"
-                                : state === "pending_reset"
-                                  ? "Pending reset"
-                                  : "Deactivated"}
-                            </Badge>
-                          );
-                        })()}
-                        <Badge
-                          variant={
-                            (detailCompleteness?.score || 0) >= 4
-                              ? "secondary"
-                              : (detailCompleteness?.score || 0) >= 2
-                                ? "outline"
-                                : "destructive"
-                          }
-                        >
-                          Profile {detailCompleteness?.score || 0}/4
-                        </Badge>
-                        {detailCompleteness?.checks.contact ? (
-                          <Badge variant="outline">Contact</Badge>
-                        ) : null}
-                        {detailCompleteness?.checks.role ? (
-                          <Badge variant="outline">Role</Badge>
-                        ) : null}
-                        {detailCompleteness?.checks.department ? (
-                          <Badge variant="outline">Department</Badge>
-                        ) : null}
-                        {detailUser?.ckan_org_id ? (
-                          <Badge variant="outline">
-                            Center:{" "}
-                            {centerNameById[detailUser.ckan_org_id] || "Set"}
-                          </Badge>
-                        ) : null}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Card>
-                      <CardContent className="p-5">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">
-                          Submissions
-                        </p>
-                        <p className="mt-1 text-xl font-bold">
-                          {detailData.submissionsCount}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-5">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">
-                          Current Projects
-                        </p>
-                        <p className="mt-1 text-xl font-bold">
-                          {detailData.currentProjectsCount}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <Card>
-                    <CardContent className="space-y-3 p-5">
-                      <p className="text-sm font-semibold">
-                        Project Status Breakdown
-                      </p>
-                      <div className="grid gap-2 text-sm md:grid-cols-4">
-                        {Object.entries(detailData.statusCounts).map(
-                          ([status, count]) => (
-                            <Card key={status}>
-                              <CardContent className="p-3">
-                                <p className="capitalize text-slate-600">
-                                  {status}
-                                </p>
-                                <p className="font-bold">{count}</p>
-                              </CardContent>
-                            </Card>
-                          ),
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="space-y-3 p-5">
-                      <p className="text-sm font-semibold">Recent Projects</p>
-                      {detailData.projects.length === 0 ? (
-                        <p className="text-sm text-slate-600">
-                          No submissions yet.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 text-sm">
-                          {detailData.projects.map((project) => (
-                            <li key={project.id}>
-                              <Card>
-                                <CardContent className="p-3">
-                                  <p className="font-semibold">
-                                    {project.title}
-                                  </p>
-                                  <p className="capitalize text-slate-600">
-                                    {project.status}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="space-y-3 p-5">
-                      <p className="text-sm font-semibold">
-                        Status History (Projects)
-                      </p>
-                      {detailData.statusHistory.length === 0 ? (
-                        <p className="text-sm text-slate-600">
-                          No status history records.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 text-sm">
-                          {detailData.statusHistory.map((entry) => (
-                            <li key={entry.id}>
-                              <Card>
-                                <CardContent className="p-3">
-                                  <p className="font-semibold">
-                                    {entry.old_status || "none"} {"->"}{" "}
-                                    {entry.new_status}
-                                  </p>
-                                  <p className="text-slate-600">
-                                    {new Date(
-                                      entry.changed_at,
-                                    ).toLocaleString()}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="space-y-3 p-5">
-                      <p className="text-sm font-semibold">Role Change Audit</p>
-                      {detailData.roleAudit.length === 0 ? (
-                        <p className="text-sm text-slate-600">
-                          No role change records found.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 text-sm">
-                          {detailData.roleAudit.map((entry) => (
-                            <li key={entry.id}>
-                              <Card className="bg-muted/40">
-                                <CardContent className="space-y-1 p-3">
-                                  <p className="font-semibold">
-                                    {entry.old_role || "none"} {"->"}{" "}
-                                    {entry.new_role}
-                                  </p>
-                                  <p className="text-slate-600">
-                                    {new Date(
-                                      entry.changed_at,
-                                    ).toLocaleString()}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    Changed by:{" "}
-                                    {entry.changed_by
-                                      ? detailData.roleAuditActorMap[
-                                          entry.changed_by
-                                        ] || entry.changed_by
-                                      : "System"}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
 
       {createModalOpen ? (
         <Dialog
