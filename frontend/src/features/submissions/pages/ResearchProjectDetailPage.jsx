@@ -142,15 +142,21 @@ export default function ResearchProjectDetailPage() {
     [isAdmin, project?.ckan_dataset_id],
   );
 
+  const resourceDatasetId = useMemo(() => {
+    const ckanId = String(project?.ckan_dataset_id || "").trim();
+    if (ckanId) return ckanId;
+    return String(project?.id || "").trim();
+  }, [project?.ckan_dataset_id, project?.id]);
+
   useEffect(() => {
-    if (!project?.id) {
+    if (!resourceDatasetId) {
       setResourcePanel((prev) => ({ ...prev, resources: [], dataset: null }));
       return;
     }
 
     let cancelled = false;
     setResourcePanel((prev) => ({ ...prev, loading: true, error: "" }));
-    fetchProjectResources({ projectId: project.id })
+    fetchProjectResources({ projectId: resourceDatasetId })
       .then(({ data, error: loadError, syncEnabled }) => {
         const resolvedSyncEnabled = syncEnabled ?? true;
         if (cancelled) return;
@@ -186,7 +192,7 @@ export default function ResearchProjectDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [project?.ckan_dataset_id, project?.id]);
+  }, [resourceDatasetId]);
 
   if (!projectId) return <Navigate to="/submit-project" replace />;
 
