@@ -36,11 +36,12 @@ export default function StepFundingTimeline({
               value={form.funding_type || "none"}
               onValueChange={(value) => setField("funding_type", value)}
             >
-              <SelectTrigger className={errors?.funding_type ? "input-error" : ""}>
+              <SelectTrigger
+                className={errors?.funding_type ? "input-error" : ""}
+              >
                 <SelectValue placeholder="Select funding type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="internal">Internal</SelectItem>
                 <SelectItem value="external">External</SelectItem>
                 <SelectItem value="self_funded">Self Funded</SelectItem>
