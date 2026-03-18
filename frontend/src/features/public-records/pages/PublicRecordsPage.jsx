@@ -23,8 +23,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { normalizeStatus } from "@/shared/utils/status";
 
 const PAGE_SIZE = 10;
+const normalizeLabel = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "Unknown";
+  const normalized = text
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+  return normalized.replace(/\b\w/g, (match) => match.toUpperCase());
+};
+
+const statusBadgeClass = (status) => {
+  const key = normalizeStatus(status);
+  if (key === "completed") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+  if (key === "ongoing") {
+    return "border-blue-200 bg-blue-50 text-blue-700";
+  }
+  if (key === "proposal") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+  if (key === "rejected") {
+    return "border-rose-200 bg-rose-50 text-rose-700";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
+const classificationBadgeClass = (classification) => {
+  const key = String(classification || "")
+    .trim()
+    .toLowerCase();
+  if (key === "academic") {
+    return "border-indigo-200 bg-indigo-50 text-indigo-700";
+  }
+  if (key === "industry") {
+    return "border-purple-200 bg-purple-50 text-purple-700";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
 export default function PublicRecordsPage() {
   const NONE_SELECT_VALUE = "__all__";
   const [records, setRecords] = useState([]);
@@ -450,69 +491,89 @@ export default function PublicRecordsPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {pagedRows.map((record) => (
-                <Card
-                  key={record.id}
-                  className="cursor-pointer transition hover:shadow-sm"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openDetails(record.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openDetails(record.id);
-                    }
-                  }}
-                >
-                  <CardContent className="space-y-2 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0 space-y-1">
-                        <h3 className="text-base font-semibold text-slate-900">
-                          {highlightText(record.title, filtered.terms)}
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          {[
-                            record.year || "-",
-                            centerById[record.research_center_id] ||
-                              "Unknown Center",
-                            departmentById[record.department_id] ||
-                              "Unknown Department",
-                          ].join(" | ")}
-                        </p>
+              {pagedRows.map((record) => {
+                const statusKey = normalizeStatus(record.status);
+                const statusLabel = normalizeLabel(statusKey);
+                const classificationLabel = normalizeLabel(
+                  record.classification,
+                );
+                return (
+                  <Card
+                    key={record.id}
+                    className="group cursor-pointer border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openDetails(record.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openDetails(record.id);
+                      }
+                    }}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span className="font-semibold uppercase tracking-[0.12em] text-slate-400">
+                              {record.year || "-"}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span>
+                              {centerById[record.research_center_id] ||
+                                "Unknown Center"}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span>
+                              {departmentById[record.department_id] ||
+                                "Unknown Department"}
+                            </span>
+                          </div>
+                          <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                            {highlightText(record.title, filtered.terms)}
+                          </h3>
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-700">
+                            {record.abstract
+                              ? highlightText(record.abstract, filtered.terms)
+                              : "No abstract available for this record."}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
+                          <Badge
+                            variant="outline"
+                            className={`px-2.5 capitalize ${statusBadgeClass(
+                              record.status,
+                            )}`}
+                          >
+                            {statusLabel}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={`px-2.5 ${classificationBadgeClass(
+                              record.classification,
+                            )}`}
+                          >
+                            {classificationLabel}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="md:mt-2"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openDetails(record.id);
+                            }}
+                          >
+                            {user || profile ? "View Project" : "View Details"}
+                          </Button>
+                        </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">
-                          {record.status || "unknown"}
-                        </Badge>
-                        <Badge variant="outline">
-                          {record.classification || "unspecified"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <p className="line-clamp-2 text-sm text-slate-700">
-                      {record.abstract
-                        ? highlightText(record.abstract, filtered.terms)
-                        : "No abstract available for this record."}
-                    </p>
-
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openDetails(record.id);
-                        }}
-                      >
-                        {user || profile ? "View Project" : "View Details"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
 
