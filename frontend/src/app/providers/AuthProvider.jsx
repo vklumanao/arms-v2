@@ -10,6 +10,7 @@ import {
 import { syncRolePermissionMapFromServer } from "@/shared/auth/permissions";
 
 const AuthContext = createContext(null);
+const SESSION_HINT_KEY = "arms_has_session";
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -36,10 +37,17 @@ export function AuthProvider({ children }) {
     const bootstrap = async () => {
       setProfileLoading(true);
       try {
+        if (!sessionStorage.getItem(SESSION_HINT_KEY)) {
+          setSession(null);
+          setProfile(null);
+          return;
+        }
         const payload = await fetchCurrentSession();
         if (!active) return;
         applyAuthPayload(payload);
-        await syncRolePermissionMapFromServer();
+        if (payload?.user) {
+          await syncRolePermissionMapFromServer();
+        }
       } catch {
         if (!active) return;
         setSession(null);
@@ -79,7 +87,9 @@ export function AuthProvider({ children }) {
         try {
           const payload = await fetchCurrentSession();
           applyAuthPayload(payload);
-          await syncRolePermissionMapFromServer();
+          if (payload?.user) {
+            await syncRolePermissionMapFromServer();
+          }
         } finally {
           setProfileLoading(false);
         }
@@ -87,12 +97,14 @@ export function AuthProvider({ children }) {
       signIn: async ({ email, password }) => {
         const payload = await loginWithPassword({ email, password });
         applyAuthPayload(payload);
+        sessionStorage.setItem(SESSION_HINT_KEY, "1");
         await syncRolePermissionMapFromServer();
         return payload;
       },
       register: async (payload) => {
         const authPayload = await registerAccount(payload);
         applyAuthPayload(authPayload);
+        sessionStorage.setItem(SESSION_HINT_KEY, "1");
         await syncRolePermissionMapFromServer();
         return authPayload;
       },
@@ -104,6 +116,7 @@ export function AuthProvider({ children }) {
         } finally {
           setSession(null);
           setProfile(null);
+          sessionStorage.removeItem(SESSION_HINT_KEY);
         }
       },
       requestPasswordReset: async (email) => {
