@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
-import PageHeader from "@/components/layout/PageHeader";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -87,6 +81,7 @@ export default function AdminResearchCenterDetailPage() {
   const centerId = String(params?.id || "").trim();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = normalizeTab(searchParams.get("tab"));
+  const projectParamsKey = searchParams.toString();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -111,6 +106,15 @@ export default function AdminResearchCenterDetailPage() {
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
   const [agendaFilter, setAgendaFilter] = useState("");
+  const [projectSearch, setProjectSearch] = useState(() =>
+    String(searchParams.get("projectSearch") || "").trim(),
+  );
+  const [projectStatus, setProjectStatus] = useState(
+    () => String(searchParams.get("projectStatus") || "all").trim() || "all",
+  );
+  const [projectYear, setProjectYear] = useState(
+    () => String(searchParams.get("projectYear") || "all").trim() || "all",
+  );
 
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
@@ -138,6 +142,46 @@ export default function AdminResearchCenterDetailPage() {
     setProjectsPage(1);
     setAgendaFilter("");
   }, [centerId]);
+
+  useEffect(() => {
+    const nextSearch = String(searchParams.get("projectSearch") || "").trim();
+    const nextStatus =
+      String(searchParams.get("projectStatus") || "all").trim() || "all";
+    const nextYear =
+      String(searchParams.get("projectYear") || "all").trim() || "all";
+
+    if (nextSearch !== projectSearch) setProjectSearch(nextSearch);
+    if (nextStatus !== projectStatus) setProjectStatus(nextStatus);
+    if (nextYear !== projectYear) setProjectYear(nextYear);
+  }, [projectParamsKey]);
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (projectSearch) {
+          next.set("projectSearch", projectSearch);
+        } else {
+          next.delete("projectSearch");
+        }
+        if (projectStatus && projectStatus !== "all") {
+          next.set("projectStatus", projectStatus);
+        } else {
+          next.delete("projectStatus");
+        }
+        if (projectYear && projectYear !== "all") {
+          next.set("projectYear", projectYear);
+        } else {
+          next.delete("projectYear");
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [projectSearch, projectStatus, projectYear, setSearchParams]);
+  useEffect(() => {
+    setProjectsPage(1);
+  }, [projectSearch, projectStatus, projectYear]);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,15 +331,56 @@ export default function AdminResearchCenterDetailPage() {
   );
 
   const filteredProjects = useMemo(() => {
-    const filterValue = String(agendaFilter || "").trim().toLowerCase();
-    if (!filterValue) return links.projects;
-    return links.projects.filter((row) => {
+    const filterValue = String(agendaFilter || "")
+      .trim()
+      .toLowerCase();
+    const statusFilter = String(projectStatus || "all").toLowerCase();
+    const yearFilter = String(projectYear || "all").toLowerCase();
+    const query = String(projectSearch || "")
+      .trim()
+      .toLowerCase();
+
+    return (links.projects || []).filter((row) => {
       const agendaName = String(row?.agenda_name || "")
         .trim()
         .toLowerCase();
-      return agendaName === filterValue;
+      const status = String(row?.status || "").toLowerCase();
+      const year = String(row?.year || "").toLowerCase();
+      if (filterValue && agendaName !== filterValue) return false;
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (yearFilter !== "all" && year !== yearFilter) return false;
+      const haystack = [
+        row?.title,
+        row?.status,
+        row?.year,
+        row?.lead_researcher,
+        row?.organization_name,
+        row?.research_center,
+        row?.agenda_name,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
     });
-  }, [agendaFilter, links.projects]);
+  }, [agendaFilter, links.projects, projectSearch, projectStatus, projectYear]);
+  const projectStatusOptions = useMemo(() => {
+    const unique = new Set();
+    (links.projects || []).forEach((row) => {
+      const value = String(row?.status || "")
+        .trim()
+        .toLowerCase();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort()];
+  }, [links.projects]);
+  const projectYearOptions = useMemo(() => {
+    const unique = new Set();
+    (links.projects || []).forEach((row) => {
+      const value = String(row?.year || "").trim();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort((a, b) => b.localeCompare(a))];
+  }, [links.projects]);
   const paginatedProjects = useMemo(() => {
     const start = (projectsPage - 1) * PAGE_SIZE;
     return filteredProjects.slice(start, start + PAGE_SIZE);
@@ -321,8 +406,30 @@ export default function AdminResearchCenterDetailPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("tab", tab);
+      if (tab !== "projects") {
+        next.delete("projectSearch");
+        next.delete("projectStatus");
+        next.delete("projectYear");
+      }
       return next;
     });
+  };
+
+  const clearProjectFilters = () => {
+    setProjectSearch("");
+    setProjectStatus("all");
+    setProjectYear("all");
+    setAgendaFilter("");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("projectSearch");
+        next.delete("projectStatus");
+        next.delete("projectYear");
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const applyAgendaFilter = (agenda) => {
@@ -658,18 +765,29 @@ export default function AdminResearchCenterDetailPage() {
     }
   };
 
-  const title = center?.name
-    ? `Research Center: ${center.name}`
-    : "Research Center";
+  const initials = useMemo(() => {
+    const name = String(center?.name || "").trim();
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || "";
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : "";
+      return `${first}${last}`.toUpperCase() || "RC";
+    }
+    return "RC";
+  }, [center]);
 
   return (
     <section className="page-stack-lg">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="outline">
-          <Link to="/admin/research-center">
-            <ChevronLeft className="h-4 w-4" />
-            Back to Centers
-          </Link>
+        <Button
+          variant="outline"
+          onClick={() => {
+            clearProjectFilters();
+            navigate("/admin/research-center");
+          }}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Centers
         </Button>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -698,35 +816,45 @@ export default function AdminResearchCenterDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                {center?.name || "Research Center"}
-              </CardTitle>
-              <CardDescription>
-                Code:{" "}
-                <span className="font-mono font-semibold text-slate-700">
-                  {center?.code || "-"}
-                </span>{" "}
-                | Center Chief:{" "}
-                <span className="font-semibold text-slate-700">
-                  {center?.centerChiefName || "-"}
-                </span>
-              </CardDescription>
+          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+                {initials}
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-bold text-slate-900">
+                  {center?.name || "Research Center"}
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-500">
+                  Code:{" "}
+                  <span className="font-mono font-semibold text-slate-700">
+                    {center?.code || "-"}
+                  </span>{" "}
+                  · Center Chief:{" "}
+                  <span className="font-semibold text-slate-700">
+                    {center?.centerChiefName || "-"}
+                  </span>
+                </CardDescription>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    {usage.profileCount} affiliates
+                  </Badge>
+                  <Badge variant="secondary" className="gap-2">
+                    <FolderKanban className="h-4 w-4" />
+                    {usage.projectCount} projects
+                  </Badge>
+                  <Badge variant="outline" className="gap-2">
+                    <Building2 className="h-4 w-4" />
+                    {center?.agendaNames?.length || 0} agenda
+                  </Badge>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="gap-2">
-                <Users className="h-4 w-4" />
-                {usage.profileCount} affiliates
-              </Badge>
-              <Badge variant="secondary" className="gap-2">
-                <FolderKanban className="h-4 w-4" />
-                {usage.projectCount} projects
-              </Badge>
-              <Badge variant="outline" className="gap-2">
-                <Building2 className="h-4 w-4" />
-                {center?.agendaNames?.length || 0} agenda
-              </Badge>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="rounded-full border border-border bg-white px-3 py-1">
+                ID: {center?.id || "-"}
+              </span>
             </div>
           </div>
         </CardHeader>
@@ -980,97 +1108,166 @@ export default function AdminResearchCenterDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-4 space-y-3">
-                  {filteredProjects.length === 0 ? (
+                  {links.projects.length === 0 ? (
                     <EmptyState
                       title="No projects"
-                      description={
-                        agendaFilter
-                          ? "No linked projects match the selected agenda."
-                          : "No linked projects found for this research center."
-                      }
+                      description="No linked projects found for this research center."
                     />
                   ) : (
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <CardTitle className="text-base font-bold text-slate-900">
-                          Linked Projects
-                        </CardTitle>
-                        <CardDescription>
-                          Showing {filteredProjects.length} project(s).
-                        </CardDescription>
-                        {agendaFilter ? (
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                            <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-slate-700">
-                              Agenda: {agendaFilter}
-                            </span>
-                            <button
-                              type="button"
-                              className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-                              onClick={() => setAgendaFilter("")}
-                            >
-                              Clear filter
-                            </button>
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-base font-bold text-slate-900">
+                              Linked Projects
+                            </CardTitle>
+                            <CardDescription>
+                              Showing {filteredProjects.length} project(s).
+                            </CardDescription>
+                            {agendaFilter ? (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                                <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-slate-700">
+                                  Agenda: {agendaFilter}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                                  onClick={() => setAgendaFilter("")}
+                                >
+                                  Clear agenda
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
-                        ) : null}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="relative w-full min-w-[14rem] md:w-auto">
+                              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                              <Input
+                                className="pl-8"
+                                placeholder="Search projects"
+                                value={projectSearch}
+                                onChange={(event) =>
+                                  setProjectSearch(event.target.value)
+                                }
+                              />
+                            </label>
+                            <Select
+                              value={projectStatus}
+                              onValueChange={setProjectStatus}
+                            >
+                              <SelectTrigger className="w-full md:w-[12rem] capitalize">
+                                <SelectValue placeholder="All statuses" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {projectStatusOptions.map((status) => (
+                                  <SelectItem
+                                    key={status}
+                                    value={status}
+                                    className="capitalize"
+                                  >
+                                    {status === "all" ? "All statuses" : status}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={projectYear}
+                              onValueChange={setProjectYear}
+                            >
+                              <SelectTrigger className="w-full md:w-[10rem]">
+                                <SelectValue placeholder="All years" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {projectYearOptions.map((year) => (
+                                  <SelectItem key={year} value={year}>
+                                    {year === "all" ? "All years" : year}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setProjectSearch("");
+                                setProjectStatus("all");
+                                setProjectYear("all");
+                                setAgendaFilter("");
+                              }}
+                            >
+                              Reset filters
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="overflow-x-auto">
-                          <Table className="min-w-[980px]">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>No.</TableHead>
-                                <TableHead>Project Title</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Year</TableHead>
-                                <TableHead>Lead Researcher</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead>Agendum</TableHead>
-                                <TableHead className="text-right">
-                                  Actions
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {paginatedProjects.map((row, idx) => (
-                                <TableRow key={row?.id || `${idx}`}>
-                                  <TableCell>
-                                    {(projectsPage - 1) * PAGE_SIZE + idx + 1}
-                                  </TableCell>
-                                  <TableCell className="font-medium text-slate-900">
-                                    {row?.title || "-"}
-                                  </TableCell>
-                                  <TableCell className="capitalize text-slate-700">
-                                    {row?.status || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.year || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.lead_researcher || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.department_name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.agenda_name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => goToProject(row)}
-                                      aria-label={`View ${row?.title || "project"}`}
-                                      title="View project"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
+                          {filteredProjects.length === 0 ? (
+                            <div className="p-6">
+                              <EmptyState
+                                title="No projects matched"
+                                description="Try adjusting the search or filters to find matching projects."
+                              />
+                            </div>
+                          ) : (
+                            <Table className="min-w-[980px]">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>No.</TableHead>
+                                  <TableHead>Project Title</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Year</TableHead>
+                                  <TableHead>Lead Researcher</TableHead>
+                                  <TableHead>Department</TableHead>
+                                  <TableHead>Agendum</TableHead>
+                                  <TableHead className="text-right">
+                                    Actions
+                                  </TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {paginatedProjects.map((row, idx) => (
+                                  <TableRow key={row?.id || `${idx}`}>
+                                    <TableCell>
+                                      {(projectsPage - 1) * PAGE_SIZE + idx + 1}
+                                    </TableCell>
+                                    <TableCell className="font-medium text-slate-900">
+                                      {row?.title || "-"}
+                                    </TableCell>
+                                    <TableCell className="capitalize text-slate-700">
+                                      {row?.status || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.year || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.lead_researcher || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.department_name || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.agenda_name || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => goToProject(row)}
+                                        aria-label={`View ${row?.title || "project"}`}
+                                        title="View project"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
                         </div>
                       </CardContent>
                       <PaginationControls
