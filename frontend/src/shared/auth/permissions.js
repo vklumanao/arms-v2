@@ -116,7 +116,9 @@ export async function syncRolePermissionMapFromServer() {
   if (syncPromise) return syncPromise;
 
   syncPromise = (async () => {
-    const payload = await apiFetch("/permissions/role-map");
+    const payload = await apiFetch("/permissions/role-map", {
+      allowUnauthorized: true,
+    });
     const nextMap = normalizeRolePermissionMap(payload?.map || {});
     const hasAny =
       nextMap.student.length > 0 ||
@@ -152,4 +154,3 @@ export async function resetRolePermissionMapToDefaults() {
   setRolePermissionCache(ROLE_PERMISSIONS);
   return getRolePermissionMap();
 }
-
