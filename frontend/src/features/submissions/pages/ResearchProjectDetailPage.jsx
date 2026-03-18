@@ -28,6 +28,28 @@ import {
   Pencil,
 } from "lucide-react";
 
+const formatCurrencyPHP = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const numericValue = Number(String(value).replace(/[^0-9.-]/g, ""));
+  if (!Number.isFinite(numericValue)) return String(value);
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numericValue);
+};
+
+const normalizeLabel = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "-";
+  const normalized = text
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+  return normalized.replace(/\b\w/g, (match) => match.toUpperCase());
+};
+
 export default function ResearchProjectDetailPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -89,23 +111,6 @@ export default function ResearchProjectDetailPage() {
       }, {}),
     [centers],
   );
-  const departmentById = useMemo(
-    () =>
-      (departments || []).reduce((acc, department) => {
-        acc[department.id] = department.name;
-        return acc;
-      }, {}),
-    [departments],
-  );
-  const agendaById = useMemo(
-    () =>
-      (agendas || []).reduce((acc, agenda) => {
-        acc[agenda.id] = agenda.name;
-        return acc;
-      }, {}),
-    [agendas],
-  );
-
   const project = useMemo(() => {
     const key = String(projectId || "").trim();
     const matchesKey = (p) => {
@@ -118,6 +123,28 @@ export default function ResearchProjectDetailPage() {
     if (fromOwned) return fromOwned;
     return linkedProjects.find(matchesKey) || null;
   }, [linkedProjects, ownedProjects, projectId]);
+
+  const agendaOrgId = String(
+    project?.research_center_id || project?.ckan_org_id || "",
+  ).trim();
+  const { agendas: scopedAgendas } = useReferenceData({ orgId: agendaOrgId });
+
+  const departmentById = useMemo(
+    () =>
+      (departments || []).reduce((acc, department) => {
+        acc[department.id] = department.name;
+        return acc;
+      }, {}),
+    [departments],
+  );
+  const agendaById = useMemo(
+    () =>
+      (scopedAgendas || []).reduce((acc, agenda) => {
+        acc[agenda.id] = agenda.name;
+        return acc;
+      }, {}),
+    [scopedAgendas],
+  );
 
   const facultyTeamUsers = useMemo(() => {
     if (!Array.isArray(project?.faculty_team_users)) return [];
@@ -284,11 +311,6 @@ export default function ResearchProjectDetailPage() {
                                     ? centerById[project.ckan_org_id] || "-"
                                     : project?.research_center || "-"}
                             </p>
-                            {project?.research_center_id ? (
-                              <p className="text-xs text-slate-500">
-                                ID: {project.research_center_id}
-                              </p>
-                            ) : null}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
@@ -354,11 +376,6 @@ export default function ResearchProjectDetailPage() {
                                 ? departmentById[project.department_id] || "-"
                                 : "-"}
                             </p>
-                            {project?.department_id ? (
-                              <p className="text-xs text-slate-500">
-                                ID: {project.department_id}
-                              </p>
-                            ) : null}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
@@ -369,11 +386,6 @@ export default function ResearchProjectDetailPage() {
                                 ? agendaById[project.research_agenda_id] || "-"
                                 : "-"}
                             </p>
-                            {project?.research_agenda_id ? (
-                              <p className="text-xs text-slate-500">
-                                ID: {project.research_agenda_id}
-                              </p>
-                            ) : null}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
@@ -406,24 +418,14 @@ export default function ResearchProjectDetailPage() {
                             <p className="mt-1 text-sm font-semibold text-slate-900">
                               {project?.lead_researcher || "-"}
                             </p>
-                            {leadResearcherUser ? (
-                              <p className="text-xs text-slate-500">
-                                {leadResearcherUser}
-                              </p>
-                            ) : null}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
                               Faculty Team
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {project?.faculty_team || "-"}
                             </p>
-                            {facultyTeamUsers.length ? (
-                              <p className="text-xs text-slate-500">
-                                {facultyTeamUsers.join(", ")}
-                              </p>
-                            ) : null}
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
@@ -442,7 +444,7 @@ export default function ResearchProjectDetailPage() {
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                           Abstract
                         </p>
-                        <p className="whitespace-pre-line text-sm text-slate-900">
+                        <p className="whitespace-pre-line mt-1 text-sm font-semibold text-slate-900">
                           {project?.abstract || "-"}
                         </p>
                       </section>
@@ -456,7 +458,7 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               Industry/Agency Partner
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {project?.industry_partner || "-"}
                             </p>
                           </div>
@@ -464,15 +466,15 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               Funding Type
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
-                              {project?.funding_type || "-"}
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {normalizeLabel(project?.funding_type)}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-slate-500">
                               Funding Source
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {project?.funding_source || "-"}
                             </p>
                           </div>
@@ -480,8 +482,8 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               Funding Amount
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
-                              {project?.funding_amount || "-"}
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {formatCurrencyPHP(project?.funding_amount)}
                             </p>
                           </div>
                         </div>
@@ -496,7 +498,7 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               Start Date
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {formatDate(project?.start_date)}
                             </p>
                           </div>
@@ -504,7 +506,7 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               End Date
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {formatDate(project?.end_date)}
                             </p>
                           </div>
@@ -531,7 +533,7 @@ export default function ResearchProjectDetailPage() {
                             <p className="text-xs font-semibold text-slate-500">
                               Signed MOA Reference
                             </p>
-                            <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
                               {project?.signed_moa_reference || "-"}
                             </p>
                           </div>
