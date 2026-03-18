@@ -66,6 +66,13 @@ export async function updateDataset(payload) {
 }
 
 /**
+ * Patches a CKAN dataset/package with partial fields.
+ */
+export async function patchDataset(payload) {
+  return ckanAction("package_patch", payload || {});
+}
+
+/**
  * Updates only dataset visibility (`private`) with patch-first strategy.
  *
  * System flow:
