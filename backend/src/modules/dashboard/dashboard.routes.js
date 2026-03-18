@@ -39,6 +39,27 @@ export function registerDashboardRoutes(app, deps) {
     }, {});
   }
 
+  function isDatasetOwnedByUser(dataset, user) {
+    const meta = extrasToMap(dataset?.extras);
+    const submittedByUserId = asTrimmedString(meta.submitted_by_user_id);
+    const submittedByEmail = asTrimmedString(meta.submitted_by_email).toLowerCase();
+    const submittedBy = asTrimmedString(meta.submitted_by);
+    const userId = asTrimmedString(user?.id);
+    const userEmail = asTrimmedString(user?.email).toLowerCase();
+
+    if (submittedByUserId && userId && submittedByUserId === userId) return true;
+    if (submittedByEmail && userEmail && submittedByEmail === userEmail)
+      return true;
+    if (submittedBy && userId && submittedBy === userId) return true;
+    if (
+      asTrimmedString(dataset?.author_email).toLowerCase() === userEmail &&
+      userEmail
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Loads all datasets needed for dashboard views with bounded pagination.
    *
@@ -168,6 +189,7 @@ export function registerDashboardRoutes(app, deps) {
       }, {});
 
       const rows = (datasets || [])
+        .filter((dataset) => (isAdmin ? true : isDatasetOwnedByUser(dataset, req.user)))
         .map((dataset) =>
           toDashboardProjectRow(dataset, { groupNameById, agendaNameById }),
         )
