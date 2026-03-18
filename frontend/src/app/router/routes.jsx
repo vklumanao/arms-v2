@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/app/layouts/AppShell";
+import PublicLayout from "@/app/layouts/PublicLayout";
 import ProtectedRoute from "@/app/router/guards/ProtectedRoute";
 import RoleRoute from "@/app/router/guards/RoleRoute";
 import AdminOrManagedCenterRoute from "@/app/router/guards/AdminOrManagedCenterRoute";
@@ -19,7 +20,10 @@ import {
   RegisterPage,
   ResetPasswordPage,
 } from "@/features/auth";
-import { PublicRecordsPage } from "@/features/public-records";
+import {
+  PublicRecordDetailPage,
+  PublicRecordsPage,
+} from "@/features/public-records";
 import { DashboardPage } from "@/features/dashboard";
 import {
   AffiliateProfilePage,
@@ -49,12 +53,19 @@ const withPermission = (permission, element) =>
     <PermissionRoute permission={permission}>{element}</PermissionRoute>,
   );
 
+function HomeLayoutSwitch() {
+  const { user, profile } = useAuth();
+  return user || profile ? <AppShell /> : <PublicLayout />;
+}
+
 function ResearchCenterEntryRoute() {
   const { profile } = useAuth();
 
   if (!profile) return <Navigate to="/unauthorized" replace />;
 
-  const role = String(profile?.role || "").trim().toLowerCase();
+  const role = String(profile?.role || "")
+    .trim()
+    .toLowerCase();
   const isAdmin = role === "admin";
   const isCenterChief =
     role === "faculty" &&
@@ -82,13 +93,20 @@ function ResearchCenterEntryRoute() {
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
+      <Route element={<HomeLayoutSwitch />}>
         <Route path="/" element={withBoundary(<HomePage />)} />
         <Route path="/home" element={withBoundary(<HomePage />)} />
+      </Route>
+
+      <Route element={<PublicLayout />}>
         <Route path="/about" element={withBoundary(<AboutPage />)} />
         <Route
           path="/public-records"
           element={withBoundary(<PublicRecordsPage />)}
+        />
+        <Route
+          path="/public-records/:id"
+          element={withBoundary(<PublicRecordDetailPage />)}
         />
 
         <Route path="/login" element={withBoundary(<LoginPage />)} />
@@ -101,7 +119,9 @@ export default function AppRoutes() {
           path="/reset-password"
           element={withBoundary(<ResetPasswordPage />)}
         />
+      </Route>
 
+      <Route element={<AppShell />}>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={withBoundary(<DashboardPage />)} />
 
@@ -219,13 +239,13 @@ export default function AppRoutes() {
             />
           </Route>
         </Route>
-
-        <Route
-          path="/unauthorized"
-          element={withBoundary(<UnauthorizedPage />)}
-        />
-        <Route path="*" element={withBoundary(<NotFoundPage />)} />
       </Route>
+
+      <Route
+        path="/unauthorized"
+        element={withBoundary(<UnauthorizedPage />)}
+      />
+      <Route path="*" element={withBoundary(<NotFoundPage />)} />
     </Routes>
   );
 }
