@@ -20,6 +20,21 @@ export default function StepFundingTimeline({
   formatFileSize,
   maxMoaFileSizeBytes,
 }) {
+  const formatFundingAmount = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+    const raw = String(value);
+    const [integerPart, decimalPart] = raw.split(".");
+    const normalizedInteger = integerPart.replace(/\D/g, "");
+    const formattedInteger = normalizedInteger.replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ",",
+    );
+    if (decimalPart !== undefined) {
+      return `${formattedInteger}.${decimalPart}`;
+    }
+    return formattedInteger;
+  };
+
   return (
     <div className="space-y-5">
       <div className="form-section">
@@ -33,7 +48,7 @@ export default function StepFundingTimeline({
           <label className="block space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Funding type</span>
             <Select
-              value={form.funding_type || "none"}
+              value={form.funding_type || "internal"}
               onValueChange={(value) => setField("funding_type", value)}
             >
               <SelectTrigger
@@ -65,18 +80,25 @@ export default function StepFundingTimeline({
           </label>
           <label className="block space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Funding amount</span>
-            <Input
-              placeholder="e.g. 50000"
-              type="number"
-              min="0"
-              inputMode="decimal"
-              step="0.01"
-              value={form.funding_amount}
-              onChange={(e) =>
-                setField("funding_amount", sanitizeDecimal(e.target.value))
-              }
-              className={errors?.funding_amount ? "input-error" : ""}
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-slate-500">
+                ₱
+              </span>
+              <Input
+                placeholder="e.g. 50,000"
+                type="text"
+                inputMode="decimal"
+                value={formatFundingAmount(form.funding_amount)}
+                onChange={(e) => {
+                  const rawValue = e.target.value;
+                  const sanitizedValue = sanitizeDecimal(
+                    rawValue.replace(/,/g, ""),
+                  );
+                  setField("funding_amount", sanitizedValue);
+                }}
+                className={`${errors?.funding_amount ? "input-error" : ""} pl-7`}
+              />
+            </div>
             {errors?.funding_amount ? (
               <p className="field-error">{errors.funding_amount}</p>
             ) : null}
