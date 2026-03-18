@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Building2,
   Download,
@@ -53,7 +53,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "@/components/layout/PageHeader";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -101,6 +100,7 @@ export default function AdminResearchCenterPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [quickFilter, setQuickFilter] = useState("all");
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
@@ -390,6 +390,18 @@ export default function AdminResearchCenterPage() {
     const keyword = filters.search.trim().toLowerCase();
 
     return rows.filter((row) => {
+      if (
+        quickFilter === "with_projects" &&
+        Number(row?.projectCount || 0) === 0
+      )
+        return false;
+      if (
+        quickFilter === "with_affiliates" &&
+        Number(row?.profileCount || 0) === 0
+      )
+        return false;
+      if (quickFilter === "with_agendas" && Number(row?.agendaCount || 0) === 0)
+        return false;
       const agendaNames = Array.isArray(agendaNamesByCenterId[row.id])
         ? agendaNamesByCenterId[row.id].join(" ").toLowerCase()
         : "";
@@ -411,7 +423,7 @@ export default function AdminResearchCenterPage() {
 
       return true;
     });
-  }, [agendaNamesByCenterId, rows, filters]);
+  }, [agendaNamesByCenterId, rows, filters, quickFilter]);
 
   const sortedFilteredRows = useMemo(() => {
     const source = [...filteredRows];
@@ -457,7 +469,7 @@ export default function AdminResearchCenterPage() {
     setCurrentPage(1);
     setAgendaCurrentPage(1);
     setExpandedAgendaRows({});
-  }, [filters, rows.length]);
+  }, [filters, rows.length, quickFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -605,6 +617,28 @@ export default function AdminResearchCenterPage() {
       agendas: scopedCenterRow?.agendaCount || 0,
     };
   }, [scopedCenterRow?.agendaCount, scopedMembers, scopedProjects.length]);
+
+  const dashboardMetrics = useMemo(() => {
+    const totalCenters = rows.length;
+    const totalAffiliates = rows.reduce(
+      (sum, row) => sum + Number(row?.profileCount || 0),
+      0,
+    );
+    const totalProjects = rows.reduce(
+      (sum, row) => sum + Number(row?.projectCount || 0),
+      0,
+    );
+    const totalAgendas = rows.reduce(
+      (sum, row) => sum + Number(row?.agendaCount || 0),
+      0,
+    );
+    return {
+      totalCenters,
+      totalAffiliates,
+      totalProjects,
+      totalAgendas,
+    };
+  }, [rows]);
 
   useEffect(() => {
     setMemberPage(1);
@@ -1000,10 +1034,78 @@ export default function AdminResearchCenterPage() {
   if (isScopedCenterChief) {
     return (
       <section className="page-stack-lg">
-        <PageHeader
-          title="My Research Center"
-          description="Review your research center summary, search affiliated members, and inspect linked projects."
-        />
+        <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                My Research Center
+              </p>
+              <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+                {scopedCenterRow?.name || "Research Center Workspace"}
+              </h1>
+              <p className="text-sm text-slate-600">
+                Review member activity, linked projects, and agenda coverage at
+                a glance.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => goToCenterDetail(scopedCenterRow)}
+                disabled={!scopedCenterRow}
+                aria-label="View center"
+                title="View center"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Center Code
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {scopedCenterRow?.code || "-"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Chief:{" "}
+                {scopedCenterRow?.centerChiefName || profile?.full_name || "-"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Active Members
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {scopedSummary.activeMembers}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Total {scopedSummary.totalMembers}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Linked Projects
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {scopedSummary.linkedProjects}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Research pipeline</p>
+            </div>
+            <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Agendas
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {scopedSummary.agendas}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Active agenda list</p>
+            </div>
+          </div>
+        </div>
 
         {dataLoading ? (
           <Card>
@@ -1019,65 +1121,6 @@ export default function AdminResearchCenterPage() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Card>
-                <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Research Center
-                  </p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">
-                    {scopedCenterRow.name}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Code: {scopedCenterRow.code}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Center Chief
-                  </p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">
-                    {scopedCenterRow.centerChiefName ||
-                      profile?.full_name ||
-                      "-"}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Active Members: {scopedSummary.activeMembers}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Linked Affiliates
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {scopedSummary.totalMembers}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Admin: {scopedCenterRow.memberBreakdown?.adminCount || 0}{" "}
-                    Editor: {scopedCenterRow.memberBreakdown?.editorCount || 0}{" "}
-                    Member: {scopedCenterRow.memberBreakdown?.memberCount || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Linked Projects
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {scopedSummary.linkedProjects}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Agendas: {scopedSummary.agendas}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
             <Card className="overflow-hidden">
               <CardHeader className="border-b border-[var(--border)] px-6 py-5 space-y-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -1448,70 +1491,114 @@ export default function AdminResearchCenterPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Research Center"
-        description={
-          isScopedCenterChief
-            ? "Inspect the research center you manage, including linked affiliates and projects."
-            : "Manage research center records and inspect linked affiliates and projects in one view."
-        }
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              ARMS Research Centers
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Research Center Command Hub
+            </h1>
+            <p className="text-sm text-slate-600">
+              Manage center records, monitor links, and keep agendas aligned
+              across the institution.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exporting || filteredRows.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    exportRowsAsCsv(sortedFilteredRows, "filtered")
+                  }
+                >
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    exportRowsAsPdf(sortedFilteredRows, "filtered")
+                  }
+                >
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {!isScopedCenterChief ? (
+              <Button
+                onClick={() => {
+                  setCreateErrors({});
+                  setCreateModalOpen(true);
+                }}
+              >
+                Create Research Center
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Total Centers
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalCenters}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Active registry</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Linked Affiliates
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalAffiliates}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Across all centers</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Linked Projects
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalProjects}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Active pipeline</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Agendas
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalAgendas}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Coverage</p>
+          </div>
+        </div>
+      </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                Research Center Records
+              <CardTitle className="text-base font-semibold text-slate-900">
+                Center Directory
               </CardTitle>
               <CardDescription>
                 Showing {filteredRows.length} record(s).
               </CardDescription>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={exporting || filteredRows.length === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      exportRowsAsCsv(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      exportRowsAsPdf(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {!isScopedCenterChief ? (
-                <Button
-                  onClick={() => {
-                    setCreateErrors({});
-                    setCreateModalOpen(true);
-                  }}
-                >
-                  Create Research Center
-                </Button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <label className="relative w-full md:max-w-md">
               <span className="sr-only">Search research centers</span>
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1528,7 +1615,7 @@ export default function AdminResearchCenterPage() {
               />
             </label>
 
-            <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-border bg-white p-1 md:w-auto">
+            <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 md:w-auto">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"
@@ -1549,8 +1636,70 @@ export default function AdminResearchCenterPage() {
               </Button>
             </div>
           </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Centers",
+                count: filteredRows.length,
+              },
+              {
+                key: "with_projects",
+                label: "With Projects",
+                count: rows.filter((row) => Number(row?.projectCount || 0) > 0)
+                  .length,
+              },
+              {
+                key: "with_affiliates",
+                label: "With Affiliates",
+                count: rows.filter((row) => Number(row?.profileCount || 0) > 0)
+                  .length,
+              },
+              {
+                key: "with_agendas",
+                label: "With Agendas",
+                count: rows.filter((row) => Number(row?.agendaCount || 0) > 0)
+                  .length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  quickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    quickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="p-3">
+        <CardContent className="p-4">
           {!dataLoading && filteredRows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
               No research center records found.
@@ -1561,13 +1710,13 @@ export default function AdminResearchCenterPage() {
               {paginatedRows.map((row, index) => (
                 <Card
                   key={`${row.tag}-${row.id}`}
-                  className="group border-border/60 bg-white transition-shadow hover:shadow-md"
+                  className="group rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          #{(currentPage - 1) * PAGE_SIZE + index + 1} �{" "}
+                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
                           {row.type}
                         </p>
                         <h3 className="mt-1 truncate text-base font-bold text-slate-900">
@@ -1592,6 +1741,12 @@ export default function AdminResearchCenterPage() {
                       <Badge variant="secondary">
                         Links: {row.totalLinks || 0}
                       </Badge>
+                      <Badge
+                        variant="outline"
+                        className="border-slate-200 text-slate-600"
+                      >
+                        Projects: {row.projectCount || 0}
+                      </Badge>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
@@ -1613,8 +1768,8 @@ export default function AdminResearchCenterPage() {
                           {row.profileCount}
                         </p>
                         <p className="mt-1 text-xs text-slate-600">
-                          Admin {row.memberBreakdown?.adminCount || 0} � Editor{" "}
-                          {row.memberBreakdown?.editorCount || 0} � Member{" "}
+                          Admin {row.memberBreakdown?.adminCount || 0} · Editor{" "}
+                          {row.memberBreakdown?.editorCount || 0} · Member{" "}
                           {row.memberBreakdown?.memberCount || 0}
                         </p>
                       </button>
@@ -1646,37 +1801,46 @@ export default function AdminResearchCenterPage() {
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
+                          className="h-9 w-9"
                           onClick={() => goToCenterDetail(row)}
+                          aria-label={`View ${row?.name || "research center"}`}
+                          title="View"
                         >
                           <Eye className="h-4 w-4" />
-                          View
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
+                          className="h-9 w-9"
                           onClick={() => startEdit(row)}
+                          aria-label={`Edit ${row?.name || "research center"}`}
+                          title="Edit"
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="text-[var(--danger)] hover:bg-red-50"
+                          size="icon"
+                          className="h-9 w-9 text-[var(--danger)] hover:bg-red-50"
                           onClick={() => setDeletingRow(row)}
+                          aria-label={`Delete ${row?.name || "research center"}`}
+                          title="Delete"
                         >
-                          Delete
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
+                          className="h-9 w-9"
                           onClick={() => goToCenterDetail(row)}
+                          aria-label={`View ${row?.name || "research center"}`}
+                          title="View"
                         >
                           <Eye className="h-4 w-4" />
-                          View
                         </Button>
                       </div>
                     )}
@@ -1685,9 +1849,9 @@ export default function AdminResearchCenterPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--border)] bg-white">
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader>
+                <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>
