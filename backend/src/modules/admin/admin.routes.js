@@ -247,6 +247,31 @@ export function registerAdminRoutes(app, deps) {
     });
   }
 
+  async function syncLocalDepartmentChairProfile(selectedUser, group, name) {
+    const localUser = await findLocalUserByCkanMember(selectedUser);
+    if (!localUser?.id) return null;
+
+    const groupId =
+      asTrimmedString(group?.name) || asTrimmedString(group?.id) || null;
+    if (!groupId) return null;
+
+    const departmentName =
+      asTrimmedString(name) ||
+      asTrimmedString(group?.title) ||
+      asTrimmedString(group?.display_name) ||
+      asTrimmedString(group?.name) ||
+      null;
+
+    return updateUser(localUser.id, {
+      department: departmentName || null,
+      ckan_group_id: groupId,
+      ckan_username:
+        asTrimmedString(selectedUser?.name) || localUser?.ckan_username || null,
+      ckan_user_id:
+        asTrimmedString(selectedUser?.id) || localUser?.ckan_user_id || null,
+    });
+  }
+
   function getDatasetExtraByKey(extras, key) {
     const rows = Array.isArray(extras) ? extras : [];
     const match = rows.find(
@@ -1719,6 +1744,11 @@ export function registerAdminRoutes(app, deps) {
             groupId: created?.name || created?.id || groupName,
             username: String(selected?.name || "").trim(),
           });
+          await syncLocalDepartmentChairProfile(
+            selected,
+            created || { name: groupName },
+            name,
+          );
 
           return res.status(201).json({
             data: {
@@ -1988,6 +2018,11 @@ export function registerAdminRoutes(app, deps) {
               role: "admin",
             });
           }
+          await syncLocalDepartmentChairProfile(
+            selected,
+            updated || { name: targetGroupId },
+            name || currentGroup?.title || currentGroup?.display_name || id,
+          );
 
           return res.json({
             data: {
