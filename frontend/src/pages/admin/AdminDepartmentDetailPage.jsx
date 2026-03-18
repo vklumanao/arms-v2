@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
-import PageHeader from "@/components/layout/PageHeader";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -62,6 +56,7 @@ import {
   ChevronLeft,
   Eye,
   FolderKanban,
+  AlertTriangle,
   Pencil,
   Plus,
   Search,
@@ -86,6 +81,7 @@ export default function AdminDepartmentDetailPage() {
   const departmentId = String(params?.id || "").trim();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = normalizeTab(searchParams.get("tab"));
+  const projectParamsKey = searchParams.toString();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,6 +101,15 @@ export default function AdminDepartmentDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
+  const [projectsSearch, setProjectsSearch] = useState(() =>
+    String(searchParams.get("projectSearch") || "").trim(),
+  );
+  const [projectsStatus, setProjectsStatus] = useState(
+    () => String(searchParams.get("projectStatus") || "all").trim() || "all",
+  );
+  const [projectsYear, setProjectsYear] = useState(
+    () => String(searchParams.get("projectYear") || "all").trim() || "all",
+  );
 
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
@@ -128,6 +133,47 @@ export default function AdminDepartmentDetailPage() {
     setAffiliatesPage(1);
     setProjectsPage(1);
   }, [departmentId]);
+
+  useEffect(() => {
+    const nextSearch = String(searchParams.get("projectSearch") || "").trim();
+    const nextStatus =
+      String(searchParams.get("projectStatus") || "all").trim() || "all";
+    const nextYear =
+      String(searchParams.get("projectYear") || "all").trim() || "all";
+
+    if (nextSearch !== projectsSearch) setProjectsSearch(nextSearch);
+    if (nextStatus !== projectsStatus) setProjectsStatus(nextStatus);
+    if (nextYear !== projectsYear) setProjectsYear(nextYear);
+  }, [projectParamsKey]);
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (projectsSearch) {
+          next.set("projectSearch", projectsSearch);
+        } else {
+          next.delete("projectSearch");
+        }
+        if (projectsStatus && projectsStatus !== "all") {
+          next.set("projectStatus", projectsStatus);
+        } else {
+          next.delete("projectStatus");
+        }
+        if (projectsYear && projectsYear !== "all") {
+          next.set("projectYear", projectsYear);
+        } else {
+          next.delete("projectYear");
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [projectsSearch, projectsStatus, projectsYear, setSearchParams]);
+
+  useEffect(() => {
+    setProjectsPage(1);
+  }, [projectsSearch, projectsStatus, projectsYear]);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,21 +328,88 @@ export default function AdminDepartmentDetailPage() {
     return links.profiles.slice(start, start + PAGE_SIZE);
   }, [affiliatesPage, links.profiles]);
 
+  const filteredProjects = useMemo(() => {
+    const query = String(projectsSearch || "")
+      .trim()
+      .toLowerCase();
+    const statusFilter = String(projectsStatus || "all").toLowerCase();
+    const yearFilter = String(projectsYear || "all").toLowerCase();
+    return (links.projects || []).filter((row) => {
+      const status = String(row?.status || "").toLowerCase();
+      const year = String(row?.year || "").toLowerCase();
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (yearFilter !== "all" && year !== yearFilter) return false;
+      const haystack = [
+        row?.title,
+        row?.status,
+        row?.year,
+        row?.lead_researcher,
+        row?.organization_name,
+        row?.research_center,
+        row?.agenda_name,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
+    });
+  }, [links.projects, projectsSearch, projectsStatus, projectsYear]);
+
+  const projectStatusOptions = useMemo(() => {
+    const unique = new Set();
+    (links.projects || []).forEach((row) => {
+      const value = String(row?.status || "")
+        .trim()
+        .toLowerCase();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort()];
+  }, [links.projects]);
+
+  const projectYearOptions = useMemo(() => {
+    const unique = new Set();
+    (links.projects || []).forEach((row) => {
+      const value = String(row?.year || "").trim();
+      if (value) unique.add(value);
+    });
+    return ["all", ...Array.from(unique).sort((a, b) => b.localeCompare(a))];
+  }, [links.projects]);
+
   const projectsTotalPages = useMemo(
-    () => Math.max(1, Math.ceil(links.projects.length / PAGE_SIZE)),
-    [links.projects.length],
+    () => Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE)),
+    [filteredProjects.length],
   );
   const paginatedProjects = useMemo(() => {
     const start = (projectsPage - 1) * PAGE_SIZE;
-    return links.projects.slice(start, start + PAGE_SIZE);
-  }, [projectsPage, links.projects]);
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [projectsPage, filteredProjects]);
 
   const setTab = (tab) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("tab", tab);
+      if (tab !== "projects") {
+        next.delete("projectSearch");
+        next.delete("projectStatus");
+        next.delete("projectYear");
+      }
       return next;
     });
+  };
+
+  const clearProjectFilters = () => {
+    setProjectsSearch("");
+    setProjectsStatus("all");
+    setProjectsYear("all");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("projectSearch");
+        next.delete("projectStatus");
+        next.delete("projectYear");
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const refreshLinksAndUsage = async () => {
@@ -524,76 +637,100 @@ export default function AdminDepartmentDetailPage() {
   const title = department?.name
     ? `Department: ${department.name}`
     : "Department";
+  const initials = useMemo(() => {
+    const name = String(department?.name || "").trim();
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || "";
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : "";
+      return `${first}${last}`.toUpperCase() || "DP";
+    }
+    return "DP";
+  }, [department]);
 
   return (
     <section className="page-stack-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="outline">
-          <Link to="/admin/departments">
-            <ChevronLeft className="h-4 w-4" />
-            Back to Departments
-          </Link>
-        </Button>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={loading || !department}
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={deleting || loading || deleteGuard.blocked}
-            onClick={handleDelete}
-            title={
-              deleteGuard.blocked
-                ? "Remove linked projects/affiliates first"
-                : "Delete department"
-            }
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                {department?.name || "Department"}
-              </CardTitle>
-              <CardDescription>
-                Code:{" "}
-                <span className="font-mono font-semibold text-slate-700">
-                  {department?.code || "-"}
-                </span>{" "}
-                | Chairperson:{" "}
-                <span className="font-semibold text-slate-700">
-                  {department?.chairpersonName || "-"}
-                </span>
-              </CardDescription>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearProjectFilters();
+                navigate("/admin/departments");
+              }}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Departments
+            </Button>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={loading || !department}
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit Department
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={deleting || loading || deleteGuard.blocked}
+                onClick={handleDelete}
+                title={
+                  deleteGuard.blocked
+                    ? "Remove linked projects/affiliates first"
+                    : "Delete department"
+                }
+              >
+                Delete
+              </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="gap-2">
-                <Users className="h-4 w-4" />
-                {usage.profileCount} affiliates
-              </Badge>
-              <Badge variant="secondary" className="gap-2">
-                <FolderKanban className="h-4 w-4" />
-                {usage.projectCount} projects
-              </Badge>
-              <Badge variant="outline" className="gap-2">
-                <Building2 className="h-4 w-4" />
-                Department record
-              </Badge>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+                {initials}
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-bold text-slate-900">
+                  {department?.name || "Department"}
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-500">
+                  Code:{" "}
+                  <span className="font-mono font-semibold text-slate-700">
+                    {department?.code || "-"}
+                  </span>{" "}
+                  · Chairperson:{" "}
+                  <span className="font-semibold text-slate-700">
+                    {department?.chairpersonName || "-"}
+                  </span>
+                </CardDescription>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    {usage.profileCount} affiliates
+                  </Badge>
+                  <Badge variant="secondary" className="gap-2">
+                    <FolderKanban className="h-4 w-4" />
+                    {usage.projectCount} projects
+                  </Badge>
+                  <Badge variant="outline" className="gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Department record
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="rounded-full border border-border bg-white px-3 py-1">
+                ID: {department?.id || "-"}
+              </span>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-5 p-6">
           {loading ? (
             <p className="text-sm text-slate-600">Loading department...</p>
           ) : error ? (
@@ -607,21 +744,28 @@ export default function AdminDepartmentDetailPage() {
             <>
               {deleteGuard.blocked ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  <p className="font-semibold">Deletion is blocked</p>
-                  <p className="mt-1 text-amber-800">
-                    This department cannot be deleted while it has{" "}
-                    {deleteGuard.reasons.projectCount
-                      ? `${deleteGuard.reasons.projectCount} linked project(s)`
-                      : null}
-                    {deleteGuard.reasons.projectCount &&
-                    deleteGuard.reasons.nonAdminAffiliates
-                      ? " and "
-                      : null}
-                    {deleteGuard.reasons.nonAdminAffiliates
-                      ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
-                      : null}
-                    .
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-700">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Deletion is blocked</p>
+                      <p className="mt-1 text-amber-800">
+                        This department cannot be deleted while it has{" "}
+                        {deleteGuard.reasons.projectCount
+                          ? `${deleteGuard.reasons.projectCount} linked project(s)`
+                          : null}
+                        {deleteGuard.reasons.projectCount &&
+                        deleteGuard.reasons.nonAdminAffiliates
+                          ? " and "
+                          : null}
+                        {deleteGuard.reasons.nonAdminAffiliates
+                          ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
+                          : null}
+                        .
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
@@ -813,73 +957,145 @@ export default function AdminDepartmentDetailPage() {
                   ) : (
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <CardTitle className="text-base font-bold text-slate-900">
-                          Linked Projects
-                        </CardTitle>
-                        <CardDescription>
-                          Showing {links.projects.length} project(s).
-                        </CardDescription>
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-base font-bold text-slate-900">
+                              Linked Projects
+                            </CardTitle>
+                            <CardDescription>
+                              Showing {filteredProjects.length} project(s).
+                            </CardDescription>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="relative w-full min-w-[14rem] md:w-auto">
+                              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                              <Input
+                                className="pl-8"
+                                placeholder="Search projects"
+                                value={projectsSearch}
+                                onChange={(event) =>
+                                  setProjectsSearch(event.target.value)
+                                }
+                              />
+                            </label>
+                            <Select
+                              value={projectsStatus}
+                              onValueChange={setProjectsStatus}
+                            >
+                              <SelectTrigger className="w-full md:w-[12rem] capitalize">
+                                <SelectValue placeholder="All statuses" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {projectStatusOptions.map((status) => (
+                                  <SelectItem
+                                    key={status}
+                                    value={status}
+                                    className="capitalize"
+                                  >
+                                    {status === "all" ? "All statuses" : status}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={projectsYear}
+                              onValueChange={setProjectsYear}
+                            >
+                              <SelectTrigger className="w-full md:w-[10rem]">
+                                <SelectValue placeholder="All years" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {projectYearOptions.map((year) => (
+                                  <SelectItem key={year} value={year}>
+                                    {year === "all" ? "All years" : year}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setProjectsSearch("");
+                                setProjectsStatus("all");
+                                setProjectsYear("all");
+                              }}
+                            >
+                              Reset filters
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="overflow-x-auto">
-                          <Table className="min-w-[980px]">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>No.</TableHead>
-                                <TableHead>Project Title</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Year</TableHead>
-                                <TableHead>Lead Researcher</TableHead>
-                                <TableHead>Research Center</TableHead>
-                                <TableHead>Agendum</TableHead>
-                                <TableHead className="text-right">
-                                  Actions
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {paginatedProjects.map((row, idx) => (
-                                <TableRow key={row?.id || `${idx}`}>
-                                  <TableCell>
-                                    {(projectsPage - 1) * PAGE_SIZE + idx + 1}
-                                  </TableCell>
-                                  <TableCell className="font-medium text-slate-900">
-                                    {row?.title || "-"}
-                                  </TableCell>
-                                  <TableCell className="capitalize text-slate-700">
-                                    {row?.status || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.year || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.lead_researcher || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.organization_name ||
-                                      row?.research_center ||
-                                      "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.agenda_name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => goToProject(row)}
-                                      aria-label={`View ${row?.title || "project"}`}
-                                      title="View project"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
+                          {filteredProjects.length === 0 ? (
+                            <div className="p-6">
+                              <EmptyState
+                                title="No projects matched"
+                                description="Try adjusting the search or filters to find matching projects."
+                              />
+                            </div>
+                          ) : (
+                            <Table className="min-w-[980px]">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>No.</TableHead>
+                                  <TableHead>Project Title</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Year</TableHead>
+                                  <TableHead>Lead Researcher</TableHead>
+                                  <TableHead>Research Center</TableHead>
+                                  <TableHead>Agendum</TableHead>
+                                  <TableHead className="text-right">
+                                    Actions
+                                  </TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {paginatedProjects.map((row, idx) => (
+                                  <TableRow key={row?.id || `${idx}`}>
+                                    <TableCell>
+                                      {(projectsPage - 1) * PAGE_SIZE + idx + 1}
+                                    </TableCell>
+                                    <TableCell className="font-medium text-slate-900">
+                                      {row?.title || "-"}
+                                    </TableCell>
+                                    <TableCell className="capitalize text-slate-700">
+                                      {row?.status || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.year || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.lead_researcher || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.organization_name ||
+                                        row?.research_center ||
+                                        "-"}
+                                    </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {row?.agenda_name || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => goToProject(row)}
+                                        aria-label={`View ${row?.title || "project"}`}
+                                        title="View project"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
                         </div>
                       </CardContent>
                       <PaginationControls
