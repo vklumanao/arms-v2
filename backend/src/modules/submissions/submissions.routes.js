@@ -29,6 +29,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     getOrganization,
     createDataset,
     updateDataset,
+    patchDataset,
     setDatasetVisibility,
     deleteDataset,
     createDatasetResource,
@@ -38,7 +39,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     getExtraByKey,
     } = deps;
 
-    function resolveCkanResourceUrl(resourceUrl) {
+  function resolveCkanResourceUrl(resourceUrl) {
       const raw = asTrimmedString(resourceUrl);
       if (!raw) return "";
       if (raw.startsWith("http://") || raw.startsWith("https://")) {
@@ -198,6 +199,25 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       .trim()
       .toLowerCase();
     return raw === SUBMISSION_STATE_DRAFT ? SUBMISSION_STATE_DRAFT : SUBMISSION_STATE_SUBMITTED;
+  }
+
+  function isCkanResourceUrl(resourceUrl) {
+    const raw = asTrimmedString(resourceUrl);
+    if (!raw) return false;
+    try {
+      const parsed = new URL(raw, `${config.ckanBaseUrl}/`);
+      const base = new URL(`${config.ckanBaseUrl}/`);
+      const isLocalHost =
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "ckan";
+      const sameOrigin = parsed.origin === base.origin;
+      if (!sameOrigin && !isLocalHost) return false;
+      const path = parsed.pathname || "";
+      return path.includes("/dataset/") || path.includes("/resource/");
+    } catch {
+      return false;
+    }
   }
 
   function parseDraftExpectedOutputs(extras = []) {
@@ -1193,6 +1213,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             });
           }
 
+          const resourceCount = Array.isArray(dataset?.resources)
+            ? dataset.resources.length
+            : 0;
           return res.json({
             data: {
               dataset,
@@ -1433,7 +1456,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       };
 
         const dataset = datasetId
-          ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+          ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
           : await createDatasetWithUniqueName(baseDatasetPayload);
 
       return res.status(datasetId ? 200 : 201).json({
@@ -1482,12 +1505,17 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       supportingMovLink || `${config.ckanBaseUrl}/dataset`;
 
     let dataset = null;
-    const createdNow = !datasetId;
-    try {
-      const existingDataset = datasetId ? await getDataset(datasetId) : null;
-      if (datasetId && !existingDataset) {
-        return res.status(404).json({ error: "Dataset not found." });
-      }
+      const createdNow = !datasetId;
+      try {
+        const existingDataset = datasetId ? await getDataset(datasetId) : null;
+        if (datasetId && !existingDataset) {
+          return res.status(404).json({ error: "Dataset not found." });
+        }
+        if (datasetId) {
+          const existingCount = Array.isArray(existingDataset?.resources)
+            ? existingDataset.resources.length
+            : 0;
+        }
 
       const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
       if (
@@ -1573,58 +1601,60 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         extras,
       };
 
-      // Update existing dataset when dataset id is supplied, otherwise create new one.
+        // Update existing dataset when dataset id is supplied, otherwise create new one.
         dataset = datasetId
-          ? await updateDataset({ ...baseDatasetPayload, id: datasetId })
+          ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
           : await createDatasetWithUniqueName(baseDatasetPayload);
-
-      if (datasetId) {
-        const current = await getDataset(
-          dataset?.id || dataset?.name || datasetId,
-        );
-        const existingResources = Array.isArray(current?.resources)
-          ? current.resources
-          : [];
-        for (const resource of existingResources) {
-          const resourceId = asTrimmedString(resource?.id);
-          if (!resourceId) continue;
-          await deleteDatasetResource(resourceId);
+        if (datasetId) {
+          const updated = await getDataset(
+            dataset?.id || dataset?.name || datasetId,
+          );
+          const updatedCount = Array.isArray(updated?.resources)
+            ? updated.resources.length
+            : 0;
         }
-      }
 
         const createdResources = [];
-        for (let i = 0; i < expectedOutputs.length; i += 1) {
-          const row = expectedOutputs[i] || {};
-          const name = formatOutputResourceName(row, i);
-          const description = asTrimmedString(row.notes);
-          const fileName =
-            asTrimmedString(row.file_name) || asTrimmedString(row.fileName) || "";
-          const mimeType =
-            asTrimmedString(row.mime_type) || asTrimmedString(row.mimeType) || "";
-          const fileSize = Number(row.file_size || row.fileSize || 0);
-          const filePath =
-            asTrimmedString(row.file_path) || asTrimmedString(row.filePath) || "";
-          const fileBase64 =
-            asTrimmedString(row.file_base64) ||
-            asTrimmedString(row.fileBase64) ||
-            "";
-          const hasRemoteFile =
-            /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:");
-          const url =
-            hasRemoteFile
-              ? filePath
-              : `${fallbackResourceUrl}?expected_output=${i + 1}&dataset=${
-                  dataset.id || dataset.name || "unknown"
-                }`;
-          // Infer format from filename extension when explicit format is missing.
-          const format = fileName.includes(".")
-            ? fileName.split(".").pop()?.toUpperCase() || ""
-            : "";
+        if (!datasetId) {
+          for (let i = 0; i < expectedOutputs.length; i += 1) {
+            const row = expectedOutputs[i] || {};
+            const name = formatOutputResourceName(row, i);
+            const description = asTrimmedString(row.notes);
+            const fileName =
+              asTrimmedString(row.file_name) ||
+              asTrimmedString(row.fileName) ||
+              "";
+            const mimeType =
+              asTrimmedString(row.mime_type) ||
+              asTrimmedString(row.mimeType) ||
+              "";
+            const fileSize = Number(row.file_size || row.fileSize || 0);
+            const filePath =
+              asTrimmedString(row.file_path) ||
+              asTrimmedString(row.filePath) ||
+              "";
+            const fileBase64 =
+              asTrimmedString(row.file_base64) ||
+              asTrimmedString(row.fileBase64) ||
+              "";
+            const hasRemoteFile =
+              /^https?:\/\//i.test(filePath) ||
+              String(filePath).startsWith("blob:");
+            const url =
+              hasRemoteFile
+                ? filePath
+                : `${fallbackResourceUrl}?expected_output=${i + 1}&dataset=${
+                    dataset.id || dataset.name || "unknown"
+                  }`;
+            // Infer format from filename extension when explicit format is missing.
+            const format = fileName.includes(".")
+              ? fileName.split(".").pop()?.toUpperCase() || ""
+              : "";
 
-          let resource;
-          if (fileBase64) {
-            const { buffer, mimeType: mimeTypeFromData } =
-              decodeBase64File(fileBase64);
+            let resource;
+            if (fileBase64) {
+              const { buffer, mimeType: mimeTypeFromData } =
+                decodeBase64File(fileBase64);
               if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
                 const resolvedMimeType =
                   mimeType || mimeTypeFromData || "application/octet-stream";
@@ -1643,21 +1673,91 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
                   mimeType: resolvedMimeType,
                 });
               }
-          }
+            }
 
-          if (!resource) {
-            resource = await createDatasetResource({
-              package_id: dataset.id || dataset.name,
-              name,
-              description: description || null,
-              url,
-              format: format || null,
-              mimetype: mimeType || null,
-              size:
-                Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
-            });
+            if (!resource) {
+              resource = await createDatasetResource({
+                package_id: dataset.id || dataset.name,
+                name,
+                description: description || null,
+                url,
+                format: format || null,
+                mimetype: mimeType || null,
+                size:
+                  Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+              });
+            }
+            createdResources.push(resource);
           }
-          createdResources.push(resource);
+        } else {
+          // Revision: add-only. Never overwrite existing resources.
+          for (let i = 0; i < expectedOutputs.length; i += 1) {
+            const row = expectedOutputs[i] || {};
+            const filePath =
+              asTrimmedString(row.file_path) ||
+              asTrimmedString(row.filePath) ||
+              "";
+            const fileBase64 =
+              asTrimmedString(row.file_base64) ||
+              asTrimmedString(row.fileBase64) ||
+              "";
+            const hasRemoteFile = /^https?:\/\//i.test(filePath);
+            const isCkanUrl = isCkanResourceUrl(filePath);
+            if (!fileBase64 && (!hasRemoteFile || isCkanUrl)) continue;
+
+            const name = formatOutputResourceName(row, i);
+            const description = asTrimmedString(row.notes);
+            const fileName =
+              asTrimmedString(row.file_name) ||
+              asTrimmedString(row.fileName) ||
+              "";
+            const mimeType =
+              asTrimmedString(row.mime_type) ||
+              asTrimmedString(row.mimeType) ||
+              "";
+            const fileSize = Number(row.file_size || row.fileSize || 0);
+            const displayName = fileName || name;
+            const format = displayName.includes(".")
+              ? displayName.split(".").pop()?.toUpperCase() || ""
+              : "";
+
+            let resource;
+            if (fileBase64) {
+              const { buffer, mimeType: mimeTypeFromData } =
+                decodeBase64File(fileBase64);
+              if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
+                const resolvedMimeType =
+                  mimeType || mimeTypeFromData || "application/octet-stream";
+                const uploadName = displayName || name;
+                resource = await createDatasetResourceUpload({
+                  fields: {
+                    package_id: dataset.id || dataset.name,
+                    name: uploadName,
+                    description: description || null,
+                    format: format || null,
+                    mimetype: resolvedMimeType,
+                    size: String(buffer.length),
+                  },
+                  fileBuffer: buffer,
+                  fileName: uploadName || "research-output.bin",
+                  mimeType: resolvedMimeType,
+                });
+              }
+            } else if (hasRemoteFile) {
+              resource = await createDatasetResource({
+                package_id: dataset.id || dataset.name,
+                name: displayName,
+                description: description || null,
+                url: filePath,
+                format: format || null,
+                mimetype: mimeType || null,
+                size:
+                  Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+              });
+            }
+
+            if (resource) createdResources.push(resource);
+          }
         }
 
       return res.status(createdNow ? 201 : 200).json({
@@ -1755,7 +1855,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         extras = upsertExtra(extras, "start_date", nextStartDate);
         extras = upsertExtra(extras, "end_date", nextEndDate);
 
-        const updated = await updateDataset({
+        const updated = await patchDataset({
           ...dataset,
           id: dataset?.id || projectId,
           title: nextTitle,
