@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   Eye,
@@ -52,7 +52,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import PageHeader from "@/components/layout/PageHeader";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -108,6 +107,7 @@ export default function AdminDepartmentPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [quickFilter, setQuickFilter] = useState("all");
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
@@ -132,6 +132,29 @@ export default function AdminDepartmentPage() {
   });
   const [editErrors, setEditErrors] = useState({});
   const [createErrors, setCreateErrors] = useState({});
+
+  const dashboardMetrics = useMemo(() => {
+    const totalDepartments = rows.length;
+    const totalAffiliates = rows.reduce(
+      (sum, row) => sum + Number(row?.profileCount || 0),
+      0,
+    );
+    const totalProjects = rows.reduce(
+      (sum, row) => sum + Number(row?.projectCount || 0),
+      0,
+    );
+    const totalLinks = rows.reduce(
+      (sum, row) => sum + Number(row?.totalLinks || 0),
+      0,
+    );
+
+    return {
+      totalDepartments,
+      totalAffiliates,
+      totalProjects,
+      totalLinks,
+    };
+  }, [rows]);
 
   const loadDepartmentRows = async () => {
     setDataLoading(true);
@@ -267,6 +290,18 @@ export default function AdminDepartmentPage() {
 
     return rows.filter((row) => {
       if (
+        quickFilter === "with_projects" &&
+        Number(row?.projectCount || 0) === 0
+      )
+        return false;
+      if (
+        quickFilter === "with_affiliates" &&
+        Number(row?.profileCount || 0) === 0
+      )
+        return false;
+      if (quickFilter === "with_links" && Number(row?.totalLinks || 0) === 0)
+        return false;
+      if (
         keyword &&
         !(
           row.name.toLowerCase().includes(keyword) ||
@@ -283,7 +318,7 @@ export default function AdminDepartmentPage() {
 
       return true;
     });
-  }, [rows, filters]);
+  }, [rows, filters, quickFilter]);
 
   const sortedFilteredRows = useMemo(() => {
     const source = [...filteredRows];
@@ -319,7 +354,7 @@ export default function AdminDepartmentPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, rows.length]);
+  }, [filters, rows.length, quickFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -648,64 +683,116 @@ export default function AdminDepartmentPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Department"
-        description="Manage departments and inspect linked affiliates, members, and projects in one view."
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              ARMS Departments
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Department Command Hub
+            </h1>
+            <p className="text-sm text-slate-600">
+              Manage department records, track leadership, and monitor linked
+              affiliates and projects.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exporting || filteredRows.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    exportRowsAsCsv(sortedFilteredRows, "filtered")
+                  }
+                >
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    exportRowsAsPdf(sortedFilteredRows, "filtered")
+                  }
+                >
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              onClick={() => {
+                setCreateErrors({});
+                setCreateModalOpen(true);
+              }}
+            >
+              Create Department
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Departments
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalDepartments}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Active academic units</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Linked Affiliates
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalAffiliates}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Faculty and staff coverage
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Research Projects
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalProjects}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Linked academic work</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Total Links
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {dashboardMetrics.totalLinks}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Combined affiliates + projects
+            </p>
+          </div>
+        </div>
+      </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                Department Records
+              <CardTitle className="text-base font-semibold text-slate-900">
+                Department Directory
               </CardTitle>
               <CardDescription>
                 Showing {filteredRows.length} record(s).
               </CardDescription>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={exporting || filteredRows.length === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      exportRowsAsCsv(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      exportRowsAsPdf(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button
-                onClick={() => {
-                  setCreateErrors({});
-                  setCreateModalOpen(true);
-                }}
-              >
-                Create Department
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <label className="relative w-full md:max-w-md">
               <span className="sr-only">Search departments</span>
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -722,7 +809,7 @@ export default function AdminDepartmentPage() {
               />
             </label>
 
-            <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-border bg-white p-1 md:w-auto">
+            <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 md:w-auto">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"
@@ -743,8 +830,70 @@ export default function AdminDepartmentPage() {
               </Button>
             </div>
           </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Departments",
+                count: filteredRows.length,
+              },
+              {
+                key: "with_projects",
+                label: "With Projects",
+                count: rows.filter((row) => Number(row?.projectCount || 0) > 0)
+                  .length,
+              },
+              {
+                key: "with_affiliates",
+                label: "With Affiliates",
+                count: rows.filter((row) => Number(row?.profileCount || 0) > 0)
+                  .length,
+              },
+              {
+                key: "with_links",
+                label: "With Links",
+                count: rows.filter((row) => Number(row?.totalLinks || 0) > 0)
+                  .length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  quickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    quickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="p-3">
+        <CardContent className="p-4">
           {!dataLoading && filteredRows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
               No department records found.
@@ -753,115 +902,133 @@ export default function AdminDepartmentPage() {
           {viewMode === "grid" ? (
             <>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedRows.map((row, index) => (
-                <Card
-                  key={`${row.tag}-${row.id}`}
-                  className="group border-border/60 bg-white transition-shadow hover:shadow-md"
-                >
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
-                          {row.type}
-                        </p>
-                        <h3 className="mt-1 truncate text-base font-bold text-slate-900">
-                          {row.name}
-                        </h3>
-                        <p className="mt-1 truncate text-sm text-slate-600">
-                          Chairperson:{" "}
-                          <span className="font-semibold text-slate-800">
-                            {row.chairpersonName || "-"}
-                          </span>
-                        </p>
+                {paginatedRows.map((row, index) => (
+                  <Card
+                    key={`${row.tag}-${row.id}`}
+                    className="group rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                            #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
+                            {row.type}
+                          </p>
+                          <h3 className="mt-1 truncate text-base font-bold text-slate-900">
+                            {row.name}
+                          </h3>
+                          <p className="mt-1 truncate text-sm text-slate-600">
+                            Chairperson:{" "}
+                            <span className="font-semibold text-slate-800">
+                              {row.chairpersonName || "-"}
+                            </span>
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-slate-200 font-mono text-slate-700"
+                        >
+                          {row.code}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="shrink-0 font-mono">
-                        {row.code}
-                      </Badge>
-                    </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge variant="secondary">
-                        Links: {row.totalLinks || 0}
-                      </Badge>
-                    </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Badge variant="secondary">
+                          Links: {row.totalLinks || 0}
+                        </Badge>
+                        <Badge variant="secondary">
+                          Affiliates: {row.profileCount || 0}
+                        </Badge>
+                        <Badge variant="secondary">
+                          Projects: {row.projectCount || 0}
+                        </Badge>
+                      </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        className={cn(
-                          "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
-                          "hover:bg-muted/50",
-                        )}
-                        onClick={() => goToDepartmentDetail(row, "affiliates")}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Affiliates
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          className={cn(
+                            "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
+                            "hover:bg-muted/50",
+                          )}
+                          onClick={() =>
+                            goToDepartmentDetail(row, "affiliates")
+                          }
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                              Affiliates
+                            </p>
+                            <Users className="h-4 w-4 text-slate-400" />
+                          </div>
+                          <p className="mt-2 text-2xl font-bold text-slate-900">
+                            {row.profileCount}
                           </p>
-                          <Users className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <p className="mt-2 text-2xl font-bold text-slate-900">
-                          {row.profileCount}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Admin {row.memberBreakdown?.adminCount || 0} · Editor{" "}
-                          {row.memberBreakdown?.editorCount || 0} · Member{" "}
-                          {row.memberBreakdown?.memberCount || 0}
-                        </p>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={cn(
-                          "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
-                          "hover:bg-muted/50",
-                        )}
-                        onClick={() => goToDepartmentDetail(row, "projects")}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Projects
+                          <p className="mt-1 text-xs text-slate-600">
+                            Admin {row.memberBreakdown?.adminCount || 0} ·
+                            Editor {row.memberBreakdown?.editorCount || 0} ·
+                            Member {row.memberBreakdown?.memberCount || 0}
                           </p>
-                          <FolderKanban className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <p className="mt-2 text-2xl font-bold text-slate-900">
-                          {row.projectCount}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Linked research projects.
-                        </p>
-                      </button>
-                    </div>
+                        </button>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => goToDepartmentDetail(row)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEdit(row)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-[var(--danger)] hover:bg-red-50"
-                        onClick={() => setDeletingRow(row)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        <button
+                          type="button"
+                          className={cn(
+                            "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
+                            "hover:bg-muted/50",
+                          )}
+                          onClick={() => goToDepartmentDetail(row, "projects")}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                              Projects
+                            </p>
+                            <FolderKanban className="h-4 w-4 text-slate-400" />
+                          </div>
+                          <p className="mt-2 text-2xl font-bold text-slate-900">
+                            {row.projectCount}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-600">
+                            Linked research projects.
+                          </p>
+                        </button>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => goToDepartmentDetail(row)}
+                          aria-label={`View ${row?.name || "department"}`}
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => startEdit(row)}
+                          aria-label={`Edit ${row?.name || "department"}`}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 text-[var(--danger)] hover:bg-red-50"
+                          onClick={() => setDeletingRow(row)}
+                          aria-label={`Delete ${row?.name || "department"}`}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
               {totalPages > 1 ? (
                 <div className="mt-3">
@@ -875,9 +1042,9 @@ export default function AdminDepartmentPage() {
               ) : null}
             </>
           ) : (
-            <div className="rounded-xl border border-[var(--border)] bg-white">
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader>
+                <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>
