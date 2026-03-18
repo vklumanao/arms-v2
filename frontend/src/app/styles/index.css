@@ -270,6 +270,18 @@ h6,
   max-width: 1280px;
 }
 
+@media (min-width: 1024px) {
+  .public-records-filter {
+    position: sticky;
+    top: var(--public-records-sticky-top, 1.25rem);
+    align-self: start;
+  }
+
+  .page-shell .public-records-filter {
+    --public-records-sticky-top: 6rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .page-shell {
     padding: var(--space-6);
