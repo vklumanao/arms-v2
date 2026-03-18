@@ -47,6 +47,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -750,7 +751,8 @@ export default function AdminDepartmentPage() {
             </div>
           ) : null}
           {viewMode === "grid" ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedRows.map((row, index) => (
                 <Card
                   key={`${row.tag}-${row.id}`}
@@ -860,7 +862,18 @@ export default function AdminDepartmentPage() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+              {totalPages > 1 ? (
+                <div className="mt-3">
+                  <PaginationControls
+                    page={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    className="border-0 rounded-none shadow-none bg-transparent"
+                  />
+                </div>
+              ) : null}
+            </>
           ) : (
             <div className="rounded-xl border border-[var(--border)] bg-white">
               <Table className="min-w-[980px]">
@@ -1042,16 +1055,24 @@ export default function AdminDepartmentPage() {
                     </TableRow>
                   ))}
                 </TableBody>
+                {totalPages > 1 ? (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={7} className="px-3 py-3">
+                        <PaginationControls
+                          page={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          className="border-0 rounded-none shadow-none bg-transparent"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                ) : null}
               </Table>
             </div>
           )}
         </CardContent>
-        <PaginationControls
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          className="rounded-none border-0 border-t border-[var(--border)]"
-        />
       </Card>
 
       <ConfirmActionModal
