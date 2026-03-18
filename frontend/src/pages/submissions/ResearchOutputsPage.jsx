@@ -1,5 +1,3 @@
-import PageHeader from "@/components/layout/PageHeader";
-import EmptyState from "@/components/feedback/EmptyState";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -208,15 +206,21 @@ export default function ResearchOutputsPage() {
 
   const missingAffiliationContent = (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Research Outputs"
-        description={
-          isAdmin
-            ? "All linked resource files from submitted project datasets."
-            : "Your submitted resource files from project expected outputs."
-        }
-      />
-      <Card>
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Research Outputs
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            Complete Your Profile First
+          </h1>
+          <p className="text-sm text-slate-600">
+            Add your organization and department before managing research
+            outputs.
+          </p>
+        </div>
+      </div>
+      <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
         <CardContent className="space-y-3 p-5">
           <p className="text-sm text-amber-700">
             Please set your Organization (Research Center) and Department in My
@@ -968,36 +972,73 @@ export default function ResearchOutputsPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Research Outputs"
-        description={
-          isAdmin
-            ? "All linked resource files from submitted project datasets."
-            : "Your submitted resource files from project expected outputs."
-        }
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              ARMS Research Outputs
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Research Outputs Command Hub
+            </h1>
+            <p className="text-sm text-slate-600">
+              Track resource files, monitor visibility, and export output
+              reports for your research projects.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={exportAsCsv}>
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={exportAsPdf}>
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            <Button onClick={openAddOutputModal}>Add Output</Button>
+          </div>
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total Outputs", value: analytics.total, icon: FileText },
-          { label: "Public Outputs", value: analytics.public, icon: Eye },
-          { label: "Private Outputs", value: analytics.private, icon: EyeOff },
-          {
-            label: "Linked Projects",
-            value: analytics.linkedProjects,
-            icon: FileText,
-          },
-        ].map(({ label, value, icon: Icon }) => (
-          <Card key={label}>
-            <CardContent className="p-5">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                <Icon size={14} />
-                {label}
-              </p>
-              <p className="mt-2 text-3xl font-black text-slate-900">{value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Total Outputs", value: analytics.total, icon: FileText },
+            { label: "Public Outputs", value: analytics.public, icon: Eye },
+            { label: "Private Outputs", value: analytics.private, icon: EyeOff },
+            {
+              label: "Linked Projects",
+              value: analytics.linkedProjects,
+              icon: FileText,
+            },
+          ].map(({ label, value, icon: Icon }) => (
+            <Card
+              key={label}
+              className="rounded-xl border border-slate-200/70 bg-white/80 shadow-sm"
+            >
+              <CardContent className="p-4">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <Icon size={14} />
+                  {label}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">
+                  {value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -1009,58 +1050,29 @@ export default function ResearchOutputsPage() {
       ) : null}
 
       {!loading && !error && !tableRows.length ? (
-        <EmptyState
-          title="No research outputs found"
-          description="No linked expected output resources are available yet."
-        />
+        <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+          <CardContent className="p-6">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+              No research outputs found. No linked expected output resources are
+              available yet.
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       {!loading && !error && tableRows.length ? (
         <div className="page-stack">
           <Card className="overflow-hidden">
             <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg font-bold text-slate-900">
+                  <CardTitle className="text-base font-semibold text-slate-900">
                     Research Output Records
                   </CardTitle>
                   <CardDescription>
                     Showing {filteredRows.length} output(s).
                   </CardDescription>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {isAdmin ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          disabled={
-                            !filteredRows.length || Boolean(exportingType)
-                          }
-                        >
-                          <Download className="h-4 w-4" />
-                          Export
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={exportAsCsv}>
-                          {exportingType === "csv"
-                            ? "Exporting..."
-                            : "Export CSV"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={exportAsPdf}>
-                          {exportingType === "pdf"
-                            ? "Exporting..."
-                            : "Export PDF"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
-                  <Button onClick={openAddOutputModal}>Add Output</Button>
-                </div>
-              </div>
-
-              <div className="mt-4">
                 <label className="relative block w-full md:max-w-xl">
                   <span className="sr-only">Search outputs</span>
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -1075,16 +1087,16 @@ export default function ResearchOutputsPage() {
             </CardHeader>
             {filteredRows.length === 0 ? (
               <CardContent className="p-4">
-                <EmptyState
-                  title="No research outputs found"
-                  description="Try a different search term or add a new research output."
-                />
+                <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+                  No research outputs found. Try a different search term or add
+                  a new research output.
+                </div>
               </CardContent>
             ) : (
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
+              <CardContent className="p-4">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
                   <Table className="min-w-[980px]">
-                    <TableHeader>
+                    <TableHeader className="bg-slate-50/80">
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
