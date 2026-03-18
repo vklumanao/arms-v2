@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import PageHeader from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -17,16 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  isLikelyUrl,
-  validatePasswordStrength,
-} from "@/utils/validation";
+import { isLikelyUrl, validatePasswordStrength } from "@/utils/validation";
 import {
   changeMyPassword,
   fetchAffiliateProfile,
   updateAffiliateProfile as updateAffiliateProfileService,
 } from "@/services/submissions";
-import PageHeader from "@/components/layout/PageHeader";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import { useToast } from "@/components/providers/ToastProvider";
 
@@ -97,7 +95,9 @@ export default function AffiliateProfilePage() {
     const middle = isMiddleInitial
       ? middleCandidate.replace(/\./g, "").charAt(0)
       : "";
-    const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(" ");
+    const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(
+      " ",
+    );
     return {
       first_name: first,
       middle_initial: middle,
@@ -260,13 +260,8 @@ export default function AffiliateProfilePage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="My Profile"
-        description="Maintain your researcher affiliation details and scholar profile."
-      />
-
       {loading ? (
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="p-5 text-sm text-slate-600">
             Loading profile...
           </CardContent>
@@ -275,364 +270,385 @@ export default function AffiliateProfilePage() {
         <div className="page-stack">
           <form onSubmit={saveProfile}>
             <Card className="overflow-hidden">
-              <CardHeader className="border-b pb-3">
-                <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+                <CardTitle className="text-lg font-semibold text-slate-900">
                   Profile Details
                 </CardTitle>
+                <CardDescription>
+                  Update your personal information.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 p-5">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
+              <CardContent className="grid gap-4 p-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Personal Info
+                  </span>
+                  <span className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        First name
+                      </span>
+                      <Input
+                        value={form.first_name || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            first_name: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Middle initial
+                      </span>
+                      <Input
+                        maxLength={2}
+                        value={form.middle_initial || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            middle_initial: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold text-slate-700">
+                        Last name
+                      </span>
+                      <Input
+                        value={form.last_name || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            last_name: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
-                      First name
+                      Department
                     </span>
-                    <Input
-                      value={form.first_name || ""}
-                      onChange={(e) =>
+                    <Select
+                      value={form.ckan_group_id || NONE_SELECT_VALUE}
+                      onValueChange={(value) => {
+                        if (value === NONE_SELECT_VALUE) {
+                          setForm((prev) => ({
+                            ...prev,
+                            ckan_group_id: "",
+                            department: "",
+                          }));
+                          return;
+                        }
+                        const selected = (departments || []).find(
+                          (row) =>
+                            String(row?.id || "")
+                              .trim()
+                              .toLowerCase() ===
+                            String(value || "")
+                              .trim()
+                              .toLowerCase(),
+                        );
                         setForm((prev) => ({
                           ...prev,
-                          first_name: e.target.value,
+                          ckan_group_id: value,
+                          department: selected?.name || "",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                        {(departments || []).map((row) => (
+                          <SelectItem key={row.id} value={row.id}>
+                            {row.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Affiliation
+                  </span>
+                  <span className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Research Center
+                    </span>
+                    <Select
+                      value={form.ckan_org_id || NONE_SELECT_VALUE}
+                      onValueChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          ckan_org_id: value === NONE_SELECT_VALUE ? "" : value,
                         }))
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select research center" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                        {(centers || []).map((row) => (
+                          <SelectItem key={row.id} value={row.id}>
+                            {row.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
-                      Middle initial
+                      Google Scholar Link
                     </span>
                     <Input
-                      maxLength={2}
-                      value={form.middle_initial || ""}
+                      type="url"
+                      placeholder="https://scholar.google.com/..."
+                      value={form.google_scholar_link || ""}
                       onChange={(e) =>
                         setForm((prev) => ({
                           ...prev,
-                          middle_initial: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Last name
-                    </span>
-                    <Input
-                      value={form.last_name || ""}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          last_name: e.target.value,
+                          google_scholar_link: e.target.value,
                         }))
                       }
                     />
                   </label>
                 </div>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Department
+
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Professional
                   </span>
-                  <Select
-                    value={form.ckan_group_id || NONE_SELECT_VALUE}
-                    onValueChange={(value) => {
-                      if (value === NONE_SELECT_VALUE) {
+                  <span className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Employment Status
+                    </span>
+                    <Select
+                      value={form.employment_status || NONE_SELECT_VALUE}
+                      onValueChange={(value) =>
                         setForm((prev) => ({
                           ...prev,
-                          ckan_group_id: "",
-                          department: "",
-                        }));
-                        return;
+                          employment_status:
+                            value === NONE_SELECT_VALUE ? "" : value,
+                        }))
                       }
-                      const selected = (departments || []).find(
-                        (row) =>
-                          String(row?.id || "")
-                            .trim()
-                            .toLowerCase() ===
-                          String(value || "").trim().toLowerCase(),
-                      );
-                      setForm((prev) => ({
-                        ...prev,
-                        ckan_group_id: value,
-                        department: selected?.name || "",
-                      }));
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
-                      {(departments || []).map((row) => (
-                        <SelectItem key={row.id} value={row.id}>
-                          {row.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-              </div>
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                        <SelectItem value="Permanent">Permanent</SelectItem>
+                        <SelectItem value="Lecturer">Lecturer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="space-y-1 text-sm sm:col-span-2">
+                    <span className="font-semibold text-slate-700">
+                      Designation
+                    </span>
+                    <Input
+                      placeholder="e.g. Department Head, Program Chair"
+                      value={form.designation || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          designation: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Research Center
-                  </span>
-                  <Select
-                    value={form.ckan_org_id || NONE_SELECT_VALUE}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        ckan_org_id:
-                          value === NONE_SELECT_VALUE ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select research center" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
-                      {(centers || []).map((row) => (
-                        <SelectItem key={row.id} value={row.id}>
-                          {row.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Google Scholar Link
-                  </span>
-                  <Input
-                    type="url"
-                    placeholder="https://scholar.google.com/..."
-                    value={form.google_scholar_link || ""}
+                <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.is_gs_faculty)}
                     onChange={(e) =>
                       setForm((prev) => ({
                         ...prev,
-                        google_scholar_link: e.target.value,
+                        is_gs_faculty: e.target.checked,
                       }))
                     }
                   />
+                  Mark as GS Faculty
                 </label>
-              </div>
 
-              <div className="grid gap-2 sm:grid-cols-3">
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
-                    Employment Status
-                  </span>
-                  <Select
-                    value={form.employment_status || NONE_SELECT_VALUE}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        employment_status:
-                          value === NONE_SELECT_VALUE ? "" : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
-                      <SelectItem value="Permanent">Permanent</SelectItem>
-                      <SelectItem value="Lecturer">Lecturer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="space-y-1 text-sm sm:col-span-2">
-                  <span className="font-semibold text-slate-700">
-                    Designation
-                  </span>
-                  <Input
-                    placeholder="e.g. Department Head, Program Chair"
-                    value={form.designation || ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        designation: e.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.is_gs_faculty)}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      is_gs_faculty: e.target.checked,
-                    }))
-                  }
-                />
-                Mark as GS Faculty
-              </label>
-
-              <div className="flex justify-end">
-                <Button disabled={saving}>
-                  {saving ? "Saving..." : "Save Profile"}
-                </Button>
-              </div>
+                <div className="flex justify-end">
+                  <Button disabled={saving}>
+                    {saving ? "Saving..." : "Save Profile"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </form>
 
-          <form
-            onSubmit={requestPasswordChange}
-          >
+          <form onSubmit={requestPasswordChange}>
             <Card className="overflow-hidden">
-              <CardHeader className="border-b pb-3">
-                <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+                <CardTitle className="text-lg font-semibold text-slate-900">
                   Change Password
                 </CardTitle>
+                <CardDescription>Update your account password.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 p-5 sm:grid-cols-3">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Current Password
-                </span>
-                <div className="relative">
-                  <Input
-                    className="pr-10"
-                    type={showPassword.current ? "text" : "password"}
-                    value={passwordForm.current_password}
-                    onChange={(e) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        current_password: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                    aria-label={
-                      showPassword.current
-                        ? "Hide current password"
-                        : "Show current password"
-                    }
-                    onClick={() =>
-                      setShowPassword((prev) => ({
-                        ...prev,
-                        current: !prev.current,
-                      }))
-                    }
-                  >
-                    {showPassword.current ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
+              <CardContent className="grid gap-3 p-6 sm:grid-cols-3">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Current Password
+                  </span>
+                  <div className="relative">
+                    <Input
+                      className="pr-10"
+                      type={showPassword.current ? "text" : "password"}
+                      value={passwordForm.current_password}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          current_password: e.target.value,
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                      aria-label={
+                        showPassword.current
+                          ? "Hide current password"
+                          : "Show current password"
+                      }
+                      onClick={() =>
+                        setShowPassword((prev) => ({
+                          ...prev,
+                          current: !prev.current,
+                        }))
+                      }
+                    >
+                      {showPassword.current ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                    </Button>
+                  </div>
+                </label>
+
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    New Password
+                  </span>
+                  <div className="relative">
+                    <Input
+                      className="pr-10"
+                      type={showPassword.next ? "text" : "password"}
+                      value={passwordForm.new_password}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          new_password: e.target.value,
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                      aria-label={
+                        showPassword.next
+                          ? "Hide new password"
+                          : "Show new password"
+                      }
+                      onClick={() =>
+                        setShowPassword((prev) => ({
+                          ...prev,
+                          next: !prev.next,
+                        }))
+                      }
+                    >
+                      {showPassword.next ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                    </Button>
+                  </div>
+                </label>
+
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-700">
+                    Confirm New Password
+                  </span>
+                  <div className="relative">
+                    <Input
+                      className="pr-10"
+                      type={showPassword.confirm ? "text" : "password"}
+                      value={passwordForm.confirm_password}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          confirm_password: e.target.value,
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
+                      aria-label={
+                        showPassword.confirm
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                      onClick={() =>
+                        setShowPassword((prev) => ({
+                          ...prev,
+                          confirm: !prev.confirm,
+                        }))
+                      }
+                    >
+                      {showPassword.confirm ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                    </Button>
+                  </div>
+                </label>
+
+                <div className="sm:col-span-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500">
+                    Password must be at least 8 characters and include
+                    uppercase, lowercase, and a number.
+                  </p>
+                  <Button disabled={changingPassword} type="submit">
+                    {changingPassword ? "Updating..." : "Update Password"}
                   </Button>
                 </div>
-              </label>
 
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  New Password
-                </span>
-                <div className="relative">
-                  <Input
-                    className="pr-10"
-                    type={showPassword.next ? "text" : "password"}
-                    value={passwordForm.new_password}
-                    onChange={(e) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        new_password: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                    aria-label={
-                      showPassword.next
-                        ? "Hide new password"
-                        : "Show new password"
-                    }
-                    onClick={() =>
-                      setShowPassword((prev) => ({ ...prev, next: !prev.next }))
-                    }
-                  >
-                    {showPassword.next ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
-                  </Button>
-                </div>
-              </label>
-
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Confirm New Password
-                </span>
-                <div className="relative">
-                  <Input
-                    className="pr-10"
-                    type={showPassword.confirm ? "text" : "password"}
-                    value={passwordForm.confirm_password}
-                    onChange={(e) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        confirm_password: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                    aria-label={
-                      showPassword.confirm
-                        ? "Hide confirm password"
-                        : "Show confirm password"
-                    }
-                    onClick={() =>
-                      setShowPassword((prev) => ({
-                        ...prev,
-                        confirm: !prev.confirm,
-                      }))
-                    }
-                  >
-                    {showPassword.confirm ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
-                  </Button>
-                </div>
-              </label>
-
-              <div className="sm:col-span-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">
-                  Password must be at least 8 characters and include uppercase,
-                  lowercase, and a number.
-                </p>
-                <Button
-                  disabled={changingPassword}
-                  type="submit"
-                >
-                  {changingPassword ? "Updating..." : "Update Password"}
-                </Button>
-              </div>
-
-              {passwordError ? (
-                <p className="sm:col-span-3 text-sm text-[var(--danger)]">
-                  {passwordError}
-                </p>
-              ) : null}
+                {passwordError ? (
+                  <p className="sm:col-span-3 text-sm text-[var(--danger)]">
+                    {passwordError}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           </form>
