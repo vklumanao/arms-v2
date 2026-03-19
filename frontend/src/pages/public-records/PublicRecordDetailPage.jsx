@@ -215,16 +215,9 @@ export default function PublicRecordDetailPage() {
       <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Public Record Detail
-            </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               {record?.title || "Research Project"}
             </h1>
-            <p className="text-sm text-slate-600">
-              Explore the published project record, citations, and linked
-              resources from the public catalog.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">
@@ -249,7 +242,6 @@ export default function PublicRecordDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900 capitalize">
               {record?.status || "Published"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Record status</p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -258,7 +250,6 @@ export default function PublicRecordDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {record?.public_visible ? "Public" : "Private"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Catalog access</p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -267,7 +258,6 @@ export default function PublicRecordDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {record?.year || "-"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Project cycle</p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -276,7 +266,6 @@ export default function PublicRecordDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {selectedCenter}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Owning center</p>
           </div>
         </div>
       </div>
