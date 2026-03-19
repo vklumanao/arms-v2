@@ -851,11 +851,6 @@ export default function AdminResearchCenterDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="rounded-full border border-border bg-white px-3 py-1">
-                ID: {center?.id || "-"}
-              </span>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
