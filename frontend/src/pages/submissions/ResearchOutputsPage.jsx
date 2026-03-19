@@ -293,8 +293,7 @@ export default function ResearchOutputsPage() {
         const outputTypeRaw = String(row?.output_type || "").trim();
         const normalizedOutputType = outputTypeRaw.replace(/_/g, "/");
         const outputType =
-          outputTypeLabelByValue[outputTypeRaw] ||
-          normalizedOutputType;
+          outputTypeLabelByValue[outputTypeRaw] || normalizedOutputType;
         const orgRef = String(row?.project_ckan_org_id || "").trim();
         const orgLabel =
           String(row?.project_org_name || "").trim() ||
@@ -314,8 +313,7 @@ export default function ResearchOutputsPage() {
         const resourceMime = String(row?.mime_type || "").trim();
         const resourceSize = Number(row?.file_size || 0) || null;
         const isFallbackUrl = /\/dataset\/?$/.test(resourceUrl);
-        const isPendingOutput =
-          isFallbackUrl && !resourceSize && !resourceMime;
+        const isPendingOutput = isFallbackUrl && !resourceSize && !resourceMime;
 
         return {
           id: row.id,
@@ -979,12 +977,8 @@ export default function ResearchOutputsPage() {
               ARMS Research Outputs
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Research Outputs Command Hub
+              Research Outputs Workspace
             </h1>
-            <p className="text-sm text-slate-600">
-              Track resource files, monitor visibility, and export output
-              reports for your research projects.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isAdmin ? (
@@ -1016,7 +1010,11 @@ export default function ResearchOutputsPage() {
           {[
             { label: "Total Outputs", value: analytics.total, icon: FileText },
             { label: "Public Outputs", value: analytics.public, icon: Eye },
-            { label: "Private Outputs", value: analytics.private, icon: EyeOff },
+            {
+              label: "Private Outputs",
+              value: analytics.private,
+              icon: EyeOff,
+            },
             {
               label: "Linked Projects",
               value: analytics.linkedProjects,
@@ -1100,219 +1098,239 @@ export default function ResearchOutputsPage() {
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
-                          <TableHead>Project</TableHead>
-                          <TableHead>Research Center</TableHead>
-                          <TableHead>Visibility</TableHead>
-                          <TableHead>Remaining</TableHead>
-                          <TableHead>Updated</TableHead>
-                          <TableHead className="text-right">Action</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Research Center</TableHead>
+                        <TableHead>Visibility</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Updated</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                {paginatedRows.map((row, index) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      {(currentPage - 1) * pageSize + index + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{row.title}</div>
-                      {row.subtitle ? (
-                        <div className="text-xs text-slate-500">
-                          {row.subtitle}
-                        </div>
-                      ) : null}
-                      {row.isPlaceholder || row.isPendingOutput ? (
-                        <div className="space-y-1 text-xs text-amber-700">
-                          <div>No file attached yet.</div>
-                          {Number(row.remainingCount || 0) > 0 ? (
-                            <div>
-                              Remaining: {row.remainingCount} of{" "}
-                              {row.targetCount || 1}
+                      {paginatedRows.map((row, index) => (
+                        <TableRow key={row.id}>
+                          <TableCell>
+                            {(currentPage - 1) * pageSize + index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{row.title}</div>
+                            {row.subtitle ? (
+                              <div className="text-xs text-slate-500">
+                                {row.subtitle}
+                              </div>
+                            ) : null}
+                            {row.isPlaceholder || row.isPendingOutput ? (
+                              <div className="space-y-1 text-xs text-amber-700">
+                                <div>No file attached yet.</div>
+                                {Number(row.remainingCount || 0) > 0 ? (
+                                  <div>
+                                    Remaining: {row.remainingCount} of{" "}
+                                    {row.targetCount || 1}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </TableCell>
+                          <TableCell>{row.datasetName || "-"}</TableCell>
+                          <TableCell>{row.organization || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge
+                                variant={
+                                  row.private ? "destructive" : "secondary"
+                                }
+                              >
+                                {row.private ? "Private" : "Public"}
+                              </Badge>
+                              {row.isPlaceholder || row.isPendingOutput ? (
+                                <Badge variant="outline">Pending</Badge>
+                              ) : null}
+                              {isAdmin ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  disabled={
+                                    !row.datasetId ||
+                                    Boolean(
+                                      visibilitySavingByDataset[row.datasetId],
+                                    )
+                                  }
+                                  onClick={() => handleToggleVisibility(row)}
+                                  aria-label={
+                                    visibilitySavingByDataset[row.datasetId]
+                                      ? "Saving visibility..."
+                                      : row.private
+                                        ? "Make public"
+                                        : "Make private"
+                                  }
+                                  title={
+                                    visibilitySavingByDataset[row.datasetId]
+                                      ? "Saving..."
+                                      : row.private
+                                        ? "Make Public"
+                                        : "Make Private"
+                                  }
+                                >
+                                  {visibilitySavingByDataset[row.datasetId] ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : row.private ? (
+                                    <Eye className="h-4 w-4" />
+                                  ) : (
+                                    <EyeOff className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{row.datasetName || "-"}</TableCell>
-                    <TableCell>{row.organization || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant={row.private ? "destructive" : "secondary"}
-                        >
-                          {row.private ? "Private" : "Public"}
-                        </Badge>
-                        {row.isPlaceholder || row.isPendingOutput ? (
-                          <Badge variant="outline">Pending</Badge>
-                        ) : null}
-                        {isAdmin ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={
-                              !row.datasetId ||
-                              Boolean(
-                                visibilitySavingByDataset[row.datasetId],
-                              )
-                            }
-                            onClick={() => handleToggleVisibility(row)}
-                            aria-label={
-                              visibilitySavingByDataset[row.datasetId]
-                                ? "Saving visibility..."
-                                : row.private
-                                  ? "Make public"
-                                  : "Make private"
-                            }
-                            title={
-                              visibilitySavingByDataset[row.datasetId]
-                                ? "Saving..."
-                                : row.private
-                                  ? "Make Public"
-                                  : "Make Private"
-                            }
-                          >
-                            {visibilitySavingByDataset[row.datasetId] ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : row.private ? (
-                              <Eye className="h-4 w-4" />
-                            ) : (
-                              <EyeOff className="h-4 w-4" />
-                            )}
-                          </Button>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {Number(row.remainingCount || 0) > 0
-                        ? `${row.remainingCount} of ${row.targetCount || 1}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {row.metadataModified
-                        ? new Date(row.metadataModified).toLocaleString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="inline-flex items-center justify-end gap-1">
-                        {row.isPlaceholder || row.isPendingOutput ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              openAddOutputForProject({
-                                id: row.datasetId,
-                                title: row.projectTitle || row.subtitle,
-                              }, row.isPlaceholder
-                                ? {}
-                                : {
-                                    output_type: row.outputTypeValue,
-                                    target_count: row.targetCount,
-                                  })
-                            }
-                            aria-label={`Add output for ${row?.subtitle || "project"}`}
-                            title="Add Output"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        ) : null}
-                        {!row.isPlaceholder &&
-                        !row.isPendingOutput &&
-                        row.resourceId &&
-                        /\/resource\/.+\/download\//i.test(
-                          String(row.resourceUrl || ""),
-                        ) ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label={`Open ${row?.title || "resource"}`}
-                              title="Open"
-                              onClick={() => {
-                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                  row.resourceId,
-                                )}/download`;
-                                window.open(url, "_blank", "noopener,noreferrer");
-                              }}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label={`Download ${row?.title || "resource"}`}
-                              title="Download"
-                              onClick={() => {
-                                const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                  row.resourceId,
-                                )}/download?download=1`;
-                                window.open(url, "_blank", "noopener,noreferrer");
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </>
-                        ) : null}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => goToOutputProject(row)}
-                          aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
-                          title="Open project"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {(!row.isPlaceholder &&
-                          !row.isPendingOutput &&
-                          Boolean(row.resourceId)) ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              disabled={Boolean(
-                                deletingByResource[row.resourceId],
-                              ) || row.isPlaceholder}
-                              onClick={() => handleOpenEdit(row)}
-                              aria-label={`Edit ${row?.title || "research output"}`}
-                              title={row.isPlaceholder ? "Edit unavailable" : "Edit"}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
-                              disabled={
-                                Boolean(deletingByResource[row.resourceId]) ||
-                                row.isPlaceholder
-                              }
-                              onClick={() => setDeleteTarget(row)}
-                              aria-label={`Delete ${row?.title || "research output"}`}
-                              title={
-                                row.isPlaceholder
-                                  ? "Delete unavailable"
-                                  : deletingByResource[row.resourceId]
-                                    ? "Deleting..."
-                                    : "Delete"
-                              }
-                            >
-                              {deletingByResource[row.resourceId] ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          </TableCell>
+                          <TableCell>
+                            {Number(row.remainingCount || 0) > 0
+                              ? `${row.remainingCount} of ${row.targetCount || 1}`
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {row.metadataModified
+                              ? new Date(row.metadataModified).toLocaleString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              {row.isPlaceholder || row.isPendingOutput ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() =>
+                                    openAddOutputForProject(
+                                      {
+                                        id: row.datasetId,
+                                        title: row.projectTitle || row.subtitle,
+                                      },
+                                      row.isPlaceholder
+                                        ? {}
+                                        : {
+                                            output_type: row.outputTypeValue,
+                                            target_count: row.targetCount,
+                                          },
+                                    )
+                                  }
+                                  aria-label={`Add output for ${row?.subtitle || "project"}`}
+                                  title="Add Output"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                              {!row.isPlaceholder &&
+                              !row.isPendingOutput &&
+                              row.resourceId &&
+                              /\/resource\/.+\/download\//i.test(
+                                String(row.resourceUrl || ""),
+                              ) ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    aria-label={`Open ${row?.title || "resource"}`}
+                                    title="Open"
+                                    onClick={() => {
+                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                        row.resourceId,
+                                      )}/download`;
+                                      window.open(
+                                        url,
+                                        "_blank",
+                                        "noopener,noreferrer",
+                                      );
+                                    }}
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    aria-label={`Download ${row?.title || "resource"}`}
+                                    title="Download"
+                                    onClick={() => {
+                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                        row.resourceId,
+                                      )}/download?download=1`;
+                                      window.open(
+                                        url,
+                                        "_blank",
+                                        "noopener,noreferrer",
+                                      );
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : null}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => goToOutputProject(row)}
+                                aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
+                                title="Open project"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {!row.isPlaceholder &&
+                              !row.isPendingOutput &&
+                              Boolean(row.resourceId) ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    disabled={
+                                      Boolean(
+                                        deletingByResource[row.resourceId],
+                                      ) || row.isPlaceholder
+                                    }
+                                    onClick={() => handleOpenEdit(row)}
+                                    aria-label={`Edit ${row?.title || "research output"}`}
+                                    title={
+                                      row.isPlaceholder
+                                        ? "Edit unavailable"
+                                        : "Edit"
+                                    }
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                    disabled={
+                                      Boolean(
+                                        deletingByResource[row.resourceId],
+                                      ) || row.isPlaceholder
+                                    }
+                                    onClick={() => setDeleteTarget(row)}
+                                    aria-label={`Delete ${row?.title || "research output"}`}
+                                    title={
+                                      row.isPlaceholder
+                                        ? "Delete unavailable"
+                                        : deletingByResource[row.resourceId]
+                                          ? "Deleting..."
+                                          : "Delete"
+                                    }
+                                  >
+                                    {deletingByResource[row.resourceId] ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                     {totalPages > 1 ? (
                       <TableFooter>
@@ -1333,7 +1351,6 @@ export default function ResearchOutputsPage() {
               </CardContent>
             )}
           </Card>
-
         </div>
       ) : null}
 
@@ -1611,7 +1628,8 @@ export default function ResearchOutputsPage() {
           <DialogHeader>
             <DialogTitle>Delete Research Output</DialogTitle>
             <DialogDescription>
-              This will permanently remove the selected resource from the system.
+              This will permanently remove the selected resource from the
+              system.
             </DialogDescription>
           </DialogHeader>
           <p className="text-sm font-medium text-slate-800">
