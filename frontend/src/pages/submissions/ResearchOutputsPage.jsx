@@ -165,6 +165,20 @@ export default function ResearchOutputsPage() {
         setLoading(true);
         setError("");
         const payload = await fetchMyResearchOutputs();
+        if (import.meta.env.DEV) {
+          const dataRows = Array.isArray(payload?.data) ? payload.data : [];
+          const missingOutputType = dataRows.filter(
+            (row) => !String(row?.output_type || "").trim(),
+          );
+          if (missingOutputType.length) {
+            console.warn(
+              "[ResearchOutputs] Missing output_type in API rows:",
+              missingOutputType.slice(0, 5),
+            );
+          } else {
+            console.info("[ResearchOutputs] output_type present for all rows.");
+          }
+        }
         if (!cancelled) {
           setRows(Array.isArray(payload?.data) ? payload.data : []);
         }
@@ -291,9 +305,7 @@ export default function ResearchOutputsPage() {
     () =>
       sortedRows.map((row) => {
         const outputTypeRaw = String(row?.output_type || "").trim();
-        const normalizedOutputType = outputTypeRaw.replace(/_/g, "/");
-        const outputType =
-          outputTypeLabelByValue[outputTypeRaw] || normalizedOutputType;
+        const outputType = outputTypeLabelByValue[outputTypeRaw] || "-";
         const orgRef = String(row?.project_ckan_org_id || "").trim();
         const orgLabel =
           String(row?.project_org_name || "").trim() ||
@@ -325,8 +337,8 @@ export default function ResearchOutputsPage() {
           datasetName,
           datasetId: row?.ckan_dataset_id || null,
           resourceId: row?.ckan_resource_id || null,
-          outputType: outputType || "-",
-          outputTypeValue: outputTypeRaw || normalizedOutputType,
+          outputType,
+          outputTypeValue: outputTypeRaw || "",
           targetCount,
           resourceUrl: resourceUrl || null,
           mimeType: resourceMime || null,
@@ -582,6 +594,7 @@ export default function ResearchOutputsPage() {
     filteredRows.map((row, index) => ({
       no: index + 1,
       resource: row.title || "-",
+      outputType: row.outputType || "-",
       project: row.subtitle || "-",
       dataset: row.datasetName || "-",
       researchCenter: row.organization || "-",
@@ -599,6 +612,7 @@ export default function ResearchOutputsPage() {
       const headers = [
         "No.",
         "Resource/File",
+        "Output Type",
         "Project",
         "Dataset",
         "Research Center",
@@ -610,6 +624,7 @@ export default function ResearchOutputsPage() {
         [
           row.no,
           row.resource,
+          row.outputType,
           row.project,
           row.dataset,
           row.researchCenter,
@@ -643,6 +658,7 @@ export default function ResearchOutputsPage() {
             <tr>
               <td>${row.no}</td>
               <td>${row.resource}</td>
+              <td>${row.outputType}</td>
               <td>${row.project}</td>
               <td>${row.dataset}</td>
               <td>${row.researchCenter}</td>
@@ -684,6 +700,7 @@ export default function ResearchOutputsPage() {
                 <tr>
                   <th>No.</th>
                   <th>Resource/File</th>
+                  <th>Output Type</th>
                   <th>Project</th>
                   <th>Dataset</th>
                   <th>Research Center</th>
@@ -693,7 +710,7 @@ export default function ResearchOutputsPage() {
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || '<tr><td colspan="8">No records found.</td></tr>'}
+                ${rowsHtml || '<tr><td colspan="9">No records found.</td></tr>'}
               </tbody>
             </table>
           </body>
@@ -1098,6 +1115,7 @@ export default function ResearchOutputsPage() {
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
+                        <TableHead>Output Type</TableHead>
                         <TableHead>Project</TableHead>
                         <TableHead>Research Center</TableHead>
                         <TableHead>Visibility</TableHead>
@@ -1131,6 +1149,7 @@ export default function ResearchOutputsPage() {
                               </div>
                             ) : null}
                           </TableCell>
+                          <TableCell>{row.outputType || "-"}</TableCell>
                           <TableCell>{row.datasetName || "-"}</TableCell>
                           <TableCell>{row.organization || "-"}</TableCell>
                           <TableCell>
@@ -1220,53 +1239,6 @@ export default function ResearchOutputsPage() {
                                   <FileText className="h-4 w-4" />
                                 </Button>
                               ) : null}
-                              {!row.isPlaceholder &&
-                              !row.isPendingOutput &&
-                              row.resourceId &&
-                              /\/resource\/.+\/download\//i.test(
-                                String(row.resourceUrl || ""),
-                              ) ? (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    aria-label={`Open ${row?.title || "resource"}`}
-                                    title="Open"
-                                    onClick={() => {
-                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                        row.resourceId,
-                                      )}/download`;
-                                      window.open(
-                                        url,
-                                        "_blank",
-                                        "noopener,noreferrer",
-                                      );
-                                    }}
-                                  >
-                                    <ExternalLink className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    aria-label={`Download ${row?.title || "resource"}`}
-                                    title="Download"
-                                    onClick={() => {
-                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                        row.resourceId,
-                                      )}/download?download=1`;
-                                      window.open(
-                                        url,
-                                        "_blank",
-                                        "noopener,noreferrer",
-                                      );
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              ) : null}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1300,6 +1272,34 @@ export default function ResearchOutputsPage() {
                                   >
                                     <Pencil className="h-4 w-4" />
                                   </Button>
+                                  {!row.isPlaceholder &&
+                                  !row.isPendingOutput &&
+                                  row.resourceId &&
+                                  /\/resource\/.+\/download\//i.test(
+                                    String(row.resourceUrl || ""),
+                                  ) ? (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        aria-label={`Download ${row?.title || "resource"}`}
+                                        title="Download"
+                                        onClick={() => {
+                                          const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                            row.resourceId,
+                                          )}/download?download=1`;
+                                          window.open(
+                                            url,
+                                            "_blank",
+                                            "noopener,noreferrer",
+                                          );
+                                        }}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  ) : null}
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -1335,7 +1335,7 @@ export default function ResearchOutputsPage() {
                     {totalPages > 1 ? (
                       <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={8} className="px-3 py-3">
+                          <TableCell colSpan={9} className="px-3 py-3">
                             <PaginationControls
                               page={currentPage}
                               totalPages={totalPages}
