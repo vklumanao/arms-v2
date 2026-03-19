@@ -298,29 +298,6 @@ export default function AdminAffiliateDetailPage() {
                   <ChevronLeft className="h-4 w-4" />
                   Back to Affiliates
                 </Button>
-                {affiliate?.source === "ckan_only" ? (
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      toast.error(
-                        "Read-only record",
-                        "Users must be edited directly in CKAN.",
-                      )
-                    }
-                  >
-                    Edit in CKAN
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      clearProjectFilters();
-                      navigate("/admin/affiliates");
-                    }}
-                  >
-                    Edit Affiliate
-                  </Button>
-                )}
               </div>
 
               <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-6 md:flex-row md:items-center md:justify-between">
