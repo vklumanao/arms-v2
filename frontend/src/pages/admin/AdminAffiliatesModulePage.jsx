@@ -423,12 +423,8 @@ export default function AdminAffiliatesModulePage() {
               ARMS Affiliates
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Affiliate Command Hub
+              Affiliate Workspace
             </h1>
-            <p className="text-sm text-slate-600">
-              Monitor affiliate records, verify activity, and export analytics
-              for reporting.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -458,45 +454,6 @@ export default function AdminAffiliatesModulePage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Total Affiliates
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {affiliateMetrics.total}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Active registry</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Active
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {affiliateMetrics.active}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Currently active</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Inactive
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {affiliateMetrics.inactive}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Needs review</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              GS Faculty
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {affiliateMetrics.gsFaculty}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Scholar profiles</p>
           </div>
         </div>
       </div>
