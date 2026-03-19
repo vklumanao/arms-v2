@@ -382,10 +382,6 @@ export default function AwardsRecognitionPage() {
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Awards Command Hub
             </h1>
-            <p className="text-sm text-slate-600">
-              Track accolades, validate recognition levels, and export
-              award-ready reports.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
