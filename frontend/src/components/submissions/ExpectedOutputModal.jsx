@@ -26,7 +26,6 @@ export default function ExpectedOutputModal({
   setNewOutputDraft,
   saveNewExpectedOutput,
   closeAddOutputModal,
-  sanitizeDigits,
   formatFileSize,
   fileToBase64,
   maxOutputFileSizeBytes,
@@ -108,23 +107,6 @@ export default function ExpectedOutputModal({
           ) : null}
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Target count</span>
-            <Input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={newOutputDraft.target_count}
-              onChange={(e) =>
-                setNewOutputDraft((prev) => ({
-                  ...prev,
-                  target_count: sanitizeDigits(e.target.value, 3),
-                }))
-              }
-            />
-          </label>
-
-          <label className="block space-y-1 text-sm">
             <span className="font-semibold text-slate-700">Notes</span>
             <Input
               placeholder="Short note about this expected output"
@@ -133,6 +115,22 @@ export default function ExpectedOutputModal({
                 setNewOutputDraft((prev) => ({
                   ...prev,
                   notes: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">
+              Output link (optional)
+            </span>
+            <Input
+              placeholder="Paste a link to the output resource"
+              value={newOutputDraft.output_link || ""}
+              onChange={(e) =>
+                setNewOutputDraft((prev) => ({
+                  ...prev,
+                  output_link: e.target.value,
                 }))
               }
             />
@@ -208,6 +206,9 @@ export default function ExpectedOutputModal({
               <div className="upload-field-preview">
                 <p className="upload-field-hint">
                   Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
+                </p>
+                <p className="text-xs text-slate-500">
+                  Tip: you can provide an output link, an output file, or both.
                 </p>
               </div>
             </div>
