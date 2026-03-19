@@ -272,10 +272,7 @@ export default function AdminAffiliateDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Affiliate Details"
-        description="Dedicated view for affiliate profile information and related projects."
-      />
+      <PageHeader title="Affiliate Details" />
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
@@ -326,7 +323,7 @@ export default function AdminAffiliateDetailPage() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
                     {initials}
@@ -358,20 +355,6 @@ export default function AdminAffiliateDetailPage() {
                       </Badge>
                     </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="rounded-full border border-border bg-white px-3 py-1">
-                    ID: {affiliate?.id || "-"}
-                  </span>
-                  <span className="rounded-full border border-border bg-white px-3 py-1">
-                    Source: {affiliate?.source || "internal"}
-                  </span>
-                  <span className="rounded-full border border-border bg-white px-3 py-1">
-                    Updated:{" "}
-                    {affiliate?.updated_at
-                      ? new Date(affiliate.updated_at).toLocaleString()
-                      : "-"}
-                  </span>
                 </div>
               </div>
 
