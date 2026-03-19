@@ -2,7 +2,7 @@ export const SUBMISSION_STEPS = [
   { id: 0, label: "Project" },
   { id: 1, label: "Classification" },
   { id: 2, label: "Funding & Timeline" },
-  { id: 3, label: "Outputs & Visibility" },
+  { id: 3, label: "Outputs" },
   { id: 4, label: "Review & Submit" },
 ];
 
@@ -321,6 +321,7 @@ export function createLocalOutputRow() {
     target_count: 1,
     specific_output: "",
     notes: "",
+    output_link: "",
     file_path: "",
     file_name: "",
     mime_type: "",
@@ -337,9 +338,10 @@ export function mapDbOutputToLocalRow(row) {
     id: row.id,
     client_id: row.id,
     output_type: row.output_type || "",
-    target_count: Math.max(1, Number(row.target_count) || 1),
+    target_count: 1,
     specific_output: row.specific_output || "",
     notes: row.notes || "",
+    output_link: row.output_link || row.file_path || "",
     file_path: row.file_path || "",
     file_name: row.file_name || "",
     mime_type: row.mime_type || "",
