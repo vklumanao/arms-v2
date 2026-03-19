@@ -387,8 +387,7 @@ export default function ResearchOutputsPage() {
       const [datasetId, outputTypeValue] = key.split("|");
       if (!datasetId) return;
       const uploadedCount = uploadedCountByKey.get(key) || 0;
-      const remainingCount = Math.max(0, expectedTarget - uploadedCount);
-      if (remainingCount <= 0) return;
+      if (expectedTarget - uploadedCount <= 0) return;
 
       const label =
         outputTypeLabelByValue[outputTypeValue] ||
@@ -405,7 +404,6 @@ export default function ResearchOutputsPage() {
         outputType: label,
         outputTypeValue,
         targetCount: expectedTarget,
-        remainingCount,
         resourceUrl: null,
         mimeType: null,
         fileSize: null,
@@ -1119,7 +1117,6 @@ export default function ResearchOutputsPage() {
                         <TableHead>Project</TableHead>
                         <TableHead>Research Center</TableHead>
                         <TableHead>Visibility</TableHead>
-                        <TableHead>Remaining</TableHead>
                         <TableHead>Updated</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
@@ -1140,12 +1137,6 @@ export default function ResearchOutputsPage() {
                             {row.isPlaceholder || row.isPendingOutput ? (
                               <div className="space-y-1 text-xs text-amber-700">
                                 <div>No file attached yet.</div>
-                                {Number(row.remainingCount || 0) > 0 ? (
-                                  <div>
-                                    Remaining: {row.remainingCount} of{" "}
-                                    {row.targetCount || 1}
-                                  </div>
-                                ) : null}
                               </div>
                             ) : null}
                           </TableCell>
@@ -1201,11 +1192,6 @@ export default function ResearchOutputsPage() {
                                 </Button>
                               ) : null}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {Number(row.remainingCount || 0) > 0
-                              ? `${row.remainingCount} of ${row.targetCount || 1}`
-                              : "-"}
                           </TableCell>
                           <TableCell>
                             {row.metadataModified
@@ -1335,7 +1321,7 @@ export default function ResearchOutputsPage() {
                     {totalPages > 1 ? (
                       <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={9} className="px-3 py-3">
+                          <TableCell colSpan={8} className="px-3 py-3">
                             <PaginationControls
                               page={currentPage}
                               totalPages={totalPages}
