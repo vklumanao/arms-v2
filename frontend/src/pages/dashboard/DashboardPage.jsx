@@ -302,13 +302,10 @@ export default function DashboardPage() {
     [effectiveCenters],
   );
 
-  
-
   return (
     <section className="page-stack-lg">
       <PageHeader
         title="Dashboard"
-        description="Monitor proposal lifecycle, filter records, and track upcoming deadlines."
         actions={
           <Button
             type="button"
@@ -320,7 +317,6 @@ export default function DashboardPage() {
           </Button>
         }
       />
-
 
       <InlineNotice
         type="error"
@@ -600,7 +596,9 @@ export default function DashboardPage() {
           <DashboardPanel title="Top 5 Agenda by Usage">
             <ul className="space-y-2">
               {topAgendaByUsage.length === 0 ? (
-                <li className="text-sm text-slate-500">No agenda usage data.</li>
+                <li className="text-sm text-slate-500">
+                  No agenda usage data.
+                </li>
               ) : (
                 topAgendaByUsage.map((item) => (
                   <li
@@ -719,7 +717,6 @@ export default function DashboardPage() {
           </DashboardPanel>
         </div>
       ) : null}
-
     </section>
   );
 }
