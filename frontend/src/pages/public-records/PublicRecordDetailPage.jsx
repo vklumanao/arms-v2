@@ -623,6 +623,29 @@ export default function PublicRecordDetailPage() {
                         const resourceUrl = String(resource.url || "").trim();
                         const isDownloadable =
                           /\/resource\/.+\/download\//i.test(resourceUrl);
+                        const descriptionText = String(
+                          resource.description || "",
+                        ).trim();
+                        const outputLinkFromDescription = descriptionText
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .find((line) =>
+                            line.toLowerCase().startsWith("output link:"),
+                          )
+                          ?.split("output link:")
+                          .slice(1)
+                          .join("output link:")
+                          .trim();
+                        const outputLinkFromUrl = descriptionText.match(
+                          /(https?:\/\/\S+)/i,
+                        )?.[1];
+                        const outputLink =
+                          String(resource.output_link || "").trim() ||
+                          outputLinkFromDescription ||
+                          outputLinkFromUrl ||
+                          (!isDownloadable ? resourceUrl : "");
+                        const hasLink = Boolean(outputLink);
+                        const hasFile = Boolean(isDownloadable);
                         const downloadUrl = resourceUrl
                           ? resourceUrl.includes("?")
                             ? `${resourceUrl}&download=1`
@@ -653,11 +676,24 @@ export default function PublicRecordDetailPage() {
                                       ).trim()
                                     ] || "-"}
                                   </p>
+                                  {hasLink ? (
+                                    <p className="text-sm text-slate-600">
+                                      Output Link:{" "}
+                                      <a
+                                        href={outputLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {outputLink}
+                                      </a>
+                                    </p>
+                                  ) : null}
                                 </div>
                                 <FileText className="h-5 w-5 text-slate-400" />
                               </div>
 
-                              {resourceUrl && isDownloadable ? (
+                              {resourceUrl && hasFile ? (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                   <Button asChild variant="outline" size="sm">
                                     <a
@@ -670,7 +706,7 @@ export default function PublicRecordDetailPage() {
                                     </a>
                                   </Button>
                                 </div>
-                              ) : (
+                              ) : hasLink ? null : (
                                 <p className="mt-2 text-sm text-slate-500">
                                   No file attached yet.
                                 </p>
