@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -76,6 +77,7 @@ function normalizeTab(value) {
 
 export default function AdminResearchCenterDetailPage() {
   const toast = useToast();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const centerId = String(params?.id || "").trim();
@@ -134,6 +136,11 @@ export default function AdminResearchCenterDetailPage() {
   const [affiliateRegistry, setAffiliateRegistry] = useState([]);
   const [selectedAffiliateId, setSelectedAffiliateId] = useState("");
   const [unlinkTarget, setUnlinkTarget] = useState(null);
+  const isCenterChief =
+    String(profile?.role || "").toLowerCase() === "faculty" &&
+    profile?.is_center_chief === true;
+  const [showDeletePopover, setShowDeletePopover] = useState(false);
+  const deletePopoverRef = useRef(null);
 
   useEffect(() => {
     setAffiliatesPage(1);
@@ -154,6 +161,25 @@ export default function AdminResearchCenterDetailPage() {
     if (nextStatus !== projectStatus) setProjectStatus(nextStatus);
     if (nextYear !== projectYear) setProjectYear(nextYear);
   }, [projectParamsKey]);
+
+  useEffect(() => {
+    if (!showDeletePopover) return;
+    const handleClickOutside = (event) => {
+      if (!deletePopoverRef.current) return;
+      if (!deletePopoverRef.current.contains(event.target)) {
+        setShowDeletePopover(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setShowDeletePopover(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showDeletePopover]);
 
   useEffect(() => {
     setSearchParams(
@@ -779,16 +805,18 @@ export default function AdminResearchCenterDetailPage() {
   return (
     <section className="page-stack-lg">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
-          variant="outline"
-          onClick={() => {
-            clearProjectFilters();
-            navigate("/admin/research-center");
-          }}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Centers
-        </Button>
+        {!isCenterChief ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              clearProjectFilters();
+              navigate("/admin/research-center");
+            }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Centers
+          </Button>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -799,18 +827,51 @@ export default function AdminResearchCenterDetailPage() {
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
-          <Button
-            variant="destructive"
-            disabled={deleting || loading || deleteGuard.blocked}
-            onClick={handleDelete}
-            title={
-              deleteGuard.blocked
-                ? "Remove linked projects/affiliates first"
-                : "Delete research center"
-            }
-          >
-            Delete
-          </Button>
+          {deleteGuard.blocked ? (
+            <div className="relative" ref={deletePopoverRef}>
+              <Button
+                variant="destructive"
+                type="button"
+                onClick={() => setShowDeletePopover((prev) => !prev)}
+                aria-expanded={showDeletePopover}
+                aria-haspopup="dialog"
+                title="Remove linked projects/affiliates first"
+                className="opacity-70 hover:opacity-100"
+              >
+                Delete
+              </Button>
+              {showDeletePopover ? (
+                <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
+                  <p className="font-semibold text-slate-900">
+                    Deletion is blocked
+                  </p>
+                  <p className="mt-1 text-slate-600">
+                    This center cannot be deleted while it has{" "}
+                    {deleteGuard.reasons.projectCount
+                      ? `${deleteGuard.reasons.projectCount} linked project(s)`
+                      : null}
+                    {deleteGuard.reasons.projectCount &&
+                    deleteGuard.reasons.nonAdminAffiliates
+                      ? " and "
+                      : null}
+                    {deleteGuard.reasons.nonAdminAffiliates
+                      ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
+                      : null}
+                    .
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <Button
+              variant="destructive"
+              disabled={deleting || loading}
+              onClick={handleDelete}
+              title="Delete research center"
+            >
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 
@@ -865,26 +926,6 @@ export default function AdminResearchCenterDetailPage() {
             />
           ) : (
             <>
-              {deleteGuard.blocked ? (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  <p className="font-semibold">Deletion is blocked</p>
-                  <p className="mt-1 text-amber-800">
-                    This center cannot be deleted while it has{" "}
-                    {deleteGuard.reasons.projectCount
-                      ? `${deleteGuard.reasons.projectCount} linked project(s)`
-                      : null}
-                    {deleteGuard.reasons.projectCount &&
-                    deleteGuard.reasons.nonAdminAffiliates
-                      ? " and "
-                      : null}
-                    {deleteGuard.reasons.nonAdminAffiliates
-                      ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
-                      : null}
-                    .
-                  </p>
-                </div>
-              ) : null}
-
               <div className="rounded-lg border border-[var(--border)] bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Description
