@@ -203,6 +203,11 @@ export default function StepReview({
                               Specific: {row.specific_output}
                             </p>
                           ) : null}
+                          {String(row.publication_authors || "").trim() ? (
+                            <p className="text-slate-600">
+                              Proponents: {row.publication_authors}
+                            </p>
+                          ) : null}
                           <p className="text-slate-600">
                             Target: {Math.max(1, Number(row.target_count) || 1)}{" "}
                             | Notes: {row.notes || "-"}
@@ -217,8 +222,7 @@ export default function StepReview({
                                 : "-")}
                           </p>
                           <p className="text-slate-600 break-all">
-                            File:{" "}
-                            {row.file?.name || row.file_name || "-"}
+                            File: {row.file?.name || row.file_name || "-"}
                           </p>
                         </CardContent>
                       </Card>
