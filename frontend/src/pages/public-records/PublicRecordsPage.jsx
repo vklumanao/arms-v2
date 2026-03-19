@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchPublicRecordsDataset } from "@/services/public-records";
+import {
+  fetchPublicCenterAffiliates,
+  fetchPublicRecordsDataset,
+} from "@/services/public-records";
 import {
   highlightText,
   INITIAL_PUBLIC_RECORD_FILTERS,
@@ -32,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { normalizeStatus } from "@/utils/status";
+import { Eye } from "lucide-react";
 
 const PAGE_SIZE = 10;
 const normalizeLabel = (value) => {
@@ -79,6 +83,7 @@ export default function PublicRecordsPage() {
   const [records, setRecords] = useState([]);
   const [centers, setCenters] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [affiliateCountsByCenter, setAffiliateCountsByCenter] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(INITIAL_PUBLIC_RECORD_FILTERS);
@@ -112,6 +117,32 @@ export default function PublicRecordsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAffiliateCounts = async () => {
+      if (!centers.length) return;
+      const results = await Promise.all(
+        centers.map(async (center) => {
+          const centerId = String(center?.id || "").trim();
+          if (!centerId) return [centerId, null];
+          const response = await fetchPublicCenterAffiliates(centerId);
+          if (response.error) return [centerId, null];
+          return [centerId, (response.rows || []).length];
+        }),
+      );
+      if (cancelled) return;
+      const nextCounts = results.reduce((acc, [id, count]) => {
+        if (id && Number.isFinite(count)) acc[id] = count;
+        return acc;
+      }, {});
+      setAffiliateCountsByCenter(nextCounts);
+    };
+    loadAffiliateCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [centers]);
 
   const centerById = useMemo(
     () =>
@@ -184,12 +215,16 @@ export default function PublicRecordsPage() {
       .map((center) => ({
         id: center.id,
         name: center.name,
+        description: center.description || center.summary || "",
         count: counts[center.id]?.projects || 0,
-        researcherCount: counts[center.id]?.researchers.size || 0,
+        researcherCount:
+          (affiliateCountsByCenter[center.id] ??
+            counts[center.id]?.researchers.size) ||
+          0,
         publicationCount: counts[center.id]?.publications || 0,
       }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  }, [centers, records]);
+  }, [affiliateCountsByCenter, centers, records]);
 
   const filtered = useMemo(() => {
     const { tokens, freeText, terms } = parseSearchTokens(filters.search);
@@ -340,40 +375,74 @@ export default function PublicRecordsPage() {
     navigate(`/public-records/${encodeURIComponent(projectId)}`);
   };
 
+  const openCenterDetails = (centerId) => {
+    if (!centerId) return;
+    navigate(`/public-research-centers/${encodeURIComponent(centerId)}`);
+  };
+
   const renderCenterCard = (center) => (
-    <Card className="h-full border-slate-200/70 bg-white">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-slate-900">
-          {center.name}
-        </CardTitle>
-        <p className="text-sm text-slate-600">
-          {center.description || center.summary || "Research center overview."}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Separator />
-        <div className="space-y-2 text-sm text-slate-700">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-slate-600">Projects</span>
-            <Badge variant="outline" className="px-2.5">
-              {center.count}
-            </Badge>
+    <div
+      role="button"
+      tabIndex={0}
+      className="group w-full text-left"
+      onClick={() => openCenterDetails(center.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openCenterDetails(center.id);
+        }
+      }}
+      aria-label={`View ${center.name}`}
+    >
+      <Card className="h-full border-slate-200/70 bg-white transition-shadow group-hover:shadow-md">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold text-slate-900">
+                {center.name}
+              </CardTitle>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-500 group-hover:text-slate-900"
+              onClick={(event) => {
+                event.stopPropagation();
+                openCenterDetails(center.id);
+              }}
+              aria-label={`View ${center.name}`}
+              title="View center"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-slate-600">Researchers</span>
-            <Badge variant="outline" className="px-2.5">
-              {center.researcherCount}
-            </Badge>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Separator />
+          <div className="space-y-2 text-sm text-slate-700">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-600">Projects</span>
+              <Badge variant="outline" className="px-2.5">
+                {center.count}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-600">Affiliates</span>
+              <Badge variant="outline" className="px-2.5">
+                {center.researcherCount}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-600">Publications</span>
+              <Badge variant="outline" className="px-2.5">
+                {center.publicationCount}
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-slate-600">Publications</span>
-            <Badge variant="outline" className="px-2.5">
-              {center.publicationCount}
-            </Badge>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 
   return (
