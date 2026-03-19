@@ -42,6 +42,11 @@ export default function useSubmissionDraft({
           ...row,
           target_count: Math.max(1, Number(row.target_count) || 1),
           specific_output: String(row?.specific_output || "").trim(),
+          output_link:
+            String(row?.output_link || "").trim() ||
+            (/^https?:\/\//i.test(String(row?.file_path || "").trim())
+              ? String(row?.file_path || "").trim()
+              : ""),
           file: null,
           file_base64: String(row?.file_base64 || "").trim(),
           needs_file_reselect: Boolean(
@@ -84,6 +89,7 @@ export default function useSubmissionDraft({
             target_count: Math.max(1, Number(row.target_count) || 1),
             specific_output: row.specific_output || "",
             notes: row.notes,
+            output_link: row.output_link || "",
             file_path: row.file_path,
             file_name: row.file_name,
             mime_type: row.mime_type,
