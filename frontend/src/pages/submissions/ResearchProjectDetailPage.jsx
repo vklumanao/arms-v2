@@ -232,10 +232,6 @@ export default function ResearchProjectDetailPage() {
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               {project?.title || "Research Project"}
             </h1>
-            <p className="text-sm text-slate-600">
-              Review the full submission, linked resources, and funding
-              information for this project.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">
@@ -272,9 +268,6 @@ export default function ResearchProjectDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900 capitalize">
               {project?.status || "Pending"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
-              {project?.submission_state || "Submission"}
-            </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -283,7 +276,6 @@ export default function ResearchProjectDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {project?.project_public_visible ? "Public" : "Private"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Portfolio access</p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -292,7 +284,6 @@ export default function ResearchProjectDetailPage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {project?.year || "-"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Project cycle</p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -307,7 +298,6 @@ export default function ResearchProjectDetailPage() {
                     ? centerById[project.ckan_org_id] || "-"
                     : project?.research_center || "-"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Owning center</p>
           </div>
         </div>
       </div>
