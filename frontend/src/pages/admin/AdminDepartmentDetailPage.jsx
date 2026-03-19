@@ -922,8 +922,6 @@ export default function AdminDepartmentDetailPage() {
                                   <TableHead>Email</TableHead>
                                   <TableHead>Role</TableHead>
                                   <TableHead>Department</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead>User ID</TableHead>
                                   <TableHead className="text-right">
                                     Actions
                                   </TableHead>
@@ -948,22 +946,6 @@ export default function AdminDepartmentDetailPage() {
                                     </TableCell>
                                     <TableCell className="text-slate-700">
                                       {row?.department || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge
-                                        variant={
-                                          row?.is_active === false
-                                            ? "destructive"
-                                            : "secondary"
-                                        }
-                                      >
-                                        {row?.is_active === false
-                                          ? "Inactive"
-                                          : "Active"}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs text-slate-600">
-                                      {row?.id || "-"}
                                     </TableCell>
                                     <TableCell className="text-right">
                                       <Button
