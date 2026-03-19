@@ -968,6 +968,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             ? dataset.resources
             : [];
           const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+          const expectedOutputMetaRows = parseExpectedOutputMetadata(
+            getExtraByKey(extras, "expected_outputs_meta"),
+          );
           const projectStatus =
             getExtraByKey(extras, "project_status") ||
             getExtraByKey(extras, "status") ||
@@ -975,19 +978,22 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             null;
 
           // Flatten each dataset resource into table-friendly response rows.
-          for (const resource of resources) {
+          for (const [index, resource] of resources.entries()) {
             const resourceNameBase = asTrimmedString(resource?.name).replace(
               /\s*\(target:[^)]+\)\s*$/i,
               "",
             );
+            const metaRow = expectedOutputMetaRows[index] || null;
+            const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
             const normalizedOutputType = normalizeOutputType(
               asTrimmedString(resource?.format) ||
                 resourceNameBase ||
                 "resource",
             );
+            const resolvedOutputType = outputTypeFromMeta || normalizedOutputType;
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
-              output_type: normalizedOutputType || "resource",
+              output_type: resolvedOutputType || "resource",
               file_name: resource?.name || null,
               file_path: resource?.url || null,
               mime_type: resource?.mimetype || resource?.format || null,
@@ -1202,29 +1208,42 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           }
 
           const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-          const isCenterChief = await isCenterChiefForDataset(dataset, req.user);
-          if (
-            !isAdmin &&
-            !isCenterChief &&
-            !isDatasetOwnedByUser(dataset, req.user)
-          ) {
-            return res.status(403).json({
-              error: "You are not allowed to view this project resources.",
-            });
-          }
-
-          const resourceCount = Array.isArray(dataset?.resources)
-            ? dataset.resources.length
-            : 0;
-          return res.json({
-            data: {
-              dataset,
-              resources: Array.isArray(dataset?.resources)
-                ? dataset.resources
-                : [],
-            },
-            syncEnabled: true,
+        const isCenterChief = await isCenterChiefForDataset(dataset, req.user);
+        if (
+          !isAdmin &&
+          !isCenterChief &&
+          !isDatasetOwnedByUser(dataset, req.user)
+        ) {
+          return res.status(403).json({
+            error: "You are not allowed to view this project resources.",
           });
+        }
+
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const expectedOutputMetaRows = parseExpectedOutputMetadata(
+          getExtraByKey(extras, "expected_outputs_meta"),
+        );
+        const resourceCount = Array.isArray(dataset?.resources)
+          ? dataset.resources.length
+          : 0;
+        const resources = Array.isArray(dataset?.resources)
+          ? dataset.resources
+          : [];
+        const resourcesWithOutputType = resources.map((resource, index) => {
+          const metaRow = expectedOutputMetaRows[index] || null;
+          const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
+          return {
+            ...resource,
+            output_type: outputTypeFromMeta || null,
+          };
+        });
+        return res.json({
+          data: {
+            dataset,
+            resources: resourcesWithOutputType,
+          },
+          syncEnabled: true,
+        });
         } catch (error) {
           return res.status(500).json({
             error: String(error?.message || "Failed to load project resources."),
