@@ -14,6 +14,22 @@ export async function listUsers() {
 }
 
 /**
+ * Retrieves a CKAN user by username (public + extras).
+ */
+export async function getUser(username) {
+  const id = String(username || "").trim();
+  if (!id) return null;
+  try {
+    return await ckanAction("user_show", {
+      id,
+      include_site_user: true,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Retrieves a CKAN user by username.
  *
  * Edge case:
