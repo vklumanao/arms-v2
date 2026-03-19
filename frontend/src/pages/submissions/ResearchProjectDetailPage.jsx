@@ -17,7 +17,11 @@ import {
   fetchUserProjects,
 } from "@/services/submissions";
 import { normalizeStatus } from "@/utils/status";
-import { formatBytes, formatDate } from "@/utils/submissions";
+import {
+  EXPECTED_OUTPUT_TYPE_OPTIONS,
+  formatBytes,
+  formatDate,
+} from "@/utils/submissions";
 import {
   ChevronLeft,
   Download,
@@ -185,6 +189,17 @@ export default function ResearchProjectDetailPage() {
         return acc;
       }, {}),
     [scopedAgendas],
+  );
+  const outputTypeLabelByValue = useMemo(
+    () =>
+      (EXPECTED_OUTPUT_TYPE_OPTIONS || []).reduce((acc, item) => {
+        const key = String(item?.value || "").trim();
+        if (!key) return acc;
+        const label = String(item?.label || "").trim();
+        acc[key] = label || key;
+        return acc;
+      }, {}),
+    [],
   );
 
   const facultyTeamUsers = useMemo(() => {
@@ -667,6 +682,16 @@ export default function ResearchProjectDetailPage() {
                                   Format: {resource.format || "-"} | Size:{" "}
                                   {formatBytes(resource.size)}
                                 </p>
+                                <p className="text-sm text-slate-600">
+                                  Output Type:{" "}
+                                  {outputTypeLabelByValue[
+                                    String(
+                                      resource.output_type ||
+                                        resource.outputType ||
+                                        "",
+                                    ).trim()
+                                  ] || "-"}
+                                </p>
                               </div>
                               <FileText className="h-5 w-5 text-slate-400" />
                             </div>
@@ -690,22 +715,6 @@ export default function ResearchProjectDetailPage() {
                                   }
                                   return (
                                     <>
-                                      <Button
-                                        asChild
-                                        variant="outline"
-                                        size="sm"
-                                      >
-                                        <a
-                                          href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                            resource.id,
-                                          )}/download`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                        >
-                                          <ExternalLink className="h-4 w-4" />
-                                          Open
-                                        </a>
-                                      </Button>
                                       <Button
                                         asChild
                                         variant="outline"
