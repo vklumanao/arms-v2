@@ -544,10 +544,6 @@ export default function ResearchProjectsHubPage() {
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Complete Your Profile First
             </h1>
-            <p className="text-sm text-slate-600">
-              Add your organization and department before submitting or
-              reviewing research projects.
-            </p>
           </div>
         </div>
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
@@ -574,12 +570,8 @@ export default function ResearchProjectsHubPage() {
               ARMS Research Projects
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Research Projects Command Hub
+              Research Projects Workspace
             </h1>
-            <p className="text-sm text-slate-600">
-              Review submissions, track status, and manage visibility for your
-              research portfolio.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1031,8 +1023,8 @@ export default function ResearchProjectsHubPage() {
         {linkedProjectRows.length === 0 ? (
           <CardContent className="p-4">
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
-              No linked projects found. Submit a research project first to
-              populate linked project summaries.
+              This section will display project summaries once you are assigned
+              to a research team or have submitted a research project.
             </div>
           </CardContent>
         ) : (
