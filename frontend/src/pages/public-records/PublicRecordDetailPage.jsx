@@ -15,7 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatBytes, formatDate } from "@/utils/submissions";
+import {
+  EXPECTED_OUTPUT_TYPE_OPTIONS,
+  formatBytes,
+  formatDate,
+} from "@/utils/submissions";
 import { Download, ExternalLink, FileText } from "lucide-react";
 
 const normalizeLabel = (value) => {
@@ -223,6 +227,17 @@ export default function PublicRecordDetailPage() {
         return acc;
       }, {}),
     [departments],
+  );
+  const outputTypeLabelByValue = useMemo(
+    () =>
+      (EXPECTED_OUTPUT_TYPE_OPTIONS || []).reduce((acc, item) => {
+        const key = String(item?.value || "").trim();
+        if (!key) return acc;
+        const label = String(item?.label || "").trim();
+        acc[key] = label || key;
+        return acc;
+      }, {}),
+    [],
   );
 
   const selectedCenter = record
@@ -628,22 +643,22 @@ export default function PublicRecordDetailPage() {
                                     Format: {resource.format || "-"} | Size:{" "}
                                     {formatBytes(resource.size)}
                                   </p>
+                                  <p className="text-sm text-slate-600">
+                                    Output Type:{" "}
+                                    {outputTypeLabelByValue[
+                                      String(
+                                        resource.output_type ||
+                                          resource.outputType ||
+                                          "",
+                                      ).trim()
+                                    ] || "-"}
+                                  </p>
                                 </div>
                                 <FileText className="h-5 w-5 text-slate-400" />
                               </div>
 
                               {resourceUrl && isDownloadable ? (
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                  <Button asChild variant="outline" size="sm">
-                                    <a
-                                      href={resourceUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                      Open
-                                    </a>
-                                  </Button>
                                   <Button asChild variant="outline" size="sm">
                                     <a
                                       href={downloadUrl}
