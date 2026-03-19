@@ -40,6 +40,49 @@ const formatCurrencyPHP = (value) => {
   }).format(numericValue);
 };
 
+const formatProjectDuration = (startDateValue, endDateValue) => {
+  if (!startDateValue || !endDateValue) return "-";
+  const startDate = new Date(startDateValue);
+  const endDate = new Date(endDateValue);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return "-";
+  }
+  const diffMs = endDate.getTime() - startDate.getTime();
+  if (diffMs < 0) return "-";
+  const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  if (diffDays >= 365) {
+    const years = Math.floor(diffDays / 365);
+    const months = Math.round((diffDays % 365) / 30);
+    return `${years} yr${years === 1 ? "" : "s"}${
+      months ? ` ${months} mo` : ""
+    }`;
+  }
+  if (diffDays >= 30) {
+    const months = Math.round(diffDays / 30);
+    return `${months} mo`;
+  }
+  return `${diffDays} day${diffDays === 1 ? "" : "s"}`;
+};
+
+const getStatusBadgeStyle = (value) => {
+  const key = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (key === "completed" || key === "complete" || key === "approved") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+  if (key === "ongoing" || key === "in progress" || key === "active") {
+    return "border-blue-200 bg-blue-50 text-blue-700";
+  }
+  if (key === "proposal" || key === "proposed" || key === "pending") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+  if (key === "rejected" || key === "cancelled" || key === "canceled") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
 export default function PublicRecordDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
@@ -234,39 +277,26 @@ export default function PublicRecordDetailPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Status
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900 capitalize">
-              {record?.status || "Published"}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Visibility
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {record?.public_visible ? "Public" : "Private"}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Year
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {record?.year || "-"}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Research Center
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {selectedCenter}
-            </p>
-          </div>
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${getStatusBadgeStyle(
+              record?.status || "Published",
+            )}`}
+          >
+            {record?.status || "Published"}
+          </span>
+
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+            {record?.public_visible ? "Public" : "Private"}
+          </span>
+
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+            {formatProjectDuration(record?.start_date, record?.end_date)}
+          </span>
+
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+            {selectedCenter}
+          </span>
         </div>
       </div>
 
@@ -277,9 +307,6 @@ export default function PublicRecordDetailPage() {
               <CardTitle className="text-base font-semibold text-slate-900">
                 Project Details
               </CardTitle>
-              <CardDescription>
-                Complete submission profile and classifications.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -302,7 +329,6 @@ export default function PublicRecordDetailPage() {
                       <CardTitle className="text-sm font-semibold text-slate-900">
                         Overview
                       </CardTitle>
-                      <CardDescription>Submission metadata.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
                       <div>
@@ -366,9 +392,6 @@ export default function PublicRecordDetailPage() {
                       <CardTitle className="text-sm font-semibold text-slate-900">
                         Classification
                       </CardTitle>
-                      <CardDescription>
-                        Program and agenda mapping.
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
                       <div>
@@ -411,9 +434,6 @@ export default function PublicRecordDetailPage() {
                       <CardTitle className="text-sm font-semibold text-slate-900">
                         People
                       </CardTitle>
-                      <CardDescription>
-                        Research teams and participants.
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
                       <div>
@@ -448,9 +468,8 @@ export default function PublicRecordDetailPage() {
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
                       <CardTitle className="text-sm font-semibold text-slate-900">
-                        Abstract
+                        Summary
                       </CardTitle>
-                      <CardDescription>Project summary.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-5 text-sm text-slate-700">
                       <p className="whitespace-pre-line text-sm font-semibold text-slate-900">
@@ -464,9 +483,6 @@ export default function PublicRecordDetailPage() {
                       <CardTitle className="text-sm font-semibold text-slate-900">
                         Funding
                       </CardTitle>
-                      <CardDescription>
-                        Budget and funding sources.
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
                       <div>
@@ -509,9 +525,6 @@ export default function PublicRecordDetailPage() {
                       <CardTitle className="text-sm font-semibold text-slate-900">
                         Timeline & MOA
                       </CardTitle>
-                      <CardDescription>
-                        Key dates and agreements.
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
                       <div>
@@ -613,10 +626,7 @@ export default function PublicRecordDetailPage() {
                                   </p>
                                   <p className="text-sm text-slate-600">
                                     Format: {resource.format || "-"} | Size:{" "}
-                                    {formatBytes(resource.size)} | Updated:{" "}
-                                    {formatDate(
-                                      resource.lastModified || resource.created,
-                                    )}
+                                    {formatBytes(resource.size)}
                                   </p>
                                 </div>
                                 <FileText className="h-5 w-5 text-slate-400" />
