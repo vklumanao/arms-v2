@@ -49,11 +49,23 @@ export function registerPublicRecordsRoutes(app, deps) {
           specific_output: asTrimmedString(
             row?.specific_output || row?.specificOutput,
           ),
+          output_link: asTrimmedString(row?.output_link || row?.outputLink),
         }))
         .filter((row) => row.output_type);
     } catch {
       return [];
     }
+  }
+
+  function extractOutputLinkFromDescription(description) {
+    const text = asTrimmedString(description);
+    if (!text) return "";
+    const line = text
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) => entry.toLowerCase().startsWith("output link:"));
+    if (!line) return "";
+    return line.split("output link:").slice(1).join("output link:").trim();
   }
 
   function getDatasetTagNames(dataset) {
@@ -288,9 +300,14 @@ export function registerPublicRecordsRoutes(app, deps) {
       const resourcesWithOutputType = resources.map((resource, index) => {
         const metaRow = expectedOutputMetaRows[index] || null;
         const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
+        const outputLinkFromMeta = asTrimmedString(metaRow?.output_link);
+        const outputLinkFromDescription = extractOutputLinkFromDescription(
+          resource?.description,
+        );
         return {
           ...resource,
           output_type: outputTypeFromMeta || null,
+          output_link: outputLinkFromMeta || outputLinkFromDescription || null,
         };
       });
 
