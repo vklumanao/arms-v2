@@ -23,6 +23,7 @@ import {
 import {
   PublicRecordDetailPage,
   PublicRecordsPage,
+  PublicResearchCenterDetailPage,
 } from "@/pages/public-records";
 import { DashboardPage } from "@/pages/dashboard";
 import {
@@ -107,6 +108,10 @@ export default function AppRoutes() {
         <Route
           path="/public-records/:id"
           element={withBoundary(<PublicRecordDetailPage />)}
+        />
+        <Route
+          path="/public-research-centers/:id"
+          element={withBoundary(<PublicResearchCenterDetailPage />)}
         />
 
         <Route path="/login" element={withBoundary(<LoginPage />)} />
