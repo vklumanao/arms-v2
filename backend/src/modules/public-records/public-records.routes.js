@@ -50,6 +50,9 @@ export function registerPublicRecordsRoutes(app, deps) {
             row?.specific_output || row?.specificOutput,
           ),
           output_link: asTrimmedString(row?.output_link || row?.outputLink),
+          publication_authors: asTrimmedString(
+            row?.publication_authors || row?.publicationAuthors,
+          ),
         }))
         .filter((row) => row.output_type);
     } catch {
@@ -66,6 +69,23 @@ export function registerPublicRecordsRoutes(app, deps) {
       .find((entry) => entry.toLowerCase().startsWith("output link:"));
     if (!line) return "";
     return line.split("output link:").slice(1).join("output link:").trim();
+  }
+
+  function extractAuthorsFromDescription(description) {
+    const text = asTrimmedString(description);
+    if (!text) return "";
+    const line = text
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) =>
+        entry.toLowerCase().startsWith("authors/proponents:"),
+      );
+    if (!line) return "";
+    return line
+      .split("authors/proponents:")
+      .slice(1)
+      .join("authors/proponents:")
+      .trim();
   }
 
   function getDatasetTagNames(dataset) {
@@ -304,10 +324,20 @@ export function registerPublicRecordsRoutes(app, deps) {
         const outputLinkFromDescription = extractOutputLinkFromDescription(
           resource?.description,
         );
+        const publicationAuthorsFromMeta = asTrimmedString(
+          metaRow?.publication_authors,
+        );
+        const publicationAuthorsFromDescription = extractAuthorsFromDescription(
+          resource?.description,
+        );
         return {
           ...resource,
           output_type: outputTypeFromMeta || null,
           output_link: outputLinkFromMeta || outputLinkFromDescription || null,
+          publication_authors:
+            publicationAuthorsFromMeta ||
+            publicationAuthorsFromDescription ||
+            null,
         };
       });
 
