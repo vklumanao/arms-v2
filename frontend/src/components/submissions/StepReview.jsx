@@ -208,11 +208,17 @@ export default function StepReview({
                             | Notes: {row.notes || "-"}
                           </p>
                           <p className="text-slate-600 break-all">
+                            Output Link:{" "}
+                            {row.output_link ||
+                              (/^https?:\/\//i.test(
+                                String(row.file_path || "").trim(),
+                              )
+                                ? row.file_path
+                                : "-")}
+                          </p>
+                          <p className="text-slate-600 break-all">
                             File:{" "}
-                            {row.file?.name ||
-                              row.file_name ||
-                              row.file_path ||
-                              "-"}
+                            {row.file?.name || row.file_name || "-"}
                           </p>
                         </CardContent>
                       </Card>
