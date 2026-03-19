@@ -1,4 +1,12 @@
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +26,9 @@ export default function StepOutputs({
   expectedOutputsPage,
   expectedOutputsTotalPages,
   setExpectedOutputsPage,
+  expectedOutputsPageSize,
+  onReorderExpectedOutputs,
+  onQuickAddOutput,
   openAddOutputModal,
   openEditOutputModal,
   deleteExpectedOutputRow,
@@ -25,19 +36,16 @@ export default function StepOutputs({
   setField,
   errors,
 }) {
+  const pageStart =
+    (expectedOutputsPage - 1) * (Number(expectedOutputsPageSize) || 10);
+  const handleDrop = (fromIndex, toIndex) => {
+    if (!onReorderExpectedOutputs) return;
+    if (fromIndex === toIndex) return;
+    onReorderExpectedOutputs(fromIndex, toIndex);
+  };
+
   return (
     <div className="space-y-5">
-      <Card className="bg-muted/30 shadow-none">
-        <CardContent className="p-4 text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">Submission checklist</p>
-          <ul className="mt-1 list-disc pl-4">
-            <li>Title and center are filled.</li>
-            <li>Classification and year are valid.</li>
-            <li>Dates and funding values are logically consistent.</li>
-          </ul>
-        </CardContent>
-      </Card>
-
       <div className="form-section">
         <div className="form-section-head">
           <p className="form-section-title">Outputs and Resources</p>
@@ -47,27 +55,46 @@ export default function StepOutputs({
           </p>
         </div>
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-semibold text-slate-700">
               Expected research outputs
             </span>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={openAddOutputModal}
-            >
-              Add Output
-            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold uppercase tracking-[0.08em] text-slate-500">
+              Quick add:
+            </span>
+            <div className="min-w-[220px]">
+              <Select
+                value="__none__"
+                onValueChange={(value) => {
+                  if (value === "__none__") return;
+                  onQuickAddOutput?.(value);
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select output type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Select output type</SelectItem>
+                  {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <p className="text-xs text-slate-500">
             Rows are finalized in database when you submit/save revision.
           </p>
           <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
-            <Table className="min-w-[680px]">
+            <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[44px]"></TableHead>
                   <TableHead>Output Type</TableHead>
-                  <TableHead>Target</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead>Output Link</TableHead>
                   <TableHead>File</TableHead>
@@ -85,68 +112,111 @@ export default function StepOutputs({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedExpectedOutputRows.map((row) => (
-                    <TableRow key={row.client_id}>
-                      <TableCell>
-                        {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
-                          (item) => item.value === row.output_type,
-                        )?.label ||
-                          row.output_type ||
-                          "-"}
-                        {String(row.specific_output || "").trim() ? (
-                          <p className="text-xs text-slate-500">
-                            Specific: {row.specific_output}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {Math.max(1, Number(row.target_count) || 1)}
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {row.notes || "-"}
-                        {row.needs_file_reselect ? (
-                          <p className="text-xs text-amber-700">
-                            File needs re-attach after refresh.
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="break-all text-slate-600">
-                        {row.output_link || "-"}
-                      </TableCell>
-                      <TableCell className="break-all text-slate-600">
-                        {row.output_link ||
-                          (/^https?:\/\//i.test(
-                            String(row.file_path || "").trim(),
-                          )
-                            ? row.file_path
-                            : "-")}
-                      </TableCell>
-                      <TableCell className="break-all text-slate-600">
-                        {row.file_name || row.file?.name || "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => openEditOutputModal(row)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="border-destructive text-destructive hover:bg-destructive/10"
-                            onClick={() =>
-                              deleteExpectedOutputRow(row.client_id)
-                            }
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  paginatedExpectedOutputRows.map((row, pageIndex) => {
+                    const globalIndex = pageStart + pageIndex;
+                    return (
+                      <TableRow
+                        key={row.client_id}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData(
+                            "text/plain",
+                            String(globalIndex),
+                          );
+                          event.dataTransfer.effectAllowed = "move";
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const fromIndex = Number(
+                            event.dataTransfer.getData("text/plain"),
+                          );
+                          if (!Number.isFinite(fromIndex)) return;
+                          handleDrop(fromIndex, globalIndex);
+                        }}
+                        className="cursor-move"
+                      >
+                        <TableCell className="text-slate-400">
+                          <GripVertical className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell>
+                          {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
+                            (item) => item.value === row.output_type,
+                          )?.label ||
+                            row.output_type ||
+                            "-"}
+                          {String(row.specific_output || "").trim() ? (
+                            <p className="text-xs text-slate-500">
+                              Specific: {row.specific_output}
+                            </p>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          {row.notes || "-"}
+                          {row.needs_file_reselect ? (
+                            <p className="text-xs text-amber-700">
+                              File needs re-attach after refresh.
+                            </p>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="break-all text-slate-600">
+                          {(() => {
+                            const outputLink =
+                              row.output_link ||
+                              (/^https?:\/\//i.test(
+                                String(row.file_path || "").trim(),
+                              )
+                                ? row.file_path
+                                : "");
+                            if (!outputLink) return "-";
+                            return (
+                              <a
+                                href={outputLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {outputLink}
+                              </a>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell className="break-all text-slate-600">
+                          {row.file_name || row.file?.name || "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditOutputModal(row)}
+                              aria-label="Edit output"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() =>
+                                deleteExpectedOutputRow(row.client_id)
+                              }
+                              aria-label="Delete output"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -164,7 +234,7 @@ export default function StepOutputs({
         </div>
         <label className="block space-y-1 text-sm sm:max-w-2xl">
           <span className="font-semibold text-slate-700">
-            Supporting MOV link (optional)
+            Other Documents (optional)
           </span>
           <Input
             placeholder="Google Drive link or repository of supporting MOVs"
