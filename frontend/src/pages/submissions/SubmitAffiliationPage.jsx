@@ -659,6 +659,7 @@ export default function SubmitAffiliationPage() {
       output_link:
         String(row?.output_link || "").trim() ||
         (isLikelyUrl(row?.file_path) ? row.file_path : ""),
+      publication_authors: String(row?.publication_authors || "").trim(),
       file: null,
       file_base64: String(row?.file_base64 || "").trim(),
     });
@@ -692,6 +693,9 @@ export default function SubmitAffiliationPage() {
       outputLinkRaw && !/^https?:\/\//i.test(outputLinkRaw)
         ? `https://${outputLinkRaw}`
         : outputLinkRaw;
+    const normalizedPublicationAuthors = String(
+      newOutputDraft.publication_authors || "",
+    ).trim();
     const selectedFile = newOutputDraft.file;
     const isEditMode = Boolean(editingOutputClientId);
     const existingRow = isEditMode
@@ -760,6 +764,7 @@ export default function SubmitAffiliationPage() {
       specific_output:
         normalizedType === "product_software" ? normalizedSpecificOutput : "",
       output_link: normalizedOutputLink,
+      publication_authors: normalizedPublicationAuthors,
       notes: String(newOutputDraft.notes || "").trim(),
       file: selectedFile || null,
       file_path: nextFilePath,
@@ -846,6 +851,7 @@ export default function SubmitAffiliationPage() {
         output_type: row.output_type || "",
         target_count: 1,
         specific_output: row.specific_output || "",
+        publication_authors: row.publication_authors || "",
         output_link: row.output_link || "",
       })),
       signed_moa_reference: moaReference,
@@ -1312,6 +1318,7 @@ export default function SubmitAffiliationPage() {
         productSoftwareSpecificOutputOptions={
           PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS
         }
+        facultyEligibleUserOptions={facultyEligibleUserOptions}
         setError={setError}
       />
     </section>
