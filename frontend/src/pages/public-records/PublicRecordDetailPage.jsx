@@ -636,9 +636,8 @@ export default function PublicRecordDetailPage() {
                           .slice(1)
                           .join("output link:")
                           .trim();
-                        const outputLinkFromUrl = descriptionText.match(
-                          /(https?:\/\/\S+)/i,
-                        )?.[1];
+                        const outputLinkFromUrl =
+                          descriptionText.match(/(https?:\/\/\S+)/i)?.[1];
                         const outputLink =
                           String(resource.output_link || "").trim() ||
                           outputLinkFromDescription ||
@@ -662,19 +661,57 @@ export default function PublicRecordDetailPage() {
                                   <p className="truncate text-base font-semibold text-slate-900">
                                     {resource.name || "Unnamed resource"}
                                   </p>
+                                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                      {outputTypeLabelByValue[
+                                        String(
+                                          resource.output_type ||
+                                            resource.outputType ||
+                                            "",
+                                        ).trim()
+                                      ] || "Output"}
+                                    </span>
+                                  </div>
+                                  {(() => {
+                                    const rawAuthors =
+                                      String(
+                                        resource.publication_authors || "",
+                                      ).trim() ||
+                                      String(
+                                        resource.publicationAuthors || "",
+                                      ).trim();
+                                    if (rawAuthors) {
+                                      return (
+                                        <p className="text-sm font-medium text-slate-800">
+                                          Proponents: {rawAuthors}
+                                        </p>
+                                      );
+                                    }
+                                    const descriptionText = String(
+                                      resource.description || "",
+                                    ).trim();
+                                    const fromDescription = descriptionText
+                                      .split("\n")
+                                      .map((line) => line.trim())
+                                      .find((line) =>
+                                        line
+                                          .toLowerCase()
+                                          .startsWith("authors/proponents:"),
+                                      )
+                                      ?.split("authors/proponents:")
+                                      .slice(1)
+                                      .join("authors/proponents:")
+                                      .trim();
+                                    if (!fromDescription) return null;
+                                    return (
+                                      <p className="text-sm font-medium text-slate-800">
+                                        Proponents: {fromDescription}
+                                      </p>
+                                    );
+                                  })()}
                                   <p className="text-sm text-slate-600">
                                     Format: {resource.format || "-"} | Size:{" "}
                                     {formatBytes(resource.size)}
-                                  </p>
-                                  <p className="text-sm text-slate-600">
-                                    Output Type:{" "}
-                                    {outputTypeLabelByValue[
-                                      String(
-                                        resource.output_type ||
-                                          resource.outputType ||
-                                          "",
-                                      ).trim()
-                                    ] || "-"}
                                   </p>
                                   {hasLink ? (
                                     <p className="text-sm text-slate-600">
