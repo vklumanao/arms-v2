@@ -667,82 +667,109 @@ export default function ResearchProjectDetailPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                      {resourcePanel.resources.map((resource) => (
-                        <Card
-                          key={resource.id || resource.url || resource.name}
-                          className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-base font-semibold text-slate-900">
-                                  {resource.name || "Unnamed resource"}
-                                </p>
-                                <p className="text-sm text-slate-600">
-                                  Format: {resource.format || "-"} | Size:{" "}
-                                  {formatBytes(resource.size)}
-                                </p>
-                                <p className="text-sm text-slate-600">
-                                  Output Type:{" "}
-                                  {outputTypeLabelByValue[
-                                    String(
-                                      resource.output_type ||
-                                        resource.outputType ||
-                                        "",
-                                    ).trim()
-                                  ] || "-"}
-                                </p>
-                              </div>
-                              <FileText className="h-5 w-5 text-slate-400" />
-                            </div>
-
-                            {resource.id ? (
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {(() => {
-                                  const resourceUrl = String(
-                                    resource.url || "",
-                                  ).trim();
-                                  const isDownloadable =
-                                    /\/resource\/.+\/download\//i.test(
-                                      resourceUrl,
-                                    );
-                                  if (!isDownloadable) {
-                                    return (
-                                      <p className="text-sm text-slate-500">
-                                        No file attached yet.
-                                      </p>
-                                    );
-                                  }
-                                  return (
-                                    <>
-                                      <Button
-                                        asChild
-                                        variant="outline"
-                                        size="sm"
+                      {resourcePanel.resources.map((resource) => {
+                        const resourceUrl = String(resource.url || "").trim();
+                        const isDownloadable =
+                          /\/resource\/.+\/download\//i.test(resourceUrl);
+                        const descriptionText = String(
+                          resource.description || "",
+                        ).trim();
+                        const outputLinkFromDescription = descriptionText
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .find((line) =>
+                            line.toLowerCase().startsWith("output link:"),
+                          )
+                          ?.split("output link:")
+                          .slice(1)
+                          .join("output link:")
+                          .trim();
+                        const outputLinkFromUrl = descriptionText.match(
+                          /(https?:\/\/\S+)/i,
+                        )?.[1];
+                        const outputLink =
+                          String(resource.output_link || "").trim() ||
+                          outputLinkFromDescription ||
+                          outputLinkFromUrl ||
+                          (!isDownloadable ? resourceUrl : "");
+                        const hasLink = Boolean(outputLink);
+                        const hasFile = Boolean(resource.id && isDownloadable);
+                        return (
+                          <Card
+                            key={resource.id || resource.url || resource.name}
+                            className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="truncate text-base font-semibold text-slate-900">
+                                    {resource.name || "Unnamed resource"}
+                                  </p>
+                                  <p className="text-sm text-slate-600">
+                                    Format: {resource.format || "-"} | Size:{" "}
+                                    {formatBytes(resource.size)}
+                                  </p>
+                                  <p className="text-sm text-slate-600">
+                                    Output Type:{" "}
+                                    {outputTypeLabelByValue[
+                                      String(
+                                        resource.output_type ||
+                                          resource.outputType ||
+                                          "",
+                                      ).trim()
+                                    ] || "-"}
+                                  </p>
+                                  {hasLink ? (
+                                    <p className="text-sm text-slate-600">
+                                      Output Link:{" "}
+                                      <a
+                                        href={outputLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-blue-600 hover:underline"
                                       >
-                                        <a
-                                          href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                            resource.id,
-                                          )}/download?download=1`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                        >
-                                          <Download className="h-4 w-4" />
-                                          Download
-                                        </a>
-                                      </Button>
-                                    </>
-                                  );
-                                })()}
+                                        {outputLink}
+                                      </a>
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <FileText className="h-5 w-5 text-slate-400" />
                               </div>
-                            ) : (
-                              <p className="mt-2 text-sm text-slate-500">
-                                No resource URL available.
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
+
+                              {resource.id ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {hasFile ? (
+                                    <Button
+                                      asChild
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <a
+                                        href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                          resource.id,
+                                        )}/download?download=1`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <Download className="h-4 w-4" />
+                                        Download
+                                      </a>
+                                    </Button>
+                                  ) : hasLink ? null : (
+                                    <p className="text-sm text-slate-500">
+                                      No file attached yet.
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="mt-2 text-sm text-slate-500">
+                                  No resource URL available.
+                                </p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
