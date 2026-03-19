@@ -153,6 +153,11 @@ export default function StepOutputs({
                               Specific: {row.specific_output}
                             </p>
                           ) : null}
+                          {String(row.publication_authors || "").trim() ? (
+                            <p className="text-xs text-slate-500">
+                              Proponents: {row.publication_authors}
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-slate-600">
                           {row.notes || "-"}
