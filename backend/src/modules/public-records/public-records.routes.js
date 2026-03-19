@@ -1,3 +1,5 @@
+import { query } from "../../db/client.js";
+
 /**
  * Registers public records API routes.
  *
@@ -12,10 +14,36 @@ export function registerPublicRecordsRoutes(app, deps) {
     listOrganizations,
     listGroups,
     listOrganizationAgendas,
+    listOrganizationMembers,
+    listUsers,
+    getUser,
     getDataset,
     asTrimmedString,
     getExtraByKey,
   } = deps;
+
+  async function listLocalUsers() {
+    const result = await query(`
+        SELECT id, full_name, email, role, department, ckan_user_id, ckan_username
+        FROM users
+        WHERE is_active = TRUE
+      `);
+    return Array.isArray(result?.rows) ? result.rows : [];
+  }
+
+  function getExtraValue(entity, key) {
+    const extras = Array.isArray(entity?.extras) ? entity.extras : [];
+    const match = extras.find(
+      (item) =>
+        String(item?.key || "")
+          .trim()
+          .toLowerCase() ===
+        String(key || "")
+          .trim()
+          .toLowerCase(),
+    );
+    return match?.value ?? null;
+  }
 
   function normalizeOutputType(value) {
     const rawType = asTrimmedString(value)
@@ -223,12 +251,16 @@ export function registerPublicRecordsRoutes(app, deps) {
       ]);
 
       const agendaLabelMap = {};
+      const agendaCountByOrg = {};
       await Promise.all(
         (organizations || []).map(async (org) => {
           const orgId = asTrimmedString(org?.name || org?.id);
           if (!orgId) return;
           try {
             const agendas = await listOrganizationAgendas(orgId);
+            agendaCountByOrg[orgId] = Array.isArray(agendas)
+              ? agendas.length
+              : 0;
             (agendas || []).forEach((agenda) => {
               const agendaId = asTrimmedString(agenda?.id);
               if (!agendaId) return;
@@ -238,6 +270,7 @@ export function registerPublicRecordsRoutes(app, deps) {
             });
           } catch {
             // Ignore agenda lookup errors per org.
+            agendaCountByOrg[orgId] = 0;
           }
         }),
       );
@@ -250,13 +283,32 @@ export function registerPublicRecordsRoutes(app, deps) {
         }
         return row;
       });
-      const centers = (organizations || []).map((org) => ({
-        id: org?.name || org?.id || "",
-        name:
-          asTrimmedString(org?.title) ||
-          asTrimmedString(org?.display_name) ||
-          asTrimmedString(org?.name || org?.id),
-      }));
+      const centers = (organizations || []).map((org) => {
+        const orgId = org?.name || org?.id || "";
+        return {
+          id: orgId,
+          name:
+            asTrimmedString(org?.title) ||
+            asTrimmedString(org?.display_name) ||
+            asTrimmedString(org?.name || org?.id),
+          description:
+            asTrimmedString(org?.description) ||
+            asTrimmedString(getExtraValue(org, "description")) ||
+            "",
+          code:
+            asTrimmedString(getExtraValue(org, "code")) ||
+            String(org?.name || org?.id || "")
+              .toUpperCase()
+              .replace(/[^A-Z0-9_]/g, "_"),
+          center_chief_id: asTrimmedString(
+            getExtraValue(org, "center_chief_id"),
+          ),
+          center_chief_name: asTrimmedString(
+            getExtraValue(org, "center_chief_name"),
+          ),
+          agenda_count: Number(agendaCountByOrg[orgId] || 0),
+        };
+      });
       const departments = (groups || []).map((group) => ({
         id: group?.name || group?.id || "",
         name:
@@ -358,6 +410,142 @@ export function registerPublicRecordsRoutes(app, deps) {
       });
     }
   });
+
+  app.get(
+    "/api/public-records/centers/:centerId/affiliates",
+    async (req, res) => {
+      try {
+        const centerId = asTrimmedString(req.params?.centerId);
+        if (!centerId) {
+          return res.status(400).json({ error: "Center id is required." });
+        }
+        const [members, users, localUsers] = await Promise.all([
+          listOrganizationMembers(centerId),
+          listUsers(),
+          listLocalUsers(),
+        ]);
+        const userByEmail = new Map(
+          (users || [])
+            .filter((row) => row?.email)
+            .map((row) => [
+              String(row.email || "")
+                .trim()
+                .toLowerCase(),
+              row,
+            ]),
+        );
+        const userById = new Map(
+          (users || [])
+            .filter((row) => row?.id)
+            .map((row) => [asTrimmedString(row.id), row]),
+        );
+        const localByCkanId = new Map(
+          (localUsers || [])
+            .filter((row) => row?.ckan_user_id)
+            .map((row) => [
+              asTrimmedString(row.ckan_user_id),
+              row,
+            ]),
+        );
+        const localByEmail = new Map(
+          (localUsers || [])
+            .filter((row) => row?.email)
+            .map((row) => [
+              String(row.email || "")
+                .trim()
+                .toLowerCase(),
+              row,
+            ]),
+        );
+        const localByUsername = new Map(
+          (localUsers || [])
+            .filter((row) => row?.ckan_username)
+            .map((row) => [
+              String(row.ckan_username || "")
+                .trim()
+                .toLowerCase(),
+              row,
+            ]),
+        );
+
+        const rows = await Promise.all(
+          (members || []).map(async (member) => {
+            const memberId = asTrimmedString(member?.id || member?.name);
+            const memberEmail = asTrimmedString(member?.email).toLowerCase();
+            const memberUsername = asTrimmedString(member?.name).toLowerCase();
+            const matchedUser =
+              userById.get(memberId) || userByEmail.get(memberEmail) || null;
+            const matchedLocalUser =
+              localByCkanId.get(memberId) ||
+              localByEmail.get(memberEmail) ||
+              localByUsername.get(memberUsername) ||
+              null;
+            let department =
+              asTrimmedString(matchedLocalUser?.department) ||
+              asTrimmedString(getExtraValue(matchedUser, "department")) ||
+              asTrimmedString(getExtraValue(matchedUser, "dept")) ||
+              asTrimmedString(getExtraValue(matchedUser, "program_department")) ||
+              "";
+            let role =
+              asTrimmedString(matchedLocalUser?.role) ||
+              asTrimmedString(member?.capacity || member?.role);
+            let fullName =
+              asTrimmedString(matchedLocalUser?.full_name) ||
+              asTrimmedString(
+                member?.fullname ||
+                  member?.display_name ||
+                  member?.name ||
+                  member?.email,
+              );
+            let email =
+              asTrimmedString(matchedLocalUser?.email) ||
+              asTrimmedString(member?.email);
+
+            if ((!department || !role || !fullName) && getUser) {
+              const userDetail = await getUser(member?.name || memberId);
+              if (userDetail) {
+                department =
+                  department ||
+                  asTrimmedString(getExtraValue(userDetail, "department")) ||
+                  asTrimmedString(getExtraValue(userDetail, "dept")) ||
+                  asTrimmedString(
+                    getExtraValue(userDetail, "program_department"),
+                  ) ||
+                  "";
+                role =
+                  role ||
+                  asTrimmedString(getExtraValue(userDetail, "role")) ||
+                  role;
+                fullName =
+                  fullName ||
+                  asTrimmedString(
+                    userDetail?.fullname ||
+                      userDetail?.display_name ||
+                      userDetail?.name ||
+                      userDetail?.email,
+                  );
+                email = email || asTrimmedString(userDetail?.email);
+              }
+            }
+
+            return {
+              id: memberId,
+              name: fullName,
+              full_name: fullName,
+              email,
+              role,
+              department,
+            };
+          }),
+        );
+        return res.json({ rows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load affiliates."),
+        });
+      }
+    },
+  );
 
   app.get("/api/public-records/:projectId/timeline", async (_req, res) => {
     return res.json({ timeline: [] });
