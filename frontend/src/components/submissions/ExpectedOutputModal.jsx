@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,26 @@ export default function ExpectedOutputModal({
   productSoftwareSpecificOutputOptions,
   setError,
 }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const handleSelectedFile = async (selectedFile) => {
+    if (selectedFile && selectedFile.size > maxOutputFileSizeBytes) {
+      setError("Each expected output file must be 25MB or smaller.");
+      return;
+    }
+    setError("");
+    const base64 = selectedFile ? await fileToBase64(selectedFile) : "";
+    setNewOutputDraft((prev) => ({
+      ...prev,
+      file: selectedFile,
+      file_name: selectedFile?.name || "",
+      mime_type: selectedFile?.type || "",
+      file_size: selectedFile?.size || null,
+      file_base64: base64,
+      file_path: "",
+      needs_file_reselect: false,
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -140,7 +161,29 @@ export default function ExpectedOutputModal({
             <span className="font-semibold text-slate-700">
               Output file (optional)
             </span>
-            <div className="upload-field">
+            <div
+              className={`upload-field ${isDragging ? "ring-2 ring-blue-400" : ""}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+              }}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
+              }}
+              onDrop={async (event) => {
+                event.preventDefault();
+                setIsDragging(false);
+                const droppedFile = event.dataTransfer.files?.[0] || null;
+                if (droppedFile) {
+                  await handleSelectedFile(droppedFile);
+                }
+              }}
+            >
               <div className="upload-picker">
                 <div className="upload-picker-info">
                   <FileText
@@ -174,30 +217,7 @@ export default function ExpectedOutputModal({
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
                       onChange={async (e) => {
                         const selectedFile = e.target.files?.[0] || null;
-                        if (
-                          selectedFile &&
-                          selectedFile.size > maxOutputFileSizeBytes
-                        ) {
-                          setError(
-                            "Each expected output file must be 25MB or smaller.",
-                          );
-                          e.target.value = "";
-                          return;
-                        }
-                        setError("");
-                        const base64 = selectedFile
-                          ? await fileToBase64(selectedFile)
-                          : "";
-                        setNewOutputDraft((prev) => ({
-                          ...prev,
-                          file: selectedFile,
-                          file_name: selectedFile?.name || "",
-                          mime_type: selectedFile?.type || "",
-                          file_size: selectedFile?.size || null,
-                          file_base64: base64,
-                          file_path: "",
-                          needs_file_reselect: false,
-                        }));
+                        await handleSelectedFile(selectedFile);
                       }}
                     />
                   </label>
