@@ -309,6 +309,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           specific_output: asTrimmedString(
             row?.specific_output || row?.specificOutput,
           ),
+          output_link: asTrimmedString(row?.output_link || row?.outputLink),
         }))
         .filter((row) => row.output_type),
     );
@@ -328,6 +329,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           specific_output: asTrimmedString(
             row?.specific_output || row?.specificOutput,
           ),
+          output_link: asTrimmedString(row?.output_link || row?.outputLink),
         }))
         .filter((row) => row.output_type);
     } catch {
@@ -416,6 +418,25 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     );
     if (outputType) return `${outputType} (Target: ${targetCount})`;
     return `Expected Output ${index + 1}`;
+  }
+
+  function formatOutputDescription(notes, outputLink) {
+    const trimmedNotes = asTrimmedString(notes);
+    const trimmedLink = asTrimmedString(outputLink);
+    if (!trimmedLink) return trimmedNotes || null;
+    if (!trimmedNotes) return `Output Link: ${trimmedLink}`;
+    return `${trimmedNotes}\nOutput Link: ${trimmedLink}`;
+  }
+
+  function extractOutputLinkFromDescription(description) {
+    const text = asTrimmedString(description);
+    if (!text) return "";
+    const line = text
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) => entry.toLowerCase().startsWith("output link:"));
+    if (!line) return "";
+    return line.split("output link:").slice(1).join("output link:").trim();
   }
 
   function normalizeOutputType(value) {
@@ -762,6 +783,10 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       const normalizedType = normalizeOutputType(rawType);
       const metadata = metadataRows[index] || null;
       const outputType = metadata?.output_type || normalizedType;
+      const outputLink =
+        metadata?.output_link ||
+        extractOutputLinkFromDescription(resource?.description) ||
+        "";
 
       return {
         id: resource?.id || `resource-${index + 1}`,
@@ -770,6 +795,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           : "publication",
         target_count: metadata?.target_count || targetCount,
         specific_output: asTrimmedString(metadata?.specific_output),
+        output_link: asTrimmedString(outputLink),
         notes: asTrimmedString(resource?.description),
         file_path: asTrimmedString(resource?.url),
         file_name: asTrimmedString(resource?.name),
@@ -994,6 +1020,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
               output_type: resolvedOutputType || "resource",
+              output_link:
+                asTrimmedString(metaRow?.output_link) ||
+                extractOutputLinkFromDescription(resource?.description),
               file_name: resource?.name || null,
               file_path: resource?.url || null,
               mime_type: resource?.mimetype || resource?.format || null,
@@ -1232,9 +1261,14 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         const resourcesWithOutputType = resources.map((resource, index) => {
           const metaRow = expectedOutputMetaRows[index] || null;
           const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
+          const outputLinkFromMeta = asTrimmedString(metaRow?.output_link);
+          const outputLinkFromDescription = extractOutputLinkFromDescription(
+            resource?.description,
+          );
           return {
             ...resource,
             output_type: outputTypeFromMeta || null,
+            output_link: outputLinkFromMeta || outputLinkFromDescription || null,
           };
         });
         return res.json({
@@ -1638,7 +1672,10 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           for (let i = 0; i < expectedOutputs.length; i += 1) {
             const row = expectedOutputs[i] || {};
             const name = formatOutputResourceName(row, i);
-            const description = asTrimmedString(row.notes);
+            const description = formatOutputDescription(
+              row.notes,
+              row.output_link || row.outputLink,
+            );
             const fileName =
               asTrimmedString(row.file_name) ||
               asTrimmedString(row.fileName) ||
@@ -1725,7 +1762,10 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             if (!fileBase64 && (!hasRemoteFile || isCkanUrl)) continue;
 
             const name = formatOutputResourceName(row, i);
-            const description = asTrimmedString(row.notes);
+            const description = formatOutputDescription(
+              row.notes,
+              row.output_link || row.outputLink,
+            );
             const fileName =
               asTrimmedString(row.file_name) ||
               asTrimmedString(row.fileName) ||
@@ -2133,6 +2173,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             Number(req.body?.target_count || 1) || 1,
           );
         const notes = asTrimmedString(req.body?.notes);
+        const outputLink = asTrimmedString(req.body?.output_link);
         const filePath = asTrimmedString(req.body?.file_path);
         const fileName = asTrimmedString(req.body?.file_name);
         const mimeType = asTrimmedString(req.body?.mime_type);
@@ -2176,7 +2217,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           const resource = await createDatasetResource({
             package_id: dataset?.id || projectId,
             name: targetName,
-            description: notes || null,
+            description: formatOutputDescription(notes, outputLink),
             url,
             format: outputType,
             mimetype: mimeType || null,
@@ -2280,7 +2321,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             fields: {
               package_id: dataset?.id || projectId,
               name: uploadName,
-              description: notes || null,
+              description: formatOutputDescription(notes, outputLink),
               format: outputType,
               mimetype: mimeType,
               size: String(buffer.length),
