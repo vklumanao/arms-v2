@@ -44,7 +44,7 @@ import {
   fetchUserProjects,
   updateResearchOutputVisibility,
 } from "@/services/submissions";
-import { normalizeStatus } from "@/utils/status";
+import { formatStatusLabel, normalizeStatus } from "@/utils/status";
 import { formatDate } from "@/utils/submissions";
 import {
   CheckCircle2,
@@ -409,6 +409,19 @@ export default function ResearchProjectsHubPage() {
     URL.revokeObjectURL(url);
   };
 
+  const getStatusBadgeClass = (status) => {
+    const normalized = normalizeStatus(status);
+    if (normalized === "proposal")
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    if (normalized === "ongoing")
+      return "border-sky-200 bg-sky-50 text-sky-700";
+    if (normalized === "completed")
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    if (normalized === "rejected")
+      return "border-rose-200 bg-rose-50 text-rose-700";
+    return "border-slate-200 bg-slate-50 text-slate-600";
+  };
+
   const buildExportRows = () =>
     filteredProjects.map((project, index) => ({
       no: index + 1,
@@ -416,7 +429,7 @@ export default function ResearchProjectsHubPage() {
       submittedBy: project.submitted_by_name || "Unknown user",
       submittedEmail: project.submitted_by_email || project.submitted_by || "-",
       year: project.year || "-",
-      status: normalizeStatus(project.status),
+      status: formatStatusLabel(project.status) || "-",
       organization: getProjectOrganization(project),
       submittedDate: formatDate(project.submitted_at),
     }));
@@ -812,6 +825,8 @@ export default function ResearchProjectsHubPage() {
                         .trim()
                         .toLowerCase() === "draft";
                     const status = normalizeStatus(project.status);
+                    const statusLabel = formatStatusLabel(status) || "-";
+                    const statusBadgeClass = getStatusBadgeClass(status);
                     const ownerKey = String(project?.submitted_by || "").trim();
                     const currentUserKey = String(
                       profile?.id || user?.id || "",
@@ -855,7 +870,12 @@ export default function ResearchProjectsHubPage() {
                             {isDraft ? (
                               <Badge variant="secondary">Draft</Badge>
                             ) : null}
-                            <Badge variant="outline">{status}</Badge>
+                            <Badge
+                              variant="outline"
+                              className={statusBadgeClass}
+                            >
+                              {statusLabel}
+                            </Badge>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1070,7 +1090,12 @@ export default function ResearchProjectsHubPage() {
                         {project.linked_resources_count}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{project.status}</Badge>
+                        <Badge
+                          variant="outline"
+                          className={getStatusBadgeClass(project.status)}
+                        >
+                          {formatStatusLabel(project.status) || "-"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-slate-600">
                         {formatDate(project.submitted_at)}
