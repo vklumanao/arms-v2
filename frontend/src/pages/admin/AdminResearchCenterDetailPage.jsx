@@ -46,10 +46,7 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/services/admin";
-import {
-  fetchAffiliateRegistry,
-  updateAffiliateProfile,
-} from "@/services/admin";
+import { updateAffiliateProfile } from "@/services/admin";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import { validateCenterForm } from "@/utils/admin";
 import {
@@ -58,7 +55,6 @@ import {
   Eye,
   FolderKanban,
   Pencil,
-  Plus,
   Search,
   Trash2,
   Users,
@@ -129,12 +125,7 @@ export default function AdminResearchCenterDetailPage() {
     researchAgendas: [],
   });
 
-  const [linkAffiliateOpen, setLinkAffiliateOpen] = useState(false);
-  const [linkAffiliateLoading, setLinkAffiliateLoading] = useState(false);
-  const [linkAffiliateSaving, setLinkAffiliateSaving] = useState(false);
-  const [affiliateSearch, setAffiliateSearch] = useState("");
-  const [affiliateRegistry, setAffiliateRegistry] = useState([]);
-  const [selectedAffiliateId, setSelectedAffiliateId] = useState("");
+  const [unlinkAffiliateSaving, setUnlinkAffiliateSaving] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState(null);
   const isCenterChief =
     String(profile?.role || "").toLowerCase() === "faculty" &&
@@ -604,111 +595,11 @@ export default function AdminResearchCenterDetailPage() {
     }
   };
 
-  const openLinkAffiliate = async () => {
-    setAffiliateSearch("");
-    setSelectedAffiliateId("");
-    setLinkAffiliateOpen(true);
-
-    if (affiliateRegistry.length > 0) return;
-
-    setLinkAffiliateLoading(true);
-    try {
-      const payload = await fetchAffiliateRegistry();
-      const rows = Array.isArray(payload?.rows) ? payload.rows : [];
-      setAffiliateRegistry(rows);
-    } catch (e) {
-      toast.error(
-        "Unable to load affiliates",
-        String(e?.message || "Please try again."),
-      );
-    } finally {
-      setLinkAffiliateLoading(false);
-    }
-  };
-
-  const linkCandidateRows = useMemo(() => {
-    const keyword = String(affiliateSearch || "")
-      .trim()
-      .toLowerCase();
-    const linkedIds = new Set(
-      (links.profiles || []).map((row) => String(row?.id || "").trim()),
-    );
-
-    return (affiliateRegistry || [])
-      .filter((row) => {
-        const id = String(row?.id || "").trim();
-        if (!id) return false;
-        if (linkedIds.has(id)) return false;
-        if (String(row?.ckan_org_id || "").trim() === centerId) return false;
-        if (!keyword) return true;
-        const haystack = [
-          row?.full_name,
-          row?.email,
-          row?.role,
-          row?.department,
-          row?.ckan_username,
-          row?.id,
-        ]
-          .map((v) => String(v || "").toLowerCase())
-          .join(" ");
-        return haystack.includes(keyword);
-      })
-      .slice(0, 20);
-  }, [affiliateRegistry, affiliateSearch, centerId, links.profiles]);
-
-  const handleLinkAffiliate = async () => {
-    const userId = String(selectedAffiliateId || "").trim();
-    if (!userId || linkAffiliateSaving) return;
-
-    setLinkAffiliateSaving(true);
-    try {
-      await updateAffiliateProfile(userId, { ckan_org_id: centerId });
-      toast.success("Affiliate linked", "Affiliate was added to this center.");
-      setLinkAffiliateOpen(false);
-
-      // Reload center links.
-      const linksPayload = await fetchReferenceLinks({
-        type: "center",
-        id: centerId,
-      });
-      setLinks((prev) => ({
-        ...prev,
-        profiles: Array.isArray(linksPayload?.profiles)
-          ? linksPayload.profiles
-          : [],
-        projects: Array.isArray(linksPayload?.projects)
-          ? linksPayload.projects
-          : [],
-        agendas: Array.isArray(linksPayload?.agendas)
-          ? linksPayload.agendas
-          : [],
-      }));
-
-      const usagePayload = await fetchReferenceUsageCounts({
-        type: "center",
-        id: centerId,
-      });
-      setUsage((prev) => ({
-        ...prev,
-        projectCount: Number(usagePayload?.projectCount || 0),
-        profileCount: Number(usagePayload?.profileCount || 0),
-        memberBreakdown: usagePayload?.memberBreakdown || prev.memberBreakdown,
-      }));
-    } catch (e) {
-      toast.error(
-        "Link failed",
-        String(e?.message || "Unable to link affiliate."),
-      );
-    } finally {
-      setLinkAffiliateSaving(false);
-    }
-  };
-
   const handleUnlinkAffiliate = async () => {
     const userId = String(unlinkTarget?.id || "").trim();
-    if (!userId || linkAffiliateSaving) return;
+    if (!userId || unlinkAffiliateSaving) return;
 
-    setLinkAffiliateSaving(true);
+    setUnlinkAffiliateSaving(true);
     try {
       await updateAffiliateProfile(userId, { ckan_org_id: null });
       toast.success(
@@ -750,7 +641,7 @@ export default function AdminResearchCenterDetailPage() {
         String(e?.message || "Unable to unlink affiliate."),
       );
     } finally {
-      setLinkAffiliateSaving(false);
+      setUnlinkAffiliateSaving(false);
     }
   };
 
@@ -1024,15 +915,6 @@ export default function AdminResearchCenterDetailPage() {
                             Showing {links.profiles.length} affiliate(s).
                           </CardDescription>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={openLinkAffiliate}
-                          disabled={loading}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Link Affiliate
-                        </Button>
                       </div>
                     </CardHeader>
 
@@ -1459,129 +1341,12 @@ export default function AdminResearchCenterDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={linkAffiliateOpen}
-        onOpenChange={(open) =>
-          !linkAffiliateSaving && setLinkAffiliateOpen(open)
-        }
-      >
-        <DialogContent
-          className="max-w-3xl"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Link Affiliate</DialogTitle>
-            <DialogDescription>
-              Search an affiliate and link them to this research center.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={affiliateSearch}
-                  onChange={(event) => setAffiliateSearch(event.target.value)}
-                  placeholder="Search name, email, role, department..."
-                  className="pl-9"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={linkAffiliateSaving || !selectedAffiliateId}
-                onClick={handleLinkAffiliate}
-              >
-                {linkAffiliateSaving ? "Linking..." : "Link"}
-              </Button>
-            </div>
-
-            {linkAffiliateLoading ? (
-              <p className="text-sm text-slate-600">Loading affiliates...</p>
-            ) : linkCandidateRows.length === 0 ? (
-              <EmptyState
-                title="No candidates"
-                description="No eligible affiliates matched your search."
-              />
-            ) : (
-              <div className="overflow-hidden rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead />
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {linkCandidateRows.map((row) => {
-                      const id = String(row?.id || "").trim();
-                      const isSelected =
-                        id && id === String(selectedAffiliateId || "").trim();
-                      return (
-                        <TableRow
-                          key={id}
-                          className={isSelected ? "bg-muted/40" : ""}
-                          onClick={() => setSelectedAffiliateId(id)}
-                        >
-                          <TableCell className="w-10">
-                            <input type="radio" checked={isSelected} readOnly />
-                          </TableCell>
-                          <TableCell className="font-medium text-slate-900">
-                            {row?.full_name || row?.email || id}
-                          </TableCell>
-                          <TableCell className="text-slate-700">
-                            {row?.email || "-"}
-                          </TableCell>
-                          <TableCell className="capitalize text-slate-700">
-                            {row?.role || "-"}
-                          </TableCell>
-                          <TableCell className="text-slate-700">
-                            {row?.department || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                row?.is_active === false
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {row?.is_active === false ? "Inactive" : "Active"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={linkAffiliateSaving}
-              onClick={() => setLinkAffiliateOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <ConfirmActionModal
         open={Boolean(unlinkTarget)}
         title="Unlink Affiliate"
         message={`Remove "${unlinkTarget?.full_name || unlinkTarget?.email || unlinkTarget?.id || "this affiliate"}" from this research center?`}
         confirmLabel="Unlink"
-        loading={linkAffiliateSaving}
+        loading={unlinkAffiliateSaving}
         onCancel={() => setUnlinkTarget(null)}
         onConfirm={handleUnlinkAffiliate}
       />
