@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
@@ -56,7 +56,6 @@ import {
   ChevronLeft,
   Eye,
   FolderKanban,
-  AlertTriangle,
   Pencil,
   Plus,
   Search,
@@ -76,6 +75,7 @@ function normalizeTab(value) {
 
 export default function AdminDepartmentDetailPage() {
   const toast = useToast();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const departmentId = String(params?.id || "").trim();
@@ -101,6 +101,7 @@ export default function AdminDepartmentDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
+  const [agendaFilter, setAgendaFilter] = useState("");
   const [projectsSearch, setProjectsSearch] = useState(() =>
     String(searchParams.get("projectSearch") || "").trim(),
   );
@@ -128,10 +129,17 @@ export default function AdminDepartmentDetailPage() {
   const [affiliateRegistry, setAffiliateRegistry] = useState([]);
   const [selectedAffiliateId, setSelectedAffiliateId] = useState("");
   const [unlinkTarget, setUnlinkTarget] = useState(null);
+  const isDepartmentChair =
+    String(profile?.role || "").toLowerCase() === "faculty" &&
+    String(profile?.id || "").trim() ===
+      String(department?.chairpersonId || "").trim();
+  const [showDeletePopover, setShowDeletePopover] = useState(false);
+  const deletePopoverRef = useRef(null);
 
   useEffect(() => {
     setAffiliatesPage(1);
     setProjectsPage(1);
+    setAgendaFilter("");
   }, [departmentId]);
 
   useEffect(() => {
@@ -145,6 +153,25 @@ export default function AdminDepartmentDetailPage() {
     if (nextStatus !== projectsStatus) setProjectsStatus(nextStatus);
     if (nextYear !== projectsYear) setProjectsYear(nextYear);
   }, [projectParamsKey]);
+
+  useEffect(() => {
+    if (!showDeletePopover) return;
+    const handleClickOutside = (event) => {
+      if (!deletePopoverRef.current) return;
+      if (!deletePopoverRef.current.contains(event.target)) {
+        setShowDeletePopover(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setShowDeletePopover(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showDeletePopover]);
 
   useEffect(() => {
     setSearchParams(
@@ -329,14 +356,21 @@ export default function AdminDepartmentDetailPage() {
   }, [affiliatesPage, links.profiles]);
 
   const filteredProjects = useMemo(() => {
+    const filterValue = String(agendaFilter || "")
+      .trim()
+      .toLowerCase();
     const query = String(projectsSearch || "")
       .trim()
       .toLowerCase();
     const statusFilter = String(projectsStatus || "all").toLowerCase();
     const yearFilter = String(projectsYear || "all").toLowerCase();
     return (links.projects || []).filter((row) => {
+      const agendaName = String(row?.agenda_name || "")
+        .trim()
+        .toLowerCase();
       const status = String(row?.status || "").toLowerCase();
       const year = String(row?.year || "").toLowerCase();
+      if (filterValue && agendaName !== filterValue) return false;
       if (statusFilter !== "all" && status !== statusFilter) return false;
       if (yearFilter !== "all" && year !== yearFilter) return false;
       const haystack = [
@@ -352,7 +386,13 @@ export default function AdminDepartmentDetailPage() {
         .join(" ");
       return query ? haystack.includes(query) : true;
     });
-  }, [links.projects, projectsSearch, projectsStatus, projectsYear]);
+  }, [
+    agendaFilter,
+    links.projects,
+    projectsSearch,
+    projectsStatus,
+    projectsYear,
+  ]);
 
   const projectStatusOptions = useMemo(() => {
     const unique = new Set();
@@ -372,6 +412,15 @@ export default function AdminDepartmentDetailPage() {
       if (value) unique.add(value);
     });
     return ["all", ...Array.from(unique).sort((a, b) => b.localeCompare(a))];
+  }, [links.projects]);
+
+  const departmentAgendas = useMemo(() => {
+    const unique = new Set();
+    (links.projects || []).forEach((row) => {
+      const value = String(row?.agenda_name || "").trim();
+      if (value) unique.add(value);
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
   }, [links.projects]);
 
   const projectsTotalPages = useMemo(
@@ -400,6 +449,7 @@ export default function AdminDepartmentDetailPage() {
     setProjectsSearch("");
     setProjectsStatus("all");
     setProjectsYear("all");
+    setAgendaFilter("");
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -410,6 +460,17 @@ export default function AdminDepartmentDetailPage() {
       },
       { replace: true },
     );
+  };
+
+  const applyAgendaFilter = (agenda) => {
+    const next = String(agenda || "").trim();
+    setAgendaFilter((prev) => {
+      const normalizedPrev = String(prev || "").trim();
+      if (normalizedPrev && normalizedPrev === next) return "";
+      return next;
+    });
+    setProjectsPage(1);
+    setTab("projects");
   };
 
   const refreshLinksAndUsage = async () => {
@@ -650,45 +711,80 @@ export default function AdminDepartmentDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                clearProjectFilters();
-                navigate("/admin/departments");
-              }}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back to Departments
-            </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {!isDepartmentChair ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              clearProjectFilters();
+              navigate("/admin/departments");
+            }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Departments
+          </Button>
+        ) : null}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                disabled={loading || !department}
-                onClick={() => setEditOpen(true)}
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Department
-              </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={loading || !department}
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
+          {deleteGuard.blocked ? (
+            <div className="relative" ref={deletePopoverRef}>
               <Button
                 variant="destructive"
-                disabled={deleting || loading || deleteGuard.blocked}
-                onClick={handleDelete}
-                title={
-                  deleteGuard.blocked
-                    ? "Remove linked projects/affiliates first"
-                    : "Delete department"
-                }
+                type="button"
+                onClick={() => setShowDeletePopover((prev) => !prev)}
+                aria-expanded={showDeletePopover}
+                aria-haspopup="dialog"
+                title="Remove linked projects/affiliates first"
+                className="opacity-70 hover:opacity-100"
               >
                 Delete
               </Button>
+              {showDeletePopover ? (
+                <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
+                  <p className="font-semibold text-slate-900">
+                    Deletion is blocked
+                  </p>
+                  <p className="mt-1 text-slate-600">
+                    This department cannot be deleted while it has{" "}
+                    {deleteGuard.reasons.projectCount
+                      ? `${deleteGuard.reasons.projectCount} linked project(s)`
+                      : null}
+                    {deleteGuard.reasons.projectCount &&
+                    deleteGuard.reasons.nonAdminAffiliates
+                      ? " and "
+                      : null}
+                    {deleteGuard.reasons.nonAdminAffiliates
+                      ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
+                      : null}
+                    .
+                  </p>
+                </div>
+              ) : null}
             </div>
-          </div>
+          ) : (
+            <Button
+              variant="destructive"
+              disabled={deleting || loading}
+              onClick={handleDelete}
+              title="Delete department"
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
 
-          <div className="mt-4 flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
                 {initials}
@@ -716,21 +812,12 @@ export default function AdminDepartmentDetailPage() {
                     <FolderKanban className="h-4 w-4" />
                     {usage.projectCount} projects
                   </Badge>
-                  <Badge variant="outline" className="gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Department record
-                  </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="rounded-full border border-border bg-white px-3 py-1">
-                ID: {department?.id || "-"}
-              </span>
-            </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-5 p-6">
+        <CardContent className="space-y-4 p-6">
           {loading ? (
             <p className="text-sm text-slate-600">Loading department...</p>
           ) : error ? (
@@ -742,33 +829,6 @@ export default function AdminDepartmentDetailPage() {
             />
           ) : (
             <>
-              {deleteGuard.blocked ? (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-700">
-                      <AlertTriangle className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Deletion is blocked</p>
-                      <p className="mt-1 text-amber-800">
-                        This department cannot be deleted while it has{" "}
-                        {deleteGuard.reasons.projectCount
-                          ? `${deleteGuard.reasons.projectCount} linked project(s)`
-                          : null}
-                        {deleteGuard.reasons.projectCount &&
-                        deleteGuard.reasons.nonAdminAffiliates
-                          ? " and "
-                          : null}
-                        {deleteGuard.reasons.nonAdminAffiliates
-                          ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
-                          : null}
-                        .
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
               <div className="rounded-lg border border-[var(--border)] bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Description
@@ -797,7 +857,7 @@ export default function AdminDepartmentDetailPage() {
                           {usage.profileCount}
                         </p>
                         <p className="mt-1 text-xs text-slate-600">
-                          Chair {usage.memberBreakdown?.adminCount || 0} ·
+                          Admin {usage.memberBreakdown?.adminCount || 0} ·
                           Editor {usage.memberBreakdown?.editorCount || 0} ·
                           Member {usage.memberBreakdown?.memberCount || 0}
                         </p>
@@ -813,19 +873,6 @@ export default function AdminDepartmentDetailPage() {
                         </p>
                         <p className="mt-1 text-xs text-slate-600">
                           Linked research projects.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          Code
-                        </p>
-                        <p className="mt-1 font-mono text-xl font-bold text-slate-900">
-                          {department.code}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Department code identifier.
                         </p>
                       </CardContent>
                     </Card>
@@ -957,7 +1004,7 @@ export default function AdminDepartmentDetailPage() {
                   ) : (
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="space-y-1">
                             <CardTitle className="text-base font-bold text-slate-900">
                               Linked Projects
@@ -965,6 +1012,20 @@ export default function AdminDepartmentDetailPage() {
                             <CardDescription>
                               Showing {filteredProjects.length} project(s).
                             </CardDescription>
+                            {agendaFilter ? (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                                <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-slate-700">
+                                  Agenda: {agendaFilter}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                                  onClick={() => setAgendaFilter("")}
+                                >
+                                  Clear agenda
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <label className="relative w-full min-w-[14rem] md:w-auto">
@@ -1020,6 +1081,7 @@ export default function AdminDepartmentDetailPage() {
                                 setProjectsSearch("");
                                 setProjectsStatus("all");
                                 setProjectsYear("all");
+                                setAgendaFilter("");
                               }}
                             >
                               Reset filters
