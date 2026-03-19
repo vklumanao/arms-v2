@@ -297,7 +297,16 @@ export function registerAdminRoutes(app, deps) {
     if (["publication", "publications", "journal_article"].includes(base)) {
       return "publication";
     }
-    if (["creative_work", "creative_works", "creative"].includes(base)) {
+    if (
+      [
+        "creative_work",
+        "creative_works",
+        "creative",
+        "product_software",
+        "product_software_application",
+        "products_software_application",
+      ].includes(base)
+    ) {
       return "creative_work";
     }
     if (["award", "awards", "recognition"].includes(base)) return "award";
@@ -316,6 +325,8 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function inferOutputTypeFromResource(resource) {
+    const fromExplicit = normalizeOutputType(resource?.output_type || "");
+    if (fromExplicit) return fromExplicit;
     const fromName = normalizeOutputType(resource?.name || "");
     if (fromName) return fromName;
     const fromDescription = normalizeOutputType(resource?.description || "");
@@ -333,6 +344,86 @@ export function registerAdminRoutes(app, deps) {
       awards_count: 0,
       ip_count: 0,
     };
+  }
+
+  function normalizePersonName(value) {
+    return String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function parsePublicationAuthors(rawValue) {
+    const raw = String(rawValue || "").trim();
+    if (!raw) return [];
+    if (raw.includes(";")) {
+      return raw
+        .split(";")
+        .map((name) => name.trim())
+        .filter(Boolean);
+    }
+    return [raw];
+  }
+
+  function parseExpectedOutputMeta(rawValue) {
+    try {
+      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((row) => ({
+          output_type: normalizeOutputType(row?.output_type || row?.outputType),
+          target_count: Math.max(
+            1,
+            Number(row?.target_count || row?.targetCount || 1) || 1,
+          ),
+          output_link: asTrimmedString(row?.output_link || row?.outputLink),
+          publication_authors: asTrimmedString(
+            row?.publication_authors || row?.publicationAuthors,
+          ),
+        }))
+        .filter((row) => row.output_type);
+    } catch {
+      return [];
+    }
+  }
+
+  function buildNameVariants(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return [];
+    const normalized = normalizePersonName(raw);
+    const variants = new Set([normalized]);
+    if (raw.includes(",")) {
+      const parts = raw.split(",").map((part) => part.trim());
+      if (parts.length >= 2) {
+        const swapped = normalizePersonName(`${parts[1]} ${parts[0]}`);
+        if (swapped) variants.add(swapped);
+      }
+    }
+    if (!raw.includes(",")) {
+      const tokens = raw
+        .split(/\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+      if (tokens.length >= 2) {
+        const last = tokens[tokens.length - 1];
+        const rest = tokens.slice(0, -1).join(" ");
+        const swapped = normalizePersonName(`${last} ${rest}`);
+        if (swapped) variants.add(swapped);
+      }
+    }
+    return Array.from(variants).filter(Boolean);
+  }
+
+  function extractAuthorsFromDescription(description) {
+    const text = String(description || "").trim();
+    if (!text) return "";
+    const line = text
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) => /authors\/proponents:/i.test(entry));
+    if (!line) return "";
+    return line.replace(/^.*authors\/proponents:/i, "").trim();
   }
 
   function normalizeDepartmentCode(value) {
@@ -410,7 +501,7 @@ export function registerAdminRoutes(app, deps) {
     return rows;
   }
 
-  function buildLiveMetricsByCkanUserId(ckanUsers, datasets) {
+  function buildLiveMetricsByCkanUserId(ckanUsers, datasets, nameToUserId) {
     const identityToUserId = new Map();
     const metricsByUserId = {};
 
@@ -453,12 +544,80 @@ export function registerAdminRoutes(app, deps) {
       const metrics = metricsByUserId[ownerUserId] || createZeroMetrics();
       metrics.research_project_count += 1;
 
+      const expectedOutputs = parseExpectedOutputMeta(
+        getDatasetExtraByKey(extras, "expected_outputs_meta"),
+      );
+      if (expectedOutputs.length > 0) {
+        expectedOutputs.forEach((row) => {
+          const outputType = normalizeOutputType(row.output_type);
+          const authorsRaw = asTrimmedString(row.publication_authors);
+          const authorNames = parsePublicationAuthors(authorsRaw);
+          const normalizedNames = authorNames.map((name) =>
+            normalizePersonName(name),
+          );
+          const authorIds = new Set(
+            normalizedNames
+              .map((name) => nameToUserId.get(name))
+              .filter(Boolean),
+          );
+          const increment = Math.max(1, Number(row.target_count || 1) || 1);
+          const applyCount = (targetMetrics) => {
+            if (outputType === "publication") {
+              targetMetrics.publication_count += increment;
+            } else if (outputType === "creative_work") {
+              targetMetrics.creative_work_count += increment;
+            } else if (outputType === "award") {
+              targetMetrics.awards_count += increment;
+            } else if (outputType === "patent_ip") {
+              targetMetrics.ip_count += increment;
+            }
+          };
+          if (authorIds.size > 0) {
+            authorIds.forEach((authorId) => {
+              const authorMetrics =
+                metricsByUserId[authorId] || createZeroMetrics();
+              applyCount(authorMetrics);
+              metricsByUserId[authorId] = authorMetrics;
+            });
+          } else {
+            applyCount(metrics);
+          }
+        });
+        metricsByUserId[ownerUserId] = metrics;
+        return;
+      }
+
       const resources = Array.isArray(dataset?.resources)
         ? dataset.resources
         : [];
       resources.forEach((resource) => {
         const outputType = inferOutputTypeFromResource(resource);
-        if (outputType === "publication") metrics.publication_count += 1;
+        if (outputType === "publication") {
+          const rawFromField = asTrimmedString(resource?.publication_authors);
+          const rawFromDescription = extractAuthorsFromDescription(
+            resource?.description,
+          );
+          const authorsRaw = rawFromField || rawFromDescription || "";
+          const authorNames = parsePublicationAuthors(authorsRaw);
+          const normalizedNames = authorNames.map((name) =>
+            normalizePersonName(name),
+          );
+          const authorIds = new Set(
+            normalizedNames
+              .map((name) => nameToUserId.get(name))
+              .filter(Boolean),
+          );
+          if (authorIds.size > 0) {
+            authorIds.forEach((authorId) => {
+              const authorMetrics =
+                metricsByUserId[authorId] || createZeroMetrics();
+              authorMetrics.publication_count += 1;
+              metricsByUserId[authorId] = authorMetrics;
+            });
+          } else {
+            metrics.publication_count += 1;
+          }
+        }
         if (outputType === "creative_work") metrics.creative_work_count += 1;
         if (outputType === "award") metrics.awards_count += 1;
         if (outputType === "patent_ip") metrics.ip_count += 1;
@@ -585,9 +744,33 @@ export function registerAdminRoutes(app, deps) {
           .filter((row) => row?.ckan_user_id)
           .map((row) => [String(row.ckan_user_id || "").trim(), row]),
       );
+      const nameToUserId = new Map();
+      (ckanUsers || []).forEach((user) => {
+        const userId = asTrimmedString(user?.id).toLowerCase();
+        if (!userId) return;
+        const name = String(
+          user?.fullname || user?.display_name || user?.name || "",
+        ).trim();
+        buildNameVariants(name).forEach((variant) => {
+          if (variant && !nameToUserId.has(variant)) {
+            nameToUserId.set(variant, userId);
+          }
+        });
+      });
+      (localUsers || []).forEach((user) => {
+        const ckanUserId = asTrimmedString(user?.ckan_user_id).toLowerCase();
+        if (!ckanUserId) return;
+        const name = String(user?.full_name || user?.email || "").trim();
+        buildNameVariants(name).forEach((variant) => {
+          if (variant && !nameToUserId.has(variant)) {
+            nameToUserId.set(variant, ckanUserId);
+          }
+        });
+      });
       const liveMetricsByCkanUserId = buildLiveMetricsByCkanUserId(
         ckanUsers,
         allDatasets,
+        nameToUserId,
       );
 
       const userOrgMap = {};
@@ -723,25 +906,26 @@ export function registerAdminRoutes(app, deps) {
             is_gs_faculty: localUser
               ? Boolean(localUser.is_gs_faculty)
               : toBool(getUserExtraValue(user, "is_gs_faculty"), false),
-            publication_count: Number(
-              localUser?.publication_count ??
-                liveMetrics.publication_count ??
-                0,
+            publication_count: Math.max(
+              Number(localUser?.publication_count || 0),
+              Number(liveMetrics.publication_count || 0),
             ),
             research_project_count: Number(
               localUser?.research_project_count ??
                 liveMetrics.research_project_count ??
                 0,
             ),
-            creative_work_count: Number(
-              localUser?.creative_work_count ??
-                liveMetrics.creative_work_count ??
-                0,
+            creative_work_count: Math.max(
+              Number(localUser?.creative_work_count || 0),
+              Number(liveMetrics.creative_work_count || 0),
             ),
             awards_count: Number(
               localUser?.awards_count ?? liveMetrics.awards_count ?? 0,
             ),
-            ip_count: Number(localUser?.ip_count ?? liveMetrics.ip_count ?? 0),
+            ip_count: Math.max(
+              Number(localUser?.ip_count || 0),
+              Number(liveMetrics.ip_count || 0),
+            ),
             created_at: localUser?.created_at || user?.created || null,
             updated_at:
               localUser?.updated_at ||
