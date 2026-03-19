@@ -47,6 +47,7 @@ export default function useSubmissionDraft({
             (/^https?:\/\//i.test(String(row?.file_path || "").trim())
               ? String(row?.file_path || "").trim()
               : ""),
+          publication_authors: String(row?.publication_authors || "").trim(),
           file: null,
           file_base64: String(row?.file_base64 || "").trim(),
           needs_file_reselect: Boolean(
@@ -90,6 +91,7 @@ export default function useSubmissionDraft({
             specific_output: row.specific_output || "",
             notes: row.notes,
             output_link: row.output_link || "",
+            publication_authors: row.publication_authors || "",
             file_path: row.file_path,
             file_name: row.file_name,
             mime_type: row.mime_type,
