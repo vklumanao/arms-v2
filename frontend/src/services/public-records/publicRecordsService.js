@@ -43,3 +43,14 @@ export async function fetchPublicRecordResources(projectId) {
   }
 }
 
+export async function fetchPublicCenterAffiliates(centerId) {
+  try {
+    const payload = await apiFetch(
+      `/public-records/centers/${encodeURIComponent(centerId)}/affiliates`,
+    );
+    return { rows: payload?.rows || [], error: null };
+  } catch (error) {
+    return { rows: [], error };
+  }
+}
+
