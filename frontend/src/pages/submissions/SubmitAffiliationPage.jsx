@@ -295,6 +295,23 @@ export default function SubmitAffiliationPage() {
     [expectedOutputRows.length],
   );
 
+  const reorderExpectedOutputs = (fromIndex, toIndex) => {
+    setExpectedOutputRows((prev) => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex >= prev.length
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (step === 3) setExpectedOutputsPage(1);
   }, [step]);
@@ -619,10 +636,15 @@ export default function SubmitAffiliationPage() {
     });
   };
 
-  const openAddOutputModal = () => {
+  const openAddOutputModal = (outputType = "") => {
     setError("");
     setEditingOutputClientId(null);
-    setNewOutputDraft(createLocalOutputRow());
+    setNewOutputDraft((prev) => ({
+      ...createLocalOutputRow(),
+      output_type: outputType || prev?.output_type || "",
+      specific_output:
+        outputType === "product_software" ? prev?.specific_output || "" : "",
+    }));
     setShowAddOutputModal(true);
   };
 
@@ -1122,6 +1144,9 @@ export default function SubmitAffiliationPage() {
                 expectedOutputsPage={expectedOutputsPage}
                 expectedOutputsTotalPages={expectedOutputsTotalPages}
                 setExpectedOutputsPage={setExpectedOutputsPage}
+                expectedOutputsPageSize={EXPECTED_OUTPUTS_PAGE_SIZE}
+                onReorderExpectedOutputs={reorderExpectedOutputs}
+                onQuickAddOutput={openAddOutputModal}
                 openAddOutputModal={openAddOutputModal}
                 openEditOutputModal={openEditOutputModal}
                 deleteExpectedOutputRow={deleteExpectedOutputRow}
