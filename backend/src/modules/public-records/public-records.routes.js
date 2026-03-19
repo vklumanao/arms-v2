@@ -17,6 +17,45 @@ export function registerPublicRecordsRoutes(app, deps) {
     getExtraByKey,
   } = deps;
 
+  function normalizeOutputType(value) {
+    const rawType = asTrimmedString(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return rawType === "patent" || rawType === "ip"
+      ? "patent_ip"
+      : rawType === "people_service"
+        ? "people_services"
+        : rawType === "place_partnerships" ||
+            rawType === "places_and_partnerships"
+          ? "places_partnerships"
+          : rawType === "products_software_application" ||
+              rawType === "product_software_application"
+            ? "product_software"
+            : rawType;
+  }
+
+  function parseExpectedOutputMetadata(rawValue) {
+    try {
+      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((row) => ({
+          output_type: normalizeOutputType(row?.output_type || row?.outputType),
+          target_count: Math.max(
+            1,
+            Number(row?.target_count || row?.targetCount || 1) || 1,
+          ),
+          specific_output: asTrimmedString(
+            row?.specific_output || row?.specificOutput,
+          ),
+        }))
+        .filter((row) => row.output_type);
+    } catch {
+      return [];
+    }
+  }
+
   function getDatasetTagNames(dataset) {
     const tags = Array.isArray(dataset?.tags) ? dataset.tags : [];
     return tags
@@ -240,16 +279,29 @@ export function registerPublicRecordsRoutes(app, deps) {
         return res.status(404).json({ error: "Project dataset not found." });
       }
 
+      const expectedOutputMetaRows = parseExpectedOutputMetadata(
+        getExtraByKey(extras, "expected_outputs_meta"),
+      );
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      const resourcesWithOutputType = resources.map((resource, index) => {
+        const metaRow = expectedOutputMetaRows[index] || null;
+        const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
+        return {
+          ...resource,
+          output_type: outputTypeFromMeta || null,
+        };
+      });
+
       console.log("[public-records] resources ok", {
         projectId,
-        resourceCount: Array.isArray(dataset?.resources)
-          ? dataset.resources.length
-          : 0,
+        resourceCount: resources.length,
       });
       return res.json({
         data: {
           dataset,
-          resources: Array.isArray(dataset?.resources) ? dataset.resources : [],
+          resources: resourcesWithOutputType,
         },
         syncEnabled: true,
       });
