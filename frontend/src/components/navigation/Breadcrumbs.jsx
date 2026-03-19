@@ -3,6 +3,7 @@
 const SEGMENT_LABELS = {
   dashboard: "Dashboard",
   "public-records": "Public Records",
+  "public-research-centers": "Research Centers",
   "submit-project": "Research Projects",
   "submit-affiliation": "Research Projects",
   submit: "Submit Research Project",
