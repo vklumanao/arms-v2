@@ -69,6 +69,7 @@ export default function StepOutputs({
                   <TableHead>Output Type</TableHead>
                   <TableHead>Target</TableHead>
                   <TableHead>Notes</TableHead>
+                  <TableHead>Output Link</TableHead>
                   <TableHead>File</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -77,7 +78,7 @@ export default function StepOutputs({
                 {expectedOutputRows.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="px-3 py-4 text-center text-xs text-slate-500"
                     >
                       No expected outputs added yet.
@@ -110,10 +111,18 @@ export default function StepOutputs({
                         ) : null}
                       </TableCell>
                       <TableCell className="break-all text-slate-600">
-                        {row.file_name ||
-                          row.file?.name ||
-                          row.file_path ||
-                          "-"}
+                        {row.output_link || "-"}
+                      </TableCell>
+                      <TableCell className="break-all text-slate-600">
+                        {row.output_link ||
+                          (/^https?:\/\//i.test(
+                            String(row.file_path || "").trim(),
+                          )
+                            ? row.file_path
+                            : "-")}
+                      </TableCell>
+                      <TableCell className="break-all text-slate-600">
+                        {row.file_name || row.file?.name || "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
