@@ -184,6 +184,7 @@ const submissionExpectedOutputSchema = z
       .int()
       .min(1, "Each expected output must have a target count of at least 1."),
       notes: z.string().trim().optional().nullable(),
+      output_link: z.string().trim().optional().nullable(),
       file_path: z.string().trim().optional().nullable(),
       file_name: z.string().trim().optional().nullable(),
       file_base64: z.string().trim().optional().nullable(),
