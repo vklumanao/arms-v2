@@ -1498,12 +1498,8 @@ export default function AdminResearchCenterPage() {
               ARMS Research Centers
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Research Center Command Hub
+              Research Center Workspace
             </h1>
-            <p className="text-sm text-slate-600">
-              Manage center records, monitor links, and keep agendas aligned
-              across the institution.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1545,45 +1541,6 @@ export default function AdminResearchCenterPage() {
                 Create Research Center
               </Button>
             ) : null}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Total Centers
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalCenters}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Active registry</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Linked Affiliates
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalAffiliates}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Across all centers</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Linked Projects
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalProjects}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Active pipeline</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Agendas
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalAgendas}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Coverage</p>
           </div>
         </div>
       </div>
