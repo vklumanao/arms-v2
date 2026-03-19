@@ -633,7 +633,10 @@ export default function SubmitAffiliationPage() {
     setNewOutputDraft({
       ...createLocalOutputRow(),
       ...row,
-      target_count: Math.max(1, Number(row.target_count) || 1),
+      target_count: 1,
+      output_link:
+        String(row?.output_link || "").trim() ||
+        (isLikelyUrl(row?.file_path) ? row.file_path : ""),
       file: null,
       file_base64: String(row?.file_base64 || "").trim(),
     });
@@ -652,14 +655,7 @@ export default function SubmitAffiliationPage() {
       setError("Expected output type is required.");
       return;
     }
-    const normalizedTargetCount = Math.max(
-      1,
-      Number(newOutputDraft.target_count) || 0,
-    );
-    if (normalizedTargetCount < 1) {
-      setError("Target count must be at least 1.");
-      return;
-    }
+    const normalizedTargetCount = 1;
     const normalizedSpecificOutput = String(
       newOutputDraft.specific_output || "",
     ).trim();
@@ -669,6 +665,11 @@ export default function SubmitAffiliationPage() {
       );
       return;
     }
+    const outputLinkRaw = String(newOutputDraft.output_link || "").trim();
+    const normalizedOutputLink =
+      outputLinkRaw && !/^https?:\/\//i.test(outputLinkRaw)
+        ? `https://${outputLinkRaw}`
+        : outputLinkRaw;
     const selectedFile = newOutputDraft.file;
     const isEditMode = Boolean(editingOutputClientId);
     const existingRow = isEditMode
@@ -685,6 +686,7 @@ export default function SubmitAffiliationPage() {
     const existingFileBase64 = String(
       newOutputDraft.file_base64 || existingRow?.file_base64 || "",
     ).trim();
+    const existingFilePathIsLink = isLikelyUrl(existingFilePath);
 
     setError("");
     setMessage("");
@@ -692,7 +694,8 @@ export default function SubmitAffiliationPage() {
       !selectedFile &&
       existingFileName &&
       !existingFilePath &&
-      !existingFileBase64
+      !existingFileBase64 &&
+      !normalizedOutputLink
     ) {
       setError("Please re-attach the output file before saving this entry.");
       return;
@@ -706,24 +709,41 @@ export default function SubmitAffiliationPage() {
     const nextFileBase64 = selectedFile
       ? await fileToBase64(selectedFile)
       : existingFileBase64;
+    const nextFilePath = selectedFile
+      ? ""
+      : normalizedOutputLink
+        ? normalizedOutputLink
+        : existingFilePathIsLink
+          ? ""
+          : existingFilePath;
+    const nextFileName = selectedFile
+      ? selectedFile.name || ""
+      : normalizedOutputLink
+        ? ""
+        : existingFileName;
+    const nextMimeType = selectedFile
+      ? selectedFile.type || ""
+      : normalizedOutputLink
+        ? ""
+        : String(newOutputDraft.mime_type || existingRow?.mime_type || "").trim();
+    const nextFileSize = selectedFile
+      ? selectedFile.size || null
+      : normalizedOutputLink
+        ? null
+        : newOutputDraft.file_size || existingRow?.file_size || null;
     const nextRow = {
       ...newOutputDraft,
       output_type: normalizedType,
       target_count: normalizedTargetCount,
       specific_output:
         normalizedType === "product_software" ? normalizedSpecificOutput : "",
+      output_link: normalizedOutputLink,
       notes: String(newOutputDraft.notes || "").trim(),
       file: selectedFile || null,
-      file_path: selectedFile ? "" : existingFilePath,
-      file_name: selectedFile ? selectedFile.name || "" : existingFileName,
-      mime_type: selectedFile
-        ? selectedFile.type || ""
-        : String(
-            newOutputDraft.mime_type || existingRow?.mime_type || "",
-          ).trim(),
-      file_size: selectedFile
-        ? selectedFile.size || null
-        : newOutputDraft.file_size || existingRow?.file_size || null,
+      file_path: nextFilePath,
+      file_name: nextFileName,
+      mime_type: nextMimeType,
+      file_size: nextFileSize,
       file_base64: nextFileBase64,
       is_saved: true,
     };
@@ -802,8 +822,9 @@ export default function SubmitAffiliationPage() {
       expected_outputs: summaryText,
       expected_outputs_items: expectedOutputRows.map((row) => ({
         output_type: row.output_type || "",
-        target_count: Math.max(1, Number(row.target_count) || 1),
+        target_count: 1,
         specific_output: row.specific_output || "",
+        output_link: row.output_link || "",
       })),
       signed_moa_reference: moaReference,
     };
@@ -1260,7 +1281,6 @@ export default function SubmitAffiliationPage() {
         setNewOutputDraft={setNewOutputDraft}
         saveNewExpectedOutput={saveNewExpectedOutput}
         closeAddOutputModal={closeAddOutputModal}
-        sanitizeDigits={sanitizeDigits}
         formatFileSize={formatFileSize}
         fileToBase64={fileToBase64}
         maxOutputFileSizeBytes={MAX_OUTPUT_FILE_SIZE_BYTES}
