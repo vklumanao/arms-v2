@@ -690,12 +690,8 @@ export default function AdminDepartmentPage() {
               ARMS Departments
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Department Command Hub
+              Department Workspace
             </h1>
-            <p className="text-sm text-slate-600">
-              Manage department records, track leadership, and monitor linked
-              affiliates and projects.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -735,49 +731,6 @@ export default function AdminDepartmentPage() {
             >
               Create Department
             </Button>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Departments
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalDepartments}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Active academic units</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Linked Affiliates
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalAffiliates}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Faculty and staff coverage
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Research Projects
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalProjects}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">Linked academic work</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Total Links
-            </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {dashboardMetrics.totalLinks}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Combined affiliates + projects
-            </p>
           </div>
         </div>
       </div>
