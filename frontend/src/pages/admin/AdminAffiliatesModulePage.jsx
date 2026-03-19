@@ -590,11 +590,11 @@ export default function AdminAffiliatesModulePage() {
                     <TableHead>Research Center</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>GS Faculty</TableHead>
-                    <TableHead>Publications</TableHead>
                     <TableHead>Projects</TableHead>
-                    <TableHead>Creative Works</TableHead>
                     <TableHead>Awards</TableHead>
+                    <TableHead>Publications</TableHead>
                     <TableHead>IPs</TableHead>
+                    <TableHead>Creative Works</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -634,19 +634,19 @@ export default function AdminAffiliatesModulePage() {
                         {row.is_gs_faculty ? "Yes" : "No"}
                       </TableCell>
                       <TableCell className="text-slate-700">
-                        {Number(row.publication_count || 0)}
-                      </TableCell>
-                      <TableCell className="text-slate-700">
                         {Number(row.research_project_count || 0)}
-                      </TableCell>
-                      <TableCell className="text-slate-700">
-                        {Number(row.creative_work_count || 0)}
                       </TableCell>
                       <TableCell className="text-slate-700">
                         {Number(row.awards_count || 0)}
                       </TableCell>
                       <TableCell className="text-slate-700">
+                        {Number(row.publication_count || 0)}
+                      </TableCell>
+                      <TableCell className="text-slate-700">
                         {Number(row.ip_count || 0)}
+                      </TableCell>
+                      <TableCell className="text-slate-700">
+                        {Number(row.creative_work_count || 0)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex items-center justify-end gap-1">
