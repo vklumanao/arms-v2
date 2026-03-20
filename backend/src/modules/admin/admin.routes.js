@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { query } from "../../db/client.js";
+import { config } from "../../config/index.js";
 
 /**
  * Registers admin controls and reference-management routes.
@@ -13,6 +14,31 @@ import { query } from "../../db/client.js";
  * - Core CKAN operations are injected from integration client.
  */
 export function registerAdminRoutes(app, deps) {
+  const serviceBotEmails = new Set(
+    (config.serviceBotEmails || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const serviceBotNames = new Set(
+    (config.serviceBotNames || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const serviceBotIds = new Set(
+    (config.serviceBotIds || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const isServiceBotProfile = (profile) => {
+    if (!profile) return false;
+    const email = String(profile?.email || "").trim().toLowerCase();
+    const name = String(profile?.full_name || "").trim().toLowerCase();
+    const id = String(profile?.id || "").trim().toLowerCase();
+    if (email && serviceBotEmails.has(email)) return true;
+    if (name && serviceBotNames.has(name)) return true;
+    if (id && serviceBotIds.has(id)) return true;
+    return false;
+  };
   const {
     authMiddleware,
     badRequest,
@@ -1329,74 +1355,163 @@ export function registerAdminRoutes(app, deps) {
                   asTrimmedString(user?.ckan_user_id) === savedCenterChiefId,
               ) || null
             : null;
-        const adminCount =
-          type === "department"
-            ? departmentChairperson || countedChairperson
-              ? 1
-              : 0
-            : countedCenterChief || countedChief
+        let adminCount = 0;
+        let editorCount = 0;
+        let memberCount = 0;
+        let totalAffiliates = 0;
+        let centerProfilesLength = null;
+
+        if (type === "center") {
+          const ckanProfiles = await Promise.all(
+            activeMembers.map(async (member) => {
+              const localUser = await findLocalUserByCkanMember(member);
+              const capacity = String(member?.capacity || "")
+                .trim()
+                .toLowerCase();
+              const roleFromCapacity =
+                capacity === "admin"
+                  ? "admin"
+                  : capacity === "editor"
+                    ? "faculty"
+                    : "student";
+              return {
+                id: member?.id || member?.name || null,
+                full_name:
+                  member?.fullname ||
+                  member?.display_name ||
+                  member?.name ||
+                  localUser?.full_name ||
+                  localUser?.email ||
+                  member?.email ||
+                  "CKAN User",
+                email: member?.email || localUser?.email || null,
+                role:
+                  String(localUser?.role || "").trim().toLowerCase() ||
+                  roleFromCapacity,
+                is_active: localUser ? localUser.is_active !== false : true,
+              };
+            }),
+          );
+          const assignedProfiles = centerUserRows.map((user) => ({
+            id: user?.ckan_user_id || user?.id || user?.email || null,
+            full_name: user?.full_name || user?.email || "ARMS User",
+            email: user?.email || null,
+            role: String(user?.role || "student").trim().toLowerCase(),
+            is_active: user?.is_active !== false,
+          }));
+          let profiles = Array.from(
+            [...ckanProfiles, ...assignedProfiles].reduce((acc, profile) => {
+              const key =
+                asTrimmedString(profile?.email).toLowerCase() ||
+                asTrimmedString(profile?.id).toLowerCase();
+              if (!key) return acc;
+              if (!acc.has(key)) {
+                acc.set(key, profile);
+                return acc;
+              }
+              const current = acc.get(key);
+              acc.set(key, {
+                ...current,
+                ...profile,
+                email: profile?.email || current?.email,
+                role: profile?.role || current?.role,
+              });
+              return acc;
+            }, new Map()).values(),
+          );
+          const chiefKey = asTrimmedString(savedCenterChiefId).toLowerCase();
+          if (chiefKey) {
+            const chiefInProfiles = profiles.some(
+              (profile) =>
+                asTrimmedString(profile?.id).toLowerCase() === chiefKey ||
+                asTrimmedString(profile?.email).toLowerCase() === chiefKey,
+            );
+            if (!chiefInProfiles) {
+              const chiefProfile = {
+                id: savedCenterChiefId,
+                full_name: "Center Chief",
+                email: null,
+                role: "admin",
+                is_active: true,
+              };
+              if (!isServiceBotProfile(chiefProfile)) {
+                profiles = [...profiles, chiefProfile];
+              }
+            }
+          }
+          const normalized = profiles
+            .filter((profile) => !isServiceBotProfile(profile))
+            .map((profile) => ({
+              ...profile,
+              isChief:
+                chiefKey &&
+                (asTrimmedString(profile?.id).toLowerCase() === chiefKey ||
+                  asTrimmedString(profile?.email).toLowerCase() === chiefKey),
+            }));
+          adminCount = normalized.filter(
+            (profile) => profile.isChief || profile.role === "admin",
+          ).length;
+          editorCount = normalized.filter(
+            (profile) => !profile.isChief && profile.role === "faculty",
+          ).length;
+          memberCount = normalized.filter(
+            (profile) =>
+              !profile.isChief &&
+              profile.role !== "admin" &&
+              profile.role !== "faculty",
+          ).length;
+          totalAffiliates = normalized.length;
+          centerProfilesLength = normalized.length;
+        } else {
+          adminCount =
+            departmentChairperson || countedChairperson
               ? 1
               : 0;
-        const memberCapacityByKey =
-          type === "department"
-            ? activeMembers.reduce((acc, member) => {
-                const capacity = String(member?.capacity || "")
-                  .trim()
-                  .toLowerCase();
-                const keys = uniqueTrimmed([
-                  member?.id,
-                  member?.name,
-                  member?.email,
-                ]);
-                keys.forEach((key) => {
-                  acc[key] = capacity;
-                });
-                return acc;
-              }, {})
-            : {};
-        let editorCount = nonAdminMembers.filter(
-          (member) =>
-            String(member?.capacity || "")
+          const memberCapacityByKey = activeMembers.reduce((acc, member) => {
+            const capacity = String(member?.capacity || "")
               .trim()
-              .toLowerCase() === "editor",
-        ).length;
-        let memberCount = Math.max(0, nonAdminMembers.length - editorCount);
-
-        if (type === "center" && centerUserRows.length > 0) {
-          const nonChiefUsers = centerUserRows.filter(
-            (user) =>
-              asTrimmedString(user?.ckan_user_id) !== savedCenterChiefId,
-          );
-          editorCount = nonChiefUsers.filter(
-            (user) => String(user?.role || "").trim().toLowerCase() === "faculty",
-          ).length;
-          memberCount = Math.max(0, nonChiefUsers.length - editorCount);
-        }
-
-        if (type === "department" && departmentUserRows.length > 0) {
-          const nonChiefUsers = departmentUserRows.filter(
-            (user) =>
-              asTrimmedString(user?.ckan_user_id) !== savedChairpersonId,
-          );
-          editorCount = nonChiefUsers.filter((user) => {
+              .toLowerCase();
             const keys = uniqueTrimmed([
-              user?.ckan_user_id,
-              user?.ckan_username,
-              user?.email,
+              member?.id,
+              member?.name,
+              member?.email,
             ]);
-            return keys.some((key) => memberCapacityByKey[key] === "editor");
-          }).length;
-          memberCount = Math.max(0, nonChiefUsers.length - editorCount);
+            keys.forEach((key) => {
+              acc[key] = capacity;
+            });
+            return acc;
+          }, {});
+          editorCount = nonAdminMembers.filter(
+            (member) =>
+              String(member?.capacity || "")
+                .trim()
+                .toLowerCase() === "editor",
+          ).length;
+          memberCount = Math.max(0, nonAdminMembers.length - editorCount);
+
+          if (departmentUserRows.length > 0) {
+            const nonChiefUsers = departmentUserRows.filter(
+              (user) =>
+                asTrimmedString(user?.ckan_user_id) !== savedChairpersonId,
+            );
+            editorCount = nonChiefUsers.filter((user) => {
+              const keys = uniqueTrimmed([
+                user?.ckan_user_id,
+                user?.ckan_username,
+                user?.email,
+              ]);
+              return keys.some((key) => memberCapacityByKey[key] === "editor");
+            }).length;
+            memberCount = Math.max(0, nonChiefUsers.length - editorCount);
+          }
+
+          totalAffiliates =
+            departmentUserRows.length > 0
+              ? memberCount + editorCount
+              : nonAdminMembers.length;
         }
 
-        const totalAffiliates =
-          type === "center" && centerUserRows.length > 0
-            ? memberCount + editorCount + adminCount
-            : type === "department" && departmentUserRows.length > 0
-              ? memberCount + editorCount
-              : nonAdminMembers.length + (type === "department" ? 0 : adminCount);
-
-        return res.json({
+        const responsePayload = {
           projectCount:
             type === "center"
               ? Number(datasets?.count || 0)
@@ -1411,7 +1526,8 @@ export function registerAdminRoutes(app, deps) {
             memberCount,
             totalCount: totalAffiliates,
           },
-        });
+        };
+        return res.json(responsePayload);
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to load reference usage."),
@@ -1529,7 +1645,7 @@ export function registerAdminRoutes(app, deps) {
               is_active: user?.is_active !== false,
             };
           });
-          const profiles = Array.from(
+          let profiles = Array.from(
             [...ckanProfiles, ...assignedProfiles].reduce((acc, profile) => {
               const key =
                 asTrimmedString(profile?.email).toLowerCase() ||
@@ -1551,6 +1667,35 @@ export function registerAdminRoutes(app, deps) {
               return acc;
             }, new Map()).values(),
           );
+          profiles = profiles.filter((profile) => !isServiceBotProfile(profile));
+          const centerChiefId = String(
+            getExtraValue(centerOrg, "center_chief_id") || "",
+          ).trim();
+          const centerChiefName = String(
+            getExtraValue(centerOrg, "center_chief_name") || "",
+          ).trim();
+          if (centerChiefId) {
+            const chiefKey = asTrimmedString(centerChiefId).toLowerCase();
+            const existingChief =
+              profiles.find(
+                (profile) =>
+                  asTrimmedString(profile?.id).toLowerCase() === chiefKey ||
+                  asTrimmedString(profile?.email).toLowerCase() === chiefKey,
+              ) || ckanProfileByKey.get(chiefKey);
+            if (!existingChief) {
+              const chiefProfile = {
+                id: centerChiefId,
+                full_name: centerChiefName || "Center Chief",
+                email: null,
+                role: "admin",
+                department: null,
+                is_active: true,
+              };
+              if (!isServiceBotProfile(chiefProfile)) {
+                profiles = [...profiles, chiefProfile];
+              }
+            }
+          }
 
           const projects = (datasets?.datasets || []).map((dataset) => {
             const meta = extrasToMap(dataset?.extras);
@@ -1579,14 +1724,15 @@ export function registerAdminRoutes(app, deps) {
             };
           });
 
-          return res.json({
+          const responsePayload = {
             profiles,
             projects,
             agendas: agendas.map((row) => ({
               id: row.id || row.name,
               name: row.name || row.id,
             })),
-          });
+          };
+          return res.json(responsePayload);
         }
         if (type === "department" && id) {
           if (!ensureDepartmentScope(res, req.user, id)) return;
