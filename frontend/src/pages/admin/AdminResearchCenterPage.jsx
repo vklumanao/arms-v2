@@ -1695,9 +1695,7 @@ export default function AdminResearchCenterPage() {
                       <Badge variant="secondary">
                         Agenda: {row.agendaCount || 0}
                       </Badge>
-                      <Badge variant="secondary">
-                        Links: {row.totalLinks || 0}
-                      </Badge>
+
                       <Badge
                         variant="outline"
                         className="border-slate-200 text-slate-600"
