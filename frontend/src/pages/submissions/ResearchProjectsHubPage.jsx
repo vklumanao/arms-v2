@@ -810,7 +810,7 @@ export default function ResearchProjectsHubPage() {
                     <TableHead className="w-[40px]">No.</TableHead>
                     <TableHead className="w-[320px]">Title</TableHead>
                     <TableHead className="w-[60px]">Submitted By</TableHead>
-                    <TableHead className="w-[60px]">Year</TableHead>
+                    <TableHead className="w-[60px]">Project Year</TableHead>
                     <TableHead className="w-[70px]">Status</TableHead>
                     <TableHead className="w-[70px]">Visibility</TableHead>
                     <TableHead className="w-[180px]">Research Center</TableHead>
