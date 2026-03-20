@@ -284,7 +284,7 @@ export default function ResearchProjectDetailPage() {
       <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
               Research Project Detail
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
@@ -320,22 +320,22 @@ export default function ResearchProjectDetailPage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${getStatusBadgeStyle(
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${getStatusBadgeStyle(
               project?.status || "Published",
             )}`}
           >
             {project?.status || "Published"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {project?.project_public_visible ? "Public" : "Private"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {formatProjectDuration(project?.start_date, project?.end_date)}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {project?.research_center_id
               ? centerById[project.research_center_id] || "-"
               : project?.project_ckan_org_id
@@ -360,15 +360,15 @@ export default function ResearchProjectDetailPage() {
 
         <CardContent className="space-y-5 p-5">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
               Loading project...
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
               Unable to load. {error}
             </div>
           ) : !project ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
               Project not found. This project is not available in your scope.
             </div>
           ) : (
@@ -377,16 +377,16 @@ export default function ResearchProjectDetailPage() {
                 <div className="space-y-4">
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Overview
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-3 p-4 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Research Center
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.research_center_id
                             ? centerById[project.research_center_id] || "-"
                             : project?.project_ckan_org_id
@@ -397,49 +397,49 @@ export default function ResearchProjectDetailPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Submitted
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(project?.submitted_at)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Submitted By
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.submitted_by_name || "Unknown user"}
                         </p>
                         {project?.submitted_by_email ? (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-sm text-slate-500">
                             {project.submitted_by_email}
                           </p>
                         ) : null}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Visibility
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.project_public_visible
                             ? "Public"
                             : "Private"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Year
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.year || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Status
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900 capitalize">
+                        <p className="mt-1 text-base font-semibold text-slate-900 capitalize">
                           {project?.status || "-"}
                         </p>
                       </div>
@@ -448,44 +448,44 @@ export default function ResearchProjectDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Classification
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-3 p-4 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Department
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.department_id
                             ? departmentById[project.department_id] || "-"
                             : "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Research Agenda
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.research_agenda_id
                             ? agendaById[project.research_agenda_id] || "-"
                             : "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Classification
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.classification || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Scholarly Type
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.scholarly_type || "-"}
                         </p>
                       </div>
@@ -494,32 +494,32 @@ export default function ResearchProjectDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         People
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-3 p-4 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Lead Researcher
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.lead_researcher || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Faculty Team
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.faculty_team || "-"}
                         </p>
                       </div>
                       <div className="sm:col-span-2">
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Student Team
                         </p>
-                        <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                        <p className="mt-1 whitespace-pre-line text-base text-slate-900">
                           {project?.student_team || "-"}
                         </p>
                       </div>
@@ -530,12 +530,12 @@ export default function ResearchProjectDetailPage() {
                 <div className="space-y-4">
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Summary
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 text-sm text-slate-700">
-                      <p className="whitespace-pre-line text-sm font-semibold text-slate-900">
+                    <CardContent className="p-4 text-base text-slate-700">
+                      <p className="whitespace-pre-line text-base font-semibold text-slate-900">
                         {project?.abstract || "-"}
                       </p>
                     </CardContent>
@@ -543,40 +543,40 @@ export default function ResearchProjectDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Funding
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-3 p-4 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Industry/Agency Partner
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.industry_partner || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Type
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {normalizeLabel(project?.funding_type)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Source
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.funding_source || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Amount
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatCurrencyPHP(project?.funding_amount)}
                         </p>
                       </div>
@@ -585,34 +585,34 @@ export default function ResearchProjectDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-5 py-3">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Timeline & MOA
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-3 p-4 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Start Date
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(project?.start_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           End Date
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(project?.end_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Supporting MOV Link
                         </p>
                         {project?.supporting_mov_link ? (
                           <a
-                            className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
+                            className="mt-1 inline-flex items-center text-base font-semibold text-slate-900 underline-offset-4 hover:underline"
                             href={project.supporting_mov_link}
                             target="_blank"
                             rel="noreferrer"
@@ -620,16 +620,16 @@ export default function ResearchProjectDetailPage() {
                             {project.supporting_mov_link}
                           </a>
                         ) : (
-                          <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                          <p className="mt-1 whitespace-pre-line text-base text-slate-900">
                             -
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Signed MOA Reference
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {project?.signed_moa_reference || "-"}
                         </p>
                       </div>
@@ -650,19 +650,19 @@ export default function ResearchProjectDetailPage() {
                 </CardHeader>
                 <CardContent className="p-4">
                   {!resourcePanel.syncEnabled ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-base text-slate-600">
                       CKAN sync is disabled in this environment.
                     </p>
                   ) : resourcePanel.loading ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-base text-slate-600">
                       Loading linked resources...
                     </p>
                   ) : resourcePanel.error ? (
-                    <p className="text-sm text-red-700">
+                    <p className="text-base text-red-700">
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
                       No linked resources found for this project.
                     </div>
                   ) : (
@@ -705,7 +705,7 @@ export default function ResearchProjectDetailPage() {
                                     {resource.name || "Unnamed resource"}
                                   </p>
                                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
                                       {outputTypeLabelByValue[
                                         String(
                                           resource.output_type ||
@@ -725,7 +725,7 @@ export default function ResearchProjectDetailPage() {
                                       ).trim();
                                     if (rawAuthors) {
                                       return (
-                                        <p className="text-sm font-medium text-slate-800">
+                                        <p className="text-base font-medium text-slate-800">
                                           Proponents: {rawAuthors}
                                         </p>
                                       );
@@ -747,17 +747,17 @@ export default function ResearchProjectDetailPage() {
                                       .trim();
                                     if (!fromDescription) return null;
                                     return (
-                                      <p className="text-sm font-medium text-slate-800">
+                                      <p className="text-base font-medium text-slate-800">
                                         Proponents: {fromDescription}
                                       </p>
                                     );
                                   })()}
-                                  <p className="text-sm text-slate-600">
+                                  <p className="text-base text-slate-600">
                                     Format: {resource.format || "-"} | Size:{" "}
                                     {formatBytes(resource.size)}
                                   </p>
                                   {hasLink ? (
-                                    <p className="text-sm text-slate-600">
+                                    <p className="text-base text-slate-600">
                                       Output Link:{" "}
                                       <a
                                         href={outputLink}
@@ -789,13 +789,13 @@ export default function ResearchProjectDetailPage() {
                                       </a>
                                     </Button>
                                   ) : hasLink ? null : (
-                                    <p className="text-sm text-slate-500">
+                                    <p className="text-base text-slate-500">
                                       No file attached yet.
                                     </p>
                                   )}
                                 </div>
                               ) : (
-                                <p className="mt-2 text-sm text-slate-500">
+                                <p className="mt-2 text-base text-slate-500">
                                   No resource URL available.
                                 </p>
                               )}

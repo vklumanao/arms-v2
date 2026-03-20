@@ -294,22 +294,22 @@ export default function PublicRecordDetailPage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${getStatusBadgeStyle(
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${getStatusBadgeStyle(
               record?.status || "Published",
             )}`}
           >
             {record?.status || "Published"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {record?.public_visible ? "Public" : "Private"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {formatProjectDuration(record?.start_date, record?.end_date)}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {selectedCenter}
           </span>
         </div>
@@ -327,11 +327,11 @@ export default function PublicRecordDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
               Loading record...
             </div>
           ) : !record ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
               Record not found. The public record you are looking for is
               unavailable.
             </div>
@@ -341,61 +341,61 @@ export default function PublicRecordDetailPage() {
                 <div className="space-y-4">
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Overview
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Research Center
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {selectedCenter}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Submitted
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(record?.submitted_at)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Submitted By
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.submitted_by_name || "Unknown user"}
                         </p>
                         {record?.submitted_by_email ? (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-sm text-slate-500">
                             {record.submitted_by_email}
                           </p>
                         ) : null}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Visibility
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.public_visible ? "Public" : "Private"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Year
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.year || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Status
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900 capitalize">
+                        <p className="mt-1 text-base font-semibold text-slate-900 capitalize">
                           {record?.status || "-"}
                         </p>
                       </div>
@@ -404,40 +404,40 @@ export default function PublicRecordDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Classification
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Department
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {selectedDepartment}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Research Agenda
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {agendaLabel}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Classification
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.classification || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Scholarly Type
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.scholarly_type || "-"}
                         </p>
                       </div>
@@ -446,32 +446,32 @@ export default function PublicRecordDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         People
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Lead Researcher
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.lead_researcher || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Faculty Team
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.faculty_team || "-"}
                         </p>
                       </div>
                       <div className="sm:col-span-2">
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Student Team
                         </p>
-                        <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                        <p className="mt-1 whitespace-pre-line text-base text-slate-900">
                           {record?.student_team || "-"}
                         </p>
                       </div>
@@ -482,12 +482,12 @@ export default function PublicRecordDetailPage() {
                 <div className="space-y-4">
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Summary
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-5 text-sm text-slate-700">
-                      <p className="whitespace-pre-line text-sm font-semibold text-slate-900">
+                    <CardContent className="p-5 text-base text-slate-700">
+                      <p className="whitespace-pre-line text-base font-semibold text-slate-900">
                         {record?.abstract || "No abstract available."}
                       </p>
                     </CardContent>
@@ -495,40 +495,40 @@ export default function PublicRecordDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Funding
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Industry/Agency Partner
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.industry_partner || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Type
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {normalizeLabel(record?.funding_type)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Source
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.funding_source || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Funding Amount
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatCurrencyPHP(record?.funding_amount)}
                         </p>
                       </div>
@@ -537,34 +537,34 @@ export default function PublicRecordDetailPage() {
 
                   <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-sm font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-slate-900">
                         Timeline & MOA
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-sm text-slate-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-slate-700 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Start Date
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(record?.start_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           End Date
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {formatDate(record?.end_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Supporting MOV Link
                         </p>
                         {record?.supporting_mov_link ? (
                           <a
-                            className="mt-1 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
+                            className="mt-1 inline-flex items-center text-base font-semibold text-slate-900 underline-offset-4 hover:underline"
                             href={record.supporting_mov_link}
                             target="_blank"
                             rel="noreferrer"
@@ -572,16 +572,16 @@ export default function PublicRecordDetailPage() {
                             {record.supporting_mov_link}
                           </a>
                         ) : (
-                          <p className="mt-1 whitespace-pre-line text-sm text-slate-900">
+                          <p className="mt-1 whitespace-pre-line text-base text-slate-900">
                             -
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-500">
+                        <p className="text-sm font-semibold text-slate-500">
                           Signed MOA Reference
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900">
                           {record?.signed_moa_reference || "-"}
                         </p>
                       </div>
@@ -602,19 +602,19 @@ export default function PublicRecordDetailPage() {
                 </CardHeader>
                 <CardContent className="p-6">
                   {!resourcePanel.syncEnabled ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-base text-slate-600">
                       CKAN sync is disabled in this environment.
                     </p>
                   ) : resourcePanel.loading ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-base text-slate-600">
                       Loading linked resources...
                     </p>
                   ) : resourcePanel.error ? (
-                    <p className="text-sm text-red-700">
+                    <p className="text-base text-red-700">
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
                       No linked resources found for this project.
                     </div>
                   ) : (
@@ -662,7 +662,7 @@ export default function PublicRecordDetailPage() {
                                     {resource.name || "Unnamed resource"}
                                   </p>
                                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
                                       {outputTypeLabelByValue[
                                         String(
                                           resource.output_type ||
@@ -682,7 +682,7 @@ export default function PublicRecordDetailPage() {
                                       ).trim();
                                     if (rawAuthors) {
                                       return (
-                                        <p className="text-sm font-medium text-slate-800">
+                                        <p className="text-base font-medium text-slate-800">
                                           Proponents: {rawAuthors}
                                         </p>
                                       );
@@ -704,17 +704,17 @@ export default function PublicRecordDetailPage() {
                                       .trim();
                                     if (!fromDescription) return null;
                                     return (
-                                      <p className="text-sm font-medium text-slate-800">
+                                      <p className="text-base font-medium text-slate-800">
                                         Proponents: {fromDescription}
                                       </p>
                                     );
                                   })()}
-                                  <p className="text-sm text-slate-600">
+                                  <p className="text-base text-slate-600">
                                     Format: {resource.format || "-"} | Size:{" "}
                                     {formatBytes(resource.size)}
                                   </p>
                                   {hasLink ? (
-                                    <p className="text-sm text-slate-600">
+                                    <p className="text-base text-slate-600">
                                       Output Link:{" "}
                                       <a
                                         href={outputLink}
@@ -744,7 +744,7 @@ export default function PublicRecordDetailPage() {
                                   </Button>
                                 </div>
                               ) : hasLink ? null : (
-                                <p className="mt-2 text-sm text-slate-500">
+                                <p className="mt-2 text-base text-slate-500">
                                   No file attached yet.
                                 </p>
                               )}
