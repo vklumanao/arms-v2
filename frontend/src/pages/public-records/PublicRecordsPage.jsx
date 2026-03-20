@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { normalizeStatus } from "@/utils/status";
-import { Eye } from "lucide-react";
+import { Eye, FolderKanban, Users, FileText } from "lucide-react";
 
 const PAGE_SIZE = 10;
 const normalizeLabel = (value) => {
@@ -384,7 +384,7 @@ export default function PublicRecordsPage() {
     <div
       role="button"
       tabIndex={0}
-      className="group w-full text-left"
+      className="group w-full h-full text-left"
       onClick={() => openCenterDetails(center.id)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -392,52 +392,67 @@ export default function PublicRecordsPage() {
           openCenterDetails(center.id);
         }
       }}
-      aria-label={`View ${center.name}`}
     >
-      <Card className="h-full border-slate-200/70 bg-white transition-shadow group-hover:shadow-md">
-        <CardHeader className="pb-3">
+      <Card className="h-full flex flex-col border border-slate-200 bg-white transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+        <CardHeader className="pb-2 min-h-[70px] flex justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base font-semibold text-slate-900">
-                {center.name}
-              </CardTitle>
-            </div>
+            <CardTitle className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">
+              {center.name}
+            </CardTitle>
+
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-500 group-hover:text-slate-900"
+              className="h-8 w-8 shrink-0 text-slate-400 group-hover:text-slate-900"
               onClick={(event) => {
                 event.stopPropagation();
                 openCenterDetails(center.id);
               }}
-              aria-label={`View ${center.name}`}
-              title="View center"
             >
               <Eye className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Separator />
-          <div className="space-y-2 text-sm text-slate-700">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-slate-600">Projects</span>
-              <Badge variant="outline" className="px-2.5">
+
+        <CardContent className="flex flex-col flex-1">
+          <div className="flex-1" />
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  Projects
+                </span>
+                <FolderKanban className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-xl font-bold text-slate-900">
                 {center.count}
-              </Badge>
+              </p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-slate-600">Affiliates</span>
-              <Badge variant="outline" className="px-2.5">
+
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  Affiliates
+                </span>
+                <Users className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-xl font-bold text-slate-900">
                 {center.researcherCount}
-              </Badge>
+              </p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-slate-600">Publications</span>
-              <Badge variant="outline" className="px-2.5">
+
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  Papers
+                </span>
+                <FileText className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-xl font-bold text-slate-900">
                 {center.publicationCount}
-              </Badge>
+              </p>
             </div>
           </div>
         </CardContent>
@@ -449,12 +464,12 @@ export default function PublicRecordsPage() {
     <section className="page-stack-lg">
       <PageHeader
         title="Public Research Records"
-        description="Scholarly index of approved public ARMS research records."
+        description="Explore approved research records made publicly available through ARMS."
       />
 
       <section>
         {centerCards.length === 0 ? (
-          <Card>
+          <Card className="h-full">
             <CardContent className="p-5 text-sm text-slate-600">
               No public records have been assigned to research centers yet.
             </CardContent>
@@ -462,7 +477,9 @@ export default function PublicRecordsPage() {
         ) : centerCards.length <= 3 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {centerCards.map((center) => (
-              <div key={center.id}>{renderCenterCard(center)}</div>
+              <div key={center.id} className="h-full">
+                {renderCenterCard(center)}
+              </div>
             ))}
           </div>
         ) : (
@@ -471,9 +488,11 @@ export default function PublicRecordsPage() {
               {centerCards.map((center) => (
                 <CarouselItem
                   key={center.id}
-                  className="sm:basis-1/2 lg:basis-1/3"
+                  className="sm:basis-1/2 lg:basis-1/3 flex"
                 >
-                  {renderCenterCard(center)}
+                  <div className="h-full w-full">
+                    {renderCenterCard(center)}
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -502,11 +521,6 @@ export default function PublicRecordsPage() {
                   }))
                 }
               />
-              <p className="text-xs text-slate-500">
-                Token search: <code>year:</code>, <code>status:</code>,{" "}
-                <code>center:</code>, <code>department:</code>,{" "}
-                <code>classification:</code>
-              </p>
 
               <Select
                 value={filters.status || NONE_SELECT_VALUE}
