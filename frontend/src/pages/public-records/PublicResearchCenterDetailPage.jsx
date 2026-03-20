@@ -35,13 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatStatusLabel, normalizeStatus } from "@/utils/status";
-import {
-  Building2,
-  ChevronLeft,
-  Eye,
-  FolderKanban,
-  Users,
-} from "lucide-react";
+import { Building2, ChevronLeft, Eye, FolderKanban, Users } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -65,12 +59,9 @@ const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
   if (key === "completed")
     return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (key === "ongoing")
-    return "border-sky-200 bg-sky-50 text-sky-700";
-  if (key === "proposal")
-    return "border-amber-200 bg-amber-50 text-amber-700";
-  if (key === "rejected")
-    return "border-rose-200 bg-rose-50 text-rose-700";
+  if (key === "ongoing") return "border-sky-200 bg-sky-50 text-sky-700";
+  if (key === "proposal") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (key === "rejected") return "border-rose-200 bg-rose-50 text-rose-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
 };
 
@@ -171,39 +162,6 @@ export default function PublicResearchCenterDetailPage() {
     [departments],
   );
 
-  const summary = useMemo(() => {
-    const researcherSet = new Set();
-    let publications = 0;
-
-    centerRecords.forEach((record) => {
-      const lead = toTokens(record.lead_researcher);
-      const faculty = toTokens(record.faculty_team);
-      const students = toTokens(record.student_team);
-      [...lead, ...faculty, ...students].forEach((name) =>
-        researcherSet.add(name),
-      );
-
-      const scholarly = String(record.scholarly_type || "").toLowerCase();
-      const expected = String(record.expected_outputs || "");
-      if (
-        includesPublicationSignal(scholarly) ||
-        includesPublicationSignal(expected)
-      ) {
-        publications += 1;
-      }
-    });
-
-    const affiliateCount = affiliateRows.length
-      ? affiliateRows.length
-      : researcherSet.size;
-
-    return {
-      projectCount: centerRecords.length,
-      researcherCount: affiliateCount,
-      publicationCount: publications,
-    };
-  }, [affiliateRows, centerRecords]);
-
   const centerInfo = useMemo(() => {
     const departmentsSet = new Set();
     const agendasSet = new Set();
@@ -270,14 +228,36 @@ export default function PublicResearchCenterDetailPage() {
         department: row.department || "-",
       }));
     }
-    return centerInfo.affiliates.map((name) => ({
-      id: name,
-      full_name: name,
-      email: "-",
-      role: "-",
-      department: "-",
-    }));
+    return [];
   }, [affiliateRows, centerInfo.affiliates]);
+
+  const summary = useMemo(() => {
+    let publications = 0;
+
+    centerRecords.forEach((record) => {
+      const scholarly = String(record.scholarly_type || "").toLowerCase();
+      const expected = String(record.expected_outputs || "");
+      if (
+        includesPublicationSignal(scholarly) ||
+        includesPublicationSignal(expected)
+      ) {
+        publications += 1;
+      }
+    });
+
+    return {
+      projectCount: centerRecords.length,
+      researcherCount: normalizedAffiliateRows.length,
+      publicationCount: publications,
+    };
+  }, [centerRecords, normalizedAffiliateRows.length]);
+
+  const agendaDisplay = useMemo(() => {
+    if (Array.isArray(center?.agenda_names) && center.agenda_names.length > 0) {
+      return center.agenda_names;
+    }
+    return centerInfo.agendas;
+  }, [center?.agenda_names, centerInfo.agendas]);
 
   const paginatedAffiliates = useMemo(() => {
     const start = (affiliatesPage - 1) * PAGE_SIZE;
@@ -293,9 +273,7 @@ export default function PublicResearchCenterDetailPage() {
     return centerRecords.filter((record) => {
       if (
         projectSearch &&
-        !`${String(record.title || "")} ${String(
-          record.lead_researcher || "",
-        )}`
+        !`${String(record.title || "")} ${String(record.lead_researcher || "")}`
           .toLowerCase()
           .includes(projectSearch.toLowerCase())
       ) {
@@ -373,10 +351,7 @@ export default function PublicResearchCenterDetailPage() {
   return (
     <section className="page-stack-lg">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/public-records")}
-        >
+        <Button variant="outline" onClick={() => navigate("/public-records")}>
           <ChevronLeft className="h-4 w-4" />
           Back to Public Records
         </Button>
@@ -389,41 +364,53 @@ export default function PublicResearchCenterDetailPage() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
                 {initials}
               </div>
-              <div className="space-y-1">
-                <CardTitle className="text-xl font-bold text-slate-900">
+              <div className="space-y-2">
+                <CardTitle className="text-2xl font-bold text-slate-900">
                   {center?.name || "Research Center"}
                 </CardTitle>
-                  <CardDescription className="text-sm text-slate-500">
-                    Code:{" "}
-                    <span className="font-mono font-semibold text-slate-700">
-                      {center?.code || center?.id || "-"}
-                    </span>{" "}
-                    · Center Chief:{" "}
-                    <span className="font-semibold text-slate-700">
-                      {center?.center_chief_name || "-"}
-                    </span>
-                  </CardDescription>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="gap-2">
-                    <Users className="h-4 w-4" />
+
+                <CardDescription className="text-base text-slate-600">
+                  Code:{" "}
+                  <span className="font-mono font-semibold text-slate-800">
+                    {center?.code || center?.id || "-"}
+                  </span>{" "}
+                  · Center Chief:{" "}
+                  <span className="font-semibold text-slate-800">
+                    {center?.center_chief_name || "-"}
+                  </span>
+                </CardDescription>
+
+                <div className="flex flex-wrap gap-3">
+                  <Badge
+                    variant="secondary"
+                    className="gap-2 text-sm px-3 py-1"
+                  >
+                    <Users className="h-5 w-5" />
                     {summary.researcherCount} affiliates
                   </Badge>
-                  <Badge variant="secondary" className="gap-2">
-                    <FolderKanban className="h-4 w-4" />
+
+                  <Badge
+                    variant="secondary"
+                    className="gap-2 text-sm px-3 py-1"
+                  >
+                    <FolderKanban className="h-5 w-5" />
                     {summary.projectCount} projects
                   </Badge>
-                      <Badge variant="outline" className="gap-2">
-                        <Building2 className="h-4 w-4" />
-                        {center?.agenda_count || centerInfo.agendas.length} agenda
-                      </Badge>
+
+                  <Badge variant="outline" className="gap-2 text-sm px-3 py-1">
+                    <Building2 className="h-5 w-5" />
+                    {center?.agenda_count || centerInfo.agendas.length} agenda
+                  </Badge>
                 </div>
               </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading research center...</p>
+            <p className="text-base text-slate-600">
+              Loading research center...
+            </p>
           ) : error ? (
             <EmptyState title="Unable to load" description={error} />
           ) : !center ? (
@@ -433,102 +420,95 @@ export default function PublicResearchCenterDetailPage() {
             />
           ) : (
             <>
-              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                <p className="mt-2 whitespace-pre-wrap text-base text-slate-700">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <div className="space-y-3">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Research Agenda
                 </p>
-                {centerInfo.agendas.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {centerInfo.agendas.map((agenda) => (
+                {agendaDisplay.length ? (
+                  <div className="flex flex-wrap gap-3">
+                    {agendaDisplay.map((agenda) => (
                       <span
                         key={agenda}
-                        className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-slate-700"
                       >
                         {agenda}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-600">No agenda linked.</p>
+                  <p className="text-base text-slate-600">No agenda linked.</p>
                 )}
               </div>
 
-              <Tabs value={normalizeTab(activeTab)} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
-                  <TabsTrigger value="projects">Projects</TabsTrigger>
+              <Tabs
+                value={normalizeTab(activeTab)}
+                onValueChange={setActiveTab}
+              >
+                <TabsList className="text-base">
+                  <TabsTrigger value="overview" className="text-base">
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="affiliates" className="text-base">
+                    Affiliates
+                  </TabsTrigger>
+                  <TabsTrigger value="projects" className="text-base">
+                    Projects
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overview" className="mt-4 space-y-4">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          Members
-                        </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
-                          {summary.researcherCount}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Public contributors.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          Projects
-                        </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
-                          {summary.projectCount}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Linked research projects.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          Agenda
-                        </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
-                          {centerInfo.agendas.length}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Research agenda items.
-                        </p>
-                      </CardContent>
-                    </Card>
+                <TabsContent value="overview" className="mt-5 space-y-5">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {[
+                      {
+                        label: "Members",
+                        value: summary.researcherCount,
+                      },
+                      {
+                        label: "Projects",
+                        value: summary.projectCount,
+                      },
+                      {
+                        label: "Agenda",
+                        value: agendaDisplay.length,
+                      },
+                    ].map((item) => (
+                      <Card key={item.label} className="bg-muted/30">
+                        <CardContent className="p-5">
+                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                            {item.label}
+                          </p>
+                          <p className="mt-2 text-3xl font-bold text-slate-900">
+                            {item.value}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {item.desc}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 </TabsContent>
 
-                <TabsContent value="affiliates" className="mt-4 space-y-3">
+                <TabsContent value="affiliates" className="mt-5 space-y-4">
                   <Card className="overflow-hidden">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <CardTitle className="text-base font-bold text-slate-900">
-                            Linked Affiliates
-                          </CardTitle>
-                          <CardDescription>
-                            Showing {normalizedAffiliateRows.length} affiliate(s).
-                          </CardDescription>
-                        </div>
-                        <Button variant="outline" size="sm" disabled>
-                          View Only
-                        </Button>
+                      <div>
+                        <CardTitle className="text-lg font-bold text-slate-900">
+                          Linked Affiliates
+                        </CardTitle>
+                        <CardDescription className="text-base">
+                          Showing {normalizedAffiliateRows.length} affiliate(s).
+                        </CardDescription>
                       </div>
                     </CardHeader>
 
@@ -543,16 +523,21 @@ export default function PublicResearchCenterDetailPage() {
                       <>
                         <CardContent className="p-0">
                           <div className="overflow-x-auto">
-                            <Table className="min-w-[980px]">
+                            <Table className="min-w-[980px] text-base">
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>No.</TableHead>
-                                  <TableHead>Full Name</TableHead>
-                                  <TableHead>Email</TableHead>
-                                  <TableHead>Role</TableHead>
-                                  <TableHead>Department</TableHead>
-                                  <TableHead className="text-right">
-                                    Actions
+                                  <TableHead className="text-sm">No.</TableHead>
+                                  <TableHead className="text-sm">
+                                    Full Name
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Email
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Role
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Department
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -567,26 +552,12 @@ export default function PublicResearchCenterDetailPage() {
                                     <TableCell className="font-medium text-slate-900">
                                       {row?.full_name || "-"}
                                     </TableCell>
-                                    <TableCell className="text-slate-700">
-                                      {row?.email || "-"}
-                                    </TableCell>
-                                    <TableCell className="capitalize text-slate-700">
+                                    <TableCell>{row?.email || "-"}</TableCell>
+                                    <TableCell className="capitalize">
                                       {row?.role || "-"}
                                     </TableCell>
-                                    <TableCell className="text-slate-700">
+                                    <TableCell>
                                       {row?.department || "-"}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        disabled
-                                        title="Read-only"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -598,14 +569,14 @@ export default function PublicResearchCenterDetailPage() {
                           page={affiliatesPage}
                           totalPages={affiliatesTotalPages}
                           onPageChange={setAffiliatesPage}
-                          className="rounded-none border-0 border-t border-[var(--border)]"
+                          className="border-t"
                         />
                       </>
                     )}
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="projects" className="mt-4 space-y-3">
+                <TabsContent value="projects" className="mt-5 space-y-4">
                   {filteredProjects.length === 0 ? (
                     <EmptyState
                       title="No projects"
@@ -614,73 +585,33 @@ export default function PublicResearchCenterDetailPage() {
                   ) : (
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-base font-bold text-slate-900">
-                              Linked Projects
-                            </CardTitle>
-                            <CardDescription>
-                              Showing {filteredProjects.length} project(s).
-                            </CardDescription>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Input
-                              value={projectSearch}
-                              onChange={(event) =>
-                                setProjectSearch(event.target.value)
-                              }
-                              placeholder="Search projects"
-                              className="h-9 w-48"
-                            />
-                            <Select
-                              value={projectStatus}
-                              onValueChange={setProjectStatus}
-                            >
-                              <SelectTrigger className="h-9 w-[140px]">
-                                <SelectValue placeholder="Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All status</SelectItem>
-                                <SelectItem value="proposal">
-                                  Proposal
-                                </SelectItem>
-                                <SelectItem value="ongoing">Ongoing</SelectItem>
-                                <SelectItem value="completed">
-                                  Completed
-                                </SelectItem>
-                                <SelectItem value="rejected">
-                                  Rejected
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Select value={projectYear} onValueChange={setProjectYear}>
-                              <SelectTrigger className="h-9 w-[120px]">
-                                <SelectValue placeholder="Year" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All years</SelectItem>
-                                {projectYearOptions.map((year) => (
-                                  <SelectItem key={year} value={year}>
-                                    {year}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        <div className="space-y-2">
+                          <CardTitle className="text-lg font-bold text-slate-900">
+                            Linked Projects
+                          </CardTitle>
+                          <CardDescription className="text-base">
+                            Showing {filteredProjects.length} project(s).
+                          </CardDescription>
                         </div>
                       </CardHeader>
+
                       <CardContent className="p-0">
-                        <Table className="min-w-[980px]">
+                        <Table className="min-w-[980px] text-base">
                           <TableHeader>
                             <TableRow>
-                              <TableHead>No.</TableHead>
-                              <TableHead>Project</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Year</TableHead>
-                              <TableHead>Lead Researcher</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
+                              <TableHead className="text-sm">No.</TableHead>
+                              <TableHead className="text-sm">Project</TableHead>
+                              <TableHead className="text-sm">Status</TableHead>
+                              <TableHead className="text-sm">Year</TableHead>
+                              <TableHead className="text-sm">
+                                Lead Researcher
+                              </TableHead>
+                              <TableHead className="text-sm text-right">
+                                Action
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
+
                           <TableBody>
                             {paginatedProjects.map((record, idx) => (
                               <TableRow key={record.id}>
@@ -693,15 +624,13 @@ export default function PublicResearchCenterDetailPage() {
                                 <TableCell>
                                   <Badge
                                     variant="outline"
-                                    className={statusBadgeClass(record.status)}
+                                    className={`text-sm ${statusBadgeClass(record.status)}`}
                                   >
                                     {formatStatusLabel(record.status) || "-"}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-slate-600">
-                                  {record.year || "-"}
-                                </TableCell>
-                                <TableCell className="text-slate-600">
+                                <TableCell>{record.year || "-"}</TableCell>
+                                <TableCell>
                                   {record.lead_researcher || "-"}
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -709,12 +638,10 @@ export default function PublicResearchCenterDetailPage() {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-9 w-9"
                                     onClick={() => openDetails(record.id)}
-                                    aria-label={`Open ${record.title || "project"}`}
-                                    title="View project"
                                   >
-                                    <Eye className="h-4 w-4" />
+                                    <Eye className="h-5 w-5" />
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -722,11 +649,12 @@ export default function PublicResearchCenterDetailPage() {
                           </TableBody>
                         </Table>
                       </CardContent>
+
                       <PaginationControls
                         page={projectsPage}
                         totalPages={projectsTotalPages}
                         onPageChange={setProjectsPage}
-                        className="rounded-none border-0 border-t border-[var(--border)]"
+                        className="border-t"
                       />
                     </Card>
                   )}
