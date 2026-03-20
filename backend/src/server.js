@@ -661,6 +661,7 @@ registerPublicRecordsRoutes(app, {
   listOrganizationMembers,
   listUsers,
   getUser,
+  getOrganization,
   getDataset,
   asTrimmedString,
   getExtraByKey,
