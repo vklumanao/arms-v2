@@ -117,12 +117,10 @@ export default function AdminAffiliatesModulePage() {
   const affiliateMetrics = useMemo(() => {
     const total = rows.length;
     const active = rows.filter((row) => row.is_active).length;
-    const inactive = total - active;
     const gsFaculty = rows.filter((row) => row.is_gs_faculty).length;
     return {
       total,
       active,
-      inactive,
       gsFaculty,
     };
   }, [rows]);
@@ -159,12 +157,6 @@ export default function AdminAffiliatesModulePage() {
   );
 
   const filteredRows = useMemo(() => {
-    if (quickFilter === "active") {
-      return baseFilteredRows.filter((row) => row.is_active);
-    }
-    if (quickFilter === "inactive") {
-      return baseFilteredRows.filter((row) => !row.is_active);
-    }
     if (quickFilter === "gs") {
       return baseFilteredRows.filter((row) => row.is_gs_faculty);
     }
@@ -518,16 +510,6 @@ export default function AdminAffiliatesModulePage() {
                 count: filteredRows.length,
               },
               {
-                key: "active",
-                label: "Active",
-                count: rows.filter((row) => row.is_active).length,
-              },
-              {
-                key: "inactive",
-                label: "Inactive",
-                count: rows.filter((row) => !row.is_active).length,
-              },
-              {
                 key: "gs",
                 label: "GS Faculty",
                 count: rows.filter((row) => row.is_gs_faculty).length,
@@ -588,7 +570,6 @@ export default function AdminAffiliatesModulePage() {
                     <TableHead>Role</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Research Center</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>GS Faculty</TableHead>
                     <TableHead>Projects</TableHead>
                     <TableHead>Awards</TableHead>
@@ -604,6 +585,7 @@ export default function AdminAffiliatesModulePage() {
                       <TableCell className="text-slate-600">
                         {pagination.start + index + 1}
                       </TableCell>
+
                       <TableCell>
                         <p className="font-semibold text-slate-900">
                           {row.full_name || "-"}
@@ -612,42 +594,45 @@ export default function AdminAffiliatesModulePage() {
                           {row.email || "-"}
                         </p>
                       </TableCell>
+
                       <TableCell className="capitalize text-slate-700">
                         {row.role || "-"}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {row.department || "-"}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
                       </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={row.is_active ? "secondary" : "destructive"}
-                        >
-                          {row.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
+
                       <TableCell className="text-slate-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {Number(row.research_project_count || 0)}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {Number(row.awards_count || 0)}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {Number(row.publication_count || 0)}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {Number(row.ip_count || 0)}
                       </TableCell>
+
                       <TableCell className="text-slate-700">
                         {Number(row.creative_work_count || 0)}
                       </TableCell>
+
                       <TableCell className="text-right">
                         <div className="inline-flex items-center justify-end gap-1">
                           <Button
@@ -661,6 +646,7 @@ export default function AdminAffiliatesModulePage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+
                           <Button
                             type="button"
                             variant="ghost"
