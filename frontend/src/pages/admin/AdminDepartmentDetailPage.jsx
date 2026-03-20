@@ -87,6 +87,8 @@ export default function AdminDepartmentDetailPage() {
   const [error, setError] = useState("");
   const [department, setDepartment] = useState(null);
   const [chairpersonUsers, setChairpersonUsers] = useState([]);
+  const [centerNameById, setCenterNameById] = useState({});
+  const [affiliateCenters, setAffiliateCenters] = useState([]);
   const [usage, setUsage] = useState({
     projectCount: 0,
     profileCount: 0,
@@ -97,7 +99,10 @@ export default function AdminDepartmentDetailPage() {
       totalCount: 0,
     },
   });
-  const [links, setLinks] = useState({ profiles: [], projects: [] });
+  const [links, setLinks] = useState({
+    profiles: [],
+    projects: [],
+  });
   const [deleting, setDeleting] = useState(false);
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
@@ -216,6 +221,7 @@ export default function AdminDepartmentDetailPage() {
           ]);
 
         const departmentsData = referencePayload?.departmentsRes?.data || [];
+        const centersData = referencePayload?.centersRes?.data || [];
         const ckanUsersData = referencePayload?.ckanUsersRes?.data || [];
         const deptRow = departmentsData.find(
           (row) => String(row?.id || "").trim() === departmentId,
@@ -254,6 +260,33 @@ export default function AdminDepartmentDetailPage() {
 
         if (cancelled) return;
         setChairpersonUsers(chairpersonOptions);
+        setCenterNameById(
+          (centersData || []).reduce((acc, row) => {
+            const id = String(row?.id || "").trim();
+            const name = String(row?.name || row?.title || "").trim();
+            if (id && name) acc[id] = name;
+            return acc;
+          }, {}),
+        );
+        void (async () => {
+          try {
+            const registryPayload = await fetchAffiliateRegistry();
+            if (cancelled) return;
+            setAffiliateRegistry(
+              Array.isArray(registryPayload?.rows) ? registryPayload.rows : [],
+            );
+            setAffiliateCenters(
+              Array.isArray(registryPayload?.centers)
+                ? registryPayload.centers
+                : [],
+            );
+          } catch {
+            if (!cancelled) {
+              setAffiliateRegistry([]);
+              setAffiliateCenters([]);
+            }
+          }
+        })();
         setDepartment(
           deptRow
             ? {
@@ -350,49 +383,28 @@ export default function AdminDepartmentDetailPage() {
     () => Math.max(1, Math.ceil(links.profiles.length / PAGE_SIZE)),
     [links.profiles.length],
   );
+
+  const affiliateById = useMemo(() => {
+    return (affiliateRegistry || []).reduce((acc, row) => {
+      const id = String(row?.id || "").trim();
+      if (id) acc[id] = row;
+      return acc;
+    }, {});
+  }, [affiliateRegistry]);
+
+  const centerNameByAffiliateId = useMemo(() => {
+    return (affiliateCenters || []).reduce((acc, row) => {
+      const id = String(row?.id || "").trim();
+      const name = String(row?.name || row?.title || "").trim();
+      if (id && name) acc[id] = name;
+      return acc;
+    }, {});
+  }, [affiliateCenters]);
+
   const paginatedAffiliates = useMemo(() => {
     const start = (affiliatesPage - 1) * PAGE_SIZE;
     return links.profiles.slice(start, start + PAGE_SIZE);
   }, [affiliatesPage, links.profiles]);
-
-  const filteredProjects = useMemo(() => {
-    const filterValue = String(agendaFilter || "")
-      .trim()
-      .toLowerCase();
-    const query = String(projectsSearch || "")
-      .trim()
-      .toLowerCase();
-    const statusFilter = String(projectsStatus || "all").toLowerCase();
-    const yearFilter = String(projectsYear || "all").toLowerCase();
-    return (links.projects || []).filter((row) => {
-      const agendaName = String(row?.agenda_name || "")
-        .trim()
-        .toLowerCase();
-      const status = String(row?.status || "").toLowerCase();
-      const year = String(row?.year || "").toLowerCase();
-      if (filterValue && agendaName !== filterValue) return false;
-      if (statusFilter !== "all" && status !== statusFilter) return false;
-      if (yearFilter !== "all" && year !== yearFilter) return false;
-      const haystack = [
-        row?.title,
-        row?.status,
-        row?.year,
-        row?.lead_researcher,
-        row?.organization_name,
-        row?.research_center,
-        row?.agenda_name,
-      ]
-        .map((value) => String(value || "").toLowerCase())
-        .join(" ");
-      return query ? haystack.includes(query) : true;
-    });
-  }, [
-    agendaFilter,
-    links.projects,
-    projectsSearch,
-    projectsStatus,
-    projectsYear,
-  ]);
 
   const projectStatusOptions = useMemo(() => {
     const unique = new Set();
@@ -413,24 +425,6 @@ export default function AdminDepartmentDetailPage() {
     });
     return ["all", ...Array.from(unique).sort((a, b) => b.localeCompare(a))];
   }, [links.projects]);
-
-  const departmentAgendas = useMemo(() => {
-    const unique = new Set();
-    (links.projects || []).forEach((row) => {
-      const value = String(row?.agenda_name || "").trim();
-      if (value) unique.add(value);
-    });
-    return Array.from(unique).sort((a, b) => a.localeCompare(b));
-  }, [links.projects]);
-
-  const projectsTotalPages = useMemo(
-    () => Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE)),
-    [filteredProjects.length],
-  );
-  const paginatedProjects = useMemo(() => {
-    const start = (projectsPage - 1) * PAGE_SIZE;
-    return filteredProjects.slice(start, start + PAGE_SIZE);
-  }, [projectsPage, filteredProjects]);
 
   const setTab = (tab) => {
     setSearchParams((prev) => {
@@ -472,6 +466,73 @@ export default function AdminDepartmentDetailPage() {
     setProjectsPage(1);
     setTab("projects");
   };
+
+  const normalizeAgendaLabel = (value) => {
+    const cleaned = String(value || "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!cleaned) return "";
+    return cleaned
+      .toLowerCase()
+      .split(" ")
+      .map((part) =>
+        part ? `${part[0].toUpperCase()}${part.slice(1)}` : "",
+      )
+      .join(" ");
+  };
+
+  const normalizeAgendaKey = (value) =>
+    normalizeAgendaLabel(value).toLowerCase();
+
+  const filteredProjects = useMemo(() => {
+    const filterValue = normalizeAgendaKey(agendaFilter);
+    const query = String(projectsSearch || "")
+      .trim()
+      .toLowerCase();
+    const statusFilter = String(projectsStatus || "all").toLowerCase();
+    const yearFilter = String(projectsYear || "all").toLowerCase();
+    return (links.projects || []).filter((row) => {
+      const agendaName = normalizeAgendaKey(row?.agenda_name);
+      const status = String(row?.status || "").toLowerCase();
+      const year = String(row?.year || "").toLowerCase();
+      if (filterValue && agendaName !== filterValue) return false;
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (yearFilter !== "all" && year !== yearFilter) return false;
+      const haystack = [
+        row?.title,
+        row?.status,
+        row?.year,
+        row?.lead_researcher,
+        row?.organization_name,
+        row?.research_center,
+        normalizeAgendaLabel(row?.agenda_name),
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
+    });
+  }, [agendaFilter, links.projects, projectsSearch, projectsStatus, projectsYear]);
+
+  const departmentAgendas = useMemo(() => {
+    const unique = new Map();
+    (links.projects || []).forEach((row) => {
+      const label = normalizeAgendaLabel(row?.agenda_name);
+      if (!label) return;
+      const key = label.toLowerCase();
+      if (!unique.has(key)) unique.set(key, label);
+    });
+    return Array.from(unique.values()).sort((a, b) => a.localeCompare(b));
+  }, [links.projects]);
+
+  const projectsTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE)),
+    [filteredProjects.length],
+  );
+  const paginatedProjects = useMemo(() => {
+    const start = (projectsPage - 1) * PAGE_SIZE;
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [projectsPage, filteredProjects]);
 
   const refreshLinksAndUsage = async () => {
     const [usagePayload, linksPayload] = await Promise.all([
@@ -891,15 +952,6 @@ export default function AdminDepartmentDetailPage() {
                             Showing {links.profiles.length} affiliate(s).
                           </CardDescription>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={openLinkAffiliate}
-                          disabled={loading}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Link Affiliate
-                        </Button>
                       </div>
                     </CardHeader>
 
@@ -921,7 +973,7 @@ export default function AdminDepartmentDetailPage() {
                                   <TableHead>Full Name</TableHead>
                                   <TableHead>Email</TableHead>
                                   <TableHead>Role</TableHead>
-                                  <TableHead>Department</TableHead>
+                                  <TableHead>Research Center</TableHead>
                                   <TableHead className="text-right">
                                     Actions
                                   </TableHead>
@@ -935,18 +987,40 @@ export default function AdminDepartmentDetailPage() {
                                         idx +
                                         1}
                                     </TableCell>
+
                                     <TableCell className="font-medium text-slate-900">
                                       {row?.full_name || row?.name || "-"}
                                     </TableCell>
+
                                     <TableCell className="text-slate-700">
                                       {row?.email || "-"}
                                     </TableCell>
+
                                     <TableCell className="capitalize text-slate-700">
                                       {row?.role || "-"}
                                     </TableCell>
+
                                     <TableCell className="text-slate-700">
-                                      {row?.department || "-"}
+                                      {(() => {
+                                        const affiliate =
+                                          affiliateById[
+                                            String(row?.id || "").trim()
+                                          ];
+                                        const centerId = String(
+                                          affiliate?.ckan_org_id || "",
+                                        ).trim();
+                                        return (
+                                          row?.research_center ||
+                                          row?.research_center_name ||
+                                          (centerId
+                                            ? centerNameById[centerId] ||
+                                              centerNameByAffiliateId[centerId]
+                                            : "") ||
+                                          "-"
+                                        );
+                                      })()}
                                     </TableCell>
+
                                     <TableCell className="text-right">
                                       <Button
                                         type="button"
@@ -1102,26 +1176,35 @@ export default function AdminDepartmentDetailPage() {
                                     <TableCell>
                                       {(projectsPage - 1) * PAGE_SIZE + idx + 1}
                                     </TableCell>
+
                                     <TableCell className="font-medium text-slate-900">
                                       {row?.title || "-"}
                                     </TableCell>
+
                                     <TableCell className="capitalize text-slate-700">
                                       {row?.status || "-"}
                                     </TableCell>
+
                                     <TableCell className="text-slate-700">
                                       {row?.year || "-"}
                                     </TableCell>
+
                                     <TableCell className="text-slate-700">
                                       {row?.lead_researcher || "-"}
                                     </TableCell>
+
                                     <TableCell className="text-slate-700">
-                                      {row?.organization_name ||
+                                      {row?.research_center_name ||
+                                        row?.organization_name ||
                                         row?.research_center ||
                                         "-"}
                                     </TableCell>
-                                    <TableCell className="text-slate-700">
-                                      {row?.agenda_name || "-"}
-                                    </TableCell>
+
+                                      <TableCell className="text-slate-700">
+                                        {normalizeAgendaLabel(row?.agenda_name) ||
+                                          "-"}
+                                      </TableCell>
+
                                     <TableCell className="text-right">
                                       <Button
                                         type="button"
@@ -1256,123 +1339,6 @@ export default function AdminDepartmentDetailPage() {
               onClick={handleSaveDepartment}
             >
               {editSaving ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={linkAffiliateOpen}
-        onOpenChange={(open) =>
-          !linkAffiliateSaving && setLinkAffiliateOpen(open)
-        }
-      >
-        <DialogContent
-          className="max-w-3xl"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Link Affiliate</DialogTitle>
-            <DialogDescription>
-              Search an affiliate and link them to this department.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={affiliateSearch}
-                  onChange={(event) => setAffiliateSearch(event.target.value)}
-                  placeholder="Search name, email, role, department..."
-                  className="pl-9"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={linkAffiliateSaving || !selectedAffiliateId}
-                onClick={handleLinkAffiliate}
-              >
-                {linkAffiliateSaving ? "Linking..." : "Link"}
-              </Button>
-            </div>
-
-            {linkAffiliateLoading ? (
-              <p className="text-sm text-slate-600">Loading affiliates...</p>
-            ) : linkCandidateRows.length === 0 ? (
-              <EmptyState
-                title="No candidates"
-                description="No eligible affiliates matched your search."
-              />
-            ) : (
-              <div className="overflow-hidden rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead />
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {linkCandidateRows.map((row) => {
-                      const id = String(row?.id || "").trim();
-                      const isSelected =
-                        id && id === String(selectedAffiliateId || "").trim();
-                      return (
-                        <TableRow
-                          key={id}
-                          className={isSelected ? "bg-muted/40" : ""}
-                          onClick={() => setSelectedAffiliateId(id)}
-                        >
-                          <TableCell className="w-10">
-                            <input type="radio" checked={isSelected} readOnly />
-                          </TableCell>
-                          <TableCell className="font-medium text-slate-900">
-                            {row?.full_name || row?.email || id}
-                          </TableCell>
-                          <TableCell className="text-slate-700">
-                            {row?.email || "-"}
-                          </TableCell>
-                          <TableCell className="capitalize text-slate-700">
-                            {row?.role || "-"}
-                          </TableCell>
-                          <TableCell className="text-slate-700">
-                            {row?.department || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                row?.is_active === false
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {row?.is_active === false ? "Inactive" : "Active"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={linkAffiliateSaving}
-              onClick={() => setLinkAffiliateOpen(false)}
-            >
-              Close
             </Button>
           </DialogFooter>
         </DialogContent>

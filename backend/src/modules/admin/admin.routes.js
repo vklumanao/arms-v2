@@ -1809,37 +1809,46 @@ export function registerAdminRoutes(app, deps) {
                     is_active: true,
                   }));
 
-          const projects = (datasets || [])
-            .filter((dataset) => {
-              const meta = extrasToMap(dataset?.extras);
-              return String(meta.department_id || "").trim() === id;
-            })
-            .map((dataset) => {
-              const meta = extrasToMap(dataset?.extras);
-              const centerId = String(
-                dataset?.organization?.name || dataset?.owner_org || "",
-              ).trim();
-              return {
-                id: dataset?.id || dataset?.name || crypto.randomUUID(),
-                title: dataset?.title || dataset?.name || "-",
-                status:
-                  meta.project_status ||
+            const projects = (datasets || [])
+              .filter((dataset) => {
+                const meta = extrasToMap(dataset?.extras);
+                return String(meta.department_id || "").trim() === id;
+              })
+              .map((dataset) => {
+                const meta = extrasToMap(dataset?.extras);
+                const centerId = String(
+                  dataset?.organization?.name || dataset?.owner_org || "",
+                ).trim();
+                const agendaId = String(meta.research_agenda_id || "").trim();
+                const agendaNameFromMeta = String(
+                  meta.research_agenda ||
+                    meta.research_agendas ||
+                    meta.agenda_name ||
+                    meta.agenda ||
+                    "",
+                ).trim();
+                return {
+                  id: dataset?.id || dataset?.name || crypto.randomUUID(),
+                  title: dataset?.title || dataset?.name || "-",
+                  status:
+                    meta.project_status ||
                   dataset?.state ||
                   (dataset?.private ? "private" : "public"),
                 year: meta.project_year || null,
                 lead_researcher: meta.lead_researcher || null,
-                department_name:
-                  departmentGroup?.title ||
-                  departmentGroup?.display_name ||
-                  departmentGroup?.name ||
-                  id,
-                research_center_name: centerId
-                  ? centerNameById[centerId] || centerId
-                  : null,
-                start_date: meta.start_date || null,
-                end_date: meta.end_date || null,
-              };
-            });
+                  department_name:
+                    departmentGroup?.title ||
+                    departmentGroup?.display_name ||
+                    departmentGroup?.name ||
+                    id,
+                  research_center_name: centerId
+                    ? centerNameById[centerId] || centerId
+                    : null,
+                  agenda_name: agendaNameFromMeta || agendaId || null,
+                  start_date: meta.start_date || null,
+                  end_date: meta.end_date || null,
+                };
+              });
 
           return res.json({ profiles, projects, agendas: [] });
         }
