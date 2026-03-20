@@ -409,7 +409,7 @@ export default function AdminUsersPage() {
         <CardHeader className="border-b border-[var(--border)] px-4 py-3 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-900">
                 Accounts Directory ({filteredUsers.length})
               </CardTitle>
               <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">

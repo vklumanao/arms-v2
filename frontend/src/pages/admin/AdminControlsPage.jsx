@@ -173,7 +173,7 @@ export default function AdminControlsPage() {
       <Card>
         <CardHeader className="flex flex-wrap items-start justify-between gap-3 space-y-0">
           <div>
-            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-600">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-900">
               Roles & Permissions
             </CardTitle>
             <p className="text-xs text-slate-500">
@@ -244,9 +244,7 @@ export default function AdminControlsPage() {
               </TableHeader>
               <TableBody>
                 {permissionKeys.map((permission) => (
-                  <TableRow
-                    key={`permission-row-${permission}`}
-                  >
+                  <TableRow key={`permission-row-${permission}`}>
                     <TableCell className="text-slate-700">
                       <p className="font-medium">
                         {PERMISSION_LABELS[permission] || permission}
