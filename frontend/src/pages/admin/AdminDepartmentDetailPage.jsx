@@ -476,9 +476,7 @@ export default function AdminDepartmentDetailPage() {
     return cleaned
       .toLowerCase()
       .split(" ")
-      .map((part) =>
-        part ? `${part[0].toUpperCase()}${part.slice(1)}` : "",
-      )
+      .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : ""))
       .join(" ");
   };
 
@@ -512,7 +510,13 @@ export default function AdminDepartmentDetailPage() {
         .join(" ");
       return query ? haystack.includes(query) : true;
     });
-  }, [agendaFilter, links.projects, projectsSearch, projectsStatus, projectsYear]);
+  }, [
+    agendaFilter,
+    links.projects,
+    projectsSearch,
+    projectsStatus,
+    projectsYear,
+  ]);
 
   const departmentAgendas = useMemo(() => {
     const unique = new Map();
@@ -1200,10 +1204,10 @@ export default function AdminDepartmentDetailPage() {
                                         "-"}
                                     </TableCell>
 
-                                      <TableCell className="text-slate-700">
-                                        {normalizeAgendaLabel(row?.agenda_name) ||
-                                          "-"}
-                                      </TableCell>
+                                    <TableCell className="text-slate-700">
+                                      {normalizeAgendaLabel(row?.agenda_name) ||
+                                        "-"}
+                                    </TableCell>
 
                                     <TableCell className="text-right">
                                       <Button
