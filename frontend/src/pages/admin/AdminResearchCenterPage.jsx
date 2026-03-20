@@ -2043,7 +2043,7 @@ export default function AdminResearchCenterPage() {
               No research center records found.
             </div>
           ) : (
-            <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedAgendaRows.map((row) => {
                 const agendaNames = agendaNamesByCenterId[row.id] || [];
                 const isExpanded = Boolean(expandedAgendaRows[row.id]);
@@ -2057,41 +2057,67 @@ export default function AdminResearchCenterPage() {
                     : ["No agendum linked"];
 
                 return (
-                  <Card key={`agenda-group-${row.id}`}>
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">
-                            {row.code || "-"}
+                  <Card
+                    key={`agenda-group-${row.id}`}
+                    className="overflow-hidden border-slate-200/70 bg-white shadow-sm"
+                  >
+                    <div className="border-b border-slate-200/70 bg-white px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            Research Center
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <h3 className="mt-1 truncate text-lg font-semibold text-slate-900">
                             {row.name || "-"}
+                          </h3>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Code:{" "}
+                            <span className="font-mono font-semibold text-slate-700">
+                              {row.code || "-"}
+                            </span>
                           </p>
                         </div>
-                        <span className="text-xs text-slate-500">
-                          {agendaNames.length}{" "}
-                          {agendaNames.length === 1 ? "Agendum" : "Agenda"}
-                        </span>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            Agendas
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {agendaNames.length}
+                          </p>
+                        </div>
                       </div>
+                    </div>
 
-                      <div className="relative pl-6">
-                        <span className="absolute left-2 top-0 h-full w-px bg-[var(--border)]" />
-                        <ul className="space-y-1.5">
-                          {displayAgendas.map((agendaName) => (
-                            <li
-                              key={`${row.id}-${agendaName}`}
-                              className="relative rounded-md bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700"
-                            >
-                              <span className="absolute -left-4 top-1/2 h-px w-4 -translate-y-1/2 bg-[var(--border)]" />
-                              <span className="absolute -left-[18px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[var(--border-strong)]" />
+                    <CardContent className="p-5">
+                      <div className="space-y-2">
+                        {displayAgendas.map((agendaName) => (
+                          <div
+                            key={`${row.id}-${agendaName}`}
+                            className={cn(
+                              "flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700",
+                              agendaName === "No agendum linked"
+                                ? "bg-slate-50 text-slate-500"
+                                : "bg-white",
+                            )}
+                            title={agendaName}
+                          >
+                            <span className="min-w-0 truncate">
                               {agendaName}
-                            </li>
-                          ))}
-                        </ul>
+                            </span>
+                            <span
+                              className={cn(
+                                "h-2 w-2 rounded-full",
+                                agendaName === "No agendum linked"
+                                  ? "bg-slate-300"
+                                  : "bg-emerald-400",
+                              )}
+                            />
+                          </div>
+                        ))}
                       </div>
 
                       {hasOverflow ? (
-                        <div className="mt-2 pl-6">
+                        <div className="mt-3 border-t border-slate-100 pt-3">
                           <button
                             type="button"
                             className="text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
