@@ -768,36 +768,50 @@ export default function AdminResearchCenterDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+          <div className="flex flex-col gap-5 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-5">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-xl font-bold uppercase text-white shadow-sm">
                 {initials}
               </div>
-              <div className="space-y-1">
-                <CardTitle className="text-xl font-bold text-slate-900">
+
+              <div className="space-y-2">
+                <CardTitle className="text-2xl font-bold text-slate-900">
                   {center?.name || "Research Center"}
                 </CardTitle>
-                <CardDescription className="text-sm text-slate-500">
+
+                <CardDescription className="text-base text-slate-600">
                   Code:{" "}
-                  <span className="font-mono font-semibold text-slate-700">
+                  <span className="font-mono font-semibold text-slate-800">
                     {center?.code || "-"}
                   </span>{" "}
                   · Center Chief:{" "}
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-slate-800">
                     {center?.centerChiefName || "-"}
                   </span>
                 </CardDescription>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="gap-2">
-                    <Users className="h-4 w-4" />
+
+                <div className="flex flex-wrap gap-3">
+                  <Badge
+                    variant="secondary"
+                    className="gap-2 text-sm px-3 py-1.5"
+                  >
+                    <Users className="h-5 w-5" />
                     {usage.profileCount} affiliates
                   </Badge>
-                  <Badge variant="secondary" className="gap-2">
-                    <FolderKanban className="h-4 w-4" />
+
+                  <Badge
+                    variant="secondary"
+                    className="gap-2 text-sm px-3 py-1.5"
+                  >
+                    <FolderKanban className="h-5 w-5" />
                     {usage.projectCount} projects
                   </Badge>
-                  <Badge variant="outline" className="gap-2">
-                    <Building2 className="h-4 w-4" />
+
+                  <Badge
+                    variant="outline"
+                    className="gap-2 text-sm px-3 py-1.5"
+                  >
+                    <Building2 className="h-5 w-5" />
                     {center?.agendaNames?.length || 0} agenda
                   </Badge>
                 </div>
@@ -805,9 +819,11 @@ export default function AdminResearchCenterDetailPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading research center...</p>
+            <p className="text-base text-slate-600">
+              Loading research center...
+            </p>
           ) : error ? (
             <EmptyState title="Unable to load" description={error} />
           ) : !center ? (
@@ -817,27 +833,27 @@ export default function AdminResearchCenterDetailPage() {
             />
           ) : (
             <>
-              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                <p className="mt-2 whitespace-pre-wrap text-base text-slate-700">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <div className="space-y-3">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Research Agenda
                 </p>
                 {center.agendaNames.length ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {center.agendaNames.map((agenda) => (
                       <button
                         key={agenda}
                         type="button"
-                        className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-muted"
+                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-slate-700 hover:bg-muted"
                         onClick={() => applyAgendaFilter(agenda)}
                         title="Filter linked projects by this agenda"
                       >
@@ -846,28 +862,34 @@ export default function AdminResearchCenterDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-600">No agenda linked.</p>
+                  <p className="text-base text-slate-600">No agenda linked.</p>
                 )}
               </div>
 
               <Tabs value={activeTab} onValueChange={setTab}>
-                <TabsList>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
-                  <TabsTrigger value="projects">Projects</TabsTrigger>
+                <TabsList className="text-base">
+                  <TabsTrigger value="overview" className="text-base">
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="affiliates" className="text-base">
+                    Affiliates
+                  </TabsTrigger>
+                  <TabsTrigger value="projects" className="text-base">
+                    Projects
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overview" className="mt-4 space-y-4">
-                  <div className="grid gap-3 md:grid-cols-3">
+                <TabsContent value="overview" className="mt-5 space-y-5">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      <CardContent className="p-5">
+                        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Members
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                        <p className="mt-1 text-3xl font-bold text-slate-900">
                           {usage.profileCount}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-sm text-slate-600">
                           Admin {usage.memberBreakdown?.adminCount || 0} ·
                           Editor {usage.memberBreakdown?.editorCount || 0} ·
                           Member {usage.memberBreakdown?.memberCount || 0}
@@ -875,27 +897,27 @@ export default function AdminResearchCenterDetailPage() {
                       </CardContent>
                     </Card>
                     <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      <CardContent className="p-5">
+                        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Projects
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                        <p className="mt-1 text-3xl font-bold text-slate-900">
                           {usage.projectCount}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-sm text-slate-600">
                           Linked research projects.
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="bg-muted/30">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      <CardContent className="p-5">
+                        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Agenda
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                        <p className="mt-1 text-3xl font-bold text-slate-900">
                           {center.agendaNames.length}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-sm text-slate-600">
                           Research agenda items.
                         </p>
                       </CardContent>
@@ -908,10 +930,10 @@ export default function AdminResearchCenterDetailPage() {
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-base font-bold text-slate-900">
+                          <CardTitle className="text-lg font-bold text-slate-900">
                             Linked Affiliates
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="text-base">
                             Showing {links.profiles.length} affiliate(s).
                           </CardDescription>
                         </div>
@@ -929,14 +951,22 @@ export default function AdminResearchCenterDetailPage() {
                       <>
                         <CardContent className="p-0">
                           <div className="overflow-x-auto">
-                            <Table className="min-w-[980px]">
+                            <Table className="min-w-[980px] text-base">
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>No.</TableHead>
-                                  <TableHead>Full Name</TableHead>
-                                  <TableHead>Email</TableHead>
-                                  <TableHead>Role</TableHead>
-                                  <TableHead>Department</TableHead>
+                                  <TableHead className="text-sm">No.</TableHead>
+                                  <TableHead className="text-sm">
+                                    Full Name
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Email
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Role
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Department
+                                  </TableHead>
                                   <TableHead className="text-right">
                                     Actions
                                   </TableHead>
@@ -1007,7 +1037,7 @@ export default function AdminResearchCenterDetailPage() {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="projects" className="mt-4 space-y-3">
+                <TabsContent value="projects" className="mt-5 space-y-4">
                   {links.projects.length === 0 ? (
                     <EmptyState
                       title="No projects"
@@ -1021,7 +1051,7 @@ export default function AdminResearchCenterDetailPage() {
                             <CardTitle className="text-base font-bold text-slate-900">
                               Linked Projects
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="text-base">
                               Showing {filteredProjects.length} project(s).
                             </CardDescription>
                             {agendaFilter ? (
@@ -1114,13 +1144,25 @@ export default function AdminResearchCenterDetailPage() {
                             <Table className="min-w-[980px]">
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>No.</TableHead>
-                                  <TableHead>Project Title</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead>Year</TableHead>
-                                  <TableHead>Lead Researcher</TableHead>
-                                  <TableHead>Department</TableHead>
-                                  <TableHead>Agendum</TableHead>
+                                  <TableHead className="text-sm">No.</TableHead>
+                                  <TableHead className="text-sm">
+                                    Project Title
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Status
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Year
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Lead Researcher
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Department
+                                  </TableHead>
+                                  <TableHead className="text-sm">
+                                    Agendum
+                                  </TableHead>
                                   <TableHead className="text-right">
                                     Actions
                                   </TableHead>
