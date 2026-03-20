@@ -444,7 +444,6 @@ export default function AdminUsersPage() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead>Last Sign-in</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -513,11 +512,6 @@ export default function AdminUsersPage() {
                         {user.created_at
                           ? new Date(user.created_at).toLocaleDateString()
                           : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {user.last_sign_in_at
-                          ? new Date(user.last_sign_in_at).toLocaleString()
-                          : "Never"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex items-center justify-end gap-1">
