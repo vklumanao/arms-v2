@@ -446,7 +446,7 @@ export default function PublicRecordsPage() {
             <div className="rounded-xl border border-slate-200 bg-white p-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                  Papers
+                  Publications
                 </span>
                 <FileText className="h-4 w-4 text-slate-700" />
               </div>
