@@ -91,6 +91,16 @@ export const config = {
   ckanApiKey: String(process.env.CKAN_API_KEY || ""),
   ckanVerifyTls: readBool(process.env.CKAN_VERIFY_TLS, false),
   ckanTokenNamePrefix: String(process.env.CKAN_TOKEN_NAME_PREFIX || "arms"),
+  serviceBotEmails: readCsv(
+    process.env.ARMS_SERVICE_BOT_EMAILS,
+    ["arms.service@example.com"],
+  ).map((value) => value.toLowerCase()),
+  serviceBotNames: readCsv(process.env.ARMS_SERVICE_BOT_NAMES, [
+    "ARMS Service Bot",
+  ]).map((value) => value.toLowerCase()),
+  serviceBotIds: readCsv(process.env.ARMS_SERVICE_BOT_IDS, []).map((value) =>
+    value.toLowerCase(),
+  ),
   authCookieName: readString(process.env.ARMS_AUTH_COOKIE_NAME, "arms_session"),
   authCookieSecure: readBool(
     process.env.ARMS_AUTH_COOKIE_SECURE,
