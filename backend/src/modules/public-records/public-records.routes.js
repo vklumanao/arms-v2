@@ -1,4 +1,5 @@
 import { query } from "../../db/client.js";
+import { config } from "../../config/index.js";
 
 /**
  * Registers public records API routes.
@@ -17,10 +18,38 @@ export function registerPublicRecordsRoutes(app, deps) {
     listOrganizationMembers,
     listUsers,
     getUser,
+    getOrganization,
     getDataset,
     asTrimmedString,
     getExtraByKey,
   } = deps;
+  const serviceBotEmails = new Set(
+    (config.serviceBotEmails || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const serviceBotNames = new Set(
+    (config.serviceBotNames || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const serviceBotIds = new Set(
+    (config.serviceBotIds || []).map((value) =>
+      String(value || "").trim().toLowerCase(),
+    ),
+  );
+  const isServiceBotProfile = (profile) => {
+    if (!profile) return false;
+    const email = String(profile?.email || "").trim().toLowerCase();
+    const name = String(profile?.full_name || profile?.name || "")
+      .trim()
+      .toLowerCase();
+    const id = String(profile?.id || "").trim().toLowerCase();
+    if (email && serviceBotEmails.has(email)) return true;
+    if (name && serviceBotNames.has(name)) return true;
+    if (id && serviceBotIds.has(id)) return true;
+    return false;
+  };
 
   async function listLocalUsers() {
     const result = await query(`
@@ -29,6 +58,23 @@ export function registerPublicRecordsRoutes(app, deps) {
         WHERE is_active = TRUE
       `);
     return Array.isArray(result?.rows) ? result.rows : [];
+  }
+
+  async function listAssignedCenterUsers(centerId) {
+    const id = asTrimmedString(centerId);
+    if (!id) return [];
+    const result = await query(
+      `
+        SELECT *
+        FROM users
+        WHERE is_active = true
+          AND role IN ('faculty', 'student')
+          AND ckan_org_id = $1
+        ORDER BY full_name ASC, email ASC
+      `,
+      [id],
+    );
+    return Array.isArray(result.rows) ? result.rows : [];
   }
 
   function getExtraValue(entity, key) {
@@ -252,6 +298,7 @@ export function registerPublicRecordsRoutes(app, deps) {
 
       const agendaLabelMap = {};
       const agendaCountByOrg = {};
+      const agendaNamesByOrg = {};
       await Promise.all(
         (organizations || []).map(async (org) => {
           const orgId = asTrimmedString(org?.name || org?.id);
@@ -261,6 +308,19 @@ export function registerPublicRecordsRoutes(app, deps) {
             agendaCountByOrg[orgId] = Array.isArray(agendas)
               ? agendas.length
               : 0;
+            agendaNamesByOrg[orgId] = Array.isArray(agendas)
+              ? Array.from(
+                  new Set(
+                    agendas
+                      .map((agenda) =>
+                        asTrimmedString(
+                          agenda?.name || agenda?.title || agenda?.id,
+                        ),
+                      )
+                      .filter(Boolean),
+                  ),
+                ).sort((a, b) => a.localeCompare(b))
+              : [];
             (agendas || []).forEach((agenda) => {
               const agendaId = asTrimmedString(agenda?.id);
               if (!agendaId) return;
@@ -307,6 +367,7 @@ export function registerPublicRecordsRoutes(app, deps) {
             getExtraValue(org, "center_chief_name"),
           ),
           agenda_count: Number(agendaCountByOrg[orgId] || 0),
+          agenda_names: agendaNamesByOrg[orgId] || [],
         };
       });
       const departments = (groups || []).map((group) => ({
@@ -419,11 +480,14 @@ export function registerPublicRecordsRoutes(app, deps) {
         if (!centerId) {
           return res.status(400).json({ error: "Center id is required." });
         }
-        const [members, users, localUsers] = await Promise.all([
-          listOrganizationMembers(centerId),
-          listUsers(),
-          listLocalUsers(),
-        ]);
+        const [members, users, localUsers, centerOrg, assignedUsers] =
+          await Promise.all([
+            listOrganizationMembers(centerId),
+            listUsers(),
+            listLocalUsers(),
+            getOrganization(centerId),
+            listAssignedCenterUsers(centerId),
+          ]);
         const userByEmail = new Map(
           (users || [])
             .filter((row) => row?.email)
@@ -468,7 +532,7 @@ export function registerPublicRecordsRoutes(app, deps) {
             ]),
         );
 
-        const rows = await Promise.all(
+        let rows = await Promise.all(
           (members || []).map(async (member) => {
             const memberId = asTrimmedString(member?.id || member?.name);
             const memberEmail = asTrimmedString(member?.email).toLowerCase();
@@ -538,6 +602,65 @@ export function registerPublicRecordsRoutes(app, deps) {
             };
           }),
         );
+        const assignedRows = (assignedUsers || []).map((user) => ({
+          id: user?.ckan_user_id || user?.id || user?.email || null,
+          name: user?.full_name || user?.email || "ARMS User",
+          full_name: user?.full_name || user?.email || "ARMS User",
+          email: asTrimmedString(user?.email),
+          role: asTrimmedString(user?.role || "student"),
+          department: asTrimmedString(user?.department),
+        }));
+        rows = Array.from(
+          [...rows, ...assignedRows]
+            .filter((row) => !isServiceBotProfile(row))
+            .reduce((acc, row) => {
+              const key =
+                asTrimmedString(row?.email).toLowerCase() ||
+                asTrimmedString(row?.id).toLowerCase();
+              if (!key) return acc;
+              if (!acc.has(key)) {
+                acc.set(key, row);
+                return acc;
+              }
+              const current = acc.get(key);
+              acc.set(key, {
+                ...current,
+                ...row,
+                full_name: row?.full_name || current?.full_name,
+                email: row?.email || current?.email,
+                department: row?.department || current?.department,
+                role: row?.role || current?.role,
+              });
+              return acc;
+            }, new Map()).values(),
+        );
+        const centerChiefId = asTrimmedString(
+          getExtraValue(centerOrg, "center_chief_id"),
+        );
+        const centerChiefName = asTrimmedString(
+          getExtraValue(centerOrg, "center_chief_name"),
+        );
+        if (centerChiefId) {
+          const chiefKey = asTrimmedString(centerChiefId).toLowerCase();
+          const chiefExists = rows.some(
+            (row) =>
+              asTrimmedString(row?.id).toLowerCase() === chiefKey ||
+              asTrimmedString(row?.email).toLowerCase() === chiefKey,
+          );
+          if (!chiefExists) {
+            const chiefRow = {
+              id: centerChiefId,
+              name: centerChiefName || "Center Chief",
+              full_name: centerChiefName || "Center Chief",
+              email: "",
+              role: "admin",
+              department: "",
+            };
+            if (!isServiceBotProfile(chiefRow)) {
+              rows = [...rows, chiefRow];
+            }
+          }
+        }
         return res.json({ rows });
       } catch (error) {
         return res.status(500).json({
