@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { normalizeStatus } from "@/utils/status";
 import {
   buildLifecycleBreakdown,
@@ -11,17 +10,41 @@ import { useDashboardData } from "@/hooks/dashboard";
 import { ChartFrame, DashboardPanel } from "@/components/dashboard";
 import PageHeader from "@/components/layout/PageHeader";
 import InlineNotice from "@/components/feedback/InlineNotice";
+import { EXPECTED_OUTPUT_TYPE_OPTIONS } from "@/utils/submissions/submissionFormUtils";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+const STATUS_COLORS = ["#f59e0b", "#1557a1", "#0e8a54", "#c4332b"];
+const PALETTE = [
+  "#0f4c81",
+  "#2f7bbd",
+  "#36b7a6",
+  "#f0b429",
+  "#e56b6f",
+  "#9f86c0",
+];
+const PANEL_CARD_CLASS =
+  "border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
+const PANEL_HEADER_CLASS =
+  "bg-gradient-to-r from-slate-50 via-white to-slate-100";
+const PANEL_BODY_CLASS = "p-6";
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -42,6 +65,7 @@ export default function DashboardPage() {
     profile,
     isAdmin,
   });
+
   const scopedProjects = useMemo(() => {
     if (isAdmin) return projects;
     const ownerId = String(profile?.id || user?.id || "").trim();
@@ -60,6 +84,7 @@ export default function DashboardPage() {
     () => buildLifecycleBreakdown(chartProjects),
     [chartProjects],
   );
+
   const centerById = useMemo(
     () =>
       effectiveCenters.reduce((acc, center) => {
@@ -81,43 +106,43 @@ export default function DashboardPage() {
   const centersWithProjectsSet = useMemo(
     () =>
       new Set(
-        (scopedProjects || [])
+        (chartProjects || [])
           .map((project) => project.research_center_id)
           .filter(Boolean),
       ),
-    [scopedProjects],
+    [chartProjects],
   );
 
   const projectsByStatus = useMemo(() => {
     const result = { proposal: 0, ongoing: 0, completed: 0, rejected: 0 };
-    (scopedProjects || []).forEach((project) => {
+    (chartProjects || []).forEach((project) => {
       const status = normalizeStatus(project.status);
       if (result[status] !== undefined) result[status] += 1;
     });
     return result;
-  }, [scopedProjects]);
+  }, [chartProjects]);
 
   const projectsThisYear = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return (scopedProjects || []).filter((project) => {
+    return (chartProjects || []).filter((project) => {
       if (project.year && Number(project.year) === currentYear) return true;
       if (!project.created_at) return false;
       return new Date(project.created_at).getFullYear() === currentYear;
     }).length;
-  }, [scopedProjects]);
+  }, [chartProjects]);
 
   const projectsNearingDeadline = useMemo(() => {
     const now = new Date();
     const cutoff = new Date(now);
     cutoff.setDate(cutoff.getDate() + 14);
-    return (scopedProjects || []).filter((project) => {
+    return (chartProjects || []).filter((project) => {
       if (!project.end_date) return false;
       const status = normalizeStatus(project.status);
       if (status === "completed" || status === "rejected") return false;
       const due = new Date(project.end_date);
       return due >= now && due <= cutoff;
     }).length;
-  }, [scopedProjects]);
+  }, [chartProjects]);
 
   const adminSummaries = useMemo(() => {
     const totalCenters = effectiveCenters.length;
@@ -126,16 +151,13 @@ export default function DashboardPage() {
     const totalAgenda = effectiveAgendas.length;
 
     const totalAffiliates = affiliateRows.length;
-    const activeAffiliates = affiliateRows.filter(
-      (row) => row.is_active,
-    ).length;
+    const activeAffiliates = affiliateRows.filter((row) => row.is_active)
+      .length;
     const inactiveAffiliates = Math.max(0, totalAffiliates - activeAffiliates);
-    const facultyCount = affiliateRows.filter(
-      (row) => row.role === "faculty",
-    ).length;
-    const studentCount = affiliateRows.filter(
-      (row) => row.role === "student",
-    ).length;
+    const facultyCount = affiliateRows.filter((row) => row.role === "faculty")
+      .length;
+    const studentCount = affiliateRows.filter((row) => row.role === "student")
+      .length;
 
     return {
       researchCenters: {
@@ -152,21 +174,21 @@ export default function DashboardPage() {
         studentCount,
       },
       projects: {
-        totalProjects: scopedProjects.length,
+        totalProjects: chartProjects.length,
         ...projectsByStatus,
         thisYear: projectsThisYear,
         nearingDeadline: projectsNearingDeadline,
       },
     };
   }, [
-    effectiveCenters.length,
+    affiliateRows,
+    chartProjects.length,
     centersWithProjectsSet.size,
     effectiveAgendas.length,
-    affiliateRows,
-    scopedProjects.length,
+    effectiveCenters.length,
     projectsByStatus,
-    projectsThisYear,
     projectsNearingDeadline,
+    projectsThisYear,
   ]);
 
   const crossModuleHealth = useMemo(() => {
@@ -203,19 +225,31 @@ export default function DashboardPage() {
         (projectCenterPct + projectAgendaPct + affiliateCenterPct) / 3,
       ),
     };
-  }, [chartProjects, affiliateRows]);
+  }, [affiliateRows, chartProjects]);
 
-  const topDepartmentsByAffiliate = useMemo(() => {
-    const counts = new Map();
-    affiliateRows.forEach((row) => {
-      const label = String(row.department || "Unassigned").trim();
-      counts.set(label, (counts.get(label) || 0) + 1);
-    });
-    return [...counts.entries()]
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [affiliateRows]);
+  const statusChartData = useMemo(
+    () => [
+      { name: "Proposal", value: projectsByStatus.proposal },
+      { name: "Ongoing", value: projectsByStatus.ongoing },
+      { name: "Completed", value: projectsByStatus.completed },
+      { name: "Rejected", value: projectsByStatus.rejected },
+    ],
+    [projectsByStatus],
+  );
+
+  const centersCoverageData = useMemo(
+    () => [
+      {
+        name: "Centers with projects",
+        value: adminSummaries.researchCenters.activeCenters,
+      },
+      {
+        name: "Centers with no projects",
+        value: adminSummaries.researchCenters.centersWithNoProjects,
+      },
+    ],
+    [adminSummaries.researchCenters],
+  );
 
   const topCentersByProject = useMemo(() => {
     const counts = new Map();
@@ -232,91 +266,238 @@ export default function DashboardPage() {
         count,
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [chartProjects, centerById]);
+      .slice(0, 6);
+  }, [centerById, chartProjects]);
 
-  const topAgendaByUsage = useMemo(() => {
-    const counts = new Map();
-    chartProjects.forEach((project) => {
-      const label = String(
-        project.agenda_name ||
-          (project.agenda_id
-            ? `Agenda ${project.agenda_id}`
-            : "Unassigned Agenda"),
-      ).trim();
-      counts.set(label, (counts.get(label) || 0) + 1);
-    });
-    return [...counts.entries()]
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [chartProjects]);
+  const departmentMixData = useMemo(() => {
+    const map = new Map();
 
-  const topDepartmentsByProject = useMemo(() => {
-    const counts = new Map();
     chartProjects.forEach((project) => {
       const label =
         departmentById[project.department_id] ||
         project.department_name ||
         "Unassigned Department";
+      if (!map.has(label)) {
+        map.set(label, { label, projects: 0, affiliates: 0, awards: 0 });
+      }
+      map.get(label).projects += 1;
+    });
+
+    affiliateRows.forEach((row) => {
+      const label = String(row.department || "Unassigned Department").trim();
+      if (!map.has(label)) {
+        map.set(label, { label, projects: 0, affiliates: 0, awards: 0 });
+      }
+      map.get(label).affiliates += 1;
+      map.get(label).awards += Number(row.awards_count || 0);
+    });
+
+    return [...map.values()]
+      .sort((a, b) => b.projects + b.affiliates - (a.projects + a.affiliates))
+      .slice(0, 6);
+  }, [affiliateRows, chartProjects, departmentById]);
+
+  const affiliateRoleData = useMemo(() => {
+    const counts = new Map();
+    affiliateRows.forEach((row) => {
+      const label = String(row.role || "other").trim() || "other";
       counts.set(label, (counts.get(label) || 0) + 1);
     });
+    return [...counts.entries()].map(([label, value], index) => ({
+      name: label,
+      value,
+      fill: PALETTE[index % PALETTE.length],
+    }));
+  }, [affiliateRows]);
+
+  const affiliateStatusData = useMemo(() => {
+    const active = affiliateRows.filter((row) => row.is_active).length;
+    const inactive = Math.max(0, affiliateRows.length - active);
+    return [
+      { name: "Active", value: active, fill: "#1d9a6c" },
+      { name: "Inactive", value: inactive, fill: "#e5e7eb" },
+    ];
+  }, [affiliateRows]);
+
+  const outputTypeLabelByValue = useMemo(
+    () =>
+      EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {
+        acc[item.value] = item.label;
+        return acc;
+      }, {}),
+    [],
+  );
+
+  const outputsByType = useMemo(() => {
+    const counts = new Map();
+
+    chartProjects.forEach((project) => {
+      const items = Array.isArray(project.expected_outputs_items)
+        ? project.expected_outputs_items
+        : [];
+
+      if (items.length) {
+        items.forEach((item) => {
+          const raw = String(item.output_type || item.outputType || "").trim();
+          const label = outputTypeLabelByValue[raw] || raw || "Unspecified";
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+        return;
+      }
+
+      const fallback = String(project.expected_outputs || "").trim();
+      if (!fallback) return;
+      fallback
+        .split(",")
+        .map((segment) => segment.trim())
+        .filter(Boolean)
+        .forEach((label) => {
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+    });
+
     return [...counts.entries()]
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [chartProjects, departmentById]);
+      .slice(0, 6);
+  }, [chartProjects, outputTypeLabelByValue]);
 
-  const recentSubmittedProjects = useMemo(
-    () =>
-      [...chartProjects]
-        .filter((project) => Boolean(project.created_at))
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 5),
-    [chartProjects],
-  );
+  const outputsMonthly = useMemo(() => {
+    const monthMap = new Map();
+    const today = new Date();
 
-  const recentUpdatedAffiliates = useMemo(
-    () =>
-      [...affiliateRows]
-        .filter((row) => Boolean(row.updated_at || row.created_at))
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at || b.created_at) -
-            new Date(a.updated_at || a.created_at),
-        )
-        .slice(0, 5),
-    [affiliateRows],
-  );
+    for (let i = 11; i >= 0; i -= 1) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthMap.set(key, {
+        key,
+        month: d.toLocaleDateString(undefined, { month: "short" }),
+        outputs: 0,
+      });
+    }
 
-  const recentCentersActivity = useMemo(
-    () =>
-      [...effectiveCenters]
-        .filter((center) => Boolean(center.updated_at || center.created_at))
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at || b.created_at) -
-            new Date(a.updated_at || a.created_at),
-        )
-        .slice(0, 5),
-    [effectiveCenters],
+    chartProjects.forEach((project) => {
+      const rawDate = project.submitted_at || project.updated_at || project.created_at;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!monthMap.has(key)) return;
+
+      const items = Array.isArray(project.expected_outputs_items)
+        ? project.expected_outputs_items.length
+        : 0;
+      const fallback = String(project.expected_outputs || "")
+        .split(",")
+        .map((segment) => segment.trim())
+        .filter(Boolean).length;
+      const total = items || fallback;
+      if (!total) return;
+
+      monthMap.get(key).outputs += total;
+    });
+
+    return Array.from(monthMap.values());
+  }, [chartProjects]);
+
+  const awardsByDepartment = useMemo(() => {
+    const map = new Map();
+    affiliateRows.forEach((row) => {
+      const label = String(row.department || "Unassigned Department").trim();
+      const count = Number(row.awards_count || 0);
+      if (!map.has(label)) {
+        map.set(label, { label, count: 0 });
+      }
+      map.get(label).count += count;
+    });
+
+    return [...map.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [affiliateRows]);
+
+  const awardsSummaryData = useMemo(() => {
+    const totalAwards = affiliateRows.reduce(
+      (sum, row) => sum + Number(row.awards_count || 0),
+      0,
+    );
+    const affiliatesWithAwards = affiliateRows.filter(
+      (row) => Number(row.awards_count || 0) > 0,
+    ).length;
+    const affiliatesWithoutAwards = Math.max(
+      0,
+      affiliateRows.length - affiliatesWithAwards,
+    );
+
+    return {
+      totalAwards,
+      donut: [
+        { name: "Affiliates with awards", value: affiliatesWithAwards },
+        { name: "Affiliates without awards", value: affiliatesWithoutAwards },
+      ],
+    };
+  }, [affiliateRows]);
+
+  const qualityPulseData = useMemo(
+    () => [
+      {
+        name: "Projects with center",
+        value: crossModuleHealth.projectCenterPct,
+        fill: "#1557a1",
+      },
+      {
+        name: "Projects with agenda",
+        value: crossModuleHealth.projectAgendaPct,
+        fill: "#36b7a6",
+      },
+      {
+        name: "Affiliates with center",
+        value: crossModuleHealth.affiliateCenterPct,
+        fill: "#f59e0b",
+      },
+    ],
+    [crossModuleHealth],
   );
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="Dashboard"
-        actions={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => loadData({ silent: true })}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </Button>
-        }
-      />
+      <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
+        <PageHeader
+          title="Dashboard"
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => loadData({ silent: true })}
+              disabled={refreshing}
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </Button>
+          }
+        />
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          A visual pulse check across research centers, departments, affiliates,
+          projects, outputs, and recognitions. Trends update from live records
+          and focus on momentum, coverage, and quality.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+            Centers: {adminSummaries.researchCenters.totalCenters}
+          </span>
+          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+            Departments: {effectiveDepartments.length}
+          </span>
+          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+            Affiliates: {adminSummaries.affiliates.totalAffiliates}
+          </span>
+          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+            Projects: {adminSummaries.projects.totalProjects}
+          </span>
+          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+            Data quality: {crossModuleHealth.dataQualityScore}%
+          </span>
+        </div>
+      </div>
 
       <InlineNotice
         type="error"
@@ -324,40 +505,100 @@ export default function DashboardPage() {
         message={error || affiliateError || referenceError?.message}
       />
 
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Portfolio Pulse
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Highlights for research activity volume and project momentum over the
+          last 12 months.
+        </p>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
-        <DashboardPanel title="Monthly Submissions (Line)">
-          <ChartFrame height={300}>
-            <LineChart
+        <DashboardPanel
+          title="Portfolio Pulse (Monthly Submissions)"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <ChartFrame height={320}>
+            <AreaChart
               data={monthlySubmissions}
               margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
             >
+              <defs>
+                <linearGradient id="submissionGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#1557a1" stopOpacity={0.5} />
+                  <stop offset="95%" stopColor="#1557a1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="submissions"
                 name="Submissions"
                 stroke="#1557a1"
                 strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                fill="url(#submissionGlow)"
               />
-            </LineChart>
+            </AreaChart>
           </ChartFrame>
         </DashboardPanel>
 
-        <DashboardPanel title="Lifecycle Status Breakdown (Stacked Bar)">
+        <DashboardPanel
+          title="Project Status Distribution"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <ChartFrame height={320}>
+            <PieChart>
+              <Tooltip />
+              <Legend />
+              <Pie
+                data={statusChartData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={65}
+                outerRadius={110}
+                paddingAngle={2}
+              >
+                {statusChartData.map((entry, index) => (
+                  <Cell
+                    key={`status-${entry.name}`}
+                    fill={STATUS_COLORS[index % STATUS_COLORS.length]}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartFrame>
+        </DashboardPanel>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Project Health
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Yearly lifecycle mix and data completeness for projects and
+          affiliates.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
+        <DashboardPanel
+          title="Lifecycle Status Breakdown"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
           {lifecycleBreakdown.length === 0 ? (
-            <Card className="shadow-none">
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-600">
-                  No lifecycle data available yet.
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-sm text-slate-600">No lifecycle data yet.</p>
           ) : (
             <ChartFrame height={300}>
               <BarChart
@@ -397,326 +638,295 @@ export default function DashboardPage() {
             </ChartFrame>
           )}
         </DashboardPanel>
+
+        <DashboardPanel
+          title="Data Quality Pulse"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <ChartFrame height={300}>
+            <RadialBarChart
+              innerRadius="35%"
+              outerRadius="90%"
+              data={qualityPulseData}
+              startAngle={90}
+              endAngle={-270}
+            >
+              <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+              <RadialBar background dataKey="value" cornerRadius={6} />
+              <Legend />
+              <Tooltip />
+            </RadialBarChart>
+          </ChartFrame>
+          <p className="mt-4 text-sm text-slate-600">
+            Composite data quality score: {crossModuleHealth.dataQualityScore}%.
+          </p>
+        </DashboardPanel>
       </div>
 
-      {isAdmin ? (
-        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-          <DashboardPanel title="Research Centers Summary">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Total centers</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.totalCenters}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Active centers</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.activeCenters}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    Centers with no projects
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.centersWithNoProjects}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Total agenda count</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.researchCenters.totalAgenda}
-                  </p>
-                </CardContent>
-              </Card>
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Centers and Departments
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Coverage and activity concentration by research centers and
+          departments.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <DashboardPanel
+          title="Research Centers Coverage"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <ChartFrame height={260}>
+            <PieChart>
+              <Tooltip />
+              <Legend />
+              <Pie
+                data={centersCoverageData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={55}
+                outerRadius={90}
+                paddingAngle={2}
+              >
+                {centersCoverageData.map((entry, index) => (
+                  <Cell
+                    key={`center-${entry.name}`}
+                    fill={PALETTE[index % PALETTE.length]}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartFrame>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+            <div>Total centers: {adminSummaries.researchCenters.totalCenters}</div>
+            <div>Total agendas: {adminSummaries.researchCenters.totalAgenda}</div>
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel
+          title="Top Centers by Project Count"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          {topCentersByProject.length === 0 ? (
+            <p className="text-sm text-slate-600">No center data available.</p>
+          ) : (
+            <ChartFrame height={260}>
+              <BarChart
+                data={topCentersByProject}
+                layout="vertical"
+                margin={{ top: 8, right: 12, left: 24, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  width={140}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip />
+                <Bar dataKey="count" fill="#1557a1" radius={[6, 6, 6, 6]} />
+              </BarChart>
+            </ChartFrame>
+          )}
+        </DashboardPanel>
+
+        <DashboardPanel
+          title="Department Mix (Projects vs Affiliates)"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          {departmentMixData.length === 0 ? (
+            <p className="text-sm text-slate-600">No department data yet.</p>
+          ) : (
+            <ChartFrame height={260}>
+              <BarChart
+                data={departmentMixData}
+                margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="projects" name="Projects" fill="#1557a1" />
+                <Bar dataKey="affiliates" name="Affiliates" fill="#36b7a6" />
+              </BarChart>
+            </ChartFrame>
+          )}
+        </DashboardPanel>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Affiliates Snapshot
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Quick counts for affiliates, roles, and activation status.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DashboardPanel
+          title="Affiliates Footprint"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Total Affiliates
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {adminSummaries.affiliates.totalAffiliates}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Active: {adminSummaries.affiliates.activeAffiliates} · Inactive:{" "}
+                {adminSummaries.affiliates.inactiveAffiliates}
+              </p>
             </div>
-          </DashboardPanel>
-
-          <DashboardPanel title="Affiliates Summary">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Total affiliates</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.totalAffiliates}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Active vs inactive</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.activeAffiliates} /{" "}
-                    {adminSummaries.affiliates.inactiveAffiliates}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Faculty vs student</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.affiliates.facultyCount} /{" "}
-                    {adminSummaries.affiliates.studentCount}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    Top departments by affiliate count
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {(topDepartmentsByAffiliate[0] &&
-                      `${topDepartmentsByAffiliate[0].label} (${topDepartmentsByAffiliate[0].count})`) ||
-                      "-"}
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Role Split
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {adminSummaries.affiliates.facultyCount} /{" "}
+                {adminSummaries.affiliates.studentCount}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Faculty / Student</p>
             </div>
-          </DashboardPanel>
+          </div>
+        </DashboardPanel>
 
-          <DashboardPanel title="Research Projects Summary">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Total projects</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.totalProjects}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    This year submissions
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.thisYear}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none sm:col-span-2">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">By status</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Proposal {adminSummaries.projects.proposal} | Ongoing{" "}
-                    {adminSummaries.projects.ongoing} | Completed{" "}
-                    {adminSummaries.projects.completed} | Rejected{" "}
-                    {adminSummaries.projects.rejected}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none sm:col-span-2">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    Projects nearing deadline
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {adminSummaries.projects.nearingDeadline}
-                  </p>
-                </CardContent>
-              </Card>
+        <DashboardPanel
+          title="Research Projects Focus"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          <div className="grid gap-4 sm:grid-cols-3 text-sm text-slate-600">
+            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Total Projects
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {adminSummaries.projects.totalProjects}
+              </p>
             </div>
-          </DashboardPanel>
-
-          <DashboardPanel title="Cross-Module Health Widget">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    % projects with assigned center
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.projectCenterPct}%
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    % projects with assigned agenda
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.projectAgendaPct}%
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">
-                    % affiliates with center assignment
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.affiliateCenterPct}%
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none">
-                <CardContent className="p-4">
-                  <p className="text-xs text-slate-500">Data quality score</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {crossModuleHealth.dataQualityScore}%
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                This Year
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {adminSummaries.projects.thisYear}
+              </p>
             </div>
-          </DashboardPanel>
-        </div>
-      ) : null}
-      {isAdmin ? (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <DashboardPanel title="Top 5 Centers by Project Count">
-            <ul className="space-y-2">
-              {topCentersByProject.length === 0 ? (
-                <li className="text-sm text-slate-500">No project data.</li>
-              ) : (
-                topCentersByProject.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <span className="text-sm text-slate-700">{item.label}</span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {item.count}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
+            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Deadline Soon
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {adminSummaries.projects.nearingDeadline}
+              </p>
+            </div>
+          </div>
+        </DashboardPanel>
+      </div>
 
-          <DashboardPanel title="Top 5 Agenda by Usage">
-            <ul className="space-y-2">
-              {topAgendaByUsage.length === 0 ? (
-                <li className="text-sm text-slate-500">
-                  No agenda usage data.
-                </li>
-              ) : (
-                topAgendaByUsage.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <span className="text-sm text-slate-700">{item.label}</span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {item.count}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Outputs and Recognition
+        </p>
+        <p className="mt-1 text-sm text-slate-600">
+          Expected outputs volume and recognition counts for research impact.
+        </p>
+      </div>
 
-          <DashboardPanel title="Top 5 Departments by Projects">
-            <ul className="space-y-2">
-              {topDepartmentsByProject.length === 0 ? (
-                <li className="text-sm text-slate-500">
-                  No project department data.
-                </li>
-              ) : (
-                topDepartmentsByProject.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <span className="text-sm text-slate-700">{item.label}</span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {item.count}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
-        </div>
-      ) : null}
-      {isAdmin ? (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <DashboardPanel title="Recent Submitted Projects">
-            <ul className="space-y-2">
-              {recentSubmittedProjects.length === 0 ? (
-                <li className="text-sm text-slate-500">
-                  No recent project submissions.
-                </li>
-              ) : (
-                recentSubmittedProjects.map((project) => (
-                  <li
-                    key={project.id}
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <p className="text-sm font-medium text-slate-900">
-                      {project.title}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(project.created_at).toLocaleString()}
-                    </p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DashboardPanel
+          title="Research Outputs (Expected)"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          {outputsByType.length === 0 ? (
+            <p className="text-sm text-slate-600">
+              No expected outputs attached to projects yet.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Total Expected Outputs
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {outputsByType.reduce((sum, item) => sum + item.count, 0)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Based on project output tracking.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Top Output Type
+                </p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {outputsByType[0]?.label || "-"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Count: {outputsByType[0]?.count || 0}
+                </p>
+              </div>
+            </div>
+          )}
+        </DashboardPanel>
 
-          <DashboardPanel title="Recently Updated Affiliate Profiles">
-            <ul className="space-y-2">
-              {recentUpdatedAffiliates.length === 0 ? (
-                <li className="text-sm text-slate-500">
-                  No recent affiliate updates.
-                </li>
-              ) : (
-                recentUpdatedAffiliates.map((affiliate) => (
-                  <li
-                    key={affiliate.id}
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <p className="text-sm font-medium text-slate-900">
-                      {affiliate.full_name || affiliate.email || affiliate.id}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(
-                        affiliate.updated_at || affiliate.created_at,
-                      ).toLocaleString()}
-                    </p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
-
-          <DashboardPanel title="Recently Created/Edited Research Centers">
-            <ul className="space-y-2">
-              {recentCentersActivity.length === 0 ? (
-                <li className="text-sm text-slate-500">
-                  No timestamped center activity available.
-                </li>
-              ) : (
-                recentCentersActivity.map((center) => (
-                  <li
-                    key={center.id}
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-sm"
-                  >
-                    <p className="text-sm font-medium text-slate-900">
-                      {center.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(
-                        center.updated_at || center.created_at,
-                      ).toLocaleString()}
-                    </p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </DashboardPanel>
-        </div>
-      ) : null}
+        <DashboardPanel
+          title="Awards and Recognition"
+          cardClassName={PANEL_CARD_CLASS}
+          headerClassName={PANEL_HEADER_CLASS}
+          bodyClassName={PANEL_BODY_CLASS}
+        >
+          {affiliateRows.length === 0 ? (
+            <p className="text-sm text-slate-600">No awards data available.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Total Awards
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {awardsSummaryData.totalAwards}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Across all affiliates.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Top Department
+                </p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {awardsByDepartment[0]?.label || "-"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Awards: {awardsByDepartment[0]?.count || 0}
+                </p>
+              </div>
+            </div>
+          )}
+        </DashboardPanel>
+      </div>
     </section>
   );
 }
