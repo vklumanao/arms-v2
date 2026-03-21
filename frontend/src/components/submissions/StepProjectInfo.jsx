@@ -51,9 +51,7 @@ export default function StepProjectInfo({
           </p>
         </label>
         <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">
-            Project abstract/summary
-          </span>
+          <span className="font-semibold text-slate-700">Project Summary</span>
           <Textarea
             placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
             value={form.abstract}
