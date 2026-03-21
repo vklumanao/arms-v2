@@ -1,5 +1,9 @@
+import http from "node:http";
+import https from "node:https";
+import path from "node:path";
 import { query } from "../../db/client.js";
 import { config } from "../../config/index.js";
+import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
 
 /**
  * Registers public records API routes.
@@ -38,6 +42,126 @@ export function registerPublicRecordsRoutes(app, deps) {
       String(value || "").trim().toLowerCase(),
     ),
   );
+  function resolveCkanResourceUrl(resourceUrl) {
+    const raw = asTrimmedString(resourceUrl);
+    if (!raw) return "";
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      try {
+        const parsed = new URL(raw);
+        const ckanBase = new URL(`${config.ckanBaseUrl}/`);
+        const isLocalHost =
+          parsed.hostname === "localhost" ||
+          parsed.hostname === "127.0.0.1" ||
+          parsed.hostname === "ckan";
+        if (isLocalHost) {
+          return new URL(
+            `${parsed.pathname}${parsed.search}`,
+            `${ckanBase.origin}/`,
+          ).toString();
+        }
+      } catch {
+        return raw;
+      }
+      return raw;
+    }
+    if (raw.startsWith("/")) {
+      return new URL(raw, `${config.ckanBaseUrl}/`).toString();
+    }
+    return new URL(raw, `${config.ckanBaseUrl}/`).toString();
+  }
+
+  function buildDownloadFilename(resource = {}, fallbackUrl = "") {
+    const name = asTrimmedString(resource?.name);
+    if (name) return name.replace(/["\\]/g, "_");
+    try {
+      const url = new URL(fallbackUrl);
+      const basename = path.basename(url.pathname || "");
+      return basename || "resource.bin";
+    } catch {
+      return "resource.bin";
+    }
+  }
+
+  function proxyDownload({ sourceUrl, res, inline, filename, mimeType }) {
+    const maxRedirects = 5;
+    const requestUrl = (url, redirectsLeft) =>
+      new Promise((resolve, reject) => {
+        const parsed = new URL(url);
+        const transport = parsed.protocol === "https:" ? https : http;
+        const options = {
+          protocol: parsed.protocol,
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+          path: `${parsed.pathname}${parsed.search}`,
+          method: "GET",
+          headers: {
+            Accept: "*/*",
+            Authorization: config.ckanApiKey,
+            "X-CKAN-API-Key": config.ckanApiKey,
+          },
+        };
+
+        if (parsed.protocol === "https:") {
+          options.rejectUnauthorized = config.ckanVerifyTls;
+        }
+
+        const req = transport.request(options, (upstream) => {
+          const status = upstream.statusCode || 0;
+          const location = upstream.headers?.location;
+          if (status >= 300 && status < 400 && location && redirectsLeft > 0) {
+            upstream.resume();
+            const nextUrl = new URL(location, url).toString();
+            resolve(requestUrl(nextUrl, redirectsLeft - 1));
+            return;
+          }
+
+          if (status >= 400) {
+            const chunks = [];
+            upstream.on("data", (chunk) => chunks.push(chunk));
+            upstream.on("end", () => {
+              const message =
+                Buffer.concat(chunks).toString("utf8") ||
+                `Upstream download failed with status ${status}`;
+              if (!res.headersSent) {
+                res.status(status).json({ error: message.slice(0, 300) });
+              }
+              resolve();
+            });
+            upstream.on("error", reject);
+            return;
+          }
+
+          if (!res.headersSent) {
+            const dispositionType = inline ? "inline" : "attachment";
+            const safeName = filename || "resource.bin";
+            res.setHeader(
+              "Content-Disposition",
+              `${dispositionType}; filename="${safeName}"`,
+            );
+            if (mimeType) {
+              res.setHeader("Content-Type", mimeType);
+            } else if (upstream.headers?.["content-type"]) {
+              res.setHeader("Content-Type", upstream.headers["content-type"]);
+            }
+            if (upstream.headers?.["content-length"]) {
+              res.setHeader(
+                "Content-Length",
+                upstream.headers["content-length"],
+              );
+            }
+          }
+
+          upstream.pipe(res);
+          upstream.on("error", reject);
+          upstream.on("end", resolve);
+        });
+
+        req.on("error", reject);
+        req.end();
+      });
+
+    return requestUrl(sourceUrl, maxRedirects);
+  }
   const isServiceBotProfile = (profile) => {
     if (!profile) return false;
     const email = String(profile?.email || "").trim().toLowerCase();
@@ -471,6 +595,72 @@ export function registerPublicRecordsRoutes(app, deps) {
       });
     }
   });
+
+  app.get(
+    "/api/public-records/resources/:resourceId/download",
+    async (req, res) => {
+      try {
+        const resourceId = asTrimmedString(req.params?.resourceId);
+        if (!resourceId) {
+          return res.status(400).json({ error: "Resource id is required." });
+        }
+
+        const ckanResource = await ckanAction("resource_show", {
+          id: resourceId,
+        });
+        const datasetId =
+          asTrimmedString(ckanResource?.package_id) ||
+          asTrimmedString(ckanResource?.package_name) ||
+          "";
+        const dataset = datasetId ? await getDataset(datasetId) : null;
+        if (!dataset || Boolean(dataset?.private)) {
+          return res.status(404).json({ error: "Resource not found." });
+        }
+
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const submissionState = getSubmissionStateFromExtras(extras);
+        if (submissionState === "draft") {
+          return res.status(404).json({ error: "Resource not found." });
+        }
+
+        const resourceUrlRaw = resolveCkanResourceUrl(ckanResource?.url);
+        const resourceName = buildDownloadFilename(
+          ckanResource,
+          resourceUrlRaw,
+        );
+        const resourceMimeType = asTrimmedString(ckanResource?.mimetype);
+        const hasDownloadUrl = /\/resource\/.+\/download\//i.test(
+          String(resourceUrlRaw || ""),
+        );
+        const resourceUrl =
+          hasDownloadUrl && resourceUrlRaw
+            ? resourceUrlRaw
+            : datasetId && resourceId
+              ? `${config.ckanBaseUrl}/dataset/${datasetId}/resource/${resourceId}/download/${encodeURIComponent(
+                  resourceName,
+                )}`
+              : resourceUrlRaw;
+        if (!resourceUrl) {
+          return res.status(404).json({ error: "Resource URL is missing." });
+        }
+
+        const isDownload =
+          String(req.query?.download || "").toLowerCase() === "1" ||
+          String(req.query?.download || "").toLowerCase() === "true";
+        await proxyDownload({
+          sourceUrl: resourceUrl,
+          res,
+          inline: !isDownload,
+          filename: resourceName,
+          mimeType: resourceMimeType,
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to download resource."),
+        });
+      }
+    },
+  );
 
   app.get(
     "/api/public-records/centers/:centerId/affiliates",

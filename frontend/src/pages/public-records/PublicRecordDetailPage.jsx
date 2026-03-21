@@ -44,6 +44,8 @@ const formatCurrencyPHP = (value) => {
   }).format(numericValue);
 };
 
+const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || ""));
+
 const formatProjectDuration = (startDateValue, endDateValue) => {
   if (!startDateValue || !endDateValue) return "-";
   const startDate = new Date(startDateValue);
@@ -92,6 +94,8 @@ export default function PublicRecordDetailPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const recordId = String(params?.id || "").trim();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
 
   const [record, setRecord] = useState(null);
   const [centers, setCenters] = useState([]);
@@ -239,6 +243,21 @@ export default function PublicRecordDetailPage() {
       }, {}),
     [],
   );
+  const moaDownloadUrl = useMemo(() => {
+    const resources = Array.isArray(resourcePanel?.resources)
+      ? resourcePanel.resources
+      : [];
+    const moaResource = resources.find((resource) => {
+      const name = String(resource?.name || "").trim();
+      const description = String(resource?.description || "").trim();
+      const notes = String(resource?.notes || "").trim();
+      return [name, description, notes].some((value) => /\bmoa\b/i.test(value));
+    });
+    if (!moaResource?.id) return "";
+    return `${apiBaseUrl}/public-records/resources/${encodeURIComponent(
+      moaResource.id,
+    )}/download?download=1`;
+  }, [apiBaseUrl, resourcePanel?.resources]);
 
   const selectedCenter = record
     ? centerById[record.research_center_id] || "-"
@@ -430,7 +449,7 @@ export default function PublicRecordDetailPage() {
                           Classification
                         </p>
                         <p className="mt-1 text-base font-semibold text-slate-900">
-                          {record?.classification || "-"}
+                          {normalizeLabel(record?.classification)}
                         </p>
                       </div>
                       <div>
@@ -581,9 +600,39 @@ export default function PublicRecordDetailPage() {
                         <p className="text-sm font-semibold text-slate-500">
                           Signed MOA Reference
                         </p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">
-                          {record?.signed_moa_reference || "-"}
-                        </p>
+                        {(() => {
+                          const moaReference = String(
+                            record?.signed_moa_reference || "",
+                          ).trim();
+                          if (isHttpUrl(moaReference)) {
+                            return (
+                              <a
+                                className="mt-1 inline-flex items-center text-base font-semibold text-slate-900 underline-offset-4 hover:underline"
+                                href={moaReference}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {moaReference}
+                              </a>
+                            );
+                          }
+                          return (
+                            <p className="mt-1 text-base font-semibold text-slate-900">
+                              {moaReference}
+                            </p>
+                          );
+                        })()}
+                        {moaDownloadUrl ? (
+                          <a
+                            className="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm font-semibold text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
+                            href={moaDownloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Download className="h-4 w-4" />
+                            {moaDownloadUrl}
+                          </a>
+                        ) : null}
                       </div>
                     </CardContent>
                   </Card>
@@ -619,139 +668,152 @@ export default function PublicRecordDetailPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                      {resourcePanel.resources.map((resource) => {
-                        const resourceUrl = String(resource.url || "").trim();
-                        const isDownloadable =
-                          /\/resource\/.+\/download\//i.test(resourceUrl);
-                        const descriptionText = String(
-                          resource.description || "",
-                        ).trim();
-                        const outputLinkFromDescription = descriptionText
-                          .split("\n")
-                          .map((line) => line.trim())
-                          .find((line) =>
-                            line.toLowerCase().startsWith("output link:"),
-                          )
-                          ?.split("output link:")
-                          .slice(1)
-                          .join("output link:")
-                          .trim();
-                        const outputLinkFromUrl =
-                          descriptionText.match(/(https?:\/\/\S+)/i)?.[1];
-                        const outputLink =
-                          String(resource.output_link || "").trim() ||
-                          outputLinkFromDescription ||
-                          outputLinkFromUrl ||
-                          (!isDownloadable ? resourceUrl : "");
-                        const hasLink = Boolean(outputLink);
-                        const hasFile = Boolean(isDownloadable);
-                        const downloadUrl = resourceUrl
-                          ? resourceUrl.includes("?")
-                            ? `${resourceUrl}&download=1`
-                            : `${resourceUrl}?download=1`
-                          : "";
-                        return (
-                          <Card
-                            key={resource.id || resource.url || resource.name}
-                            className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-base font-semibold text-slate-900">
-                                    {resource.name || "Unnamed resource"}
-                                  </p>
-                                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
-                                      {outputTypeLabelByValue[
+                      {resourcePanel.resources
+                        .filter((resource) => {
+                          const name = String(resource?.name || "").trim();
+                          const description = String(
+                            resource?.description || "",
+                          ).trim();
+                          const notes = String(resource?.notes || "").trim();
+                          return ![name, description, notes].some((value) =>
+                            /\bmoa\b/i.test(value),
+                          );
+                        })
+                        .map((resource) => {
+                          const resourceUrl = String(resource.url || "").trim();
+                          const isDownloadable =
+                            /\/resource\/.+\/download\//i.test(resourceUrl);
+                          const descriptionText = String(
+                            resource.description || "",
+                          ).trim();
+                          const outputLinkFromDescription = descriptionText
+                            .split("\n")
+                            .map((line) => line.trim())
+                            .find((line) =>
+                              line.toLowerCase().startsWith("output link:"),
+                            )
+                            ?.split("output link:")
+                            .slice(1)
+                            .join("output link:")
+                            .trim();
+                          const outputLinkFromUrl =
+                            descriptionText.match(/(https?:\/\/\S+)/i)?.[1];
+                          const outputLink =
+                            String(resource.output_link || "").trim() ||
+                            outputLinkFromDescription ||
+                            outputLinkFromUrl ||
+                            (!isDownloadable ? resourceUrl : "");
+                          const hasLink = Boolean(outputLink);
+                          const hasFile = Boolean(
+                            resource.id && isDownloadable,
+                          );
+                          const downloadUrl = resource.id
+                            ? `${apiBaseUrl}/public-records/resources/${encodeURIComponent(
+                                resource.id,
+                              )}/download?download=1`
+                            : "";
+                          return (
+                            <Card
+                              key={resource.id || resource.url || resource.name}
+                              className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-base font-semibold text-slate-900">
+                                      {resource.name || "Unnamed resource"}
+                                    </p>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
+                                        {outputTypeLabelByValue[
+                                          String(
+                                            resource.output_type ||
+                                              resource.outputType ||
+                                              "",
+                                          ).trim()
+                                        ] || "Output"}
+                                      </span>
+                                    </div>
+                                    {(() => {
+                                      const rawAuthors =
                                         String(
-                                          resource.output_type ||
-                                            resource.outputType ||
-                                            "",
-                                        ).trim()
-                                      ] || "Output"}
-                                    </span>
-                                  </div>
-                                  {(() => {
-                                    const rawAuthors =
-                                      String(
-                                        resource.publication_authors || "",
-                                      ).trim() ||
-                                      String(
-                                        resource.publicationAuthors || "",
+                                          resource.publication_authors || "",
+                                        ).trim() ||
+                                        String(
+                                          resource.publicationAuthors || "",
+                                        ).trim();
+                                      if (rawAuthors) {
+                                        return (
+                                          <p className="text-base font-medium text-slate-800">
+                                            Proponents: {rawAuthors}
+                                          </p>
+                                        );
+                                      }
+                                      const descriptionText = String(
+                                        resource.description || "",
                                       ).trim();
-                                    if (rawAuthors) {
+                                      const fromDescription = descriptionText
+                                        .split("\n")
+                                        .map((line) => line.trim())
+                                        .find((line) =>
+                                          line
+                                            .toLowerCase()
+                                            .startsWith("authors/proponents:"),
+                                        )
+                                        ?.split("authors/proponents:")
+                                        .slice(1)
+                                        .join("authors/proponents:")
+                                        .trim();
+                                      if (!fromDescription) return null;
                                       return (
                                         <p className="text-base font-medium text-slate-800">
-                                          Proponents: {rawAuthors}
+                                          Proponents: {fromDescription}
                                         </p>
                                       );
-                                    }
-                                    const descriptionText = String(
-                                      resource.description || "",
-                                    ).trim();
-                                    const fromDescription = descriptionText
-                                      .split("\n")
-                                      .map((line) => line.trim())
-                                      .find((line) =>
-                                        line
-                                          .toLowerCase()
-                                          .startsWith("authors/proponents:"),
-                                      )
-                                      ?.split("authors/proponents:")
-                                      .slice(1)
-                                      .join("authors/proponents:")
-                                      .trim();
-                                    if (!fromDescription) return null;
-                                    return (
-                                      <p className="text-base font-medium text-slate-800">
-                                        Proponents: {fromDescription}
-                                      </p>
-                                    );
-                                  })()}
-                                  <p className="text-base text-slate-600">
-                                    Format: {resource.format || "-"} | Size:{" "}
-                                    {formatBytes(resource.size)}
-                                  </p>
-                                  {hasLink ? (
+                                    })()}
                                     <p className="text-base text-slate-600">
-                                      Output Link:{" "}
+                                      Format: {resource.format || "-"} | Size:{" "}
+                                      {formatBytes(resource.size)}
+                                    </p>
+                                    {hasLink ? (
+                                      <p className="text-base text-slate-600">
+                                        Output Link:{" "}
+                                        <a
+                                          href={outputLink}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                        >
+                                          {outputLink}
+                                        </a>
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <FileText className="h-5 w-5 text-slate-400" />
+                                </div>
+
+                                {resource.id && hasFile ? (
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <Button asChild variant="outline" size="sm">
                                       <a
-                                        href={outputLink}
+                                        href={downloadUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="text-blue-600 hover:underline"
                                       >
-                                        {outputLink}
+                                        <Download className="h-4 w-4" />
+                                        Download
                                       </a>
-                                    </p>
-                                  ) : null}
-                                </div>
-                                <FileText className="h-5 w-5 text-slate-400" />
-                              </div>
-
-                              {resourceUrl && hasFile ? (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  <Button asChild variant="outline" size="sm">
-                                    <a
-                                      href={downloadUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      <Download className="h-4 w-4" />
-                                      Download
-                                    </a>
-                                  </Button>
-                                </div>
-                              ) : hasLink ? null : (
-                                <p className="mt-2 text-base text-slate-500">
-                                  No file attached yet.
-                                </p>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                                    </Button>
+                                  </div>
+                                ) : hasLink ? null : (
+                                  <p className="mt-2 text-base text-slate-500">
+                                    No file attached yet.
+                                  </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                     </div>
                   )}
                 </CardContent>
