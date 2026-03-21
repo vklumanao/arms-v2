@@ -173,6 +173,16 @@ export async function createResearchOutputWithFile({
   }
 }
 
+export async function uploadProjectMoaResource({ projectId, file }) {
+  return createResearchOutputWithFile({
+    projectId,
+    outputType: "others",
+    targetCount: 1,
+    notes: "Signed MOA",
+    file,
+  });
+}
+
 export async function quickEditOwnedProject({ projectId, form }) {
   try {
     const payload = await apiFetch(`/submissions/${projectId}/owner-edit`, {

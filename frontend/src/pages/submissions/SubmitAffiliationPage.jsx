@@ -22,8 +22,8 @@ import {
   saveSubmission,
 } from "@/services/submissions";
 import {
-  removeMovFilesFromStorage,
-  uploadMovFileToStorage,
+  quickEditOwnedProject,
+  uploadProjectMoaResource,
 } from "@/services/submissions";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import {
@@ -35,7 +35,6 @@ import {
   INITIAL_SUBMISSION_FORM,
   mapProjectToSubmissionForm,
   mapDbOutputToLocalRow,
-  sanitizeFileName,
   splitCsvNames,
   SUBMISSION_STEPS,
   toCsvNames,
@@ -802,26 +801,6 @@ export default function SubmitAffiliationPage() {
     setSubmitting(true);
     const summaryText = buildExpectedOutputsSummary(expectedOutputRows);
     let moaReference = form.signed_moa_reference || null;
-    let uploadedMoaPath = "";
-    if (moaFile) {
-      const baseProjectRef = editId || "draft";
-      const storagePath = `${baseProjectRef}/moa/${Date.now()}-${sanitizeFileName(moaFile.name)}`;
-      const { data: uploadedMoa, error: uploadError } =
-        await uploadMovFileToStorage({
-          storagePath,
-          file: moaFile,
-          contentType: moaFile.type || "application/octet-stream",
-        });
-      if (uploadError) {
-        setError(
-          `Unable to attach MOA file: ${uploadError.message || "Unknown upload error."}`,
-        );
-        setSubmitting(false);
-        return;
-      }
-      moaReference = uploadedMoa?.path || storagePath;
-      uploadedMoaPath = moaReference;
-    }
 
     const expectedOutputsForSave = await Promise.all(
       expectedOutputRows.map(async (row) => {
@@ -869,12 +848,35 @@ export default function SubmitAffiliationPage() {
 
     if (mode === "revise") {
       if (saveError || !data) {
-        if (uploadedMoaPath) {
-          await removeMovFilesFromStorage({ filePaths: [uploadedMoaPath] });
-        }
         setError(saveError?.message || "Unable to save revision.");
         setSubmitting(false);
         return;
+      }
+
+      const resolvedProjectId = String(
+        data?.ckan_dataset_id || data?.id || editId || "",
+      ).trim();
+      if (moaFile && resolvedProjectId) {
+        const { data: moaResource, error: uploadError } =
+          await uploadProjectMoaResource({
+            projectId: resolvedProjectId,
+            file: moaFile,
+          });
+        if (uploadError) {
+          setError(uploadError.message || "Unable to upload MOA file.");
+          setSubmitting(false);
+          return;
+        }
+        const nextReference = String(
+          moaResource?.file_path || moaResource?.url || "",
+        ).trim();
+        if (nextReference) {
+          moaReference = nextReference;
+          await quickEditOwnedProject({
+            projectId: resolvedProjectId,
+            form: { signed_moa_reference: nextReference },
+          });
+        }
       }
 
       localStorage.removeItem(draftKey);
@@ -892,12 +894,35 @@ export default function SubmitAffiliationPage() {
     }
 
     if (saveError) {
-      if (uploadedMoaPath) {
-        await removeMovFilesFromStorage({ filePaths: [uploadedMoaPath] });
-      }
       setError(saveError.message);
       setSubmitting(false);
       return;
+    }
+
+    const resolvedProjectId = String(
+      data?.ckan_dataset_id || data?.id || editId || "",
+    ).trim();
+    if (moaFile && resolvedProjectId) {
+      const { data: moaResource, error: uploadError } =
+        await uploadProjectMoaResource({
+          projectId: resolvedProjectId,
+          file: moaFile,
+        });
+      if (uploadError) {
+        setError(uploadError.message || "Unable to upload MOA file.");
+        setSubmitting(false);
+        return;
+      }
+      const nextReference = String(
+        moaResource?.file_path || moaResource?.url || "",
+      ).trim();
+      if (nextReference) {
+        moaReference = nextReference;
+        await quickEditOwnedProject({
+          projectId: resolvedProjectId,
+          form: { signed_moa_reference: nextReference },
+        });
+      }
     }
 
     localStorage.removeItem(draftKey);

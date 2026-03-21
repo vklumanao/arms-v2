@@ -2332,12 +2332,13 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           });
         }
 
-          const outputType = normalizeOutputType(req.body?.output_type);
-          const targetCount = Math.max(
-            1,
-            Number(req.body?.target_count || 1) || 1,
-          );
+        const outputType = normalizeOutputType(req.body?.output_type);
+        const targetCount = Math.max(
+          1,
+          Number(req.body?.target_count || 1) || 1,
+        );
         const notes = asTrimmedString(req.body?.notes);
+        const outputLink = asTrimmedString(req.body?.output_link);
         const fileName =
           asTrimmedString(req.body?.file_name) || "research-output.bin";
         const mimeTypeFromBody = asTrimmedString(req.body?.mime_type);
