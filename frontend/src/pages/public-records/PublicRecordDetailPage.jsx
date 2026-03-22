@@ -20,7 +20,7 @@ import {
   formatBytes,
   formatDate,
 } from "@/utils/submissions";
-import { Download, ExternalLink, FileText } from "lucide-react";
+import { ChevronLeft, Download, ExternalLink, FileText } from "lucide-react";
 
 const normalizeLabel = (value) => {
   const text = String(value || "").trim();
@@ -271,43 +271,27 @@ export default function PublicRecordDetailPage() {
       ? record.research_agenda_id
       : "-";
 
-  const apaCitation = record
-    ? buildApaCitation(record, selectedCenter, selectedDepartment)
-    : "";
-  const mlaCitation = record
-    ? buildMlaCitation(record, selectedCenter, selectedDepartment)
-    : "";
-
-  const copyCitation = async (text, label) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setMessage(`${label} citation copied.`);
-    } catch {
-      setError("Unable to copy citation.");
-    }
-  };
-
   return (
     <section className="page-stack-lg">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild variant="outline">
+          <Link to="/public-records">
+            <ChevronLeft className="h-4 w-4" />
+            Back to Catalog
+          </Link>
+        </Button>
+        {!recordId ? (
+          <Button variant="ghost" onClick={() => navigate("/public-records")}>
+            Return
+          </Button>
+        ) : null}
+      </div>
       <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               {record?.title || "Research Project"}
             </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline">
-              <Link to="/public-records">Back to Catalog</Link>
-            </Button>
-            {!recordId ? (
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/public-records")}
-              >
-                Return
-              </Button>
-            ) : null}
           </div>
         </div>
 
@@ -598,6 +582,7 @@ export default function PublicRecordDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-500">
+                          {" "}
                           Signed MOA Reference
                         </p>
                         {(() => {
