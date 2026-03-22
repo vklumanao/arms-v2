@@ -2079,7 +2079,7 @@ export default function AdminResearchCenterPage() {
                         </div>
                         <div className="shrink-0 text-right">
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                            Agendas
+                            Agenda
                           </p>
                           <p className="mt-1 text-lg font-semibold text-slate-900">
                             {agendaNames.length}
