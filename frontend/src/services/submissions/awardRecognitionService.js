@@ -4,6 +4,8 @@ export async function listAwardRecognitionRecords(options = {}) {
   try {
     const query = new URLSearchParams();
     if (options?.q) query.set("q", String(options.q).trim());
+    if (options?.projectId)
+      query.set("project_id", String(options.projectId).trim());
     const payload = await apiFetch(`/awards${query.toString() ? `?${query}` : ""}`);
     return { data: Array.isArray(payload?.data) ? payload.data : [], error: null };
   } catch (error) {
