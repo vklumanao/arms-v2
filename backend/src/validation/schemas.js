@@ -119,6 +119,7 @@ export const affiliateProfileUpdateSchema = z
 
 export const awardRecognitionSchema = z.object({
   work_title: z.string().trim().min(1),
+  project_id: z.string().trim().optional().nullable(),
   award_recognition: z.string().trim().min(1),
   awarding_body: z.string().trim().min(1),
   year_received: z
