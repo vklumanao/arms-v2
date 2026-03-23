@@ -72,6 +72,7 @@ const EMPTY_EDITING = {
   name: "",
   code: "",
   description: "",
+  socialMediaLink: "",
   chairpersonId: "",
 };
 
@@ -123,6 +124,8 @@ export default function AdminDepartmentPage() {
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [newDepartmentCode, setNewDepartmentCode] = useState("");
   const [newDepartmentDescription, setNewDepartmentDescription] = useState("");
+  const [newDepartmentSocialMediaLink, setNewDepartmentSocialMediaLink] =
+    useState("");
   const [newChairpersonId, setNewChairpersonId] = useState("");
   const [chairpersonUsers, setChairpersonUsers] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
@@ -218,6 +221,7 @@ export default function AdminDepartmentPage() {
             code: String(item?.code || "").trim() || String(orgId || "-"),
             name: item.title || item.display_name || item.name || "-",
             description: String(item?.description || "").trim(),
+            socialMediaLink: String(item?.social_media_link || "").trim(),
             type: "Department",
             tag: "department",
             chairpersonId,
@@ -410,6 +414,7 @@ export default function AdminDepartmentPage() {
       name: row.name === "-" ? "" : row.name,
       code: row.code === "-" ? "" : row.code,
       description: String(row?.description || "").trim(),
+      socialMediaLink: String(row?.socialMediaLink || "").trim(),
       chairpersonId: row.chairpersonId || "",
     });
     setEditLoading(false);
@@ -444,6 +449,7 @@ export default function AdminDepartmentPage() {
       name: nextName,
       code: nextCode,
       description: editing.description,
+      social_media_link: editing.socialMediaLink,
       chairperson_id: editing.chairpersonId,
     });
 
@@ -514,6 +520,7 @@ export default function AdminDepartmentPage() {
       name,
       code,
       description: newDepartmentDescription,
+      social_media_link: newDepartmentSocialMediaLink,
       chairperson_id: newChairpersonId,
     });
 
@@ -530,6 +537,7 @@ export default function AdminDepartmentPage() {
     setNewDepartmentName("");
     setNewDepartmentCode("");
     setNewDepartmentDescription("");
+    setNewDepartmentSocialMediaLink("");
     setNewChairpersonId("");
     await loadDepartmentRows();
   };
@@ -1289,6 +1297,24 @@ export default function AdminDepartmentPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Social Media Link
+                    </label>
+                    <Input
+                      value={editing.socialMediaLink}
+                      placeholder="Optional: https://facebook.com/your-department"
+                      onChange={(event) =>
+                        setEditing((prev) => ({
+                          ...prev,
+                          socialMediaLink: event.target.value,
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-slate-500">
+                      Optional. Displayed on the department detail page.
+                    </p>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Chairperson *
                     </label>
                     <Select
@@ -1420,6 +1446,21 @@ export default function AdminDepartmentPage() {
                 }
                 rows={4}
               />
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Social Media Link
+              </label>
+              <Input
+                value={newDepartmentSocialMediaLink}
+                placeholder="Optional: https://facebook.com/your-department"
+                onChange={(event) =>
+                  setNewDepartmentSocialMediaLink(event.target.value)
+                }
+              />
+              <p className="text-xs text-slate-500">
+                Optional. You can add this later in Edit Department.
+              </p>
             </div>
             <div className="mt-3 space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
