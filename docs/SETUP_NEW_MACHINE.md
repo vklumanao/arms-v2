@@ -63,9 +63,9 @@ Expected behavior on first run:
 
 ## 6) Open the services
 
-- Frontend: `http://127.0.0.1:5173`
-- Backend API: `http://127.0.0.1:4010/api`
-- CKAN: `https://127.0.0.1:8443`
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:4010/api`
+- CKAN: `https://localhost:8443`
 
 The frontend now uses an `HttpOnly` session cookie for auth in the Docker dev setup. It no longer depends on a JWT stored in browser `localStorage`.
 
@@ -98,7 +98,7 @@ CKAN admin connection:
 - Password: `postgres`
 - SSL: `disable`
 
-Both databases are bound to `127.0.0.1` only, so they are reachable from your machine but not exposed to the local network by default.
+Both databases are bound to `localhost` only, so they are reachable from your machine but not exposed to the local network by default.
 
 ## 8) Stop the stack
 
@@ -147,26 +147,8 @@ docker compose -f ckan-docker/docker-compose.yml -f ckan-docker/docker-compose.a
 
 If you want to open ARMS from another device on the same network, bind the frontend to `0.0.0.0` and point the frontend API base URL plus backend `CORS_ORIGINS` to your current IPv4 host.
 
-Current LAN example:
-
-- Frontend: `http://192.168.196.235:5173`
-- Backend API: `http://192.168.196.235:4010/api`
-
 After changing `ckan-docker/docker-compose.arms.dev.yml`, recreate the affected containers:
 
 ```bash
 docker compose -f ckan-docker/docker-compose.yml -f ckan-docker/docker-compose.arms.dev.yml up -d --force-recreate backend frontend
 ```
-
-If another device still cannot connect, allow ports `5173` and `4010` through the host firewall.
-
-## Troubleshooting
-
-- Docker Desktop reports virtualization missing:
-  enable virtualization in BIOS/UEFI and confirm `WSL2` and `Virtual Machine Platform` are enabled
-- `CKAN_API_KEY` stays `CHANGE_ME` or token generation fails:
-  check `ckan-docker/.env` for placeholder values, fix them, then run `.\scripts\bootstrap-dev.ps1` again
-- Beekeeper cannot connect to CKAN DB:
-  verify that `POSTGRES_PORT_HOST=5434` is present in `ckan-docker/.env`
-- Forgot-password does not return a reset token:
-  this is now disabled by default; enable `ARMS_EXPOSE_RESET_TOKEN_IN_RESPONSE=true` only for explicit local debugging
