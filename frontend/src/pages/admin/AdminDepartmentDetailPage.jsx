@@ -123,6 +123,7 @@ export default function AdminDepartmentDetailPage() {
     name: "",
     code: "",
     description: "",
+    socialMediaLink: "",
     chairpersonId: "",
   });
   const [editErrors, setEditErrors] = useState({});
@@ -298,6 +299,9 @@ export default function AdminDepartmentDetailPage() {
                   "-",
                 code: String(deptRow?.code || "").trim() || departmentId,
                 description: String(deptRow?.description || "").trim(),
+                socialMediaLink: String(
+                  deptRow?.social_media_link || "",
+                ).trim(),
                 chairpersonId: chairpersonId || null,
                 chairpersonName: chairpersonName || "-",
               }
@@ -310,6 +314,7 @@ export default function AdminDepartmentDetailPage() {
           code:
             String(deptRow?.code || "").trim() || String(departmentId || ""),
           description: String(deptRow?.description || "").trim(),
+          socialMediaLink: String(deptRow?.social_media_link || "").trim(),
           chairpersonId: chairpersonId || "",
         });
         setUsage({
@@ -574,6 +579,7 @@ export default function AdminDepartmentDetailPage() {
         name: String(editForm.name || "").trim(),
         code: String(editForm.code || "").trim(),
         description: String(editForm.description || "").trim(),
+        social_media_link: String(editForm.socialMediaLink || "").trim(),
         chairperson_id: String(editForm.chairpersonId || "").trim(),
       });
       if (updateError) throw updateError;
@@ -604,11 +610,22 @@ export default function AdminDepartmentDetailPage() {
               name:
                 deptRow?.title || deptRow?.display_name || deptRow?.name || "-",
               code: String(deptRow?.code || "").trim() || departmentId,
+              description: String(deptRow?.description || "").trim(),
+              socialMediaLink: String(deptRow?.social_media_link || "").trim(),
               chairpersonId: chairpersonId || null,
               chairpersonName: chairpersonName || "-",
             }
           : null,
       );
+      setEditForm({
+        name: String(
+          deptRow?.title || deptRow?.display_name || deptRow?.name || "",
+        ).trim(),
+        code: String(deptRow?.code || "").trim() || String(departmentId || ""),
+        description: String(deptRow?.description || "").trim(),
+        socialMediaLink: String(deptRow?.social_media_link || "").trim(),
+        chairpersonId: chairpersonId || "",
+      });
     } catch (e) {
       toast.error(
         "Update failed",
@@ -902,6 +919,26 @@ export default function AdminDepartmentDetailPage() {
                   {String(department?.description || "").trim() ||
                     "No description provided."}
                 </p>
+              </div>
+
+              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Social Media
+                </p>
+                {String(department?.socialMediaLink || "").trim() ? (
+                  <a
+                    className="mt-2 inline-flex items-center text-sm font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
+                    href={String(department?.socialMediaLink || "").trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {String(department?.socialMediaLink || "").trim()}
+                  </a>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-600">
+                    No social media link yet.
+                  </p>
+                )}
               </div>
 
               <Tabs value={activeTab} onValueChange={setTab}>
@@ -1299,6 +1336,25 @@ export default function AdminDepartmentDetailPage() {
                 rows={4}
                 placeholder="Optional short description about the department..."
               />
+            </label>
+
+            <label className="space-y-1 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">
+                Social Media Link
+              </span>
+              <Input
+                value={editForm.socialMediaLink}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    socialMediaLink: event.target.value,
+                  }))
+                }
+                placeholder="Optional: https://facebook.com/your-department"
+              />
+              <p className="text-xs text-slate-500">
+                Optional. Shown in the department overview.
+              </p>
             </label>
 
             <label className="space-y-1 text-sm">
