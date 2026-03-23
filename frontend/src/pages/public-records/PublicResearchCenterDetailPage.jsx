@@ -426,6 +426,26 @@ export default function PublicResearchCenterDetailPage() {
                 </p>
               </div>
 
+              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Social Media
+                </p>
+                {String(center?.social_media_link || "").trim() ? (
+                  <a
+                    className="mt-2 inline-flex items-center text-base font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
+                    href={String(center?.social_media_link || "").trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {String(center?.social_media_link || "").trim()}
+                  </a>
+                ) : (
+                  <p className="mt-2 text-base text-slate-600">
+                    No social media link yet.
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Research Agenda
