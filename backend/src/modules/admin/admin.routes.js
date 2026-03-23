@@ -312,6 +312,82 @@ export function registerAdminRoutes(app, deps) {
     return match?.value ?? null;
   }
 
+  function isAwardDataset(dataset) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const recordType = String(getDatasetExtraByKey(extras, "record_type") || "")
+      .trim()
+      .toLowerCase();
+    return recordType === "award";
+  }
+
+  function parseRecipientUsersFromExtras(extras) {
+    const raw = asTrimmedString(getDatasetExtraByKey(extras, "recipient_users"));
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function parseRecipientNamesFromExtras(extras) {
+    const raw = asTrimmedString(getDatasetExtraByKey(extras, "recipients"));
+    if (!raw) return [];
+    return raw
+      .split(/[,;]+/)
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+  }
+
+  function resolveRecipientIds({
+    recipientUsers,
+    recipientNames,
+    identityToUserId,
+    nameToUserId,
+    metricsByUserId,
+  }) {
+    const resolved = new Set();
+
+    (recipientUsers || []).forEach((user) => {
+      const id = asTrimmedString(user?.id).toLowerCase();
+      if (id) {
+        const mapped = identityToUserId.get(`id:${id}`);
+        if (mapped) resolved.add(mapped);
+        else if (metricsByUserId[id]) resolved.add(id);
+      }
+
+      const email = asTrimmedString(user?.email).toLowerCase();
+      if (email) {
+        const mapped = identityToUserId.get(`email:${email}`);
+        if (mapped) resolved.add(mapped);
+      }
+
+      const username = asTrimmedString(user?.username).toLowerCase();
+      if (username) {
+        const mapped = identityToUserId.get(`username:${username}`);
+        if (mapped) resolved.add(mapped);
+      }
+
+      const name = asTrimmedString(user?.name);
+      if (name) {
+        buildNameVariants(name).forEach((variant) => {
+          const mapped = nameToUserId.get(variant);
+          if (mapped) resolved.add(mapped);
+        });
+      }
+    });
+
+    (recipientNames || []).forEach((name) => {
+      buildNameVariants(name).forEach((variant) => {
+        const mapped = nameToUserId.get(variant);
+        if (mapped) resolved.add(mapped);
+      });
+    });
+
+    return Array.from(resolved).filter(Boolean);
+  }
+
   function normalizeOutputType(value) {
     const base = String(value || "")
       .trim()
@@ -568,6 +644,32 @@ export function registerAdminRoutes(app, deps) {
 
       if (!ownerUserId) return;
       const metrics = metricsByUserId[ownerUserId] || createZeroMetrics();
+
+      if (isAwardDataset(dataset)) {
+        const recipientUsers = parseRecipientUsersFromExtras(extras);
+        const recipientNames = parseRecipientNamesFromExtras(extras);
+        const recipientIds = resolveRecipientIds({
+          recipientUsers,
+          recipientNames,
+          identityToUserId,
+          nameToUserId,
+          metricsByUserId,
+        });
+
+        if (recipientIds.length > 0) {
+          recipientIds.forEach((recipientId) => {
+            const targetMetrics =
+              metricsByUserId[recipientId] || createZeroMetrics();
+            targetMetrics.awards_count += 1;
+            metricsByUserId[recipientId] = targetMetrics;
+          });
+        } else {
+          metrics.awards_count += 1;
+          metricsByUserId[ownerUserId] = metrics;
+        }
+        return;
+      }
+
       metrics.research_project_count += 1;
 
       const expectedOutputs = parseExpectedOutputMeta(
@@ -945,8 +1047,9 @@ export function registerAdminRoutes(app, deps) {
               Number(localUser?.creative_work_count || 0),
               Number(liveMetrics.creative_work_count || 0),
             ),
-            awards_count: Number(
-              localUser?.awards_count ?? liveMetrics.awards_count ?? 0,
+            awards_count: Math.max(
+              Number(localUser?.awards_count || 0),
+              Number(liveMetrics.awards_count || 0),
             ),
             ip_count: Math.max(
               Number(localUser?.ip_count || 0),
