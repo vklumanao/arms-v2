@@ -43,6 +43,15 @@ export async function fetchPublicRecordResources(projectId) {
   }
 }
 
+export async function fetchPublicRecordAwards(projectId) {
+  try {
+    const payload = await apiFetch(`/public-records/${projectId}/awards`);
+    return { data: payload?.data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
 export async function fetchPublicCenterAffiliates(centerId) {
   try {
     const payload = await apiFetch(
