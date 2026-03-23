@@ -396,7 +396,6 @@ export function registerPublicRecordsRoutes(app, deps) {
         getExtraByKey(extras, "research_agenda_name") ||
           getExtraByKey(extras, "agenda_name"),
       ),
-      scholarly_type: asTrimmedString(getExtraByKey(extras, "scholarly_type")),
       year:
         yearFromExtra ||
         (Number.isFinite(createdYear) && createdYear > 0
