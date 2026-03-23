@@ -483,6 +483,13 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             : rawType;
   }
 
+  function isMoaResource(resource = {}) {
+    const name = asTrimmedString(resource?.name);
+    const description = asTrimmedString(resource?.description);
+    const notes = asTrimmedString(resource?.notes);
+    return [name, description, notes].some((value) => /\bmoa\b/i.test(value));
+  }
+
   function decodeBase64File(payload) {
     const raw = asTrimmedString(payload);
     if (!raw) return { buffer: null, mimeType: "" };
@@ -634,6 +641,14 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       return true;
     }
     return false;
+  }
+
+  function isAwardDataset(dataset) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const recordType = asTrimmedString(
+      getExtraByKey(extras, "record_type"),
+    ).toLowerCase();
+    return recordType === "award";
   }
 
   function getDatasetTagNames(dataset) {
@@ -1020,6 +1035,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         const rows = [];
 
         for (const dataset of datasets) {
+          if (isAwardDataset(dataset)) continue;
           if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
           const resources = Array.isArray(dataset?.resources)
             ? dataset.resources
@@ -1036,6 +1052,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
 
           // Flatten each dataset resource into table-friendly response rows.
           for (const [index, resource] of resources.entries()) {
+            if (isMoaResource(resource)) {
+              continue;
+            }
             const resourceNameBase = asTrimmedString(resource?.name).replace(
               /\s*\(target:[^)]+\)\s*$/i,
               "",
@@ -1121,10 +1140,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             : [];
           if (!datasets.length) break;
 
-          for (const dataset of datasets) {
-            if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
-            rows.push(mapDatasetToProjectListRecord(dataset));
-          }
+        for (const dataset of datasets) {
+          if (isAwardDataset(dataset)) continue;
+          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
+          rows.push(mapDatasetToProjectListRecord(dataset));
+        }
 
           const total = Number(result?.count || 0);
           if (datasets.length < limit || (total > 0 && page * limit >= total)) {
@@ -1162,11 +1182,12 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             : [];
           if (!datasets.length) break;
 
-          for (const dataset of datasets) {
-            if (isDatasetOwnedByUser(dataset, req.user)) continue;
-            if (!isDatasetLinkedToFacultyUser(dataset, req.user)) {
-              continue;
-            }
+        for (const dataset of datasets) {
+          if (isAwardDataset(dataset)) continue;
+          if (isDatasetOwnedByUser(dataset, req.user)) continue;
+          if (!isDatasetLinkedToFacultyUser(dataset, req.user)) {
+            continue;
+          }
             rows.push(mapDatasetToProjectListRecord(dataset));
           }
 
