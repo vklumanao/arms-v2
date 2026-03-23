@@ -187,6 +187,7 @@ function mockApiPayload(path, options = {}) {
           code: "ORG_1",
           center_chief_id: "ckan-user-2",
           center_chief_name: "Demo Faculty",
+          social_media_link: "https://facebook.com/research-center-a",
         },
       ],
       agendas: [],
