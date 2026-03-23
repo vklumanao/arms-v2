@@ -15,6 +15,7 @@ import {
   fetchLinkedProjects,
   fetchProjectResources,
   fetchUserProjects,
+  listAwardRecognitionRecords,
 } from "@/services/submissions";
 import { normalizeStatus } from "@/utils/status";
 import {
@@ -28,6 +29,7 @@ import {
   ExternalLink,
   FileText,
   Pencil,
+  Trophy,
 } from "lucide-react";
 
 const formatCurrencyPHP = (value) => {
@@ -121,6 +123,11 @@ export default function ResearchProjectDetailPage() {
     dataset: null,
     resources: [],
     syncEnabled: true,
+  });
+  const [awardsPanel, setAwardsPanel] = useState({
+    loading: false,
+    error: "",
+    rows: [],
   });
 
   useEffect(() => {
@@ -286,6 +293,44 @@ export default function ResearchProjectDetailPage() {
           dataset: null,
           resources: [],
           syncEnabled: true,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resourceDatasetId]);
+
+  useEffect(() => {
+    if (!resourceDatasetId) {
+      setAwardsPanel({ loading: false, error: "", rows: [] });
+      return;
+    }
+    let cancelled = false;
+    setAwardsPanel((prev) => ({ ...prev, loading: true, error: "" }));
+    listAwardRecognitionRecords({ projectId: resourceDatasetId })
+      .then(({ data, error: loadError }) => {
+        if (cancelled) return;
+        if (loadError) {
+          setAwardsPanel({
+            loading: false,
+            error: loadError.message || "Unable to load linked awards.",
+            rows: [],
+          });
+          return;
+        }
+        setAwardsPanel({
+          loading: false,
+          error: "",
+          rows: Array.isArray(data) ? data : [],
+        });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setAwardsPanel({
+          loading: false,
+          error: e?.message || "Unable to load linked awards.",
+          rows: [],
         });
       });
 
@@ -644,7 +689,7 @@ export default function ResearchProjectDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-500">
-                          Signed MOA Reference
+                          Signed MOA
                         </p>
                         {(() => {
                           const moaReference = String(
@@ -669,15 +714,18 @@ export default function ResearchProjectDetailPage() {
                           );
                         })()}
                         {moaDownloadUrl ? (
-                          <a
-                            className="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm font-semibold text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
-                            href={moaDownloadUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Download className="h-4 w-4" />
-                            {moaDownloadUrl}
-                          </a>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={moaDownloadUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download MOA
+                              </a>
+                            </Button>
+                          </div>
                         ) : null}
                       </div>
                     </CardContent>
@@ -690,7 +738,7 @@ export default function ResearchProjectDetailPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <CardTitle className="text-base font-semibold text-slate-900">
-                        Linked Resources
+                        Outputs
                       </CardTitle>
                     </div>
                   </div>
@@ -823,40 +871,136 @@ export default function ResearchProjectDetailPage() {
                                   <FileText className="h-5 w-5 text-slate-400" />
                                 </div>
 
-                                {resource.id ? (
+                                {resource.id && (hasFile || hasLink) ? (
                                   <div className="mt-2 flex flex-wrap gap-2">
-                                    {hasFile ? (
-                                      <Button
-                                        asChild
-                                        variant="outline"
-                                        size="sm"
+                                    <Button asChild variant="outline" size="sm">
+                                      <a
+                                        href={
+                                          hasFile
+                                            ? `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                                resource.id,
+                                              )}/download?download=1`
+                                            : resolvedOutputLink
+                                        }
+                                        target="_blank"
+                                        rel="noreferrer"
                                       >
-                                        <a
-                                          href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                            resource.id,
-                                          )}/download?download=1`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                        >
-                                          <Download className="h-4 w-4" />
-                                          Download
-                                        </a>
-                                      </Button>
-                                    ) : hasLink ? null : (
-                                      <p className="text-base text-slate-500">
-                                        No file attached yet.
-                                      </p>
-                                    )}
+                                        <Download className="h-4 w-4" />
+                                        Download
+                                      </a>
+                                    </Button>
                                   </div>
                                 ) : (
                                   <p className="mt-2 text-base text-slate-500">
-                                    No resource URL available.
+                                    No file attached yet.
                                   </p>
                                 )}
                               </CardContent>
                             </Card>
                           );
                         })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base font-semibold text-slate-900">
+                        Awards &amp; Recognition
+                      </CardTitle>
+                      <CardDescription>
+                        Awards linked to this project.
+                      </CardDescription>
+                    </div>
+                    {resourceDatasetId ? (
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          to={`/awards-recognitions/add?project_id=${encodeURIComponent(
+                            resourceDatasetId,
+                          )}`}
+                        >
+                          <Trophy className="h-4 w-4" />
+                          Add Award
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {awardsPanel.loading ? (
+                    <p className="text-base text-slate-600">
+                      Loading linked awards...
+                    </p>
+                  ) : awardsPanel.error ? (
+                    <p className="text-base text-red-700">
+                      {awardsPanel.error}
+                    </p>
+                  ) : awardsPanel.rows.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
+                      No awards linked to this project yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {awardsPanel.rows.map((row) => (
+                        <Card
+                          key={
+                            row.id ||
+                            row.ckan_dataset_id ||
+                            row.award_recognition
+                          }
+                          className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-base font-semibold text-slate-900">
+                                  {row.award_recognition || "Award"}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                  <Badge variant="outline">
+                                    {row.level || "Level"}
+                                  </Badge>
+                                  {row.year_received ? (
+                                    <Badge variant="secondary">
+                                      {row.year_received}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                                <p className="mt-2 text-base text-slate-700">
+                                  Awarding body: {row.awarding_body || "-"}
+                                </p>
+                                <p className="text-base text-slate-700">
+                                  Recipients: {row.recipients || "-"}
+                                </p>
+                              </div>
+                              <Trophy className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {row.supporting_mov_resource_id ||
+                              row.supporting_movs ? (
+                                <Button asChild variant="outline" size="sm">
+                                  <a
+                                    href={
+                                      row.supporting_mov_resource_id
+                                        ? `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                            row.supporting_mov_resource_id,
+                                          )}/download?download=1`
+                                        : row.supporting_movs
+                                    }
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Download
+                                  </a>
+                                </Button>
+                              ) : null}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   )}
                 </CardContent>
