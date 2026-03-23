@@ -26,6 +26,7 @@ export function registerAuthRoutes(app, deps) {
     resetPasswordSchema,
     changePasswordSchema,
     config,
+    DEFAULT_ROLE_PERMISSIONS,
     ROLE_PERMISSIONS,
     normalizeRole,
     badRequest,
@@ -491,5 +492,92 @@ export function registerAuthRoutes(app, deps) {
   // Permission map is protected to avoid exposing full authorization model publicly.
   app.get("/api/permissions/role-map", authMiddleware, (req, res) => {
     return res.json({ map: ROLE_PERMISSIONS });
+  });
+
+  function userHasPermission(user, permission) {
+    const role = normalizeRole(user?.role);
+    const permissions = ROLE_PERMISSIONS?.[role] || [];
+    return permissions.includes(permission);
+  }
+
+  function normalizePermissionList(rawList) {
+    const next = [];
+    const seen = new Set();
+    for (const item of rawList || []) {
+      if (typeof item !== "string") continue;
+      const trimmed = item.trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+      seen.add(trimmed);
+      next.push(trimmed);
+    }
+    return next;
+  }
+
+  function normalizeRolePermissionMap(rawMap) {
+    const roles = Object.keys(DEFAULT_ROLE_PERMISSIONS || ROLE_PERMISSIONS || {});
+    const next = {};
+    for (const role of roles) {
+      next[role] = normalizePermissionList(rawMap?.[role] || []);
+    }
+
+    // Prevent locking the system by ensuring admin can still access controls.
+    if (Array.isArray(next.admin)) {
+      if (!next.admin.includes("admin.controls.manage")) {
+        next.admin.push("admin.controls.manage");
+      }
+    }
+
+    return next;
+  }
+
+  // Updates the role-to-permission map for this running server instance.
+  // Note: this does not persist across server restarts.
+  app.put("/api/permissions/role-map", authMiddleware, async (req, res) => {
+    if (!userHasPermission(req.user, "admin.controls.manage")) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const rawMap = req.body?.map;
+    if (!rawMap || typeof rawMap !== "object") {
+      return badRequest(res, "Invalid payload: expected { map: { ... } }");
+    }
+
+    const nextMap = normalizeRolePermissionMap(rawMap);
+    for (const role of Object.keys(nextMap)) {
+      if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
+      ROLE_PERMISSIONS[role].splice(0, ROLE_PERMISSIONS[role].length, ...nextMap[role]);
+    }
+
+    await logAuditEvent({
+      actorUserId: req.user?.id || null,
+      eventType: "permissions.role_map_updated",
+      details: { roles: Object.keys(nextMap) },
+    });
+
+    return res.json({ ok: true, map: ROLE_PERMISSIONS });
+  });
+
+  app.post("/api/permissions/role-map/reset", authMiddleware, async (req, res) => {
+    if (!userHasPermission(req.user, "admin.controls.manage")) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const defaults = normalizeRolePermissionMap(DEFAULT_ROLE_PERMISSIONS);
+    for (const role of Object.keys(defaults)) {
+      if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
+      ROLE_PERMISSIONS[role].splice(
+        0,
+        ROLE_PERMISSIONS[role].length,
+        ...defaults[role],
+      );
+    }
+
+    await logAuditEvent({
+      actorUserId: req.user?.id || null,
+      eventType: "permissions.role_map_reset",
+      details: {},
+    });
+
+    return res.json({ ok: true, map: ROLE_PERMISSIONS });
   });
 }
