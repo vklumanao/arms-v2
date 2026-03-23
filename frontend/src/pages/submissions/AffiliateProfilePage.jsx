@@ -54,7 +54,6 @@ export default function AffiliateProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [confirmSave, setConfirmSave] = useState(false);
   const [confirmPasswordChange, setConfirmPasswordChange] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -141,14 +140,9 @@ export default function AffiliateProfilePage() {
     if (nextError) toast.error("Save failed", nextError);
   }, [error, referenceError?.message, toast]);
 
-  useEffect(() => {
-    if (message) toast.success("Profile updated", message);
-  }, [message, toast]);
-
   const saveProfile = async (e, confirmed = false) => {
     e?.preventDefault?.();
     setError("");
-    setMessage("");
 
     if (!form.first_name?.trim()) {
       setError("First name is required.");
@@ -206,7 +200,7 @@ export default function AffiliateProfilePage() {
         toast.error("CKAN sync warning", String(warning || "Unknown warning.")),
       );
     }
-    setMessage("Profile updated successfully.");
+    toast.success("Profile updated", "Profile updated successfully.");
   };
 
   const validatePasswordForm = () => {
@@ -663,8 +657,8 @@ export default function AffiliateProfilePage() {
         loading={saving}
         onCancel={() => setConfirmSave(false)}
         onConfirm={async () => {
-          await saveProfile(null, true);
           setConfirmSave(false);
+          await saveProfile(null, true);
         }}
       />
       <ConfirmActionModal

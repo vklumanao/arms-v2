@@ -282,33 +282,29 @@ export default function AdminAffiliatesModulePage() {
       const headers = [
         "No.",
         "Name",
-        "Email",
-        "Role",
-        "Department",
         "Research Center",
-        "Status",
+        "Department",
+        "Role",
         "GS Faculty",
-        "Publications",
         "Projects",
-        "Creative Works",
         "Awards",
+        "Publications",
         "IPs",
+        "Creative Works",
       ];
       const lines = buildExportRows().map((row) =>
         [
           row.no,
           row.name,
-          row.email,
-          row.role,
-          row.department,
           row.center,
-          row.status,
+          row.department,
+          row.role,
           row.gs,
-          row.publications,
           row.projects,
-          row.creativeWorks,
           row.awards,
+          row.publications,
           row.ips,
+          row.creativeWorks,
         ]
           .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
           .join(","),
@@ -335,17 +331,15 @@ export default function AdminAffiliatesModulePage() {
             <tr>
               <td>${row.no}</td>
               <td>${row.name}</td>
-              <td>${row.email}</td>
-              <td>${row.role}</td>
-              <td>${row.department}</td>
               <td>${row.center}</td>
-              <td>${row.status}</td>
+              <td>${row.department}</td>
+              <td>${row.role}</td>
               <td>${row.gs}</td>
-              <td>${row.publications}</td>
               <td>${row.projects}</td>
-              <td>${row.creativeWorks}</td>
               <td>${row.awards}</td>
+              <td>${row.publications}</td>
               <td>${row.ips}</td>
+              <td>${row.creativeWorks}</td>
             </tr>
           `,
         )
@@ -378,21 +372,19 @@ export default function AdminAffiliatesModulePage() {
                 <tr>
                   <th>No.</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Department</th>
                   <th>Research Center</th>
-                  <th>Status</th>
+                  <th>Department</th>
+                  <th>Role</th>
                   <th>GS Faculty</th>
-                  <th>Publications</th>
                   <th>Projects</th>
-                  <th>Creative Works</th>
                   <th>Awards</th>
+                  <th>Publications</th>
                   <th>IPs</th>
+                  <th>Creative Works</th>
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || '<tr><td colspan="13">No records found.</td></tr>'}
+                ${rowsHtml || '<tr><td colspan="12">No records found.</td></tr>'}
               </tbody>
             </table>
           </body>
@@ -564,12 +556,12 @@ export default function AdminAffiliatesModulePage() {
             <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
               <Table>
                 <TableHeader className="bg-slate-50/80">
-                  <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Name</TableHead>
+              <TableRow>
+                <TableHead>No.</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Research Center</TableHead>
+                <TableHead>Department</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Research Center</TableHead>
                     <TableHead>GS Faculty</TableHead>
                     <TableHead>Projects</TableHead>
                     <TableHead>Awards</TableHead>
@@ -586,28 +578,28 @@ export default function AdminAffiliatesModulePage() {
                         {pagination.start + index + 1}
                       </TableCell>
 
-                      <TableCell>
-                        <p className="font-semibold text-slate-900">
-                          {row.full_name || "-"}
+                  <TableCell>
+                    <p className="font-semibold text-slate-900">
+                      {row.full_name || "-"}
                         </p>
                         <p className="text-xs text-slate-500">
                           {row.email || "-"}
                         </p>
                       </TableCell>
 
-                      <TableCell className="capitalize text-slate-700">
-                        {row.role || "-"}
-                      </TableCell>
+                  <TableCell className="text-slate-700">
+                    {row.ckan_org_id
+                      ? centerNameById[row.ckan_org_id] || "-"
+                      : "-"}
+                  </TableCell>
 
-                      <TableCell className="text-slate-700">
-                        {row.department || "-"}
-                      </TableCell>
+                  <TableCell className="text-slate-700">
+                    {row.department || "-"}
+                  </TableCell>
 
-                      <TableCell className="text-slate-700">
-                        {row.ckan_org_id
-                          ? centerNameById[row.ckan_org_id] || "-"
-                          : "-"}
-                      </TableCell>
+                  <TableCell className="capitalize text-slate-700">
+                    {row.role || "-"}
+                  </TableCell>
 
                       <TableCell className="text-slate-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
@@ -671,7 +663,7 @@ export default function AdminAffiliatesModulePage() {
                 {pagination.totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={13} className="px-3 py-3">
+                      <TableCell colSpan={12} className="px-3 py-3">
                         <PaginationControls
                           page={currentPage}
                           totalPages={pagination.totalPages}

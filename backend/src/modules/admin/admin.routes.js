@@ -340,6 +340,24 @@ export function registerAdminRoutes(app, deps) {
       .filter(Boolean);
   }
 
+  function parseSelectedUsers(rawValue) {
+    try {
+      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((row) => ({
+          id: asTrimmedString(row?.id).toLowerCase(),
+          name: asTrimmedString(row?.name),
+          username: asTrimmedString(row?.username).toLowerCase(),
+          email: asTrimmedString(row?.email).toLowerCase(),
+          role: asTrimmedString(row?.role).toLowerCase(),
+        }))
+        .filter((row) => row.id || row.username || row.email || row.name);
+    } catch {
+      return [];
+    }
+  }
+
   function resolveRecipientIds({
     recipientUsers,
     recipientNames,
@@ -670,7 +688,33 @@ export function registerAdminRoutes(app, deps) {
         return;
       }
 
-      metrics.research_project_count += 1;
+      const leadResearchers = parseSelectedUsers(
+        getDatasetExtraByKey(extras, "lead_researcher_user"),
+      );
+      const leadUserIds = Array.from(
+        new Set(
+          leadResearchers
+            .flatMap((lead) => [
+              lead?.id ? `id:${lead.id}` : "",
+              lead?.email ? `email:${lead.email}` : "",
+              lead?.username ? `username:${lead.username}` : "",
+            ])
+            .filter(Boolean)
+            .map((identity) => identityToUserId.get(identity))
+            .filter(Boolean),
+        ),
+      );
+
+      if (leadUserIds.length > 0) {
+        leadUserIds.forEach((leadUserId) => {
+          const targetMetrics =
+            metricsByUserId[leadUserId] || createZeroMetrics();
+          targetMetrics.research_project_count += 1;
+          metricsByUserId[leadUserId] = targetMetrics;
+        });
+      } else {
+        metrics.research_project_count += 1;
+      }
 
       const expectedOutputs = parseExpectedOutputMeta(
         getDatasetExtraByKey(extras, "expected_outputs_meta"),
@@ -1038,10 +1082,9 @@ export function registerAdminRoutes(app, deps) {
               Number(localUser?.publication_count || 0),
               Number(liveMetrics.publication_count || 0),
             ),
-            research_project_count: Number(
-              localUser?.research_project_count ??
-                liveMetrics.research_project_count ??
-                0,
+            research_project_count: Math.max(
+              Number(localUser?.research_project_count || 0),
+              Number(liveMetrics.research_project_count || 0),
             ),
             creative_work_count: Math.max(
               Number(localUser?.creative_work_count || 0),

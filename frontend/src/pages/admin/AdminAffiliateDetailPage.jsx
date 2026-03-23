@@ -271,276 +271,254 @@ export default function AdminAffiliateDetailPage() {
   if (!affiliateId) return <Navigate to="/admin/affiliates" replace />;
 
   return (
-    <section className="page-stack-lg">
-      <PageHeader title="Affiliate Details" />
+    <section className="page-stack-xl">
+      <div className="flex items-center justify-between">
+        <PageHeader title="Affiliate Details" />
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          {loading ? (
-            <p className="text-sm text-slate-600">Loading affiliate...</p>
-          ) : error ? (
-            <EmptyState title="Unable to load" description={error} />
-          ) : !affiliate ? (
-            <EmptyState
-              title="Affiliate not found"
-              description="The requested affiliate could not be found."
-            />
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    clearProjectFilters();
-                    navigate("/admin/affiliates");
-                  }}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Back to Affiliates
-                </Button>
-              </div>
+        <Button
+          variant="outline"
+          onClick={() => {
+            clearProjectFilters();
+            navigate("/admin/affiliates");
+          }}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to Affiliates
+        </Button>
+      </div>
 
-              <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-6 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+      {loading ? (
+        <p className="text-sm text-slate-600">Loading affiliate...</p>
+      ) : error ? (
+        <EmptyState title="Unable to load" description={error} />
+      ) : !affiliate ? (
+        <EmptyState
+          title="Affiliate not found"
+          description="The requested affiliate could not be found."
+        />
+      ) : (
+        <>
+          <Card className="overflow-hidden border shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-5">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-xl font-bold uppercase text-white shadow">
                     {initials}
                   </div>
+
                   <div className="space-y-1">
-                    <p className="text-xl font-bold text-slate-900">
+                    <h2 className="text-xl font-bold text-slate-900">
                       {affiliate?.full_name || "-"}
-                    </p>
+                    </h2>
+
                     <p className="text-sm text-slate-500">
                       {affiliate?.email || "-"}
                     </p>
-                    <div className="flex flex-wrap gap-2">
+
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <Badge variant="secondary" className="gap-2 capitalize">
                         <Users className="h-4 w-4" />
-                        {affiliate?.role || "role"}
+                        {affiliate?.role}
                       </Badge>
+
                       <Badge
                         variant={
                           affiliate?.is_active ? "secondary" : "destructive"
                         }
-                        className="gap-2"
                       >
                         {affiliate?.is_active ? "Active" : "Inactive"}
                       </Badge>
+
                       <Badge variant="secondary" className="gap-2">
                         <FolderKanban className="h-4 w-4" />
                         {Number(affiliate?.research_project_count || 0)}{" "}
-                        projects
+                        Projects
                       </Badge>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Department
-                    </p>
-                    <p className="mt-1 font-semibold text-slate-900">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                  <div>
+                    <p className="text-slate-500">Department</p>
+                    <p className="font-semibold text-slate-900">
                       {departmentLabel}
                     </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Research Center
-                    </p>
-                    <p className="mt-1 font-semibold text-slate-900">
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500">Research Center</p>
+                    <p className="font-semibold text-slate-900">
                       {affiliate?.ckan_org_id
                         ? centerNameById[affiliate.ckan_org_id] || "-"
                         : "-"}
                     </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      GS Faculty
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500">Employment Status</p>
+                    <p className="font-semibold text-slate-900">
+                      {affiliate?.employment_status || "-"}
                     </p>
-                    <p className="mt-1 font-semibold text-slate-900">
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500">Designation</p>
+                    <p className="font-semibold text-slate-900">
+                      {affiliate?.designation || "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500">GS Faculty</p>
+                    <p className="font-semibold text-slate-900">
                       {affiliate?.is_gs_faculty ? "Yes" : "No"}
                     </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Publications
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                      {Number(affiliate?.publication_count || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Awards
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                      {Number(affiliate?.awards_count || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      IPs
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                      {Number(affiliate?.ip_count || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
-            </>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6 p-6">
-          {!loading && !error && affiliate ? (
-            <>
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-base font-bold text-slate-900">
-                        Related Projects
-                      </CardTitle>
-                      <CardDescription>
-                        Projects linked to this affiliate.
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-slate-600">
-                        {filteredProjects.length} row(s)
-                      </span>
-                      <label className="relative w-full min-w-[14rem] md:w-auto">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <Input
-                          className="pl-8"
-                          placeholder="Search projects"
-                          value={projectSearch}
-                          onChange={(event) =>
-                            setProjectSearch(event.target.value)
-                          }
-                        />
-                      </label>
-                      <Select
-                        value={projectStatus}
-                        onValueChange={setProjectStatus}
-                      >
-                        <SelectTrigger className="w-full md:w-[12rem] capitalize">
-                          <SelectValue placeholder="All statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projectStatusOptions.map((status) => (
-                            <SelectItem
-                              key={status}
-                              value={status}
-                              className="capitalize"
-                            >
-                              {status === "all" ? "All statuses" : status}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={projectYear}
-                        onValueChange={setProjectYear}
-                      >
-                        <SelectTrigger className="w-full md:w-[10rem]">
-                          <SelectValue placeholder="All years" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projectYearOptions.map((year) => (
-                            <SelectItem key={year} value={year}>
-                              {year === "all" ? "All years" : year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setProjectSearch("");
-                          setProjectStatus("all");
-                          setProjectYear("all");
-                        }}
-                      >
-                        Reset filters
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="max-h-[420px] overflow-auto">
-                    {projectsPanel.loading ? (
-                      <p className="p-4 text-sm text-slate-600">
-                        Loading related projects...
-                      </p>
-                    ) : projectsPanel.error ? (
-                      <p className="p-4 text-sm text-red-700">
-                        {projectsPanel.error}
-                      </p>
-                    ) : filteredProjects.length === 0 ? (
-                      <div className="p-6">
-                        <EmptyState
-                          title="No related projects found"
-                          description="Try adjusting the search or filters to find matching projects."
-                        />
-                      </div>
-                    ) : (
-                      <Table className="min-w-[980px]">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No.</TableHead>
-                            <TableHead>Project Title</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Year</TableHead>
-                            <TableHead>Organization</TableHead>
-                            <TableHead>Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredProjects.map((project, index) => (
-                            <TableRow key={project.id || index}>
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell className="font-medium text-slate-900">
-                                {project.title || "-"}
-                              </TableCell>
-                              <TableCell className="capitalize text-slate-700">
-                                {project.status || "-"}
-                              </TableCell>
-                              <TableCell className="text-slate-700">
-                                {project.year || "-"}
-                              </TableCell>
-                              <TableCell className="text-slate-700">
-                                {project.organization || "-"}
-                              </TableCell>
-                              <TableCell className="text-slate-700">
-                                {project.updatedAt
-                                  ? new Date(project.updatedAt).toLocaleString()
-                                  : "-"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Publications
+                </p>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {Number(affiliate?.publication_count || 0)}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Awards
+                </p>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {Number(affiliate?.awards_count || 0)}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  IPs
+                </p>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {Number(affiliate?.ip_count || 0)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>Related Projects</CardTitle>
+                  <CardDescription>
+                    Projects linked to this affiliate
+                  </CardDescription>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="relative w-[220px]">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                    <Input
+                      className="pl-8"
+                      placeholder="Search projects"
+                      value={projectSearch}
+                      onChange={(e) => setProjectSearch(e.target.value)}
+                    />
+                  </label>
+
+                  <Select
+                    value={projectStatus}
+                    onValueChange={setProjectStatus}
+                  >
+                    <SelectTrigger className="w-[140px] capitalize">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectStatusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status === "all" ? "All statuses" : status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={projectYear} onValueChange={setProjectYear}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectYearOptions.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year === "all" ? "All years" : year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setProjectSearch("");
+                      setProjectStatus("all");
+                      setProjectYear("all");
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              <div className="max-h-[420px] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>Project Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Year</TableHead>
+                      <TableHead>Organization</TableHead>
+                      <TableHead>Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {filteredProjects.map((project, index) => (
+                      <TableRow key={project.id || index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell className="font-medium">
+                          {project.title || "-"}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          {project.status || "-"}
+                        </TableCell>
+                        <TableCell>{project.year || "-"}</TableCell>
+                        <TableCell>{project.organization || "-"}</TableCell>
+                        <TableCell>
+                          {project.updatedAt
+                            ? new Date(project.updatedAt).toLocaleString()
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </section>
   );
 }
