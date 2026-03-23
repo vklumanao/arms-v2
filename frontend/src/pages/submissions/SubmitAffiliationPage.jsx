@@ -927,7 +927,7 @@ export default function SubmitAffiliationPage() {
       );
       setShowSubmitConfirm(false);
       setSubmitting(false);
-      navigate("/submit-project");
+      navigate("/projects");
       return;
     }
 
@@ -980,7 +980,7 @@ export default function SubmitAffiliationPage() {
     setStep(0);
     setShowSubmitConfirm(false);
     setSubmitting(false);
-    navigate("/submit-project");
+    navigate("/projects");
   };
 
   const handleSaveDraft = async () => {
@@ -1019,7 +1019,7 @@ export default function SubmitAffiliationPage() {
     setSavingDraft(false);
 
     if (!editId) {
-      navigate(`/submit-project/submit?edit=${encodeURIComponent(data.id)}`, {
+      navigate(`/projects/submit?edit=${encodeURIComponent(data.id)}`, {
         replace: true,
       });
     }
@@ -1034,7 +1034,7 @@ export default function SubmitAffiliationPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate("/submit-project")}
+            onClick={() => navigate("/projects")}
           >
             Go back
           </Button>
