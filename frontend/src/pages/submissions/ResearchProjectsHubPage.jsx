@@ -103,7 +103,7 @@ export default function ResearchProjectsHubPage() {
   useEffect(() => {
     const editId = searchParams.get("edit");
     if (editId) {
-      navigate(`/submit-project/submit?edit=${encodeURIComponent(editId)}`, {
+      navigate(`/projects/submit?edit=${encodeURIComponent(editId)}`, {
         replace: true,
       });
     }
@@ -112,7 +112,7 @@ export default function ResearchProjectsHubPage() {
   const goToProjectDetail = (project) => {
     const id = String(project?.ckan_dataset_id || project?.id || "").trim();
     if (!id) return;
-    navigate(`/submit-project/${encodeURIComponent(id)}`);
+    navigate(`/projects/${encodeURIComponent(id)}`);
   };
 
   useEffect(() => {
@@ -322,7 +322,7 @@ export default function ResearchProjectsHubPage() {
       setError("Project id is missing.");
       return;
     }
-    navigate(`/submit-project/submit?edit=${encodeURIComponent(datasetId)}`);
+    navigate(`/projects/submit?edit=${encodeURIComponent(datasetId)}`);
   };
 
   const handleDeleteProject = async (project) => {
@@ -566,7 +566,7 @@ export default function ResearchProjectsHubPage() {
               My Profile first before accessing Research Projects.
             </p>
             <Button asChild>
-              <Link to="/my-profile">Go to My Profile</Link>
+              <Link to="/profile">Go to My Profile</Link>
             </Button>
           </CardContent>
         </Card>
@@ -614,7 +614,7 @@ export default function ResearchProjectsHubPage() {
             ) : null}
 
             <Button asChild>
-              <Link to="/submit-project/submit">Submit Research Project</Link>
+              <Link to="/projects/submit">Submit Research Project</Link>
             </Button>
           </div>
         </div>
