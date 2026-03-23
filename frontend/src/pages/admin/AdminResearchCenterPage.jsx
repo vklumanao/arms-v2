@@ -86,6 +86,7 @@ const EMPTY_EDITING = {
   name: "",
   code: "",
   description: "",
+  socialMediaLink: "",
   centerChiefId: "",
   agendaInput: "",
   researchAgendas: [],
@@ -119,6 +120,10 @@ export default function AdminResearchCenterPage() {
   const [newResearchCenterCode, setnewResearchCenterCode] = useState("");
   const [newResearchCenterDescription, setNewResearchCenterDescription] =
     useState("");
+  const [
+    newResearchCenterSocialMediaLink,
+    setNewResearchCenterSocialMediaLink,
+  ] = useState("");
   const [newCenterChiefId, setNewCenterChiefId] = useState("");
   const [centerChiefUsers, setCenterChiefUsers] = useState([]);
   const [newAgendaInput, setNewAgendaInput] = useState("");
@@ -270,6 +275,7 @@ export default function AdminResearchCenterPage() {
             code: String(item?.code || "").trim() || String(orgId || "-"),
             name: item.name || "-",
             description: String(item?.description || "").trim(),
+            socialMediaLink: String(item?.social_media_link || "").trim(),
             type: "Research Center",
             tag: "research-center",
             centerChiefId,
@@ -716,6 +722,7 @@ export default function AdminResearchCenterPage() {
       name: row.name === "-" ? "" : row.name,
       code: row.code === "-" ? "" : row.code,
       description: String(row?.description || "").trim(),
+      socialMediaLink: String(row?.socialMediaLink || "").trim(),
       centerChiefId: row.centerChiefId || "",
     });
 
@@ -798,6 +805,7 @@ export default function AdminResearchCenterPage() {
       name: nextName,
       code: nextCode,
       description: editing.description,
+      social_media_link: editing.socialMediaLink,
       center_chief_id: editing.centerChiefId,
       research_agendas: editing.researchAgendas,
     });
@@ -870,6 +878,7 @@ export default function AdminResearchCenterPage() {
       name,
       code,
       description: newResearchCenterDescription,
+      social_media_link: newResearchCenterSocialMediaLink,
       center_chief_id: newCenterChiefId,
       research_agendas: newResearchAgendas,
     });
@@ -889,6 +898,7 @@ export default function AdminResearchCenterPage() {
     setnewResearchCenterName("");
     setnewResearchCenterCode("");
     setNewResearchCenterDescription("");
+    setNewResearchCenterSocialMediaLink("");
     setNewCenterChiefId("");
     setNewAgendaInput("");
     setNewResearchAgendas([]);
@@ -2168,7 +2178,7 @@ export default function AdminResearchCenterPage() {
           onOpenChange={(open) => !open && cancelEdit()}
         >
           <DialogContent
-            className="max-w-2xl"
+            className="max-w-3xl"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
@@ -2184,8 +2194,9 @@ export default function AdminResearchCenterPage() {
               </p>
             ) : (
               <>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  {/* Research Center Name */}
+                  <div className="space-y-2 col-span-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Research Center Name *
                     </label>
@@ -2204,6 +2215,8 @@ export default function AdminResearchCenterPage() {
                       <p className="field-error">{editErrors.name}</p>
                     ) : null}
                   </div>
+
+                  {/* Code */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Code *
@@ -2225,29 +2238,8 @@ export default function AdminResearchCenterPage() {
                       <p className="field-error">{editErrors.code}</p>
                     ) : null}
                   </div>
-                </div>
 
-                <div className="mt-4 space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Description
-                  </label>
-                  <Textarea
-                    value={editing.description}
-                    placeholder="Optional short description about the research center..."
-                    onChange={(event) =>
-                      setEditing((prev) => ({
-                        ...prev,
-                        description: event.target.value,
-                      }))
-                    }
-                    rows={4}
-                  />
-                  <p className="text-xs text-slate-500">
-                    Shown on the research center detail page.
-                  </p>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {/* Center Chief */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Center Chief *
@@ -2280,65 +2272,113 @@ export default function AdminResearchCenterPage() {
                         ))}
                       </SelectContent>
                     </Select>
+
                     {editErrors.centerChiefId ? (
                       <p className="field-error">{editErrors.centerChiefId}</p>
                     ) : null}
                   </div>
-                </div>
 
-                <div className="mt-4 space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Research Agendum *
-                  </label>
-                  <div className="flex gap-2">
+                  {/* Social Media */}
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Social Media Link
+                    </label>
                     <Input
-                      className={
-                        editErrors.researchAgendas ? "input-error" : ""
-                      }
-                      placeholder="Add research agendum"
-                      value={editing.agendaInput}
+                      value={editing.socialMediaLink}
+                      placeholder="Optional: https://facebook.com/your-center"
                       onChange={(event) =>
                         setEditing((prev) => ({
                           ...prev,
-                          agendaInput: event.target.value,
+                          socialMediaLink: event.target.value,
                         }))
                       }
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addEditAgenda();
-                        }
-                      }}
                     />
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={addEditAgenda}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  {editing.researchAgendas.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {editing.researchAgendas.map((agenda) => (
-                        <button
-                          key={agenda}
-                          type="button"
-                          className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs text-slate-700 hover:bg-[var(--surface-strong)]"
-                          onClick={() => removeEditAgenda(agenda)}
-                        >
-                          {agenda} x
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
                     <p className="text-xs text-slate-500">
-                      Required. Add at least one research agendum.
+                      Optional. Displayed on the center detail page.
                     </p>
-                  )}
-                  {editErrors.researchAgendas ? (
-                    <p className="field-error">{editErrors.researchAgendas}</p>
-                  ) : null}
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Description
+                    </label>
+                    <Textarea
+                      value={editing.description}
+                      placeholder="Optional short description about the research center..."
+                      onChange={(event) =>
+                        setEditing((prev) => ({
+                          ...prev,
+                          description: event.target.value,
+                        }))
+                      }
+                      rows={4}
+                    />
+                    <p className="text-xs text-slate-500">
+                      Shown on the research center detail page.
+                    </p>
+                  </div>
+
+                  {/* Research Agendum */}
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Research Agendum *
+                    </label>
+
+                    <div className="flex gap-2">
+                      <Input
+                        className={
+                          editErrors.researchAgendas ? "input-error" : ""
+                        }
+                        placeholder="Add research agendum"
+                        value={editing.agendaInput}
+                        onChange={(event) =>
+                          setEditing((prev) => ({
+                            ...prev,
+                            agendaInput: event.target.value,
+                          }))
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addEditAgenda();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={addEditAgenda}
+                      >
+                        Add
+                      </Button>
+                    </div>
+
+                    {editing.researchAgendas.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {editing.researchAgendas.map((agenda) => (
+                          <button
+                            key={agenda}
+                            type="button"
+                            className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs text-slate-700 hover:bg-[var(--surface-strong)]"
+                            onClick={() => removeEditAgenda(agenda)}
+                          >
+                            {agenda} x
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500">
+                        Required. Add at least one research agendum.
+                      </p>
+                    )}
+
+                    {editErrors.researchAgendas ? (
+                      <p className="field-error">
+                        {editErrors.researchAgendas}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               </>
             )}
@@ -2351,6 +2391,7 @@ export default function AdminResearchCenterPage() {
               >
                 Cancel
               </Button>
+
               <Button
                 onClick={saveEdit}
                 disabled={actionLoading || editLoading || !isEditFormValid}
@@ -2373,7 +2414,7 @@ export default function AdminResearchCenterPage() {
           }}
         >
           <DialogContent
-            className="max-w-2xl mx-auto"
+            className="max-w-3xl mx-auto"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
@@ -2386,137 +2427,168 @@ export default function AdminResearchCenterPage() {
                 required.
               </p>
             </DialogHeader>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Research Center Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                className={createErrors.name ? "input-error" : ""}
-                placeholder="e.g. Center for Human-Computer Interaction"
-                value={newResearchCenterName}
-                onChange={(event) => {
-                  setnewResearchCenterName(event.target.value);
-                  setCreateErrors((prev) => ({ ...prev, name: "" }));
-                }}
-                required
-              />
-              {createErrors.name ? (
-                <p className="field-error">{createErrors.name}</p>
-              ) : null}
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Code <span className="text-red-500">*</span>
-              </label>
-              <Input
-                className={createErrors.code ? "input-error" : ""}
-                placeholder="e.g. CHCI"
-                value={newResearchCenterCode}
-                onChange={(event) => {
-                  setnewResearchCenterCode(
-                    event.target.value.toUpperCase().replace(/\s+/g, "_"),
-                  );
-                  setCreateErrors((prev) => ({ ...prev, code: "" }));
-                }}
-                required
-              />
-              {createErrors.code ? (
-                <p className="field-error">{createErrors.code}</p>
-              ) : null}
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <Textarea
-                value={newResearchCenterDescription}
-                placeholder="Optional short description about the research center..."
-                onChange={(event) =>
-                  setNewResearchCenterDescription(event.target.value)
-                }
-                rows={4}
-              />
-              <p className="text-xs text-slate-500">
-                This will appear on the research center detail page.
-              </p>
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Center Chief <span className="text-red-500">*</span>
-              </label>
-              <Select
-                value={newCenterChiefId}
-                onValueChange={(value) => {
-                  setNewCenterChiefId(value);
-                  setCreateErrors((prev) => ({ ...prev, centerChiefId: "" }));
-                }}
-              >
-                <SelectTrigger
-                  className={createErrors.centerChiefId ? "input-error" : ""}
-                >
-                  <SelectValue placeholder="Select Center Chief" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centerChiefUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {createErrors.centerChiefId ? (
-                <p className="field-error">{createErrors.centerChiefId}</p>
-              ) : null}
-              <p className="text-xs text-slate-500">Select from users.</p>
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Research Agendum <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Research Center Name <span className="text-red-500">*</span>
+                </label>
                 <Input
-                  className={createErrors.researchAgendas ? "input-error" : ""}
-                  placeholder="Add research agendum"
-                  value={newAgendaInput}
-                  onChange={(event) => setNewAgendaInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addResearchAgenda();
-                    }
+                  className={createErrors.name ? "input-error" : ""}
+                  placeholder="e.g. Center for Human-Computer Interaction"
+                  value={newResearchCenterName}
+                  onChange={(event) => {
+                    setnewResearchCenterName(event.target.value);
+                    setCreateErrors((prev) => ({ ...prev, name: "" }));
                   }}
+                  required
                 />
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={addResearchAgenda}
-                >
-                  Add
-                </Button>
+                {createErrors.name ? (
+                  <p className="field-error">{createErrors.name}</p>
+                ) : null}
               </div>
-              {newResearchAgendas.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {newResearchAgendas.map((agenda) => (
-                    <button
-                      key={agenda}
-                      type="button"
-                      className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs text-slate-700 hover:bg-[var(--surface-strong)]"
-                      onClick={() => removeResearchAgenda(agenda)}
-                    >
-                      {agenda} x
-                    </button>
-                  ))}
-                </div>
-              ) : (
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Code <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  className={createErrors.code ? "input-error" : ""}
+                  placeholder="e.g. CHCI"
+                  value={newResearchCenterCode}
+                  onChange={(event) => {
+                    setnewResearchCenterCode(
+                      event.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    );
+                    setCreateErrors((prev) => ({ ...prev, code: "" }));
+                  }}
+                  required
+                />
+                {createErrors.code ? (
+                  <p className="field-error">{createErrors.code}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Center Chief <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={newCenterChiefId}
+                  onValueChange={(value) => {
+                    setNewCenterChiefId(value);
+                    setCreateErrors((prev) => ({ ...prev, centerChiefId: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    className={createErrors.centerChiefId ? "input-error" : ""}
+                  >
+                    <SelectValue placeholder="Select Center Chief" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {centerChiefUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {createErrors.centerChiefId ? (
+                  <p className="field-error">{createErrors.centerChiefId}</p>
+                ) : null}
+
+                <p className="text-xs text-slate-500">Select from users.</p>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Social Media Link
+                </label>
+                <Input
+                  value={newResearchCenterSocialMediaLink}
+                  placeholder="Optional: https://facebook.com/your-center"
+                  onChange={(event) =>
+                    setNewResearchCenterSocialMediaLink(event.target.value)
+                  }
+                />
                 <p className="text-xs text-slate-500">
-                  Required. Add at least one research agendum.
+                  Optional. You can add this later in Edit Research Center.
                 </p>
-              )}
-              {createErrors.researchAgendas ? (
-                <p className="field-error">{createErrors.researchAgendas}</p>
-              ) : null}
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={newResearchCenterDescription}
+                  placeholder="Optional short description about the research center..."
+                  onChange={(event) =>
+                    setNewResearchCenterDescription(event.target.value)
+                  }
+                  rows={4}
+                />
+                <p className="text-xs text-slate-500">
+                  This will appear on the research center detail page.
+                </p>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Research Agendum <span className="text-red-500">*</span>
+                </label>
+
+                <div className="flex gap-2">
+                  <Input
+                    className={
+                      createErrors.researchAgendas ? "input-error" : ""
+                    }
+                    placeholder="Add research agendum"
+                    value={newAgendaInput}
+                    onChange={(event) => setNewAgendaInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addResearchAgenda();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={addResearchAgenda}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {newResearchAgendas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {newResearchAgendas.map((agenda) => (
+                      <button
+                        key={agenda}
+                        type="button"
+                        className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs text-slate-700 hover:bg-[var(--surface-strong)]"
+                        onClick={() => removeResearchAgenda(agenda)}
+                      >
+                        {agenda} x
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Required. Add at least one research agendum.
+                  </p>
+                )}
+
+                {createErrors.researchAgendas ? (
+                  <p className="field-error">{createErrors.researchAgendas}</p>
+                ) : null}
+              </div>
             </div>
-            <div className="modal-actions mt-5 flex justify-end gap-2">
+
+            <div className="modal-actions mt-6 flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -2527,6 +2599,7 @@ export default function AdminResearchCenterPage() {
               >
                 Cancel
               </Button>
+
               <Button
                 onClick={createResearchCenter}
                 disabled={createLoading || !isCreateFormValid}
