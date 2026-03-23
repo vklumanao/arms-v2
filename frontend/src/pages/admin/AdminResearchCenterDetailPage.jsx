@@ -120,6 +120,7 @@ export default function AdminResearchCenterDetailPage() {
     name: "",
     code: "",
     description: "",
+    socialMediaLink: "",
     centerChiefId: "",
     agendaInput: "",
     researchAgendas: [],
@@ -269,6 +270,9 @@ export default function AdminResearchCenterDetailPage() {
                 name: centerRow?.name || "-",
                 code: String(centerRow?.code || "").trim() || centerId,
                 description: String(centerRow?.description || "").trim(),
+                socialMediaLink: String(
+                  centerRow?.social_media_link || "",
+                ).trim(),
                 centerChiefId: centerChiefId || null,
                 centerChiefName: centerChiefName || "-",
                 agendaNames,
@@ -279,6 +283,7 @@ export default function AdminResearchCenterDetailPage() {
           name: String(centerRow?.name || "").trim(),
           code: String(centerRow?.code || "").trim() || String(centerId || ""),
           description: String(centerRow?.description || "").trim(),
+          socialMediaLink: String(centerRow?.social_media_link || "").trim(),
           centerChiefId: centerChiefId || "",
           agendaInput: "",
           researchAgendas: agendaNames,
@@ -498,6 +503,7 @@ export default function AdminResearchCenterDetailPage() {
         name: String(editForm.name || "").trim(),
         code: String(editForm.code || "").trim(),
         description: String(editForm.description || "").trim(),
+        social_media_link: String(editForm.socialMediaLink || "").trim(),
         center_chief_id: String(editForm.centerChiefId || "").trim(),
         research_agendas: Array.isArray(editForm.researchAgendas)
           ? editForm.researchAgendas
@@ -548,6 +554,9 @@ export default function AdminResearchCenterDetailPage() {
               name: centerRow?.name || "-",
               code: String(centerRow?.code || "").trim() || centerId,
               description: String(centerRow?.description || "").trim(),
+              socialMediaLink: String(
+                centerRow?.social_media_link || "",
+              ).trim(),
               centerChiefId: centerChiefId || null,
               centerChiefName: centerChiefName || "-",
               agendaNames,
@@ -558,6 +567,7 @@ export default function AdminResearchCenterDetailPage() {
         name: String(centerRow?.name || "").trim(),
         code: String(centerRow?.code || "").trim() || String(centerId || ""),
         description: String(centerRow?.description || "").trim(),
+        socialMediaLink: String(centerRow?.social_media_link || "").trim(),
         centerChiefId: centerChiefId || "",
         agendaInput: "",
         researchAgendas: agendaNames,
@@ -841,6 +851,26 @@ export default function AdminResearchCenterDetailPage() {
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
+              </div>
+
+              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Social Media
+                </p>
+                {String(center?.socialMediaLink || "").trim() ? (
+                  <a
+                    className="mt-2 inline-flex items-center text-base font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
+                    href={String(center?.socialMediaLink || "").trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {String(center?.socialMediaLink || "").trim()}
+                  </a>
+                ) : (
+                  <p className="mt-2 text-base text-slate-600">
+                    No social media link yet.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -1288,6 +1318,25 @@ export default function AdminResearchCenterDetailPage() {
                 rows={4}
                 placeholder="Optional short description about the research center..."
               />
+            </label>
+
+            <label className="space-y-1 text-sm md:col-span-2">
+              <span className="font-semibold text-slate-700">
+                Social Media Link
+              </span>
+              <Input
+                value={editForm.socialMediaLink}
+                onChange={(event) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    socialMediaLink: event.target.value,
+                  }))
+                }
+                placeholder="Optional: https://facebook.com/your-center"
+              />
+              <p className="text-xs text-slate-500">
+                Optional. Shown in the center overview.
+              </p>
             </label>
 
             <label className="space-y-1 text-sm">
