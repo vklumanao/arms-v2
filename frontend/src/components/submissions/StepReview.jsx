@@ -102,12 +102,6 @@ export default function StepReview({
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
-                  Scholarly Type
-                </span>
-                <Input value={form.scholarly_type || "-"} readOnly />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
                   Research Agenda
                 </span>
                 <Input value={agendaName || "-"} readOnly />
