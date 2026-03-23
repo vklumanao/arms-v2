@@ -199,12 +199,8 @@ export default function PublicRecordsPage() {
         acc[key].researchers.add(name);
       });
 
-      const scholarly = String(record.scholarly_type || "").toLowerCase();
       const expected = String(record.expected_outputs || "");
-      if (
-        includesPublicationSignal(scholarly) ||
-        includesPublicationSignal(expected)
-      ) {
+      if (includesPublicationSignal(expected)) {
         acc[key].publications += 1;
       }
 
