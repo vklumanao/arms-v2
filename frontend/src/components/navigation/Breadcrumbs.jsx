@@ -4,18 +4,18 @@ const SEGMENT_LABELS = {
   dashboard: "Dashboard",
   "public-records": "Public Records",
   "public-research-centers": "Research Centers",
-  "submit-project": "Research Projects",
-  "submit-affiliation": "Research Projects",
-  submit: "Submit Research Project",
-  add: "Add Award Record",
-  "research-outputs": "Research Outputs",
-  "awards-recognitions": "Awards and Recognitions",
-  "my-profile": "My Profile",
+  profile: "My Profile",
+  projects: "Research Projects",
+  submit: "Submit Project",
+  outputs: "Research Outputs",
+  awards: "Awards & Recognition",
+  new: "New Record",
   admin: "Admin",
   affiliates: "Affiliates",
-  "research-center": "Research Center",
-  departments: "Department",
-  controls: "Controls",
+  users: "Users",
+  "research-center": "Research Centers",
+  departments: "Departments",
+  controls: "Admin Controls",
   login: "Login",
   register: "Register",
   "forgot-password": "Forgot Password",
@@ -23,14 +23,36 @@ const SEGMENT_LABELS = {
   unauthorized: "Unauthorized",
 };
 
-function toLabel(segment) {
-  return (
-    SEGMENT_LABELS[segment] ||
-    segment
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  );
+function toLabel(segment, prevSegment) {
+  const label = SEGMENT_LABELS[segment];
+  if (label) return label;
+
+  // Avoid exposing raw ids in breadcrumb labels.
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      segment,
+    );
+  const looksLikeId =
+    isUuid || /^\d+$/.test(segment) || (segment.includes("-") && segment.length > 12);
+
+  if (looksLikeId) {
+    const parent = String(prevSegment || "").toLowerCase();
+    const parentLabel = {
+      projects: "Project",
+      "public-records": "Record",
+      "public-research-centers": "Research Center",
+      "research-center": "Research Center",
+      departments: "Department",
+      affiliates: "Affiliate",
+      users: "User",
+    }[parent];
+    return parentLabel ? `${parentLabel} Detail` : "Detail";
+  }
+
+  return segment
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 export default function Breadcrumbs() {
@@ -39,13 +61,17 @@ export default function Breadcrumbs() {
   const normalizedSegments =
     segments[0] === "home" ? segments.slice(1) : segments;
 
+  // Don't render breadcrumbs on the home route; a lone "Home" crumb is visual noise.
+  if (normalizedSegments.length === 0) return null;
+
   const crumbs = [{ label: "Home", to: "/home" }];
   let path = "";
 
-  normalizedSegments.forEach((segment) => {
+  normalizedSegments.forEach((segment, index) => {
+    const prevSegment = index > 0 ? normalizedSegments[index - 1] : null;
     path += `/${segment}`;
     crumbs.push({
-      label: toLabel(segment),
+      label: toLabel(segment, prevSegment),
       to: path,
     });
   });
