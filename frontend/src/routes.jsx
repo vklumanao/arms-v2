@@ -1,4 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import PublicLayout from "@/components/layout/PublicLayout";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
@@ -140,57 +144,49 @@ export default function AppRoutes() {
             element={<RoleRoute allow={["faculty", "student", "admin"]} />}
           >
             <Route
-              path="/my-profile"
+              path="/profile"
               element={withPermission(
                 PERMISSIONS.AFFILIATE_PROFILE_VIEW,
                 <AffiliateProfilePage />,
               )}
             />
             <Route
-              path="/submit-project"
+              path="/projects"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <ResearchProjectsHubPage />,
               )}
             />
             <Route
-              path="/submit-project/:id"
+              path="/projects/:id"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <ResearchProjectDetailPage />,
               )}
             />
             <Route
-              path="/submit-project/submit"
+              path="/projects/submit"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
                 <SubmitAffiliationPage />,
               )}
             />
             <Route
-              path="/submit-affiliation"
-              element={<Navigate to="/submit-project" replace />}
-            />
-            <Route
-              path="/submit-affiliation/submit"
-              element={<Navigate to="/submit-project/submit" replace />}
-            />
-            <Route
-              path="/research-outputs"
+              path="/outputs"
               element={withPermission(
                 PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
                 <ResearchOutputsPage />,
               )}
             />
             <Route
-              path="/awards-recognitions"
+              path="/awards"
               element={withPermission(
                 PERMISSIONS.AWARDS_RECOGNITION_VIEW,
                 <AwardsRecognitionPage />,
               )}
             />
             <Route
-              path="/awards-recognitions/add"
+              path="/awards/new"
               element={withPermission(
                 PERMISSIONS.AWARDS_RECOGNITION_VIEW,
                 <SubmitAwardRecognitionPage />,
