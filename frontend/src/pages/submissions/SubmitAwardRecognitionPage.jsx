@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
+import UserMultiSelect from "@/components/submissions/UserMultiSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ export default function SubmitAwardRecognitionPage() {
   const [recipientOptions, setRecipientOptions] = useState([]);
   const [loadingRecipients, setLoadingRecipients] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipientDropdownOpen, setRecipientDropdownOpen] = useState(false);
+  const recipientFieldRef = useRef(null);
   const [projectOptions, setProjectOptions] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -179,18 +182,6 @@ export default function SubmitAwardRecognitionPage() {
             .filter(Boolean);
         }
 
-        if (!nextRecipientUsers.length && !editId) {
-          const currentUserMatch =
-            selectedByEmail.get(
-              String(profile?.email || user?.email || "").toLowerCase(),
-            ) ||
-            selectedByName.get(
-              String(profile?.full_name || user?.full_name || "").toLowerCase(),
-            ) ||
-            null;
-          if (currentUserMatch) nextRecipientUsers = [currentUserMatch];
-        }
-
         return {
           ...prev,
           recipient_users: nextRecipientUsers,
@@ -212,6 +203,20 @@ export default function SubmitAwardRecognitionPage() {
     user?.email,
     user?.full_name,
   ]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        recipientFieldRef.current &&
+        !recipientFieldRef.current.contains(event.target)
+      ) {
+        setRecipientDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const userId = profile?.id || user?.id;
@@ -499,304 +504,287 @@ export default function SubmitAwardRecognitionPage() {
               <p className="text-sm text-slate-600">Loading award record...</p>
             </CardContent>
           ) : null}
-          <CardContent className="grid gap-4 p-5 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Award / Recognition
-              </span>
-              <Input
-                value={form.award_recognition}
-                onChange={(event) =>
-                  updateField("award_recognition", event.target.value)
-                }
-                placeholder="Best Paper Award, Recognition for Innovation, etc."
-                className={fieldErrors.award_recognition ? "input-error" : ""}
-              />
-              {fieldErrors.award_recognition ? (
-                <p className="field-error">{fieldErrors.award_recognition}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Awarding Body
-              </span>
-              <Input
-                value={form.awarding_body}
-                onChange={(event) =>
-                  updateField("awarding_body", event.target.value)
-                }
-                placeholder="Conference organizer, institution, agency"
-                className={fieldErrors.awarding_body ? "input-error" : ""}
-              />
-              {fieldErrors.awarding_body ? (
-                <p className="field-error">{fieldErrors.awarding_body}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Year Received
-              </span>
-              <Input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={form.year_received}
-                onChange={(event) =>
-                  updateField(
-                    "year_received",
-                    sanitizeDigits(event.target.value, 4),
-                  )
-                }
-                placeholder="2026"
-                className={fieldErrors.year_received ? "input-error" : ""}
-              />
-              {fieldErrors.year_received ? (
-                <p className="field-error">{fieldErrors.year_received}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Level
-              </span>
-              <Select
-                value={form.level}
-                onValueChange={(value) => updateField("level", value)}
-              >
-                <SelectTrigger
-                  className={fieldErrors.level ? "input-error" : ""}
-                >
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LEVEL_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.level ? (
-                <p className="field-error">{fieldErrors.level}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Title of Research (Optional)
-              </span>
-              <Select
-                value={selectedProjectId || "__none__"}
-                onValueChange={(value) => {
-                  if (value === "__none__") {
-                    setSelectedProjectId("");
-                    updateField("work_title", "");
-                    updateField("project_id", "");
-                    return;
-                  }
-                  if (value === "__custom__") return;
-                  const selected = normalizedProjectOptions.find(
-                    (item) => item.id === value,
-                  );
-                  setSelectedProjectId(value);
-                  updateField("work_title", selected?.title || "");
-                  updateField("project_id", selected?.id || "");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      loadingProjects ? "Loading projects..." : "Select project"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Select project</SelectItem>
-                  {selectedProjectId === "__custom__" && form.work_title ? (
-                    <SelectItem value="__custom__">
-                      Current entry: {form.work_title}
-                    </SelectItem>
-                  ) : null}
-                  {normalizedProjectOptions.length ? (
-                    normalizedProjectOptions.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.title}
-                        {project.year ? ` (${project.year})` : ""}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="__empty__" disabled>
-                      No project entries found
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {fieldErrors.work_title ? (
-                <p className="field-error">{fieldErrors.work_title}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Recipient(s)
-              </span>
-              <div className="space-y-2 rounded-md border bg-white p-3">
-                <Input
-                  value={recipientSearch}
-                  onChange={(event) => setRecipientSearch(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && filteredRecipientOptions[0]) {
-                      event.preventDefault();
-                      addRecipientUser(filteredRecipientOptions[0]);
-                    }
-                  }}
-                  placeholder="Type a name to search Faculty"
-                  className={fieldErrors.recipients ? "input-error" : ""}
-                />
-                <div className="flex flex-wrap gap-2">
-                  {(form.recipient_users || []).length ? (
-                    form.recipient_users.map((item) => (
-                      <Button
-                        key={item.id}
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-7 rounded-full px-3 text-xs"
-                        onClick={() =>
-                          updateRecipientUsers((prev) =>
-                            prev.filter((entry) => entry.id !== item.id),
-                          )
-                        }
-                        title="Remove recipient"
-                      >
-                        {item.name}
-                      </Button>
-                    ))
-                  ) : (
-                    <span className="text-sm text-slate-500">
-                      No recipients selected yet.
-                    </span>
-                  )}
-                </div>
-                {loadingRecipients ? (
-                  <p className="text-sm text-slate-500">Loading users...</p>
-                ) : recipientSearch.trim() ? (
-                  <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
-                    {filteredRecipientOptions.length ? (
-                      filteredRecipientOptions.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className="flex w-full items-start gap-3 rounded-md px-2 py-1.5 text-left hover:bg-white"
-                          onClick={() => addRecipientUser(option)}
-                        >
-                          <span className="min-w-0 text-sm">
-                            <span className="block font-medium text-slate-800">
-                              {option.name}
-                            </span>
-                            <span className="block truncate text-slate-500">
-                              {[option.username, option.email]
-                                .filter(Boolean)
-                                .join(" | ")}
-                            </span>
-                          </span>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">
-                        No matching Faculty found.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    Start typing a recipient name to search Faculty.
-                  </p>
-                )}
+          <CardContent className="space-y-4 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Award Details
+                </p>
+                <p className="text-sm text-slate-600">
+                  Provide the official award name and issuing body.
+                </p>
               </div>
-              {fieldErrors.recipients ? (
-                <p className="field-error">{fieldErrors.recipients}</p>
-              ) : null}
-            </label>
-
-            <div className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Supporting MOV File
-              </span>
-              <div className="rounded-md border bg-muted/30 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-slate-800">
-                      {movFile?.name ||
-                        existingMov?.fileName ||
-                        "No supporting MOV file attached yet"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {movFile
-                        ? `${formatFileSize(movFile.size)} selected for upload`
-                        : existingMov?.filePath
-                          ? "Current Faculty resource attached to this award record"
-                          : "Upload a file to store the supporting MOV as a Faculty resource"}
-                    </p>
-                  </div>
-                  <Button variant="outline" asChild>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        className="sr-only"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] || null;
-                          setMovFile(file);
-                        }}
-                      />
-                      {movFile || existingMov ? "Replace File" : "Choose File"}
-                    </label>
-                  </Button>
-                </div>
-                {existingMov?.filePath && !movFile ? (
-                  <a
-                    href={existingMov.filePath}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex text-sm font-medium text-sky-700 hover:text-sky-900"
-                  >
-                    Open current MOV attachment
-                  </a>
-                ) : null}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                  {form.level ? `Level: ${form.level}` : "Level: Not set"}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                  {form.year_received
+                    ? `Year: ${form.year_received}`
+                    : "Year: -"}
+                </span>
               </div>
-              {fieldErrors.supporting_movs ? (
-                <p className="field-error">{fieldErrors.supporting_movs}</p>
-              ) : null}
             </div>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Supporting MOV Reference
-              </span>
-              <Input
-                value={form.supporting_movs}
-                onChange={(event) =>
-                  updateField("supporting_movs", event.target.value)
-                }
-                placeholder="Drive link, repository URL, or MOV reference"
-              />
-            </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Award / Recognition
+                </span>
+                <Input
+                  value={form.award_recognition}
+                  onChange={(event) =>
+                    updateField("award_recognition", event.target.value)
+                  }
+                  placeholder="Best Paper Award, Recognition for Innovation, etc."
+                  className={fieldErrors.award_recognition ? "input-error" : ""}
+                />
+                {fieldErrors.award_recognition ? (
+                  <p className="field-error">{fieldErrors.award_recognition}</p>
+                ) : null}
+              </label>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Notes
-              </span>
-              <Textarea
-                value={form.notes}
-                onChange={(event) => updateField("notes", event.target.value)}
-                placeholder="Additional context about the award or recognition"
-              />
-            </label>
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Awarding Body
+                </span>
+                <Input
+                  value={form.awarding_body}
+                  onChange={(event) =>
+                    updateField("awarding_body", event.target.value)
+                  }
+                  placeholder="Conference organizer, institution, agency"
+                  className={fieldErrors.awarding_body ? "input-error" : ""}
+                />
+                {fieldErrors.awarding_body ? (
+                  <p className="field-error">{fieldErrors.awarding_body}</p>
+                ) : null}
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Year Received
+                </span>
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  value={form.year_received}
+                  onChange={(event) =>
+                    updateField(
+                      "year_received",
+                      sanitizeDigits(event.target.value, 4),
+                    )
+                  }
+                  placeholder="2026"
+                  className={fieldErrors.year_received ? "input-error" : ""}
+                />
+                {fieldErrors.year_received ? (
+                  <p className="field-error">{fieldErrors.year_received}</p>
+                ) : null}
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Level
+                </span>
+                <Select
+                  value={form.level}
+                  onValueChange={(value) => updateField("level", value)}
+                >
+                  <SelectTrigger
+                    className={fieldErrors.level ? "input-error" : ""}
+                  >
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEVEL_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldErrors.level ? (
+                  <p className="field-error">{fieldErrors.level}</p>
+                ) : null}
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Title of Research (Optional)
+                </span>
+                <Select
+                  value={selectedProjectId || "__none__"}
+                  onValueChange={(value) => {
+                    if (value === "__none__") {
+                      setSelectedProjectId("");
+                      updateField("work_title", "");
+                      updateField("project_id", "");
+                      return;
+                    }
+                    if (value === "__custom__") return;
+                    const selected = normalizedProjectOptions.find(
+                      (item) => item.id === value,
+                    );
+                    setSelectedProjectId(value);
+                    updateField("work_title", selected?.title || "");
+                    updateField("project_id", selected?.id || "");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        loadingProjects
+                          ? "Loading projects..."
+                          : "Select project"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Select project</SelectItem>
+                    {selectedProjectId === "__custom__" && form.work_title ? (
+                      <SelectItem value="__custom__">
+                        Current entry: {form.work_title}
+                      </SelectItem>
+                    ) : null}
+                    {normalizedProjectOptions.length ? (
+                      normalizedProjectOptions.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                          {project.year ? ` (${project.year})` : ""}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="__empty__" disabled>
+                        No project entries found
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {fieldErrors.work_title ? (
+                  <p className="field-error">{fieldErrors.work_title}</p>
+                ) : null}
+              </label>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="lg:col-span-1">
+                <UserMultiSelect
+                  label="Recipients"
+                  headerVariant="caps"
+                  headerBadge={`${form.recipient_users?.length || 0} selected`}
+                  placeholder="Type a recipient name"
+                  searchValue={recipientSearch}
+                  onSearchChange={setRecipientSearch}
+                  dropdownOpen={recipientDropdownOpen}
+                  setDropdownOpen={setRecipientDropdownOpen}
+                  suggestions={
+                    loadingRecipients ? [] : filteredRecipientOptions
+                  }
+                  onSelect={addRecipientUser}
+                  selections={(form.recipient_users || []).map(
+                    (item) => item.name,
+                  )}
+                  onRemove={(name) =>
+                    updateRecipientUsers((prev) =>
+                      prev.filter((item) => item.name !== name),
+                    )
+                  }
+                  fieldRef={recipientFieldRef}
+                  emptyText="No recipients selected yet."
+                  helperText={
+                    loadingRecipients
+                      ? "Loading users..."
+                      : "Type to search and select one or more recipients."
+                  }
+                  error={fieldErrors.recipients}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Supporting MOV File
+                  </span>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {movFile?.name ||
+                            existingMov?.fileName ||
+                            "No supporting MOV file attached yet"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {movFile
+                            ? `${formatFileSize(movFile.size)} selected for upload`
+                            : existingMov?.filePath
+                              ? "Current Faculty resource attached to this award record"
+                              : "Upload a file to store the supporting MOV as a Faculty resource"}
+                        </p>
+                      </div>
+                      <Button variant="outline" asChild>
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            className="sr-only"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] || null;
+                              setMovFile(file);
+                            }}
+                          />
+                          {movFile || existingMov
+                            ? "Replace File"
+                            : "Choose File"}
+                        </label>
+                      </Button>
+                    </div>
+                    {existingMov?.filePath && !movFile ? (
+                      <a
+                        href={existingMov.filePath}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-900"
+                      >
+                        Open current MOV attachment
+                      </a>
+                    ) : null}
+                  </div>
+                  {fieldErrors.supporting_movs ? (
+                    <p className="field-error">{fieldErrors.supporting_movs}</p>
+                  ) : null}
+                </div>
+
+                <label className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Supporting MOV Reference
+                  </span>
+                  <Input
+                    value={form.supporting_movs}
+                    onChange={(event) =>
+                      updateField("supporting_movs", event.target.value)
+                    }
+                    placeholder="Drive link, repository URL, or MOV reference"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Notes
+                  </span>
+                  <Textarea
+                    value={form.notes}
+                    onChange={(event) =>
+                      updateField("notes", event.target.value)
+                    }
+                    placeholder="Additional context about the award or recognition"
+                  />
+                </label>
+              </div>
+            </div>
           </CardContent>
 
-          <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
+          <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
             <p className="text-sm text-rose-700">{error || " "}</p>
             <div className="flex gap-2">
               <Button
