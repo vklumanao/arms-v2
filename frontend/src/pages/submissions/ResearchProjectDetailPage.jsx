@@ -543,14 +543,6 @@ export default function ResearchProjectDetailPage() {
                           {normalizeLabel(project?.classification)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">
-                          Scholarly Type
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">
-                          {project?.scholarly_type || "-"}
-                        </p>
-                      </div>
                     </CardContent>
                   </Card>
 
