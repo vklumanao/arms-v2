@@ -472,7 +472,7 @@ export default function SubmitAwardRecognitionPage() {
         : "The awards and recognition entry was added to your workspace.",
     );
     setSubmitting(false);
-    navigate("/awards-recognitions");
+    navigate("/awards");
   };
 
   return (
@@ -490,7 +490,7 @@ export default function SubmitAwardRecognitionPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate("/awards-recognitions")}
+            onClick={() => navigate("/awards")}
           >
             Back to Awards
           </Button>
@@ -790,7 +790,7 @@ export default function SubmitAwardRecognitionPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/awards-recognitions")}
+                onClick={() => navigate("/awards")}
               >
                 Cancel
               </Button>
