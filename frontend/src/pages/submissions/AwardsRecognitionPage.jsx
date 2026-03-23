@@ -31,11 +31,14 @@ import {
 import {
   deleteAwardRecognitionRecord,
   listAwardRecognitionRecords,
+  fetchAllProjects,
+  fetchUserProjects,
 } from "@/services/submissions";
 import {
   Award,
   Building2,
   Download,
+  ExternalLink,
   PencilLine,
   Search,
   Trash2,
@@ -49,6 +52,8 @@ export default function AwardsRecognitionPage() {
   const { profile } = useAuth();
   const toast = useToast();
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const missingAffiliation =
     !isAdmin &&
     (!String(profile?.ckan_org_id || "").trim() ||
@@ -61,6 +66,8 @@ export default function AwardsRecognitionPage() {
   const [loadError, setLoadError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [projectOptions, setProjectOptions] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   const loadAwards = useCallback(() => {
     setLoading(true);
@@ -91,6 +98,29 @@ export default function AwardsRecognitionPage() {
       cancelled = true;
     };
   }, [loadAwards]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadProjects = async () => {
+      setLoadingProjects(true);
+      const response = isAdmin
+        ? await fetchAllProjects()
+        : await fetchUserProjects({ userId: profile?.id });
+      if (cancelled) return;
+      if (response?.error) {
+        setProjectOptions([]);
+        setLoadingProjects(false);
+        return;
+      }
+      setProjectOptions(Array.isArray(response?.data) ? response.data : []);
+      setLoadingProjects(false);
+    };
+
+    loadProjects();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, profile?.id]);
 
   const filteredRows = useMemo(() => {
     const query = String(searchTerm || "")
@@ -142,6 +172,19 @@ export default function AwardsRecognitionPage() {
     base.recipients = uniqueRecipients.size;
     return base;
   }, [rows]);
+
+  const projectTitleById = useMemo(() => {
+    const map = new Map();
+    (projectOptions || []).forEach((item) => {
+      const id = String(item?.id || item?.ckan_dataset_id || "").trim();
+      const title = String(
+        item?.title || item?.work_title || item?.name || "",
+      ).trim();
+      if (!id || !title || map.has(id)) return;
+      map.set(id, title);
+    });
+    return map;
+  }, [projectOptions]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -212,6 +255,10 @@ export default function AwardsRecognitionPage() {
       no: index + 1,
       department: row.program_department || "-",
       title: row.work_title || "-",
+      project:
+        projectTitleById.get(String(row?.project_id || "").trim()) ||
+        row.work_title ||
+        "-",
       award: row.award_recognition || "-",
       body: row.awarding_body || "-",
       year: row.year_received || "-",
@@ -228,6 +275,7 @@ export default function AwardsRecognitionPage() {
         "No.",
         "Department",
         "Title of Research",
+        "Project",
         "Award/Recognition",
         "Awarding Body",
         "Year Received",
@@ -240,6 +288,7 @@ export default function AwardsRecognitionPage() {
           row.no,
           row.department,
           row.title,
+          row.project,
           row.award,
           row.body,
           row.year,
@@ -274,6 +323,7 @@ export default function AwardsRecognitionPage() {
               <td>${row.no}</td>
               <td>${row.department}</td>
               <td>${row.title}</td>
+              <td>${row.project}</td>
               <td>${row.award}</td>
               <td>${row.body}</td>
               <td>${row.year}</td>
@@ -316,6 +366,7 @@ export default function AwardsRecognitionPage() {
                   <th>No.</th>
                   <th>Department</th>
                   <th>Title of Research</th>
+                  <th>Project</th>
                   <th>Award/Recognition</th>
                   <th>Awarding Body</th>
                   <th>Year Received</th>
@@ -491,7 +542,7 @@ export default function AwardsRecognitionPage() {
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Department</TableHead>
-                    <TableHead>Title of Research</TableHead>
+                    <TableHead>Title of Research/Creative Work</TableHead>
                     <TableHead>Award/Recognition</TableHead>
                     <TableHead>Awarding Body</TableHead>
                     <TableHead>Year Received</TableHead>
@@ -526,18 +577,21 @@ export default function AwardsRecognitionPage() {
                               Link / Reference
                             </a>
                           ) : null}
-                          {row.supporting_mov_file_path ? (
+                          {row.supporting_mov_resource_id ? (
                             <a
-                              href={row.supporting_mov_file_path}
+                              href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                row.supporting_mov_resource_id,
+                              )}/download?download=1`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
                             >
                               {row.supporting_mov_file_name ||
-                                "Attached MOV file"}
+                                "Download MOV file"}
                             </a>
                           ) : null}
-                          {!row.supporting_movs && !row.supporting_mov_file_path
+                          {!row.supporting_movs &&
+                          !row.supporting_mov_resource_id
                             ? "-"
                             : null}
                         </div>
@@ -558,6 +612,24 @@ export default function AwardsRecognitionPage() {
                                 ownerKey === currentUserKey);
                             return canManage ? (
                               <>
+                                {row?.project_id ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    asChild
+                                  >
+                                    <Link
+                                      to={`/submit-project/${encodeURIComponent(
+                                        String(row.project_id || "").trim(),
+                                      )}`}
+                                      aria-label="Open linked project"
+                                      title="Open project"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                ) : null}
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -589,7 +661,7 @@ export default function AwardsRecognitionPage() {
                 {totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={10} className="px-3 py-3">
+                      <TableCell colSpan={11} className="px-3 py-3">
                         <PaginationControls
                           page={currentPage}
                           totalPages={totalPages}
