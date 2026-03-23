@@ -298,6 +298,65 @@ export function registerPublicRecordsRoutes(app, deps) {
     return raw ? raw.toLowerCase() : "";
   }
 
+  function isAwardDataset(dataset) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const recordType = asTrimmedString(getExtraByKey(extras, "record_type"));
+    return recordType.toLowerCase() === "award";
+  }
+
+  function mapDatasetToPublicAward(dataset) {
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+    const movResource = resources[0] || null;
+    return {
+      id: dataset?.id || dataset?.name || null,
+      award_recognition:
+        asTrimmedString(getExtraByKey(extras, "award_recognition")) ||
+        asTrimmedString(dataset?.title) ||
+        "",
+      awarding_body: asTrimmedString(getExtraByKey(extras, "awarding_body")),
+      year_received: asTrimmedString(getExtraByKey(extras, "year_received")),
+      level: asTrimmedString(getExtraByKey(extras, "level")),
+      recipients: asTrimmedString(getExtraByKey(extras, "recipients")),
+      supporting_movs: asTrimmedString(getExtraByKey(extras, "supporting_movs")),
+      supporting_mov_resource_id: movResource?.id || null,
+      supporting_mov_file_name: movResource?.name || null,
+      supporting_mov_file_path: movResource?.url || null,
+      project_id: asTrimmedString(getExtraByKey(extras, "project_id")),
+    };
+  }
+
+  async function listAllPublicAwardDatasetsByProjectId(projectId) {
+    const rows = [];
+    const limit = 100;
+    let page = 1;
+
+    while (page <= 20) {
+      const result = await listDatasets({ page, limit });
+      const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+      rows.push(...datasets);
+
+      const total = Number(result?.count || 0);
+      if (!datasets.length || rows.length >= total || datasets.length < limit) {
+        break;
+      }
+      page += 1;
+    }
+
+    const targetProjectId = asTrimmedString(projectId);
+    if (!targetProjectId) return [];
+
+    return rows
+      .filter((dataset) => {
+        if (Boolean(dataset?.private)) return false;
+        if (!isAwardDataset(dataset)) return false;
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        if (getSubmissionStateFromExtras(extras) === "draft") return false;
+        return asTrimmedString(getExtraByKey(extras, "project_id")) === targetProjectId;
+      })
+      .map(mapDatasetToPublicAward);
+  }
+
   function mapDatasetToPublicRecord(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const tagNames = getDatasetTagNames(dataset);
@@ -405,6 +464,7 @@ export function registerPublicRecordsRoutes(app, deps) {
 
     return rows.filter((dataset) => {
       if (Boolean(dataset?.private)) return false;
+      if (isAwardDataset(dataset)) return false;
       const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
       const submissionState = getSubmissionStateFromExtras(extras);
       if (submissionState === "draft") return false;
@@ -592,6 +652,33 @@ export function registerPublicRecordsRoutes(app, deps) {
     } catch (error) {
       return res.status(500).json({
         error: String(error?.message || "Failed to load project resources."),
+      });
+    }
+  });
+
+  app.get("/api/public-records/:projectId/awards", async (req, res) => {
+    try {
+      const projectId = asTrimmedString(req.params?.projectId);
+      if (!projectId) {
+        return res.status(400).json({ error: "Project id is required." });
+      }
+
+      const dataset = await getDataset(projectId);
+      if (!dataset || Boolean(dataset?.private)) {
+        return res.status(404).json({ error: "Project dataset not found." });
+      }
+
+      const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+      const submissionState = getSubmissionStateFromExtras(extras);
+      if (submissionState === "draft") {
+        return res.status(404).json({ error: "Project dataset not found." });
+      }
+
+      const rows = await listAllPublicAwardDatasetsByProjectId(projectId);
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load project awards."),
       });
     }
   });
