@@ -489,6 +489,44 @@ export default function SubmitAffiliationPage() {
   }, [defaultDepartmentId, editId]);
 
   useEffect(() => {
+    if (editId) return;
+    if (form.lead_researcher) return;
+    if (!leadEligibleUserOptions.length) return;
+    const email = String(profile?.email || user?.email || "")
+      .trim()
+      .toLowerCase();
+    const fullName = String(profile?.full_name || user?.full_name || "")
+      .trim()
+      .toLowerCase();
+    const matchedLead = leadEligibleUserOptions.find((row) => {
+      if (email && String(row.email || "").toLowerCase() === email) return true;
+      if (fullName && String(row.name || "").toLowerCase() === fullName)
+        return true;
+      return false;
+    });
+    if (!matchedLead) return;
+    mergeForm({
+      lead_researcher: matchedLead.name,
+      lead_researcher_user: {
+        id: matchedLead.id || "",
+        name: matchedLead.name,
+        username: matchedLead.username || "",
+        email: matchedLead.email || "",
+        role: matchedLead.role || "",
+      },
+    });
+  }, [
+    editId,
+    form.lead_researcher,
+    leadEligibleUserOptions,
+    mergeForm,
+    profile?.email,
+    profile?.full_name,
+    user?.email,
+    user?.full_name,
+  ]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         leadFieldRef.current &&
