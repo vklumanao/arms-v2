@@ -22,108 +22,107 @@ export default function StepClassification({
           Classify the project for reporting, routing, and review.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">
-            Project classification
-          </span>
-          <Select
-            value={form.classification || "academic"}
-            onValueChange={(value) => setField("classification", value)}
-          >
-            <SelectTrigger
-              className={errors?.classification ? "input-error" : ""}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="space-y-4">
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">
+              Project Classification
+            </span>
+            <Select
+              value={form.classification || "academic"}
+              onValueChange={(value) => setField("classification", value)}
             >
-              <SelectValue placeholder="Select classification" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="academic">Academic</SelectItem>
-              <SelectItem value="industry">Industry</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors?.classification ? (
-            <p className="field-error">{errors.classification}</p>
-          ) : null}
-        </label>
+              <SelectTrigger
+                className={errors?.classification ? "input-error" : ""}
+              >
+                <SelectValue placeholder="Select classification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="academic">Academic</SelectItem>
+                <SelectItem value="industry">Industry</SelectItem>
+                <SelectItem value="other_scholary">Other Scholarly</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors?.classification && (
+              <p className="field-error">{errors.classification}</p>
+            )}
+          </label>
 
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Status</span>
-          <Select
-            value={form.status || "proposal"}
-            onValueChange={(value) => setField("status", value)}
-          >
-            <SelectTrigger className={errors?.status ? "input-error" : ""}>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="proposal">Proposal</SelectItem>
-              <SelectItem value="ongoing">On-going</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors?.status ? (
-            <p className="field-error">{errors.status}</p>
-          ) : null}
-        </label>
-
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Research agenda</span>
-          <Select
-            value={form.research_agenda_id || "__none__"}
-            disabled={effectiveAgendas.length === 0}
-            onValueChange={(value) =>
-              setField("research_agenda_id", value === "__none__" ? "" : value)
-            }
-          >
-            <SelectTrigger
-              className={errors?.research_agenda_id ? "input-error" : ""}
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">
+              Research Agenda
+            </span>
+            <Select
+              value={form.research_agenda_id || "__none__"}
+              disabled={effectiveAgendas.length === 0}
+              onValueChange={(value) =>
+                setField(
+                  "research_agenda_id",
+                  value === "__none__" ? "" : value,
+                )
+              }
             >
-              <SelectValue placeholder="Select research agenda" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Select research agenda</SelectItem>
-              {effectiveAgendas.map((a) => (
-                <SelectItem key={a.id} value={String(a.id)}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {effectiveAgendas.length === 0 ? (
-            <p className="text-xs text-amber-700">
-              No research agenda found in your organization custom fields.
-            </p>
-          ) : null}
-          {errors?.research_agenda_id ? (
-            <p className="field-error">{errors.research_agenda_id}</p>
-          ) : null}
-        </label>
+              <SelectTrigger
+                className={errors?.research_agenda_id ? "input-error" : ""}
+              >
+                <SelectValue placeholder="Select research agenda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select research agenda</SelectItem>
+                {effectiveAgendas.map((a) => (
+                  <SelectItem key={a.id} value={String(a.id)}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Department</span>
-          <Input
-            value={departmentName === "-" ? "" : departmentName}
-            readOnly
-            disabled
-            className={errors?.department_id ? "input-error" : ""}
-          />
-          {errors?.department_id ? (
-            <p className="field-error">{errors.department_id}</p>
-          ) : null}
-        </label>
-        <label className="block space-y-1 text-sm sm:col-span-2">
-          <span className="font-semibold text-slate-700">Scholarly type</span>
-          <Input
-            placeholder="e.g. Industry-based, Other Scholarly"
-            value={form.scholarly_type}
-            onChange={(e) => setField("scholarly_type", e.target.value)}
-            className={errors?.scholarly_type ? "input-error" : ""}
-          />
-          {errors?.scholarly_type ? (
-            <p className="field-error">{errors.scholarly_type}</p>
-          ) : null}
-        </label>
+            {effectiveAgendas.length === 0 && (
+              <p className="text-xs text-amber-700">
+                No research agenda found in your organization custom fields.
+              </p>
+            )}
+
+            {errors?.research_agenda_id && (
+              <p className="field-error">{errors.research_agenda_id}</p>
+            )}
+          </label>
+        </div>
+
+        <div className="space-y-4">
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Status</span>
+            <Select
+              value={form.status || "proposal"}
+              onValueChange={(value) => setField("status", value)}
+            >
+              <SelectTrigger className={errors?.status ? "input-error" : ""}>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proposal">Proposal</SelectItem>
+                <SelectItem value="ongoing">On-going</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors?.status && <p className="field-error">{errors.status}</p>}
+          </label>
+
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Department</span>
+            <Input
+              value={departmentName === "-" ? "" : departmentName}
+              readOnly
+              disabled
+              className={errors?.department_id ? "input-error" : ""}
+            />
+            {errors?.department_id && (
+              <p className="field-error">{errors.department_id}</p>
+            )}
+          </label>
+        </div>
       </div>
     </div>
   );
