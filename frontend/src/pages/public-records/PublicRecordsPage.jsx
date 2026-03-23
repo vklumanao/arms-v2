@@ -365,7 +365,7 @@ export default function PublicRecordsPage() {
   const openDetails = (projectId) => {
     if (!projectId) return;
     if (user || profile) {
-      navigate(`/submit-project/${encodeURIComponent(projectId)}`);
+      navigate(`/projects/${encodeURIComponent(projectId)}`);
       return;
     }
     navigate(`/public-records/${encodeURIComponent(projectId)}`);
