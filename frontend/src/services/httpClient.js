@@ -600,7 +600,6 @@ function mockApiPayload(path, options = {}) {
         research_center_id: "org-1",
         research_agenda_id: "agenda-1",
         department_id: "dept-1",
-        scholarly_type: "applied",
         funding_type: "internal",
         funding_category: "grant",
         industry_partner: "Demo Industry",
