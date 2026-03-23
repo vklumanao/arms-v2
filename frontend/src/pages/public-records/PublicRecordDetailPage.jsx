@@ -487,14 +487,6 @@ export default function PublicRecordDetailPage() {
                           {normalizeLabel(record?.classification)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">
-                          Scholarly Type
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">
-                          {record?.scholarly_type || "-"}
-                        </p>
-                      </div>
                     </CardContent>
                   </Card>
 
