@@ -562,10 +562,6 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         value: asTrimmedString(form.research_agenda_id) || null,
       },
       {
-        key: "scholarly_type",
-        value: asTrimmedString(form.scholarly_type) || null,
-      },
-      {
         key: "funding_type",
         value: asTrimmedString(form.funding_type) || null,
       },
@@ -748,9 +744,6 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           getExtraByKey(extras, "program_department") ||
           getExtraByKey(extras, "department"),
       ),
-      scholarly_type: asTrimmedString(
-        getExtraByKey(extras, "scholarly_type"),
-      ),
       funding_type:
         asTrimmedString(getExtraByKey(extras, "funding_type")) ||
         (tagNames.includes("internal")
@@ -900,7 +893,6 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       classification:
         asTrimmedString(getExtraByKey(extras, "classification")) ||
         (tagNames.includes("industry") ? "industry" : "academic"),
-      scholarly_type: asTrimmedString(getExtraByKey(extras, "scholarly_type")),
       department_id: asTrimmedString(
         getExtraByKey(extras, "department_id") ||
           getExtraByKey(extras, "program_department") ||
@@ -1564,7 +1556,6 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         tags: [
           asTrimmedString(form?.classification),
           asTrimmedString(form?.status),
-          asTrimmedString(form?.scholarly_type),
         ]
           .filter(Boolean)
           .map((value) => ({
@@ -1723,7 +1714,6 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         tags: [
           asTrimmedString(form.classification),
           asTrimmedString(form.status),
-          asTrimmedString(form.scholarly_type),
         ]
           .filter(Boolean)
           .map((value) => ({
