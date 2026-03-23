@@ -28,71 +28,114 @@ export default function StepProjectInfo({
   profileOrgId,
 }) {
   return (
-    <div className="space-y-5">
-      <div className="form-section">
-        <div className="form-section-head">
-          <p className="form-section-title">Basic Project Information</p>
-          <p className="form-section-note">
-            Start with the core project details to establish context.
-          </p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-5">
+        <div className="form-section">
+          <div className="form-section-head">
+            <p className="form-section-title">Basic Project Information</p>
+            <p className="form-section-note">
+              Start with the core project details to establish context.
+            </p>
+          </div>
+
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Project Title</span>
+            <Input
+              placeholder="e.g. AI Mentorship in Public Schools"
+              required
+              value={form.title}
+              onChange={(e) => setField("title", e.target.value)}
+              className={errors?.title ? "input-error" : ""}
+            />
+            {errors?.title && <p className="field-error">{errors.title}</p>}
+          </label>
+
+          <label className="block space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">
+              Project Summary
+            </span>
+            <Textarea
+              placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
+              value={form.abstract}
+              onChange={(e) => setField("abstract", e.target.value)}
+              className={errors?.abstract ? "input-error" : ""}
+            />
+            {errors?.abstract && (
+              <p className="field-error">{errors.abstract}</p>
+            )}
+          </label>
         </div>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Project title</span>
-          <Input
-            placeholder="e.g. AI Mentorship in Public Schools"
-            required
-            value={form.title}
-            onChange={(e) => setField("title", e.target.value)}
-            className={errors?.title ? "input-error" : ""}
-          />
-          {errors?.title ? <p className="field-error">{errors.title}</p> : null}
-          <p className="text-xs text-slate-500">
-            Use a concise, descriptive title that will appear in reports.
-          </p>
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Project Summary</span>
-          <Textarea
-            placeholder="Briefly explain objectives, target beneficiaries, and expected outcomes."
-            value={form.abstract}
-            onChange={(e) => setField("abstract", e.target.value)}
-            className={errors?.abstract ? "input-error" : ""}
-          />
-          {errors?.abstract ? (
-            <p className="field-error">{errors.abstract}</p>
-          ) : null}
-        </label>
+
+        <div className="form-section">
+          <div className="form-section-head">
+            <p className="form-section-title">Project Context</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Project Year</span>
+              <Input
+                type="number"
+                min="2000"
+                max="2100"
+                inputMode="numeric"
+                placeholder="e.g. 2026"
+                required
+                value={form.year}
+                onChange={(e) =>
+                  setField("year", sanitizeDigits(e.target.value, 4))
+                }
+                className={errors?.year ? "input-error" : ""}
+              />
+              {errors?.year && <p className="field-error">{errors.year}</p>}
+            </label>
+
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">
+                Research Center
+              </span>
+              <Input
+                value={
+                  centerName === "-"
+                    ? form.research_center_id || profileOrgId || ""
+                    : centerName
+                }
+                readOnly
+                disabled
+                className={errors?.research_center_id ? "input-error" : ""}
+              />
+              {errors?.research_center_id && (
+                <p className="field-error">{errors.research_center_id}</p>
+              )}
+            </label>
+          </div>
+        </div>
       </div>
 
-      <div className="form-section">
-        <div className="form-section-head">
-          <p className="form-section-title">Research Team</p>
-        </div>
-        <div className="form-fields-grid form-fields-grid-2">
-          <div className="lg:col-span-1">
-            <UserMultiSelect
-              label="Lead researcher"
-              placeholder="Type a Lead Researcher name"
-              searchValue={leadSearch}
-              onSearchChange={setLeadSearch}
-              dropdownOpen={leadDropdownOpen}
-              setDropdownOpen={setLeadDropdownOpen}
-              suggestions={leadSuggestions}
-              onSelect={setLeadResearcherSelection}
-              selections={
-                selectedLeadResearcher ? [selectedLeadResearcher] : []
-              }
-              onRemove={() => setLeadResearcherSelection(null)}
-              fieldRef={leadFieldRef}
-              emptyText="No Lead Researcher selected yet."
-              helperText="Type to search and select one Lead Researcher only."
-              allowMultiple={false}
-              error={errors?.lead_researcher}
-            />
+      <div className="space-y-5">
+        <div className="form-section">
+          <div className="form-section-head">
+            <p className="form-section-title">Research Team</p>
           </div>
-          <div className="lg:col-span-1">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">
+                Lead Researcher
+              </span>
+              <Input
+                value={selectedLeadResearcher || form.lead_researcher || ""}
+                readOnly
+                disabled
+                className={errors?.lead_researcher ? "input-error" : ""}
+              />
+              {errors?.lead_researcher && (
+                <p className="field-error">{errors.lead_researcher}</p>
+              )}
+            </label>
+
             <UserMultiSelect
-              label="Research team (faculty)"
+              label="Research Team (Faculty)"
               placeholder="Type a Faculty name"
               searchValue={facultySearch}
               onSearchChange={setFacultySearch}
@@ -110,58 +153,16 @@ export default function StepProjectInfo({
               error={errors?.faculty_team}
             />
           </div>
-        </div>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">
-            Research team (students)
-          </span>
-          <Input
-            placeholder="Comma-separated names (optional)"
-            value={form.student_team}
-            onChange={(e) => setField("student_team", e.target.value)}
-          />
-        </label>
-      </div>
 
-      <div className="form-section">
-        <div className="form-section-head">
-          <p className="form-section-title">Project Context</p>
-        </div>
-        <div className="form-fields-grid form-fields-grid-2">
-          <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Project year</span>
-            <Input
-              type="number"
-              min="2000"
-              max="2100"
-              inputMode="numeric"
-              placeholder="e.g. 2026"
-              required
-              value={form.year}
-              onChange={(e) =>
-                setField("year", sanitizeDigits(e.target.value, 4))
-              }
-              className={errors?.year ? "input-error" : ""}
-            />
-            {errors?.year ? <p className="field-error">{errors.year}</p> : null}
-          </label>
           <label className="block space-y-1 text-sm">
             <span className="font-semibold text-slate-700">
-              Research center
+              Research Team (Students)
             </span>
             <Input
-              value={
-                centerName === "-"
-                  ? form.research_center_id || profileOrgId || ""
-                  : centerName
-              }
-              readOnly
-              disabled
-              className={errors?.research_center_id ? "input-error" : ""}
+              placeholder="Comma-separated names (optional)"
+              value={form.student_team}
+              onChange={(e) => setField("student_team", e.target.value)}
             />
-            {errors?.research_center_id ? (
-              <p className="field-error">{errors.research_center_id}</p>
-            ) : null}
           </label>
         </div>
       </div>
