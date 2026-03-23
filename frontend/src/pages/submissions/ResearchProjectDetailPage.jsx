@@ -339,7 +339,7 @@ export default function ResearchProjectDetailPage() {
     };
   }, [resourceDatasetId]);
 
-  if (!projectId) return <Navigate to="/submit-project" replace />;
+  if (!projectId) return <Navigate to="/projects" replace />;
 
   return (
     <section className="page-stack-lg">
@@ -355,7 +355,7 @@ export default function ResearchProjectDetailPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">
-              <Link to="/submit-project">
+              <Link to="/projects">
                 <ChevronLeft className="h-4 w-4" />
                 Back to Projects
               </Link>
@@ -365,7 +365,7 @@ export default function ResearchProjectDetailPage() {
                 variant="outline"
                 onClick={() =>
                   navigate(
-                    `/submit-project/submit?edit=${encodeURIComponent(
+                    `/projects/submit?edit=${encodeURIComponent(
                       String(
                         project?.ckan_dataset_id || projectId || "",
                       ).trim(),
@@ -909,7 +909,7 @@ export default function ResearchProjectDetailPage() {
                     {resourceDatasetId ? (
                       <Button asChild variant="outline" size="sm">
                         <Link
-                          to={`/awards-recognitions/add?project_id=${encodeURIComponent(
+                          to={`/awards/new?project_id=${encodeURIComponent(
                             resourceDatasetId,
                           )}`}
                         >
