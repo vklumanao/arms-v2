@@ -1297,6 +1297,9 @@ export function registerAdminRoutes(app, deps) {
                 String(row?.name || row?.id || "")
                   .toUpperCase()
                   .replace(/[^A-Z0-9_]/g, "_"),
+              social_media_link: String(
+                getExtraValue(row, "social_media_link") || "",
+              ).trim() || null,
               center_chief_id:
                 savedChiefId || centerChiefByOrg[orgId]?.id || null,
               center_chief_name:
@@ -1320,6 +1323,9 @@ export function registerAdminRoutes(app, deps) {
             description:
               String(row?.description || getExtraValue(row, "description") || "")
                 .trim() || null,
+            social_media_link:
+              String(getExtraValue(row, "social_media_link") || "").trim() ||
+              null,
             chairperson_id: getExtraValue(row, "chairperson_id"),
             chairperson_name: getExtraValue(row, "chairperson_name"),
           })),
@@ -2143,6 +2149,9 @@ export function registerAdminRoutes(app, deps) {
           const codeRaw = normalizeDepartmentCode(req.body?.code || name);
           const description = String(req.body?.description || "").trim();
           const chairpersonId = String(req.body?.chairperson_id || "").trim();
+          const socialMediaLink = String(
+            req.body?.social_media_link || "",
+          ).trim();
           if (!name) return badRequest(res, "Department name is required.");
           if (!codeRaw) return badRequest(res, "Department code is required.");
           if (!chairpersonId)
@@ -2180,6 +2189,9 @@ export function registerAdminRoutes(app, deps) {
               { key: "code", value: codeRaw },
               { key: "chairperson_id", value: chairpersonId },
               { key: "chairperson_name", value: chairpersonName },
+              ...(socialMediaLink
+                ? [{ key: "social_media_link", value: socialMediaLink }]
+                : []),
             ],
           });
           await assignUserToGroupAdmin({
@@ -2204,6 +2216,7 @@ export function registerAdminRoutes(app, deps) {
               chairperson_id: chairpersonId,
               chairperson_name: chairpersonName,
               description: description || null,
+              social_media_link: socialMediaLink || null,
             },
           });
         }
@@ -2212,6 +2225,9 @@ export function registerAdminRoutes(app, deps) {
         const codeRaw = String(req.body?.code || "").trim();
         const description = String(req.body?.description || "").trim();
         const centerChiefId = String(req.body?.center_chief_id || "").trim();
+        const socialMediaLink = String(
+          req.body?.social_media_link || "",
+        ).trim();
         const agendaNames = normalizeAgendaNames(req.body?.research_agendas);
         if (!name) return badRequest(res, "Research center name is required.");
         if (!codeRaw)
@@ -2262,6 +2278,12 @@ export function registerAdminRoutes(app, deps) {
             value: agendaNames.join("; "),
           });
         }
+        if (socialMediaLink) {
+          extras.push({
+            key: "social_media_link",
+            value: socialMediaLink,
+          });
+        }
         let created = null;
         try {
           // Create org first, then assign center chief as org admin.
@@ -2307,6 +2329,7 @@ export function registerAdminRoutes(app, deps) {
               ).trim() || null,
             description: description || null,
             research_agendas: agendaNames,
+            social_media_link: socialMediaLink || null,
           },
         });
       } catch (error) {
@@ -2372,6 +2395,9 @@ export function registerAdminRoutes(app, deps) {
             req.body?.code || getExtraValue(currentGroup, "code") || id,
           );
           const chairpersonId = String(req.body?.chairperson_id || "").trim();
+          const socialMediaLink = String(
+            req.body?.social_media_link || "",
+          ).trim();
           if (!name && !currentGroup?.title && !currentGroup?.display_name) {
             return badRequest(res, "Department name is required.");
           }
@@ -2409,12 +2435,19 @@ export function registerAdminRoutes(app, deps) {
             return (
               key !== "code" &&
               key !== "chairperson_id" &&
-              key !== "chairperson_name"
+              key !== "chairperson_name" &&
+              key !== "social_media_link"
             );
           });
           nextExtras.push({ key: "code", value: codeRaw });
           nextExtras.push({ key: "chairperson_id", value: chairpersonId });
           nextExtras.push({ key: "chairperson_name", value: chairpersonName });
+          if (socialMediaLink) {
+            nextExtras.push({
+              key: "social_media_link",
+              value: socialMediaLink,
+            });
+          }
 
           const updated = await updateGroupMetadataWithDescription({
             groupId: id,
@@ -2478,6 +2511,7 @@ export function registerAdminRoutes(app, deps) {
                 String(req.body?.description || "").trim() ||
                 String(updated?.description || "").trim() ||
                 null,
+              social_media_link: socialMediaLink || null,
             },
           });
         }
@@ -2498,6 +2532,9 @@ export function registerAdminRoutes(app, deps) {
         const description = String(req.body?.description || "").trim();
         const savedCenterChiefId = String(
           getExtraValue(currentOrg, "center_chief_id") || "",
+        ).trim();
+        const socialMediaLink = String(
+          req.body?.social_media_link || "",
         ).trim();
         const centerChiefId = isScopedChief
           ? savedCenterChiefId
@@ -2557,7 +2594,8 @@ export function registerAdminRoutes(app, deps) {
             key !== "center_chief_id" &&
             key !== "center_chief_name" &&
             key !== "research_agendas" &&
-            key !== "research_agenda"
+            key !== "research_agenda" &&
+            key !== "social_media_link"
           );
         });
 
@@ -2569,6 +2607,12 @@ export function registerAdminRoutes(app, deps) {
         });
         if (joinedAgenda) {
           nextExtras.push({ key: "research_agendas", value: joinedAgenda });
+        }
+        if (socialMediaLink) {
+          nextExtras.push({
+            key: "social_media_link",
+            value: socialMediaLink,
+          });
         }
 
         const updated = await updateOrganizationMetadata({
@@ -2633,6 +2677,7 @@ export function registerAdminRoutes(app, deps) {
             description:
               description || String(updated?.description || "").trim() || null,
             research_agendas: agendaNames,
+            social_media_link: socialMediaLink || null,
           },
         });
       } catch (error) {
