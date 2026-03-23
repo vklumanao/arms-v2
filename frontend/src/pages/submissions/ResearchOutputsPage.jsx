@@ -128,7 +128,7 @@ export default function ResearchOutputsPage() {
       toast.error("Unable to open project", "Dataset id is missing.");
       return;
     }
-    navigate(`/submit-project/${encodeURIComponent(datasetId)}`);
+    navigate(`/projects/${encodeURIComponent(datasetId)}`);
   };
   const openAddOutputForProject = (project, options = {}) => {
     const projectId = String(project?.id || "").trim();
@@ -241,7 +241,7 @@ export default function ResearchOutputsPage() {
             Profile first before accessing Research Outputs.
           </p>
           <Button asChild>
-            <Link to="/my-profile">Go to My Profile</Link>
+            <Link to="/profile">Go to My Profile</Link>
           </Button>
         </CardContent>
       </Card>
