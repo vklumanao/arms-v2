@@ -746,7 +746,7 @@ export default function AdminDepartmentDetailPage() {
     if (!id) return;
     const resolvedId = String(row?.ckan_dataset_id || id || "").trim();
     if (!resolvedId) return;
-    navigate(`/submit-project/${encodeURIComponent(resolvedId)}`);
+    navigate(`/projects/${encodeURIComponent(resolvedId)}`);
   };
 
   const handleDelete = async () => {
