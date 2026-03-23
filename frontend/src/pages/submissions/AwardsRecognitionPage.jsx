@@ -431,7 +431,7 @@ export default function AwardsRecognitionPage() {
               ARMS Awards and Recognition
             </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Awards Command Hub
+              Awards and Recognitions Workspace
             </h1>
           </div>
 
