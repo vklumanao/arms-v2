@@ -222,19 +222,19 @@ export default function AppShell() {
   const workspaceResearchLinks = useMemo(
     () => [
       {
-        to: "/submit-project",
+        to: "/projects",
         label: "Research Projects",
         icon: FolderOpen,
         permission: PERMISSIONS.AFFILIATIONS_MANAGE,
       },
       {
-        to: "/research-outputs",
+        to: "/outputs",
         label: "Research Outputs",
         icon: Database,
         permission: PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
       },
       {
-        to: "/awards-recognitions",
+        to: "/awards",
         label: "Awards and Recognitions",
         icon: Award,
         permission: PERMISSIONS.AWARDS_RECOGNITION_VIEW,
@@ -547,7 +547,7 @@ export default function AppShell() {
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <Link
-                to="/my-profile"
+                to="/profile"
                 onClick={onNavigate}
                 className="flex w-full items-center gap-2"
               >
