@@ -28,7 +28,6 @@ export const INITIAL_SUBMISSION_FORM = {
   research_center_id: "",
   research_agenda_id: "",
   department_id: "",
-  scholarly_type: "",
   funding_type: "",
   funding_category: "",
   industry_partner: "",
@@ -64,7 +63,6 @@ export function mapProjectToSubmissionForm(project) {
     research_center_id: project?.research_center_id || "",
     research_agenda_id: project?.research_agenda_id || "",
     department_id: project?.department_id || "",
-    scholarly_type: project?.scholarly_type || "",
     funding_type: project?.funding_type || "",
     funding_category: project?.funding_category || "",
     industry_partner: project?.industry_partner || "",
@@ -175,11 +173,6 @@ const SUBMISSION_STEP_RULES = {
       field: "department_id",
       message: "Department is required.",
       check: (form) => Boolean(form.department_id),
-    },
-    {
-      field: "scholarly_type",
-      message: "Scholarly type is required.",
-      check: (form) => Boolean(form.scholarly_type?.trim()),
     },
   ],
   2: [
