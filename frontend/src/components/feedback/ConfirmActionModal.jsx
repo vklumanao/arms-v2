@@ -38,7 +38,9 @@ export default function ConfirmActionModal({
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{message}</DialogDescription>
+          <DialogDescription asChild>
+            <div className="text-sm text-muted-foreground">{message}</div>
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
