@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 
 export default function UserMultiSelect({
   label,
+  headerVariant = "default",
+  headerBadge,
   placeholder,
   searchValue,
   onSearchChange,
@@ -16,22 +18,42 @@ export default function UserMultiSelect({
   emptyText,
   helperText,
   allowMultiple = true,
+  disabled = false,
   error,
 }) {
+  const headerIsCaps = headerVariant === "caps";
   return (
     <label className="block space-y-1 text-sm">
-      <span className="font-semibold text-slate-700">{label}</span>
+      {headerIsCaps ? (
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {label}
+          </span>
+          {headerBadge ? (
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">
+              {headerBadge}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <span className="font-semibold text-slate-700">{label}</span>
+      )}
       <div ref={fieldRef} className="relative space-y-2">
         <Input
           placeholder={placeholder}
           value={searchValue}
           className={error ? "input-error" : ""}
-          onFocus={() => setDropdownOpen(Boolean(searchValue.trim()))}
+          disabled={disabled}
+          onFocus={() =>
+            disabled ? null : setDropdownOpen(Boolean(searchValue.trim()))
+          }
           onChange={(e) => {
+            if (disabled) return;
             onSearchChange(e.target.value);
             setDropdownOpen(Boolean(e.target.value.trim()));
           }}
           onKeyDown={(e) => {
+            if (disabled) return;
             if (e.key === "Enter" && suggestions[0]) {
               e.preventDefault();
               onSelect(suggestions[0]);
@@ -40,7 +62,7 @@ export default function UserMultiSelect({
             }
           }}
         />
-        {dropdownOpen && suggestions.length > 0 ? (
+        {!disabled && dropdownOpen && suggestions.length > 0 ? (
           <div className="absolute z-10 max-h-56 w-full overflow-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-white p-1 shadow-sm">
             {suggestions.map((user) => (
               <button
@@ -76,6 +98,7 @@ export default function UserMultiSelect({
                     className="text-[var(--brand)] hover:text-[var(--brand-strong)]"
                     onClick={() => onRemove(name)}
                     aria-label={`Remove ${name}`}
+                    disabled={disabled}
                   >
                     x
                   </button>
