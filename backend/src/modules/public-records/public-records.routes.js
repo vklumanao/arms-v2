@@ -543,6 +543,8 @@ export function registerPublicRecordsRoutes(app, deps) {
             String(org?.name || org?.id || "")
               .toUpperCase()
               .replace(/[^A-Z0-9_]/g, "_"),
+          social_media_link:
+            asTrimmedString(getExtraValue(org, "social_media_link")) || "",
           center_chief_id: asTrimmedString(
             getExtraValue(org, "center_chief_id"),
           ),
@@ -559,6 +561,8 @@ export function registerPublicRecordsRoutes(app, deps) {
           asTrimmedString(group?.title) ||
           asTrimmedString(group?.display_name) ||
           asTrimmedString(group?.name || group?.id),
+        social_media_link:
+          asTrimmedString(getExtraValue(group, "social_media_link")) || "",
       }));
 
       const timelineExists = records.reduce((acc, record) => {
