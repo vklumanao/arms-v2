@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useReferenceData } from "@/hooks/useReferenceData";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -45,14 +44,6 @@ export default function SubmitAwardRecognitionPage() {
   const { user, profile } = useAuth();
   const editId = String(searchParams.get("edit") || "").trim();
   const prefillProjectId = String(searchParams.get("project_id") || "").trim();
-  const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
-  const missingAffiliation =
-    !isAdmin &&
-    (!String(profile?.ckan_org_id || "").trim() ||
-      !String(profile?.department || "").trim());
-  const { centers, departments } = useReferenceData({
-    orgId: profile?.ckan_org_id || "",
-  });
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState("");
@@ -75,40 +66,7 @@ export default function SubmitAwardRecognitionPage() {
     recipient_users: [],
     supporting_movs: "",
     notes: "",
-    research_center_id: String(profile?.ckan_org_id || "").trim(),
-    department_id: "",
   });
-
-  const defaultDepartmentId = useMemo(() => {
-    const profileDepartmentId = String(profile?.ckan_group_id || "").trim();
-    const profileDepartment = String(profile?.department || "")
-      .trim()
-      .toLowerCase();
-    if (profileDepartmentId) {
-      const matchedDepartment = departments.find(
-        (item) =>
-          String(item?.id || "")
-            .trim()
-            .toLowerCase() === profileDepartmentId.toLowerCase(),
-      );
-      if (matchedDepartment?.id) return matchedDepartment.id;
-    }
-    if (!profileDepartment) return "";
-    return (
-      departments.find(
-        (item) =>
-          String(item?.name || "")
-            .trim()
-            .toLowerCase() === profileDepartment,
-      )?.id || ""
-    );
-  }, [departments, profile?.ckan_group_id, profile?.department]);
-
-  const effectiveDepartmentId = form.department_id || defaultDepartmentId;
-  const centerName =
-    centers.find((item) => item.id === form.research_center_id)?.name || "";
-  const departmentName =
-    departments.find((item) => item.id === effectiveDepartmentId)?.name || "";
   const filteredRecipientOptions = useMemo(() => {
     const query = String(recipientSearch || "")
       .trim()
@@ -249,7 +207,6 @@ export default function SubmitAwardRecognitionPage() {
     };
   }, [
     editId,
-    form.research_center_id,
     profile?.email,
     profile?.full_name,
     user?.email,
@@ -362,8 +319,6 @@ export default function SubmitAwardRecognitionPage() {
           : [],
         supporting_movs: String(data.supporting_movs || "").trim(),
         notes: String(data.notes || "").trim(),
-        research_center_id: String(data.research_center_id || "").trim(),
-        department_id: String(data.department_id || "").trim(),
       });
       setSelectedProjectId(
         String(data.project_id || "").trim() || "__custom__",
@@ -400,9 +355,6 @@ export default function SubmitAwardRecognitionPage() {
 
   const validateFields = () => {
     const errors = {};
-    if (!String(form.work_title || "").trim()) {
-      errors.work_title = "Title of research/work is required.";
-    }
     if (!String(form.award_recognition || "").trim()) {
       errors.award_recognition = "Award or recognition name is required.";
     }
@@ -427,23 +379,15 @@ export default function SubmitAwardRecognitionPage() {
     if (movFile && Number(movFile.size || 0) > MAX_MOV_FILE_SIZE_BYTES) {
       errors.supporting_movs = "MOV file must be 25MB or smaller.";
     }
-    if (!String(form.research_center_id || "").trim()) {
-      errors.research_center_id = "Research center is required.";
-    }
-    if (!String(effectiveDepartmentId || "").trim()) {
-      errors.department_id = "Department is required.";
-    }
     return errors;
   };
   const fieldErrors = useMemo(
     () => validateFields(),
     [
-      effectiveDepartmentId,
       form.award_recognition,
       form.awarding_body,
       form.level,
       form.recipient_users,
-      form.research_center_id,
       form.work_title,
       form.year_received,
       movFile,
@@ -481,10 +425,6 @@ export default function SubmitAwardRecognitionPage() {
       })),
       supporting_movs: String(form.supporting_movs || "").trim(),
       notes: String(form.notes || "").trim(),
-      research_center_id: String(form.research_center_id || "").trim(),
-      research_center_name: centerName,
-      department_id: String(effectiveDepartmentId || "").trim(),
-      program_department: departmentName,
     };
 
     const saveAction = editId
@@ -530,28 +470,6 @@ export default function SubmitAwardRecognitionPage() {
     navigate("/awards-recognitions");
   };
 
-  if (missingAffiliation) {
-    return (
-      <section className="page-stack-lg">
-        <PageHeader
-          title="Add Award or Recognition"
-          description="Complete your profile affiliation first before creating award records."
-        />
-        <Card>
-          <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) and Department in
-              My Profile first before adding an award or recognition entry.
-            </p>
-            <Button asChild>
-              <Link to="/my-profile">Go to My Profile</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
-
   return (
     <section className="page-stack-lg">
       <PageHeader
@@ -582,63 +500,6 @@ export default function SubmitAwardRecognitionPage() {
             </CardContent>
           ) : null}
           <CardContent className="grid gap-4 p-5 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Title of Research / Work
-              </span>
-              <Select
-                value={selectedProjectId || "__none__"}
-                onValueChange={(value) => {
-                  if (value === "__none__") {
-                    setSelectedProjectId("");
-                    updateField("work_title", "");
-                    updateField("project_id", "");
-                    return;
-                  }
-                  if (value === "__custom__") return;
-                  const selected = normalizedProjectOptions.find(
-                    (item) => item.id === value,
-                  );
-                  setSelectedProjectId(value);
-                  updateField("work_title", selected?.title || "");
-                  updateField("project_id", selected?.id || "");
-                }}
-              >
-                <SelectTrigger
-                  className={fieldErrors.work_title ? "input-error" : ""}
-                >
-                  <SelectValue
-                    placeholder={
-                      loadingProjects ? "Loading projects..." : "Select project"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Select project</SelectItem>
-                  {selectedProjectId === "__custom__" && form.work_title ? (
-                    <SelectItem value="__custom__">
-                      Current entry: {form.work_title}
-                    </SelectItem>
-                  ) : null}
-                  {normalizedProjectOptions.length ? (
-                    normalizedProjectOptions.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.title}
-                        {project.year ? ` (${project.year})` : ""}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="__empty__" disabled>
-                      No project entries found
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {fieldErrors.work_title ? (
-                <p className="field-error">{fieldErrors.work_title}</p>
-              ) : null}
-            </label>
-
             <label className="space-y-2">
               <span className="text-sm font-semibold text-slate-700">
                 Award / Recognition
@@ -719,6 +580,61 @@ export default function SubmitAwardRecognitionPage() {
               </Select>
               {fieldErrors.level ? (
                 <p className="field-error">{fieldErrors.level}</p>
+              ) : null}
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Title of Research (Optional)
+              </span>
+              <Select
+                value={selectedProjectId || "__none__"}
+                onValueChange={(value) => {
+                  if (value === "__none__") {
+                    setSelectedProjectId("");
+                    updateField("work_title", "");
+                    updateField("project_id", "");
+                    return;
+                  }
+                  if (value === "__custom__") return;
+                  const selected = normalizedProjectOptions.find(
+                    (item) => item.id === value,
+                  );
+                  setSelectedProjectId(value);
+                  updateField("work_title", selected?.title || "");
+                  updateField("project_id", selected?.id || "");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      loadingProjects ? "Loading projects..." : "Select project"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Select project</SelectItem>
+                  {selectedProjectId === "__custom__" && form.work_title ? (
+                    <SelectItem value="__custom__">
+                      Current entry: {form.work_title}
+                    </SelectItem>
+                  ) : null}
+                  {normalizedProjectOptions.length ? (
+                    normalizedProjectOptions.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.title}
+                        {project.year ? ` (${project.year})` : ""}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="__empty__" disabled>
+                      No project entries found
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {fieldErrors.work_title ? (
+                <p className="field-error">{fieldErrors.work_title}</p>
               ) : null}
             </label>
 
@@ -805,77 +721,6 @@ export default function SubmitAwardRecognitionPage() {
               ) : null}
             </label>
 
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Research Center
-              </span>
-              <Select
-                value={form.research_center_id}
-                onValueChange={(value) =>
-                  updateField("research_center_id", value)
-                }
-                disabled={!isAdmin}
-              >
-                <SelectTrigger
-                  className={
-                    fieldErrors.research_center_id ? "input-error" : ""
-                  }
-                >
-                  <SelectValue placeholder="Select research center" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.research_center_id ? (
-                <p className="field-error">{fieldErrors.research_center_id}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Department
-              </span>
-              <Select
-                value={effectiveDepartmentId}
-                onValueChange={(value) => updateField("department_id", value)}
-                disabled={!isAdmin && Boolean(defaultDepartmentId)}
-              >
-                <SelectTrigger
-                  className={fieldErrors.department_id ? "input-error" : ""}
-                >
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.department_id ? (
-                <p className="field-error">{fieldErrors.department_id}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Supporting MOV Reference
-              </span>
-              <Input
-                value={form.supporting_movs}
-                onChange={(event) =>
-                  updateField("supporting_movs", event.target.value)
-                }
-                placeholder="Drive link, repository URL, or MOV reference"
-              />
-            </label>
-
             <div className="space-y-2 md:col-span-2">
               <span className="text-sm font-semibold text-slate-700">
                 Supporting MOV File
@@ -925,6 +770,19 @@ export default function SubmitAwardRecognitionPage() {
                 <p className="field-error">{fieldErrors.supporting_movs}</p>
               ) : null}
             </div>
+
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Supporting MOV Reference
+              </span>
+              <Input
+                value={form.supporting_movs}
+                onChange={(event) =>
+                  updateField("supporting_movs", event.target.value)
+                }
+                placeholder="Drive link, repository URL, or MOV reference"
+              />
+            </label>
 
             <label className="space-y-2 md:col-span-2">
               <span className="text-sm font-semibold text-slate-700">

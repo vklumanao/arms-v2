@@ -118,7 +118,7 @@ export const affiliateProfileUpdateSchema = z
   });
 
 export const awardRecognitionSchema = z.object({
-  work_title: z.string().trim().min(1),
+  work_title: z.string().trim().optional().nullable(),
   project_id: z.string().trim().optional().nullable(),
   award_recognition: z.string().trim().min(1),
   awarding_body: z.string().trim().min(1),
@@ -141,7 +141,7 @@ export const awardRecognitionSchema = z.object({
     .nullable(),
   supporting_movs: z.string().trim().optional().nullable(),
   notes: z.string().trim().optional().nullable(),
-  research_center_id: z.string().trim().min(1),
+  research_center_id: z.string().trim().optional().nullable(),
   department_id: z.string().trim().optional().nullable(),
   program_department: z.string().trim().optional().nullable(),
 });
