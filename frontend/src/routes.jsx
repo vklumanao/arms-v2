@@ -128,7 +128,13 @@ export default function AppRoutes() {
 
       <Route element={<AppShell />}>
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={withBoundary(<DashboardPage />)} />
+          <Route
+            path="/dashboard"
+            element={withPermission(
+              PERMISSIONS.DASHBOARD_VIEW,
+              <DashboardPage />,
+            )}
+          />
 
           <Route
             element={<RoleRoute allow={["faculty", "student", "admin"]} />}
@@ -195,12 +201,18 @@ export default function AppRoutes() {
           <Route>
             <Route
               path="/admin/research-center"
-              element={withBoundary(<ResearchCenterEntryRoute />)}
+              element={withPermission(
+                PERMISSIONS.DASHBOARD_VIEW,
+                <ResearchCenterEntryRoute />,
+              )}
             />
             <Route element={<AdminOrManagedCenterRoute />}>
               <Route
                 path="/admin/research-center/:id"
-                element={withBoundary(<AdminResearchCenterDetailPage />)}
+                element={withPermission(
+                  PERMISSIONS.DASHBOARD_VIEW,
+                  <AdminResearchCenterDetailPage />,
+                )}
               />
             </Route>
           </Route>
