@@ -235,12 +235,8 @@ export default function PublicResearchCenterDetailPage() {
     let publications = 0;
 
     centerRecords.forEach((record) => {
-      const scholarly = String(record.scholarly_type || "").toLowerCase();
       const expected = String(record.expected_outputs || "");
-      if (
-        includesPublicationSignal(scholarly) ||
-        includesPublicationSignal(expected)
-      ) {
+      if (includesPublicationSignal(expected)) {
         publications += 1;
       }
     });
