@@ -114,6 +114,7 @@ export function registerAwardsRoutes(app, deps) {
       getExtra(existingExtras, "submitted_at") || new Date().toISOString(),
     );
     extras = upsertExtra(extras, "work_title", asTrimmedString(payload.work_title));
+    extras = upsertExtra(extras, "project_id", asTrimmedString(payload.project_id));
     extras = upsertExtra(
       extras,
       "award_recognition",
@@ -163,6 +164,7 @@ export function registerAwardsRoutes(app, deps) {
       year_received: getExtra(extras, "year_received"),
       level: getExtra(extras, "level"),
       recipients: getExtra(extras, "recipients"),
+      project_id: getExtra(extras, "project_id"),
       recipient_users: recipientUsers,
       supporting_movs: getExtra(extras, "supporting_movs"),
       notes: getExtra(extras, "notes") || dataset?.notes || "",
@@ -228,7 +230,19 @@ export function registerAwardsRoutes(app, deps) {
     return asTrimmedString(selected?.name) || asTrimmedString(selected?.id);
   }
 
-  async function listAllAwardDatasets(user, query = "") {
+  async function isLinkedProjectPublic(projectId) {
+    const cleanId = asTrimmedString(projectId);
+    if (!cleanId) return false;
+    try {
+      const dataset = await getDataset(cleanId);
+      if (!dataset) return false;
+      return !Boolean(dataset?.private);
+    } catch {
+      return false;
+    }
+  }
+
+  async function listAllAwardDatasets(user, query = "", projectId = "") {
     const isAdmin = asTrimmedString(user?.role).toLowerCase() === "admin";
     const orgId = isAdmin ? "" : asTrimmedString(user?.ckan_org_id);
     let page = 1;
@@ -249,10 +263,17 @@ export function registerAwardsRoutes(app, deps) {
       page += 1;
     }
 
-    return allRows.filter((dataset) => {
+    const filtered = allRows.filter((dataset) => {
       if (!isAwardDataset(dataset)) return false;
       if (isAdmin) return true;
       return isAwardOwnedByUser(dataset, user);
+    });
+
+    const targetProjectId = asTrimmedString(projectId);
+    if (!targetProjectId) return filtered;
+    return filtered.filter((dataset) => {
+      const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+      return getExtra(extras, "project_id") === targetProjectId;
     });
   }
 
@@ -294,7 +315,8 @@ export function registerAwardsRoutes(app, deps) {
   app.get("/api/awards", authMiddleware, async (req, res) => {
     try {
       const q = asTrimmedString(req.query?.q);
-      const rows = await listAllAwardDatasets(req.user, q);
+      const projectId = asTrimmedString(req.query?.project_id);
+      const rows = await listAllAwardDatasets(req.user, q, projectId);
       return res.json({ data: rows.map(mapDatasetToAwardRecord) });
     } catch (error) {
       return res.status(500).json({
@@ -353,6 +375,7 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const groupName = await resolveDepartmentGroupName(payload.department_id);
+      const projectIsPublic = await isLinkedProjectPublic(payload.project_id);
       const dataset = await createDataset({
         name: toAwardSlug(payload.award_recognition || payload.work_title),
         title:
@@ -367,7 +390,7 @@ export function registerAwardsRoutes(app, deps) {
         maintainer:
           asTrimmedString(req.user?.full_name) || asTrimmedString(req.user?.email) || null,
         maintainer_email: asTrimmedString(req.user?.email) || null,
-        private: true,
+        private: projectIsPublic ? false : true,
         tags: ["award-record", asTrimmedString(payload.level).toLowerCase(), "award"]
           .filter(Boolean)
           .map((value) => ({
@@ -414,6 +437,7 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const groupName = await resolveDepartmentGroupName(payload.department_id);
+      const projectIsPublic = await isLinkedProjectPublic(payload.project_id);
       const updated = await updateDataset({
         id: existingDataset.id || req.params.id,
         name:
@@ -444,7 +468,10 @@ export function registerAwardsRoutes(app, deps) {
           asTrimmedString(existingDataset?.maintainer_email) ||
           asTrimmedString(req.user?.email) ||
           null,
-        private: Boolean(existingDataset?.private),
+        private: projectIsPublic ? false : Boolean(existingDataset?.private),
+        resources: Array.isArray(existingDataset?.resources)
+          ? existingDataset.resources
+          : [],
         tags: ["award-record", asTrimmedString(payload.level).toLowerCase(), "award"]
           .filter(Boolean)
           .map((value) => ({
