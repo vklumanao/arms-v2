@@ -39,15 +39,18 @@ import {
   listOrganizations,
   listUsers,
   setOrganizationMemberRole,
-    updateDataset,
-    patchDataset,
+  updateDataset,
+  patchDataset,
   updateGroupMetadata,
   updateGroupMetadataWithDescription,
   setDatasetVisibility,
   updateOrganizationMetadata,
   updateCkanUserPassword,
 } from "./integrations/ckan/client.js";
-import { ROLE_PERMISSIONS } from "./security/rolePermissions.js";
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  ROLE_PERMISSIONS,
+} from "./security/rolePermissions.js";
 import {
   createUser,
   ensureDefaultAdmin,
@@ -200,7 +203,12 @@ async function resolveCenterChiefContext(user) {
     managed_center_id: null,
     managed_center_name: null,
   };
-  if (!user || String(user?.role || "").trim().toLowerCase() !== "faculty") {
+  if (
+    !user ||
+    String(user?.role || "")
+      .trim()
+      .toLowerCase() !== "faculty"
+  ) {
     return base;
   }
 
@@ -560,7 +568,8 @@ const resetRateLimit = createRateLimiter({
 const changePasswordRateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   maxRequests: 20,
-  keyFn: (req) => `${requestIdentity(req)}|change|${String(req.user?.id || "anon")}`,
+  keyFn: (req) =>
+    `${requestIdentity(req)}|change|${String(req.user?.id || "anon")}`,
 });
 
 // Register module routes with explicit dependency injection.
@@ -579,6 +588,7 @@ registerAuthRoutes(app, {
   resetPasswordSchema,
   changePasswordSchema,
   config,
+  DEFAULT_ROLE_PERMISSIONS,
   ROLE_PERMISSIONS,
   normalizeRole,
   badRequest,
@@ -680,8 +690,8 @@ registerSubmissionsRoutes(app, {
   getDataset,
   getOrganization,
   createDataset,
-    updateDataset,
-    patchDataset,
+  updateDataset,
+  patchDataset,
   setDatasetVisibility,
   deleteDataset,
   createDatasetResource,
@@ -787,4 +797,3 @@ app.use((err, req, res, next) => {
 app.listen(config.port, () => {
   console.log(`ARMS backend listening on http://localhost:${config.port}`);
 });
-
