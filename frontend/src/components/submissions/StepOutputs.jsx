@@ -45,199 +45,200 @@ export default function StepOutputs({
   };
 
   return (
-    <div className="space-y-5">
-      <div className="form-section">
-        <div className="form-section-head">
-          <p className="form-section-title">Outputs and Resources</p>
-          <p className="form-section-note">
-            Optional step: add outputs now, or add them later in Research
-            Outputs.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-semibold text-slate-700">
-              Expected research outputs
-            </span>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="lg:col-span-2">
+        <div className="form-section">
+          <div className="form-section-head">
+            <p className="form-section-title">Outputs and Resources</p>
+            <p className="form-section-note">
+              Optional step: add outputs now, or add them later in Research
+              Outputs.
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-            <span className="font-semibold uppercase tracking-[0.08em] text-slate-500">
-              Quick add:
-            </span>
-            <div className="min-w-[220px]">
-              <Select
-                value="__none__"
-                onValueChange={(value) => {
-                  if (value === "__none__") return;
-                  onQuickAddOutput?.(value);
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Select output type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Select output type</SelectItem>
-                  {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-semibold text-slate-700">
+                Expected research outputs
+              </span>
             </div>
-          </div>
-          <p className="text-xs text-slate-500">
-            Rows are finalized in database when you submit/save revision.
-          </p>
-          <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white">
-            <Table className="min-w-[980px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[44px]"></TableHead>
-                  <TableHead>Output Type</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Output Link</TableHead>
-                  <TableHead>File</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expectedOutputRows.length === 0 ? (
+
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+              <span className="font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Quick add:
+              </span>
+
+              <div className="min-w-[220px]">
+                <Select
+                  value="__none__"
+                  onValueChange={(value) => {
+                    if (value === "__none__") return;
+                    onQuickAddOutput?.(value);
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select output type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Select output type</SelectItem>
+                    {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Rows are finalized in database when you submit/save revision.
+            </p>
+
+            <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-white overflow-x-auto">
+              <Table className="min-w-[980px]">
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="px-3 py-4 text-center text-xs text-slate-500"
-                    >
-                      No expected outputs added yet.
-                    </TableCell>
+                    <TableHead className="w-[44px]" />
+                    <TableHead>Output Type</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Output Link</TableHead>
+                    <TableHead>File</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ) : (
-                  paginatedExpectedOutputRows.map((row, pageIndex) => {
-                    const globalIndex = pageStart + pageIndex;
-                    return (
-                      <TableRow
-                        key={row.client_id}
-                        draggable
-                        onDragStart={(event) => {
-                          event.dataTransfer.setData(
-                            "text/plain",
-                            String(globalIndex),
-                          );
-                          event.dataTransfer.effectAllowed = "move";
-                        }}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          event.dataTransfer.dropEffect = "move";
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          const fromIndex = Number(
-                            event.dataTransfer.getData("text/plain"),
-                          );
-                          if (!Number.isFinite(fromIndex)) return;
-                          handleDrop(fromIndex, globalIndex);
-                        }}
-                        className="cursor-move"
+                </TableHeader>
+
+                <TableBody>
+                  {expectedOutputRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="px-3 py-4 text-center text-xs text-slate-500"
                       >
-                        <TableCell className="text-slate-400">
-                          <GripVertical className="h-4 w-4" />
-                        </TableCell>
-                        <TableCell>
-                          {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
-                            (item) => item.value === row.output_type,
-                          )?.label ||
-                            row.output_type ||
-                            "-"}
-                          {String(row.specific_output || "").trim() ? (
-                            <p className="text-xs text-slate-500">
-                              Specific: {row.specific_output}
-                            </p>
-                          ) : null}
-                          {String(row.publication_authors || "").trim() ? (
-                            <p className="text-xs text-slate-500">
-                              Proponents: {row.publication_authors}
-                            </p>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {row.notes || "-"}
-                          {row.needs_file_reselect ? (
-                            <p className="text-xs text-amber-700">
-                              File needs re-attach after refresh.
-                            </p>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="break-all text-slate-600">
-                          {(() => {
-                            const outputLink =
-                              row.output_link ||
-                              (/^https?:\/\//i.test(
-                                String(row.file_path || "").trim(),
-                              )
-                                ? row.file_path
-                                : "");
-                            if (!outputLink) return "-";
-                            return (
+                        No expected outputs added yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedExpectedOutputRows.map((row, pageIndex) => {
+                      const globalIndex = pageStart + pageIndex;
+
+                      return (
+                        <TableRow
+                          key={row.client_id}
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData(
+                              "text/plain",
+                              String(globalIndex),
+                            );
+                          }}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            const fromIndex = Number(
+                              event.dataTransfer.getData("text/plain"),
+                            );
+                            if (!Number.isFinite(fromIndex)) return;
+                            handleDrop(fromIndex, globalIndex);
+                          }}
+                          className="cursor-move"
+                        >
+                          <TableCell className="text-slate-400">
+                            <GripVertical className="h-4 w-4" />
+                          </TableCell>
+
+                          <TableCell>
+                            {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
+                              (item) => item.value === row.output_type,
+                            )?.label ||
+                              row.output_type ||
+                              "-"}
+
+                            {row.specific_output && (
+                              <p className="text-xs text-slate-500">
+                                Specific: {row.specific_output}
+                              </p>
+                            )}
+
+                            {row.publication_authors && (
+                              <p className="text-xs text-slate-500">
+                                Proponents: {row.publication_authors}
+                              </p>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="text-slate-600">
+                            {row.notes || "-"}
+                          </TableCell>
+
+                          <TableCell className="break-all text-slate-600">
+                            {row.output_link ? (
                               <a
-                                href={outputLink}
+                                href={row.output_link}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-blue-600 hover:underline"
                               >
-                                {outputLink}
+                                {row.output_link}
                               </a>
-                            );
-                          })()}
-                        </TableCell>
-                        <TableCell className="break-all text-slate-600">
-                          {row.file_name || row.file?.name || "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditOutputModal(row)}
-                              aria-label="Edit output"
-                              title="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:bg-destructive/10"
-                              onClick={() =>
-                                deleteExpectedOutputRow(row.client_id)
-                              }
-                              aria-label="Delete output"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+
+                          <TableCell className="break-all text-slate-600">
+                            {row.file_name || row.file?.name || "-"}
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditOutputModal(row)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() =>
+                                  deleteExpectedOutputRow(row.client_id)
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {errors?.expected_outputs && (
+              <p className="field-error">{errors.expected_outputs}</p>
+            )}
+
+            {expectedOutputRows.length > 0 && (
+              <PaginationControls
+                page={expectedOutputsPage}
+                totalPages={expectedOutputsTotalPages}
+                onPageChange={setExpectedOutputsPage}
+              />
+            )}
           </div>
-          {errors?.expected_outputs ? (
-            <p className="field-error">{errors.expected_outputs}</p>
-          ) : null}
-          {expectedOutputRows.length > 0 ? (
-            <PaginationControls
-              page={expectedOutputsPage}
-              totalPages={expectedOutputsTotalPages}
-              onPageChange={setExpectedOutputsPage}
-            />
-          ) : null}
         </div>
-        <label className="block space-y-1 text-sm sm:max-w-2xl">
+      </div>
+
+      <div className="lg:col-span-2 lg:max-w-2xl">
+        <label className="block space-y-1 text-sm">
           <span className="font-semibold text-slate-700">
             Other Documents (optional)
           </span>
