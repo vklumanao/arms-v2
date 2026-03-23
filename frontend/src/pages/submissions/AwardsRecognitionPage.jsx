@@ -207,7 +207,7 @@ export default function AwardsRecognitionPage() {
   const openEdit = (row) => {
     const recordId = String(row?.id || row?.ckan_dataset_id || "").trim();
     if (!recordId) return;
-    navigate(`/awards-recognitions/add?edit=${encodeURIComponent(recordId)}`);
+    navigate(`/awards/new?edit=${encodeURIComponent(recordId)}`);
   };
 
   const confirmDelete = async () => {
@@ -414,7 +414,7 @@ export default function AwardsRecognitionPage() {
               My Profile first before accessing Awards and Recognition.
             </p>
             <Button asChild>
-              <Link to="/my-profile">Go to My Profile</Link>
+              <Link to="/profile">Go to My Profile</Link>
             </Button>
           </CardContent>
         </Card>
@@ -459,7 +459,7 @@ export default function AwardsRecognitionPage() {
             ) : null}
 
             <Button asChild>
-              <Link to="/awards-recognitions/add">Add Awards/Recognitions</Link>
+              <Link to="/awards/new">Add Awards/Recognitions</Link>
             </Button>
           </div>
         </div>
@@ -620,7 +620,7 @@ export default function AwardsRecognitionPage() {
                                     asChild
                                   >
                                     <Link
-                                      to={`/submit-project/${encodeURIComponent(
+                                      to={`/projects/${encodeURIComponent(
                                         String(row.project_id || "").trim(),
                                       )}`}
                                       aria-label="Open linked project"
