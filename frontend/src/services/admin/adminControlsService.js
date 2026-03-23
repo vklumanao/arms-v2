@@ -24,6 +24,7 @@ export async function createReference({
   center_chief_id,
   chairperson_id,
   research_agendas,
+  social_media_link,
 }) {
   const { table } = getRefMeta(type);
   void table;
@@ -47,23 +48,25 @@ export async function createReference({
       method: "POST",
       body: JSON.stringify(
         type === "center"
-          ? {
-              name: payload,
-              code: finalCode || null,
-              description: String(description || "").trim() || null,
-              center_chief_id: center_chief_id || null,
-              research_agendas: Array.isArray(research_agendas)
-                ? research_agendas
-                : [],
-            }
-          : type === "department"
-            ? {
-                name: payload,
-                code: finalCode || null,
-                description: String(description || "").trim() || null,
-                chairperson_id: chairperson_id || null,
-              }
-            : { name: payload },
+      ? {
+          name: payload,
+          code: finalCode || null,
+          description: String(description || "").trim() || null,
+          center_chief_id: center_chief_id || null,
+          research_agendas: Array.isArray(research_agendas)
+            ? research_agendas
+            : [],
+          social_media_link: String(social_media_link || "").trim() || null,
+        }
+      : type === "department"
+        ? {
+            name: payload,
+            code: finalCode || null,
+            description: String(description || "").trim() || null,
+            chairperson_id: chairperson_id || null,
+            social_media_link: String(social_media_link || "").trim() || null,
+          }
+        : { name: payload },
       ),
     });
     return { error: null };
@@ -93,6 +96,7 @@ export async function updateReference({
   center_chief_id,
   chairperson_id,
   research_agendas,
+  social_media_link,
 }) {
   const { table } = getRefMeta(type);
   void table;
@@ -115,23 +119,25 @@ export async function updateReference({
       method: "PATCH",
       body: JSON.stringify(
         type === "center"
-          ? {
-              name: payload,
-              code: centerCode,
-              description: String(description || "").trim() || null,
-              center_chief_id: center_chief_id || null,
-              research_agendas: Array.isArray(research_agendas)
-                ? research_agendas
-                : [],
-            }
-          : type === "department"
-            ? {
-                name: payload,
-                code: departmentCode,
-                description: String(description || "").trim() || null,
-                chairperson_id: chairperson_id || null,
-              }
-            : { name: payload },
+      ? {
+          name: payload,
+          code: centerCode,
+          description: String(description || "").trim() || null,
+          center_chief_id: center_chief_id || null,
+          research_agendas: Array.isArray(research_agendas)
+            ? research_agendas
+            : [],
+          social_media_link: String(social_media_link || "").trim() || null,
+        }
+      : type === "department"
+        ? {
+            name: payload,
+            code: departmentCode,
+            description: String(description || "").trim() || null,
+            chairperson_id: chairperson_id || null,
+            social_media_link: String(social_media_link || "").trim() || null,
+          }
+        : { name: payload },
       ),
     });
     return { data: result?.data || null, error: null };
