@@ -3,11 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   fetchPublicRecordTimeline,
   fetchPublicRecordResources,
+  fetchPublicRecordAwards,
   fetchPublicRecordsDataset,
 } from "@/services/public-records";
 import { buildApaCitation, buildMlaCitation } from "@/utils/public-records";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -20,7 +22,13 @@ import {
   formatBytes,
   formatDate,
 } from "@/utils/submissions";
-import { ChevronLeft, Download, ExternalLink, FileText } from "lucide-react";
+import {
+  ChevronLeft,
+  Download,
+  ExternalLink,
+  FileText,
+  Trophy,
+} from "lucide-react";
 
 const normalizeLabel = (value) => {
   const text = String(value || "").trim();
@@ -107,6 +115,11 @@ export default function PublicRecordDetailPage() {
     dataset: null,
     resources: [],
     syncEnabled: true,
+  });
+  const [awardsPanel, setAwardsPanel] = useState({
+    loading: false,
+    error: "",
+    rows: [],
   });
   const [loading, setLoading] = useState(true);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -207,6 +220,44 @@ export default function PublicRecordDetailPage() {
           dataset: null,
           resources: [],
           syncEnabled: true,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recordId]);
+
+  useEffect(() => {
+    if (!recordId) {
+      setAwardsPanel({ loading: false, error: "", rows: [] });
+      return;
+    }
+    let cancelled = false;
+    setAwardsPanel((prev) => ({ ...prev, loading: true, error: "" }));
+    fetchPublicRecordAwards(recordId)
+      .then(({ data, error: loadError }) => {
+        if (cancelled) return;
+        if (loadError) {
+          setAwardsPanel({
+            loading: false,
+            error: loadError.message || "Unable to load linked awards.",
+            rows: [],
+          });
+          return;
+        }
+        setAwardsPanel({
+          loading: false,
+          error: "",
+          rows: Array.isArray(data) ? data : [],
+        });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setAwardsPanel({
+          loading: false,
+          error: e?.message || "Unable to load linked awards.",
+          rows: [],
         });
       });
 
@@ -583,7 +634,7 @@ export default function PublicRecordDetailPage() {
                       <div>
                         <p className="text-sm font-semibold text-slate-500">
                           {" "}
-                          Signed MOA Reference
+                          Signed MOA
                         </p>
                         {(() => {
                           const moaReference = String(
@@ -608,15 +659,18 @@ export default function PublicRecordDetailPage() {
                           );
                         })()}
                         {moaDownloadUrl ? (
-                          <a
-                            className="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm font-semibold text-slate-700 underline-offset-4 hover:text-slate-900 hover:underline"
-                            href={moaDownloadUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Download className="h-4 w-4" />
-                            {moaDownloadUrl}
-                          </a>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={moaDownloadUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download MOA
+                              </a>
+                            </Button>
+                          </div>
                         ) : null}
                       </div>
                     </CardContent>
@@ -629,7 +683,7 @@ export default function PublicRecordDetailPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <CardTitle className="text-base font-semibold text-slate-900">
-                        Linked Resources
+                        Outputs
                       </CardTitle>
                     </div>
                   </div>
@@ -799,6 +853,93 @@ export default function PublicRecordDetailPage() {
                             </Card>
                           );
                         })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base font-semibold text-slate-900">
+                        Awards &amp; Recognition
+                      </CardTitle>
+                      <CardDescription>
+                        Awards linked to this project.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {awardsPanel.loading ? (
+                    <p className="text-base text-slate-600">
+                      Loading linked awards...
+                    </p>
+                  ) : awardsPanel.error ? (
+                    <p className="text-base text-red-700">
+                      {awardsPanel.error}
+                    </p>
+                  ) : awardsPanel.rows.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
+                      No awards linked to this project yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {awardsPanel.rows.map((row) => {
+                        const downloadUrl = row.supporting_mov_resource_id
+                          ? `${apiBaseUrl}/public-records/resources/${encodeURIComponent(
+                              row.supporting_mov_resource_id,
+                            )}/download?download=1`
+                          : "";
+                        const fallbackLink = row.supporting_movs || "";
+                        return (
+                          <Card
+                            key={row.id || row.award_recognition}
+                            className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-base font-semibold text-slate-900">
+                                    {row.award_recognition || "Award"}
+                                  </p>
+                                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline">
+                                      {row.level || "Level"}
+                                    </Badge>
+                                    {row.year_received ? (
+                                      <Badge variant="secondary">
+                                        {row.year_received}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                  <p className="mt-2 text-base text-slate-700">
+                                    Awarding body: {row.awarding_body || "-"}
+                                  </p>
+                                  <p className="text-base text-slate-700">
+                                    Recipients: {row.recipients || "-"}
+                                  </p>
+                                </div>
+                                <Trophy className="h-5 w-5 text-amber-500" />
+                              </div>
+                              {downloadUrl || fallbackLink ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <Button asChild variant="outline" size="sm">
+                                    <a
+                                      href={downloadUrl || fallbackLink}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      <Download className="h-4 w-4" />
+                                      Download
+                                    </a>
+                                  </Button>
+                                </div>
+                              ) : null}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
