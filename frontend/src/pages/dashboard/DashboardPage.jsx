@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { normalizeStatus } from "@/utils/status";
@@ -49,6 +50,7 @@ const PANEL_BODY_CLASS = "p-6 flex-1";
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === "admin";
+  const isFaculty = profile?.role === "faculty";
   const {
     projects,
     affiliateRows,
@@ -196,7 +198,6 @@ export default function DashboardPage() {
 
   const crossModuleHealth = useMemo(() => {
     const projectTotal = chartProjects.length || 1;
-    const affiliateTotal = affiliateRows.length || 1;
     const projectsWithCenter = chartProjects.filter((project) =>
       Boolean(project.research_center_id),
     ).length;
@@ -206,9 +207,6 @@ export default function DashboardPage() {
         Boolean(project.agenda_id) ||
         Boolean(project.agenda_name),
     ).length;
-    const affiliatesWithCenter = affiliateRows.filter((row) =>
-      Boolean(row.research_center_id),
-    ).length;
 
     const projectCenterPct = Math.round(
       (projectsWithCenter / projectTotal) * 100,
@@ -216,6 +214,20 @@ export default function DashboardPage() {
     const projectAgendaPct = Math.round(
       (projectsWithAgenda / projectTotal) * 100,
     );
+
+    if (!isAdmin) {
+      return {
+        projectCenterPct,
+        projectAgendaPct,
+        affiliateCenterPct: null,
+        dataQualityScore: Math.round((projectCenterPct + projectAgendaPct) / 2),
+      };
+    }
+
+    const affiliateTotal = affiliateRows.length || 1;
+    const affiliatesWithCenter = affiliateRows.filter((row) =>
+      Boolean(row.research_center_id),
+    ).length;
     const affiliateCenterPct = Math.round(
       (affiliatesWithCenter / affiliateTotal) * 100,
     );
@@ -228,7 +240,7 @@ export default function DashboardPage() {
         (projectCenterPct + projectAgendaPct + affiliateCenterPct) / 3,
       ),
     };
-  }, [affiliateRows, chartProjects]);
+  }, [affiliateRows, chartProjects, isAdmin]);
 
   const statusChartData = useMemo(
     () => [
@@ -240,19 +252,39 @@ export default function DashboardPage() {
     [projectsByStatus],
   );
 
-  const centersCoverageData = useMemo(
-    () => [
-      {
-        name: "Centers with projects",
-        value: adminSummaries.researchCenters.activeCenters,
-      },
-      {
-        name: "Centers with no projects",
-        value: adminSummaries.researchCenters.centersWithNoProjects,
-      },
-    ],
-    [adminSummaries.researchCenters],
-  );
+  const centersCoverageData = useMemo(() => {
+    if (isAdmin) {
+      return [
+        {
+          name: "Centers with projects",
+          value: adminSummaries.researchCenters.activeCenters,
+        },
+        {
+          name: "Centers with no projects",
+          value: adminSummaries.researchCenters.centersWithNoProjects,
+        },
+      ];
+    }
+
+    const assigned = (chartProjects || []).filter((project) =>
+      Boolean(project?.research_center_id),
+    ).length;
+    const unassigned = Math.max(0, (chartProjects || []).length - assigned);
+
+    return [
+      { name: "Assigned to center", value: assigned },
+      { name: "Unassigned center", value: unassigned },
+    ];
+  }, [adminSummaries.researchCenters, chartProjects, isAdmin]);
+
+  const centerAssignmentSummary = useMemo(() => {
+    if (isAdmin) return null;
+    const assigned = (chartProjects || []).filter((project) =>
+      Boolean(project?.research_center_id),
+    ).length;
+    const total = (chartProjects || []).length;
+    return { assigned, unassigned: Math.max(0, total - assigned) };
+  }, [chartProjects, isAdmin]);
 
   const topCentersByProject = useMemo(() => {
     const counts = new Map();
@@ -440,8 +472,8 @@ export default function DashboardPage() {
     };
   }, [affiliateRows]);
 
-  const qualityPulseData = useMemo(
-    () => [
+  const qualityPulseData = useMemo(() => {
+    const base = [
       {
         name: "Projects with center",
         value: crossModuleHealth.projectCenterPct,
@@ -452,14 +484,130 @@ export default function DashboardPage() {
         value: crossModuleHealth.projectAgendaPct,
         fill: "#36b7a6",
       },
-      {
+    ];
+
+    if (isAdmin) {
+      base.push({
         name: "Affiliates with center",
         value: crossModuleHealth.affiliateCenterPct,
         fill: "#f59e0b",
-      },
-    ],
-    [crossModuleHealth],
-  );
+      });
+    }
+
+    return base;
+  }, [crossModuleHealth, isAdmin]);
+
+  const facultyInsights = useMemo(() => {
+    if (isAdmin) {
+      return {
+        upcomingDeadlines: [],
+        needsAttention: [],
+        counts: {
+          drafts: 0,
+          missingOutputs: 0,
+          missingCenter: 0,
+          missingAgenda: 0,
+          missingEndDate: 0,
+        },
+      };
+    }
+
+    const now = new Date();
+
+    const counts = {
+      drafts: 0,
+      missingOutputs: 0,
+      missingCenter: 0,
+      missingAgenda: 0,
+      missingEndDate: 0,
+    };
+
+    const needsAttention = [];
+
+    (chartProjects || []).forEach((project) => {
+      const issues = [];
+      const title = project?.title || "Untitled project";
+      const submissionState = String(project?.submission_state || "")
+        .trim()
+        .toLowerCase();
+
+      if (submissionState === "draft") {
+        counts.drafts += 1;
+        issues.push("Draft");
+      }
+
+      if (!project?.research_center_id) {
+        counts.missingCenter += 1;
+        issues.push("Missing center");
+      }
+
+      const hasAgenda =
+        Boolean(project?.research_agenda_id) ||
+        Boolean(project?.agenda_id) ||
+        Boolean(project?.agenda_name);
+      if (!hasAgenda) {
+        counts.missingAgenda += 1;
+        issues.push("Missing agenda");
+      }
+
+      const items = Array.isArray(project?.expected_outputs_items)
+        ? project.expected_outputs_items
+        : [];
+      const fallbackOutputs = String(project?.expected_outputs || "").trim();
+      if (!items.length && !fallbackOutputs) {
+        counts.missingOutputs += 1;
+        issues.push("Missing outputs");
+      }
+
+      const status = normalizeStatus(project?.status);
+      if (
+        (status === "ongoing" || status === "proposal") &&
+        !project?.end_date
+      ) {
+        counts.missingEndDate += 1;
+        issues.push("Missing end date");
+      }
+
+      if (issues.length) {
+        needsAttention.push({
+          id: project?.id,
+          title,
+          issues,
+        });
+      }
+    });
+
+    const upcomingDeadlines = (chartProjects || [])
+      .map((project) => {
+        if (!project?.end_date) return null;
+        const status = normalizeStatus(project?.status);
+        if (status === "completed" || status === "rejected") return null;
+        const due = new Date(project.end_date);
+        if (Number.isNaN(due.getTime())) return null;
+        const daysLeft = Math.ceil((due - now) / (24 * 60 * 60 * 1000));
+        if (daysLeft < 0) return null;
+        return {
+          id: project?.id,
+          title: project?.title || "Untitled project",
+          due,
+          daysLeft,
+          status,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.due - b.due)
+      .slice(0, 5);
+
+    const sortedNeedsAttention = needsAttention
+      .sort((a, b) => b.issues.length - a.issues.length)
+      .slice(0, 5);
+
+    return {
+      upcomingDeadlines,
+      needsAttention: sortedNeedsAttention,
+      counts,
+    };
+  }, [chartProjects, isAdmin]);
 
   return (
     <section className="page-stack-lg">
@@ -478,26 +626,46 @@ export default function DashboardPage() {
           }
         />
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          A visual pulse check across research centers, departments, affiliates,
-          projects, outputs, and recognitions. Trends update from live records
-          and focus on momentum, coverage, and quality.
+          {isAdmin
+            ? "A visual pulse check across research centers, departments, affiliates, projects, outputs, and recognitions. Trends update from live records and focus on momentum, coverage, and quality."
+            : "A personal pulse check for your research submissions and progress. Metrics focus on momentum, coverage, and completeness of your project records."}
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
-            Centers: {adminSummaries.researchCenters.totalCenters}
-          </span>
-          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
-            Departments: {effectiveDepartments.length}
-          </span>
-          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
-            Affiliates: {adminSummaries.affiliates.totalAffiliates}
-          </span>
-          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
-            Projects: {adminSummaries.projects.totalProjects}
-          </span>
-          <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
-            Data quality: {crossModuleHealth.dataQualityScore}%
-          </span>
+          {isAdmin ? (
+            <>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Centers: {adminSummaries.researchCenters.totalCenters}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Departments: {effectiveDepartments.length}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Affiliates: {adminSummaries.affiliates.totalAffiliates}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Projects: {adminSummaries.projects.totalProjects}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Data quality: {crossModuleHealth.dataQualityScore}%
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                {isFaculty ? "Faculty projects" : "My projects"}:{" "}
+                {adminSummaries.projects.totalProjects}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                This year: {adminSummaries.projects.thisYear}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Deadline soon: {adminSummaries.projects.nearingDeadline}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2">
+                Data quality: {crossModuleHealth.dataQualityScore}%
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -516,6 +684,171 @@ export default function DashboardPage() {
           last 12 months.
         </p>
       </div>
+
+      {!isAdmin ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <DashboardPanel
+            title="Next Steps"
+            cardClassName={PANEL_CARD_CLASS}
+            headerClassName={PANEL_HEADER_CLASS}
+            bodyClassName={PANEL_BODY_CLASS}
+          >
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <Link to="/projects/submit">New project</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/projects">View projects</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/outputs">Outputs</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/profile">Profile</Link>
+              </Button>
+            </div>
+
+            <div className="mt-6 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Draft Projects
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {facultyInsights.counts.drafts}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Continue drafts from Projects.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Missing Outputs
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {facultyInsights.counts.missingOutputs}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Add expected outputs to improve tracking.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Missing Center / Agenda
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {facultyInsights.counts.missingCenter} /{" "}
+                  {facultyInsights.counts.missingAgenda}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Assign classification for reporting.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Missing End Date
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {facultyInsights.counts.missingEndDate}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Helps deadline and progress monitoring.
+                </p>
+              </div>
+            </div>
+
+            {facultyInsights.needsAttention.length ? (
+              <div className="mt-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Needs Attention
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                  {facultyInsights.needsAttention.map((item) => (
+                    <li
+                      key={`attention-${item.id || item.title}`}
+                      className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
+                    >
+                      {item.id ? (
+                        <Link
+                          to={`/projects/${encodeURIComponent(String(item.id))}`}
+                          className="font-medium text-slate-900 hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-slate-900">
+                          {item.title}
+                        </span>
+                      )}
+                      <p className="mt-1 text-xs text-slate-500">
+                        {item.issues.join(" · ")}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </DashboardPanel>
+
+          <DashboardPanel
+            title="Upcoming Deadlines"
+            cardClassName={PANEL_CARD_CLASS}
+            headerClassName={PANEL_HEADER_CLASS}
+            bodyClassName={PANEL_BODY_CLASS}
+          >
+            {facultyInsights.upcomingDeadlines.length === 0 ? (
+              <p className="text-sm text-slate-600">
+                No upcoming deadlines found in your projects.
+              </p>
+            ) : (
+              <ul className="space-y-2 text-sm text-slate-700">
+                {facultyInsights.upcomingDeadlines.map((item) => {
+                  const dueLabel = item.due.toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  });
+                  const urgencyClass =
+                    item.daysLeft <= 7
+                      ? "text-rose-700"
+                      : item.daysLeft <= 14
+                        ? "text-amber-700"
+                        : "text-slate-500";
+
+                  return (
+                    <li
+                      key={`deadline-${item.id || item.title}`}
+                      className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
+                    >
+                      {item.id ? (
+                        <Link
+                          to={`/projects/${encodeURIComponent(String(item.id))}`}
+                          className="font-medium text-slate-900 hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-slate-900">
+                          {item.title}
+                        </span>
+                      )}
+                      <p className="mt-1 text-xs text-slate-500">
+                        Due {dueLabel} ·{" "}
+                        <span className={urgencyClass}>
+                          {item.daysLeft === 0
+                            ? "due today"
+                            : `${item.daysLeft} day${
+                                item.daysLeft === 1 ? "" : "s"
+                              } left`}
+                        </span>
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </DashboardPanel>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <DashboardPanel
@@ -676,7 +1009,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <DashboardPanel
-          title="Research Centers Coverage"
+          title={isAdmin ? "Research Centers Coverage" : "Center Assignment"}
           cardClassName={PANEL_CARD_CLASS}
           headerClassName={PANEL_HEADER_CLASS}
           bodyClassName={PANEL_BODY_CLASS}
@@ -703,12 +1036,23 @@ export default function DashboardPage() {
             </PieChart>
           </ChartFrame>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
-            <div>
-              Total centers: {adminSummaries.researchCenters.totalCenters}
-            </div>
-            <div>
-              Total agendas: {adminSummaries.researchCenters.totalAgenda}
-            </div>
+            {isAdmin ? (
+              <>
+                <div>
+                  Total centers: {adminSummaries.researchCenters.totalCenters}
+                </div>
+                <div>
+                  Total agendas: {adminSummaries.researchCenters.totalAgenda}
+                </div>
+              </>
+            ) : (
+              <>
+                <div>With center: {centerAssignmentSummary?.assigned ?? 0}</div>
+                <div>
+                  Without center: {centerAssignmentSummary?.unassigned ?? 0}
+                </div>
+              </>
+            )}
           </div>
         </DashboardPanel>
 
@@ -749,7 +1093,11 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 xl:grid-cols-1">
         <DashboardPanel
-          title="Department Mix (Projects vs Affiliates)"
+          title={
+            isAdmin
+              ? "Department Mix (Projects vs Affiliates)"
+              : "Department Mix (Projects)"
+          }
           cardClassName={PANEL_CARD_CLASS}
           headerClassName={PANEL_HEADER_CLASS}
           bodyClassName={PANEL_BODY_CLASS}
@@ -768,100 +1116,113 @@ export default function DashboardPage() {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="projects" name="Projects" fill="#1557a1" />
-                <Bar dataKey="affiliates" name="Affiliates" fill="#36b7a6" />
+                {isAdmin ? (
+                  <Bar dataKey="affiliates" name="Affiliates" fill="#36b7a6" />
+                ) : null}
               </BarChart>
             </ChartFrame>
           )}
         </DashboardPanel>
       </div>
 
+      {isAdmin ? (
+        <>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Affiliates Snapshot
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Quick counts for affiliates, roles, and activation status.
+            </p>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <DashboardPanel
+              title="Affiliates Footprint"
+              cardClassName={PANEL_CARD_CLASS}
+              headerClassName={PANEL_HEADER_CLASS}
+              bodyClassName={PANEL_BODY_CLASS}
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Total Affiliates
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {adminSummaries.affiliates.totalAffiliates}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Active: {adminSummaries.affiliates.activeAffiliates}{" "}
+                    {"\u00b7"} Inactive:{" "}
+                    {adminSummaries.affiliates.inactiveAffiliates}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Role Split
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {adminSummaries.affiliates.facultyCount} /{" "}
+                    {adminSummaries.affiliates.studentCount}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Faculty / Student
+                  </p>
+                </div>
+              </div>
+            </DashboardPanel>
+
+            <DashboardPanel
+              title="Research Projects Focus"
+              cardClassName={PANEL_CARD_CLASS}
+              headerClassName={PANEL_HEADER_CLASS}
+              bodyClassName={PANEL_BODY_CLASS}
+            >
+              <div className="grid gap-4 sm:grid-cols-3 text-sm text-slate-600">
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Total Projects
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {adminSummaries.projects.totalProjects}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    This Year
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {adminSummaries.projects.thisYear}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Deadline Soon
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {adminSummaries.projects.nearingDeadline}
+                  </p>
+                </div>
+              </div>
+            </DashboardPanel>
+          </div>
+        </>
+      ) : null}
+
       <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Affiliates Snapshot
+          {isAdmin ? "Outputs and Recognition" : "Outputs"}
         </p>
         <p className="mt-1 text-sm text-slate-600">
-          Quick counts for affiliates, roles, and activation status.
+          {isAdmin
+            ? "Expected outputs volume and recognition counts for research impact."
+            : "Expected outputs volume tracked across your projects."}
         </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <DashboardPanel
-          title="Affiliates Footprint"
-          cardClassName={PANEL_CARD_CLASS}
-          headerClassName={PANEL_HEADER_CLASS}
-          bodyClassName={PANEL_BODY_CLASS}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Total Affiliates
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {adminSummaries.affiliates.totalAffiliates}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Active: {adminSummaries.affiliates.activeAffiliates} · Inactive:{" "}
-                {adminSummaries.affiliates.inactiveAffiliates}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Role Split
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {adminSummaries.affiliates.facultyCount} /{" "}
-                {adminSummaries.affiliates.studentCount}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">Faculty / Student</p>
-            </div>
-          </div>
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Research Projects Focus"
-          cardClassName={PANEL_CARD_CLASS}
-          headerClassName={PANEL_HEADER_CLASS}
-          bodyClassName={PANEL_BODY_CLASS}
-        >
-          <div className="grid gap-4 sm:grid-cols-3 text-sm text-slate-600">
-            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Total Projects
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {adminSummaries.projects.totalProjects}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                This Year
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {adminSummaries.projects.thisYear}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Deadline Soon
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {adminSummaries.projects.nearingDeadline}
-              </p>
-            </div>
-          </div>
-        </DashboardPanel>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Outputs and Recognition
-        </p>
-        <p className="mt-1 text-sm text-slate-600">
-          Expected outputs volume and recognition counts for research impact.
-        </p>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div
+        className={`grid gap-4 ${isAdmin ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}
+      >
         <DashboardPanel
           title="Research Outputs (Expected)"
           cardClassName={PANEL_CARD_CLASS}
@@ -900,41 +1261,45 @@ export default function DashboardPage() {
           )}
         </DashboardPanel>
 
-        <DashboardPanel
-          title="Awards and Recognition"
-          cardClassName={PANEL_CARD_CLASS}
-          headerClassName={PANEL_HEADER_CLASS}
-          bodyClassName={PANEL_BODY_CLASS}
-        >
-          {affiliateRows.length === 0 ? (
-            <p className="text-sm text-slate-600">No awards data available.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Total Awards
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">
-                  {awardsSummaryData.totalAwards}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Across all affiliates.
-                </p>
+        {isAdmin ? (
+          <DashboardPanel
+            title="Awards and Recognition"
+            cardClassName={PANEL_CARD_CLASS}
+            headerClassName={PANEL_HEADER_CLASS}
+            bodyClassName={PANEL_BODY_CLASS}
+          >
+            {affiliateRows.length === 0 ? (
+              <p className="text-sm text-slate-600">
+                No awards data available.
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Total Awards
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    {awardsSummaryData.totalAwards}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Across all affiliates.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Top Department
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">
+                    {awardsByDepartment[0]?.label || "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Awards: {awardsByDepartment[0]?.count || 0}
+                  </p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Top Department
-                </p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">
-                  {awardsByDepartment[0]?.label || "-"}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Awards: {awardsByDepartment[0]?.count || 0}
-                </p>
-              </div>
-            </div>
-          )}
-        </DashboardPanel>
+            )}
+          </DashboardPanel>
+        ) : null}
       </div>
     </section>
   );
