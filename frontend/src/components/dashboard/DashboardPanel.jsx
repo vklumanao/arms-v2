@@ -3,6 +3,7 @@ import { cn } from "@/utils/cn";
 
 export default function DashboardPanel({
   title,
+  action = null,
   children,
   className = "",
   bodyClassName = "p-5",
@@ -15,9 +16,12 @@ export default function DashboardPanel({
         <CardHeader
           className={cn("border-b px-5 py-4", headerClassName)}
         >
-          <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
-            {title}
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              {title}
+            </CardTitle>
+            {action ? <div className="text-sm">{action}</div> : null}
+          </div>
         </CardHeader>
         <CardContent className={cn(bodyClassName)}>{children}</CardContent>
       </Card>
