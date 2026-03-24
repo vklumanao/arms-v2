@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { query } from "../../db/client.js";
 
 /**
  * Registers dashboard-related API routes.
@@ -218,19 +219,67 @@ export function registerDashboardRoutes(app, deps) {
   }
 
   function parseSelectedUsers(rawValue) {
-    try {
-      const parsed = JSON.parse(asTrimmedString(rawValue) || "[]");
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map((row) => ({
-          id: asTrimmedString(row?.id),
-          username: asTrimmedString(row?.username),
-          email: asTrimmedString(row?.email).toLowerCase(),
-        }))
+    const normalizeRow = (row) => ({
+      id: asTrimmedString(row?.id),
+      username: asTrimmedString(row?.username),
+      email: asTrimmedString(row?.email).toLowerCase(),
+    });
+
+    if (Array.isArray(rawValue)) {
+      return rawValue
+        .map(normalizeRow)
         .filter((row) => row.id || row.username || row.email);
-    } catch {
-      return [];
     }
+
+    if (rawValue && typeof rawValue === "object") {
+      const row = normalizeRow(rawValue);
+      return row.id || row.username || row.email ? [row] : [];
+    }
+
+    const rawString = asTrimmedString(rawValue);
+    if (!rawString) return [];
+
+    try {
+      const parsed = JSON.parse(rawString);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(normalizeRow)
+          .filter((row) => row.id || row.username || row.email);
+      }
+      if (parsed && typeof parsed === "object") {
+        const row = normalizeRow(parsed);
+        return row.id || row.username || row.email ? [row] : [];
+      }
+      if (typeof parsed === "string") {
+        const token = asTrimmedString(parsed);
+        if (!token) return [];
+        return [
+          {
+            id: token,
+            username: token,
+            email: token.includes("@") ? token.toLowerCase() : "",
+          },
+        ];
+      }
+      return [];
+    } catch {
+      return [
+        {
+          id: rawString,
+          username: rawString,
+          email: rawString.includes("@") ? rawString.toLowerCase() : "",
+        },
+      ];
+    }
+  }
+
+  function resolveAffiliateKey(row) {
+    if (!row) return "";
+    return (
+      asTrimmedString(row.id) ||
+      asTrimmedString(row.username) ||
+      asTrimmedString(row.email)
+    );
   }
 
   function parseExpectedOutputMetadata(rawValue) {
@@ -256,14 +305,18 @@ export function registerDashboardRoutes(app, deps) {
     const meta = extrasToMap(dataset?.extras);
 
     const candidateIds = new Set(
-      [user?.ckan_user_id, user?.id].map((value) => asTrimmedString(value)).filter(Boolean),
+      [user?.ckan_user_id, user?.id]
+        .map((value) => asTrimmedString(value))
+        .filter(Boolean),
     );
     const candidateEmails = new Set(
       [user?.email]
         .map((value) => asTrimmedString(value).toLowerCase())
         .filter(Boolean),
     );
-    const candidateUsername = asTrimmedString(user?.ckan_username).toLowerCase();
+    const candidateUsername = asTrimmedString(
+      user?.ckan_username,
+    ).toLowerCase();
 
     const matchSelected = (row) => {
       const id = asTrimmedString(row?.id);
@@ -271,7 +324,8 @@ export function registerDashboardRoutes(app, deps) {
       const username = asTrimmedString(row?.username).toLowerCase();
       if (id && candidateIds.has(id)) return true;
       if (email && candidateEmails.has(email)) return true;
-      if (candidateUsername && username && username === candidateUsername) return true;
+      if (candidateUsername && username && username === candidateUsername)
+        return true;
       return false;
     };
 
@@ -398,257 +452,527 @@ export function registerDashboardRoutes(app, deps) {
     return true;
   }
 
-  app.get("/api/dashboard/projects", authMiddleware, async (req, res) => {
-    try {
-      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-      const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
-      if (!isAdmin && !orgId) {
-        // Non-admin users without org scope cannot have dashboard project visibility.
-        return res.json({ data: [] });
-      }
+  const DASHBOARD_SUMMARY_CACHE = new Map();
+  const DASHBOARD_SUMMARY_TTL_MS = 30 * 1000;
 
-      const [datasets, groups, agendas] = await Promise.all([
-        listAllDatasetsForDashboard({ orgId }),
-        listGroups(),
-        orgId ? listOrganizationAgendas(orgId) : Promise.resolve([]),
-      ]);
+  function buildSummaryCacheKey(req, filters, limit) {
+    const userId = asTrimmedString(req.user?.id);
+    const userRole = asTrimmedString(req.user?.role);
+    const orgId = asTrimmedString(req.user?.ckan_org_id);
+    return [
+      userId || "-",
+      userRole || "-",
+      orgId || "-",
+      asTrimmedString(filters?.centerId) || "-",
+      asTrimmedString(filters?.departmentId) || "-",
+      asTrimmedString(filters?.year) || "-",
+      String(limit || 0),
+    ].join("|");
+  }
 
-      const groupNameById = (groups || []).reduce((acc, row) => {
-        const id = asTrimmedString(row?.name || row?.id);
-        if (!id) return acc;
-        acc[id] =
-          asTrimmedString(row?.title || row?.display_name || row?.name) || id;
-        return acc;
-      }, {});
-      const agendaNameById = (agendas || []).reduce((acc, row) => {
-        const id = asTrimmedString(row?.id || row?.name);
-        if (!id) return acc;
-        acc[id] = asTrimmedString(row?.name || row?.title || row?.id) || id;
-        return acc;
-      }, {});
+  async function computeDashboardSummary({ req, filters, limit }) {
+    const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
+    const {
+      knownCenterIds,
+      centerNameById,
+      departmentNameById,
+      agendaNameById,
+    } = await loadDashboardLookups({ orgId });
+    const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+    const hasActiveFilters = Boolean(
+      asTrimmedString(filters.centerId) ||
+      asTrimmedString(filters.departmentId) ||
+      asTrimmedString(filters.year),
+    );
 
-      const rows = (datasets || [])
-        .filter((dataset) =>
-          isAdmin ? true : isDatasetOwnedByUser(dataset, req.user),
-        )
-        .map((dataset) =>
-          toDashboardProjectRow(dataset, { groupNameById, agendaNameById }),
-        )
-        // Show most recently updated projects first for dashboard relevance.
-        .sort(
-          (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
-        );
+    const years = new Set();
+    (datasets || []).forEach((dataset) => {
+      const meta = extrasToMap(dataset?.extras);
+      const submittedAt =
+        asTrimmedString(meta.submitted_at) ||
+        asTrimmedString(dataset?.metadata_created);
 
-      return res.json({ data: rows });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(error?.message || "Failed to load dashboard projects."),
-      });
-    }
-  });
+      years.add(
+        resolveYearFromRecord({
+          year: meta.project_year,
+          submitted_at: submittedAt,
+          updated_at: dataset?.metadata_modified,
+        }),
+      );
 
-  app.get("/api/dashboard/filters/years", authMiddleware, async (req, res) => {
-    try {
-      const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-      void orgId;
-      const years = new Set();
-
-      (datasets || []).forEach((dataset) => {
-        const meta = extrasToMap(dataset?.extras);
-        const submittedAt =
-          asTrimmedString(meta.submitted_at) ||
-          asTrimmedString(dataset?.metadata_created);
-
+      if (isAwardDataset(dataset)) {
         years.add(
           resolveYearFromRecord({
-            year: meta.project_year,
-            submitted_at: submittedAt,
+            year_received: meta.year_received,
+            created_at: meta.submitted_at || dataset?.metadata_created,
             updated_at: dataset?.metadata_modified,
           }),
         );
-
-        if (isAwardDataset(dataset)) {
-          years.add(
-            resolveYearFromRecord({
-              year_received: meta.year_received,
-              created_at: meta.submitted_at || dataset?.metadata_created,
-              updated_at: dataset?.metadata_modified,
-            }),
-          );
-          return;
-        }
-
-        const resources = Array.isArray(dataset?.resources)
-          ? dataset.resources
-          : [];
-        resources.forEach((resource) => {
-          if (isMoaResource(resource)) return;
-          years.add(
-            resolveYearFromRecord({
-              created_at: resource?.created || dataset?.metadata_created,
-              updated_at: resource?.last_modified || dataset?.metadata_modified,
-            }),
-          );
-        });
-
-        const expectedMetaRows = parseExpectedOutputMetadata(
-          meta.expected_outputs_meta,
-        );
-        if (expectedMetaRows.length) {
-          years.add(
-            resolveYearFromRecord({
-              updated_at: dataset?.metadata_modified || submittedAt,
-            }),
-          );
-          return;
-        }
-
-        if (asTrimmedString(meta.expected_outputs_summary)) {
-          years.add(
-            resolveYearFromRecord({
-              updated_at: dataset?.metadata_modified || submittedAt,
-            }),
-          );
-        }
-      });
-
-      const sorted = [...years]
-        .filter(Boolean)
-        .sort((a, b) => Number(b) - Number(a));
-      return res.json({ data: sorted });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(
-          error?.message || "Failed to load dashboard year options.",
-        ),
-      });
-    }
-  });
-
-  app.get("/api/dashboard/overview", authMiddleware, async (req, res) => {
-    try {
-      const filters = {
-        centerId: asTrimmedString(req.query?.centerId),
-        departmentId: asTrimmedString(req.query?.departmentId),
-        year: asTrimmedString(req.query?.year),
-      };
-
-      const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-      const {
-        knownCenterIds,
-        departmentNameById,
-      } = await loadDashboardLookups({ orgId });
-      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-      const hasActiveFilters = Boolean(
-        asTrimmedString(filters.centerId) ||
-          asTrimmedString(filters.departmentId) ||
-          asTrimmedString(filters.year),
-      );
-
-      let linkedProjectsCount = 0;
-      if (!isAdmin && orgId) {
-        const allOrgDatasets = await listAllDatasetsForDashboard({ orgId });
-        const linkedSet = new Set();
-        (allOrgDatasets || []).forEach((dataset) => {
-          if (!dataset || isAwardDataset(dataset)) return;
-          if (!isDatasetLinkedToUser(dataset, req.user)) return;
-          const id = asTrimmedString(dataset?.id || dataset?.name);
-          if (!id) return;
-          linkedSet.add(id);
-        });
-        linkedProjectsCount = linkedSet.size;
+        return;
       }
 
-      const centerIdsInScope = new Set();
-      const departmentIdsInScope = new Set();
-      const affiliateIdsInScope = new Set();
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        years.add(
+          resolveYearFromRecord({
+            created_at: resource?.created || dataset?.metadata_created,
+            updated_at: resource?.last_modified || dataset?.metadata_modified,
+          }),
+        );
+      });
 
-      let projectsCount = 0;
-      let outputsSubmittedCount = 0;
-      let outputsExpectedCount = 0;
-      let awardsCount = 0;
+      const expectedMetaRows = parseExpectedOutputMetadata(
+        meta.expected_outputs_meta,
+      );
+      if (expectedMetaRows.length) {
+        years.add(
+          resolveYearFromRecord({
+            updated_at: dataset?.metadata_modified || submittedAt,
+          }),
+        );
+        return;
+      }
 
+      if (asTrimmedString(meta.expected_outputs_summary)) {
+        years.add(
+          resolveYearFromRecord({
+            updated_at: dataset?.metadata_modified || submittedAt,
+          }),
+        );
+      }
+    });
+
+    const yearOptions = [...years]
+      .filter(Boolean)
+      .sort((a, b) => Number(b) - Number(a));
+
+    const activeUsersResult = await query(
+      `SELECT COUNT(*)::int AS count FROM users WHERE is_active = TRUE AND role IN ('faculty', 'student')`,
+    );
+    const activeUsersCount = Number(activeUsersResult.rows?.[0]?.count || 0);
+
+    let linkedProjectsCount = 0;
+    if (!isAdmin && orgId) {
+      const allOrgDatasets = await listAllDatasetsForDashboard({ orgId });
+      const linkedSet = new Set();
+      (allOrgDatasets || []).forEach((dataset) => {
+        if (!dataset || isAwardDataset(dataset)) return;
+        if (!isDatasetLinkedToUser(dataset, req.user)) return;
+        const id = asTrimmedString(dataset?.id || dataset?.name);
+        if (!id) return;
+        linkedSet.add(id);
+      });
+      linkedProjectsCount = linkedSet.size;
+    }
+
+    const centerIdsInScope = new Set();
+    const departmentIdsInScope = new Set();
+    const affiliateIdsInScope = new Set();
+
+    let projectsCount = 0;
+    let outputsSubmittedCount = 0;
+    let outputsExpectedCount = 0;
+    let awardsCount = 0;
+
+    (datasets || []).forEach((dataset) => {
+      const meta = extrasToMap(dataset?.extras);
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const submittedAt =
+        asTrimmedString(meta.submitted_at) ||
+        asTrimmedString(dataset?.metadata_created);
+      const baseScope = {
+        centerId,
+        departmentId,
+        year: asTrimmedString(meta.project_year),
+        submitted_at: submittedAt,
+        updated_at:
+          asTrimmedString(dataset?.metadata_modified) ||
+          asTrimmedString(dataset?.metadata_created),
+        start_date: meta.start_date,
+        end_date: meta.end_date,
+      };
+
+      if (isAwardDataset(dataset)) {
+        const awardScope = {
+          ...baseScope,
+          year_received: asTrimmedString(meta.year_received),
+        };
+        if (!matchesFilters(awardScope, filters)) return;
+        if (centerId) centerIdsInScope.add(centerId);
+        if (departmentId) departmentIdsInScope.add(departmentId);
+        awardsCount += 1;
+        return;
+      }
+
+      if (!matchesFilters(baseScope, filters)) return;
+      if (centerId) centerIdsInScope.add(centerId);
+      if (departmentId) departmentIdsInScope.add(departmentId);
+      projectsCount += 1;
+
+      const leadUser = parseSelectedUsers(meta.lead_researcher_user)[0] || null;
+      const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
+      const submittedById = asTrimmedString(
+        meta.submitted_by_user_id || meta.submitted_by,
+      );
+      if (submittedById) affiliateIdsInScope.add(submittedById);
+      const leadKey = resolveAffiliateKey(leadUser);
+      if (leadKey) affiliateIdsInScope.add(leadKey);
+      facultyUsers.forEach((row) => {
+        const key = resolveAffiliateKey(row);
+        if (key) affiliateIdsInScope.add(key);
+      });
+
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        const outputScope = {
+          centerId,
+          departmentId,
+          created_at: resource?.created || dataset?.metadata_created,
+          updated_at: resource?.last_modified || dataset?.metadata_modified,
+        };
+        if (!matchesFilters(outputScope, filters)) return;
+        outputsSubmittedCount += 1;
+      });
+
+      const expectedMetaRows = parseExpectedOutputMetadata(
+        meta.expected_outputs_meta,
+      );
+      const expectedTimestamp =
+        dataset?.metadata_modified || dataset?.metadata_created || submittedAt;
+      if (expectedMetaRows.length) {
+        expectedMetaRows.forEach(() => {
+          const expectedScope = {
+            centerId,
+            departmentId,
+            updated_at: expectedTimestamp,
+          };
+          if (!matchesFilters(expectedScope, filters)) return;
+          outputsExpectedCount += 1;
+        });
+        return;
+      }
+
+      const summary = asTrimmedString(meta.expected_outputs_summary);
+      if (!summary) return;
+      summary
+        .split(",")
+        .map((chunk) => chunk.trim())
+        .filter(Boolean)
+        .forEach(() => {
+          const expectedScope = {
+            centerId,
+            departmentId,
+            updated_at: expectedTimestamp,
+          };
+          if (!matchesFilters(expectedScope, filters)) return;
+          outputsExpectedCount += 1;
+        });
+    });
+
+    const outputsCount = outputsSubmittedCount || outputsExpectedCount || 0;
+    const overview = {
+      centers: hasActiveFilters
+        ? centerIdsInScope.size
+        : isAdmin
+          ? knownCenterIds.size
+          : centerIdsInScope.size,
+      departments: hasActiveFilters
+        ? departmentIdsInScope.size
+        : isAdmin
+          ? Object.keys(departmentNameById).length
+          : departmentIdsInScope.size,
+      affiliates: activeUsersCount,
+      linkedProjects: linkedProjectsCount,
+      projects: projectsCount,
+      outputs: outputsCount,
+      outputsSubmitted: outputsSubmittedCount,
+      outputsExpected: outputsExpectedCount,
+      awards: awardsCount,
+    };
+
+    if (
+      asTrimmedString(req?.query?.debug_affiliates) === "1" ||
+      asTrimmedString(req?.query?.debug_affiliates) === "true"
+    ) {
+      console.log("[dashboard] affiliates debug", {
+        affiliatesCount: activeUsersCount,
+        affiliatesMode: "active_users",
+        affiliateIds: [...affiliateIdsInScope],
+        filters,
+      });
+    }
+
+    const projectCountByCenter = new Map();
+    const outputCountByCenter = new Map();
+    const awardCountByCenter = new Map();
+    const affiliateIdsByCenter = new Map();
+
+    (datasets || []).forEach((dataset) => {
+      const meta = extrasToMap(dataset?.extras);
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const submittedAt =
+        asTrimmedString(meta.submitted_at) ||
+        asTrimmedString(dataset?.metadata_created);
+      const baseScope = {
+        centerId,
+        departmentId,
+        year: asTrimmedString(meta.project_year),
+        submitted_at: submittedAt,
+        updated_at:
+          asTrimmedString(dataset?.metadata_modified) ||
+          asTrimmedString(dataset?.metadata_created),
+      };
+
+      if (isAwardDataset(dataset)) {
+        const awardScope = {
+          ...baseScope,
+          year_received: asTrimmedString(meta.year_received),
+        };
+        if (!matchesFilters(awardScope, filters)) return;
+        awardCountByCenter.set(
+          centerId,
+          (awardCountByCenter.get(centerId) || 0) + 1,
+        );
+        return;
+      }
+
+      if (!matchesFilters(baseScope, filters)) return;
+      projectCountByCenter.set(
+        centerId,
+        (projectCountByCenter.get(centerId) || 0) + 1,
+      );
+
+      if (!affiliateIdsByCenter.has(centerId)) {
+        affiliateIdsByCenter.set(centerId, new Set());
+      }
+      const affiliateSet = affiliateIdsByCenter.get(centerId);
+      const leadUser = parseSelectedUsers(meta.lead_researcher_user)[0] || null;
+      const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
+      const submittedById = asTrimmedString(
+        meta.submitted_by_user_id || meta.submitted_by,
+      );
+      if (submittedById) affiliateSet.add(submittedById);
+      const leadKey = resolveAffiliateKey(leadUser);
+      if (leadKey) affiliateSet.add(leadKey);
+      facultyUsers.forEach((row) => {
+        const key = resolveAffiliateKey(row);
+        if (key) affiliateSet.add(key);
+      });
+
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        const outputScope = {
+          centerId,
+          departmentId,
+          created_at: resource?.created || dataset?.metadata_created,
+          updated_at: resource?.last_modified || dataset?.metadata_modified,
+        };
+        if (!matchesFilters(outputScope, filters)) return;
+        outputCountByCenter.set(
+          centerId,
+          (outputCountByCenter.get(centerId) || 0) + 1,
+        );
+      });
+    });
+
+    const activityCenterIds = new Set([
+      ...projectCountByCenter.keys(),
+      ...outputCountByCenter.keys(),
+      ...awardCountByCenter.keys(),
+      ...affiliateIdsByCenter.keys(),
+    ]);
+
+    const selectedCenterId = normalizeCenterId(
+      filters.centerId,
+      knownCenterIds,
+    );
+    const baseCenterIds = (() => {
+      if (asTrimmedString(filters.centerId)) {
+        return selectedCenterId ? [selectedCenterId] : [];
+      }
+      if (isAdmin) {
+        return [...knownCenterIds];
+      }
+      const userCenterId = normalizeCenterId(
+        req.user?.ckan_org_id,
+        knownCenterIds,
+      );
+      return userCenterId ? [userCenterId] : [];
+    })();
+
+    const centerIds = new Set(baseCenterIds);
+    if (activityCenterIds.has("__unassigned__")) {
+      centerIds.add("__unassigned__");
+    }
+
+    const resolveCenterName = (centerId) => {
+      if (centerId === "__unassigned__") return "Unassigned";
+      return asTrimmedString(centerNameById[centerId]) || "Unknown";
+    };
+
+    const centerBreakdownRows = [...centerIds]
+      .map((centerId) => ({
+        id: centerId,
+        name: resolveCenterName(centerId),
+        projects: projectCountByCenter.get(centerId) || 0,
+        affiliates: affiliateIdsByCenter.has(centerId)
+          ? affiliateIdsByCenter.get(centerId).size || 0
+          : null,
+        outputs: outputCountByCenter.get(centerId) || 0,
+        awards: awardCountByCenter.get(centerId) || 0,
+      }))
+      .sort((a, b) => b.projects - a.projects || b.outputs - a.outputs);
+
+    const projectsPerCenterCounts = new Map();
+    (datasets || []).forEach((dataset) => {
+      if (isAwardDataset(dataset)) return;
+      const meta = extrasToMap(dataset?.extras);
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const submittedAt =
+        asTrimmedString(meta.submitted_at) ||
+        asTrimmedString(dataset?.metadata_created);
+      const scope = {
+        centerId,
+        departmentId,
+        year: asTrimmedString(meta.project_year),
+        submitted_at: submittedAt,
+        updated_at:
+          asTrimmedString(dataset?.metadata_modified) ||
+          asTrimmedString(dataset?.metadata_created),
+      };
+      if (!matchesFilters(scope, filters)) return;
+
+      const label =
+        centerId === "__unassigned__"
+          ? "Unassigned"
+          : asTrimmedString(centerNameById[centerId]) || "Unknown";
+      projectsPerCenterCounts.set(
+        label,
+        (projectsPerCenterCounts.get(label) || 0) + 1,
+      );
+    });
+
+    const projectsPerCenterData = [...projectsPerCenterCounts.entries()]
+      .map(([center, count]) => ({ center, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const outputsByDepartmentCounts = new Map();
+    (datasets || []).forEach((dataset) => {
+      if (isAwardDataset(dataset)) return;
+      const meta = extrasToMap(dataset?.extras);
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        const scope = {
+          centerId,
+          departmentId,
+          created_at: resource?.created || dataset?.metadata_created,
+          updated_at: resource?.last_modified || dataset?.metadata_modified,
+        };
+        if (!matchesFilters(scope, filters)) return;
+
+        const label =
+          asTrimmedString(departmentNameById[departmentId]) ||
+          asTrimmedString(meta.program_department) ||
+          "Unassigned";
+        outputsByDepartmentCounts.set(
+          label,
+          (outputsByDepartmentCounts.get(label) || 0) + 1,
+        );
+      });
+    });
+
+    const outputsByDepartmentData = [...outputsByDepartmentCounts.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+
+    const monthMap = buildLast12MonthsSeries();
+    const bump = (rawTimestamp, incrementBy = 1) => {
+      const value = asTrimmedString(rawTimestamp);
+      if (!value) return;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return;
+      const key = monthKey(new Date(d.getFullYear(), d.getMonth(), 1));
+      if (!monthMap.has(key)) return;
+      monthMap.get(key).outputs += incrementBy;
+    };
+
+    let submittedCount = 0;
+    (datasets || []).forEach((dataset) => {
+      if (isAwardDataset(dataset)) return;
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        const scope = {
+          centerId,
+          departmentId,
+          created_at: resource?.created || dataset?.metadata_created,
+          updated_at: resource?.last_modified || dataset?.metadata_modified,
+        };
+        if (!matchesFilters(scope, filters)) return;
+        submittedCount += 1;
+        bump(
+          resource?.created ||
+            resource?.last_modified ||
+            dataset?.metadata_modified,
+          1,
+        );
+      });
+    });
+
+    if (submittedCount === 0) {
       (datasets || []).forEach((dataset) => {
+        if (isAwardDataset(dataset)) return;
         const meta = extrasToMap(dataset?.extras);
         const { centerId, departmentId } = extractDatasetScopeIds(
           dataset,
           knownCenterIds,
         );
-        const submittedAt =
-          asTrimmedString(meta.submitted_at) ||
-          asTrimmedString(dataset?.metadata_created);
-        const baseScope = {
-          centerId,
-          departmentId,
-          year: asTrimmedString(meta.project_year),
-          submitted_at: submittedAt,
-          updated_at:
-            asTrimmedString(dataset?.metadata_modified) ||
-            asTrimmedString(dataset?.metadata_created),
-          start_date: meta.start_date,
-          end_date: meta.end_date,
-        };
-
-        if (isAwardDataset(dataset)) {
-          const awardScope = {
-            ...baseScope,
-            year_received: asTrimmedString(meta.year_received),
-          };
-          if (!matchesFilters(awardScope, filters)) return;
-          if (centerId) centerIdsInScope.add(centerId);
-          if (departmentId) departmentIdsInScope.add(departmentId);
-          awardsCount += 1;
-          return;
-        }
-
-        if (!matchesFilters(baseScope, filters)) return;
-        if (centerId) centerIdsInScope.add(centerId);
-        if (departmentId) departmentIdsInScope.add(departmentId);
-        projectsCount += 1;
-
-        const leadUser =
-          parseSelectedUsers(meta.lead_researcher_user)[0] || null;
-        const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
-        const submittedById = asTrimmedString(
-          meta.submitted_by_user_id || meta.submitted_by,
-        );
-        if (submittedById) affiliateIdsInScope.add(submittedById);
-        if (leadUser?.id) affiliateIdsInScope.add(leadUser.id);
-        facultyUsers.forEach((row) => {
-          if (row?.id) affiliateIdsInScope.add(row.id);
-        });
-
-        const resources = Array.isArray(dataset?.resources)
-          ? dataset.resources
-          : [];
-        resources.forEach((resource) => {
-          if (isMoaResource(resource)) return;
-          const outputScope = {
-            centerId,
-            departmentId,
-            created_at: resource?.created || dataset?.metadata_created,
-            updated_at: resource?.last_modified || dataset?.metadata_modified,
-          };
-          if (!matchesFilters(outputScope, filters)) return;
-          outputsSubmittedCount += 1;
-        });
-
+        const timestamp =
+          dataset?.metadata_modified ||
+          dataset?.metadata_created ||
+          meta.submitted_at;
         const expectedMetaRows = parseExpectedOutputMetadata(
           meta.expected_outputs_meta,
         );
-        const expectedTimestamp =
-          dataset?.metadata_modified ||
-          dataset?.metadata_created ||
-          submittedAt;
+
         if (expectedMetaRows.length) {
           expectedMetaRows.forEach(() => {
-            const expectedScope = {
-              centerId,
-              departmentId,
-              updated_at: expectedTimestamp,
-            };
-            if (!matchesFilters(expectedScope, filters)) return;
-            outputsExpectedCount += 1;
+            const scope = { centerId, departmentId, updated_at: timestamp };
+            if (!matchesFilters(scope, filters)) return;
+            bump(timestamp, 1);
           });
           return;
         }
@@ -660,605 +984,131 @@ export function registerDashboardRoutes(app, deps) {
           .map((chunk) => chunk.trim())
           .filter(Boolean)
           .forEach(() => {
-            const expectedScope = {
-              centerId,
-              departmentId,
-              updated_at: expectedTimestamp,
-            };
-            if (!matchesFilters(expectedScope, filters)) return;
-            outputsExpectedCount += 1;
+            const scope = { centerId, departmentId, updated_at: timestamp };
+            if (!matchesFilters(scope, filters)) return;
+            bump(timestamp, 1);
           });
-      });
-
-      const outputsCount = outputsSubmittedCount || outputsExpectedCount || 0;
-
-      return res.json({
-        data: {
-          centers: hasActiveFilters
-            ? centerIdsInScope.size
-            : isAdmin
-              ? knownCenterIds.size
-              : centerIdsInScope.size,
-          departments: hasActiveFilters
-            ? departmentIdsInScope.size
-            : isAdmin
-              ? Object.keys(departmentNameById).length
-              : departmentIdsInScope.size,
-          affiliates: affiliateIdsInScope.size || 1,
-          linkedProjects: linkedProjectsCount,
-          projects: projectsCount,
-          outputs: outputsCount,
-          outputsSubmitted: outputsSubmittedCount,
-          outputsExpected: outputsExpectedCount,
-          awards: awardsCount,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({
-        error: String(error?.message || "Failed to load dashboard overview."),
       });
     }
-  });
 
-  app.get(
-    "/api/dashboard/center-breakdown",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
+    const outputsOverTimeData = Array.from(monthMap.values());
 
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const { knownCenterIds, centerNameById } = await loadDashboardLookups({
-          orgId,
-        });
-        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-
-        const projectCountByCenter = new Map();
-        const outputCountByCenter = new Map();
-        const awardCountByCenter = new Map();
-        const affiliateIdsByCenter = new Map();
-
-        (datasets || []).forEach((dataset) => {
-          const meta = extrasToMap(dataset?.extras);
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          const submittedAt =
-            asTrimmedString(meta.submitted_at) ||
-            asTrimmedString(dataset?.metadata_created);
-          const baseScope = {
-            centerId,
-            departmentId,
-            year: asTrimmedString(meta.project_year),
-            submitted_at: submittedAt,
-            updated_at:
-              asTrimmedString(dataset?.metadata_modified) ||
-              asTrimmedString(dataset?.metadata_created),
-          };
-
-          if (isAwardDataset(dataset)) {
-            const awardScope = {
-              ...baseScope,
-              year_received: asTrimmedString(meta.year_received),
-            };
-            if (!matchesFilters(awardScope, filters)) return;
-            awardCountByCenter.set(
-              centerId,
-              (awardCountByCenter.get(centerId) || 0) + 1,
-            );
-            return;
-          }
-
-          if (!matchesFilters(baseScope, filters)) return;
-          projectCountByCenter.set(
-            centerId,
-            (projectCountByCenter.get(centerId) || 0) + 1,
-          );
-
-          if (!affiliateIdsByCenter.has(centerId)) {
-            affiliateIdsByCenter.set(centerId, new Set());
-          }
-          const affiliateSet = affiliateIdsByCenter.get(centerId);
-          const leadUser =
-            parseSelectedUsers(meta.lead_researcher_user)[0] || null;
-          const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
-          const submittedById = asTrimmedString(
-            meta.submitted_by_user_id || meta.submitted_by,
-          );
-          if (submittedById) affiliateSet.add(submittedById);
-          if (leadUser?.id) affiliateSet.add(leadUser.id);
-          facultyUsers.forEach((row) => {
-            if (row?.id) affiliateSet.add(row.id);
-          });
-
-          const resources = Array.isArray(dataset?.resources)
-            ? dataset.resources
-            : [];
-          resources.forEach((resource) => {
-            if (isMoaResource(resource)) return;
-            const outputScope = {
-              centerId,
-              departmentId,
-              created_at: resource?.created || dataset?.metadata_created,
-              updated_at: resource?.last_modified || dataset?.metadata_modified,
-            };
-            if (!matchesFilters(outputScope, filters)) return;
-            outputCountByCenter.set(
-              centerId,
-              (outputCountByCenter.get(centerId) || 0) + 1,
-            );
-          });
-        });
-
-        const activityCenterIds = new Set([
-          ...projectCountByCenter.keys(),
-          ...outputCountByCenter.keys(),
-          ...awardCountByCenter.keys(),
-          ...affiliateIdsByCenter.keys(),
-        ]);
-
-        const selectedCenterId = normalizeCenterId(
-          filters.centerId,
-          knownCenterIds,
-        );
-        const baseCenterIds = (() => {
-          if (asTrimmedString(filters.centerId)) {
-            return selectedCenterId ? [selectedCenterId] : [];
-          }
-          if (isAdmin) {
-            return [...knownCenterIds];
-          }
-          const userCenterId = normalizeCenterId(
-            req.user?.ckan_org_id,
-            knownCenterIds,
-          );
-          return userCenterId ? [userCenterId] : [];
-        })();
-
-        const centerIds = new Set(baseCenterIds);
-        if (activityCenterIds.has("__unassigned__")) {
-          centerIds.add("__unassigned__");
-        }
-
-        const resolveCenterName = (centerId) => {
-          if (centerId === "__unassigned__") return "Unassigned";
-          return asTrimmedString(centerNameById[centerId]) || "Unknown";
-        };
-
-        const rows = [...centerIds]
-          .map((centerId) => ({
-            id: centerId,
-            name: resolveCenterName(centerId),
-            projects: projectCountByCenter.get(centerId) || 0,
-            affiliates: affiliateIdsByCenter.has(centerId)
-              ? affiliateIdsByCenter.get(centerId).size || 1
-              : null,
-            outputs: outputCountByCenter.get(centerId) || 0,
-            awards: awardCountByCenter.get(centerId) || 0,
-          }))
-          .sort((a, b) => b.projects - a.projects || b.outputs - a.outputs);
-
-        return res.json({ data: rows });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(error?.message || "Failed to load center breakdown."),
-        });
-      }
-    },
-  );
-
-  app.get(
-    "/api/dashboard/charts/projects-per-center",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
-
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const { knownCenterIds, centerNameById } = await loadDashboardLookups({
-          orgId,
-        });
-
-        const counts = new Map();
-        (datasets || []).forEach((dataset) => {
-          if (isAwardDataset(dataset)) return;
-          const meta = extrasToMap(dataset?.extras);
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          const submittedAt =
-            asTrimmedString(meta.submitted_at) ||
-            asTrimmedString(dataset?.metadata_created);
-          const scope = {
-            centerId,
-            departmentId,
-            year: asTrimmedString(meta.project_year),
-            submitted_at: submittedAt,
-            updated_at:
-              asTrimmedString(dataset?.metadata_modified) ||
-              asTrimmedString(dataset?.metadata_created),
-          };
-          if (!matchesFilters(scope, filters)) return;
-
-          const label =
-            centerId === "__unassigned__"
-              ? "Unassigned"
-              : asTrimmedString(centerNameById[centerId]) || "Unknown";
-          counts.set(label, (counts.get(label) || 0) + 1);
-        });
-
-        const rows = [...counts.entries()]
-          .map(([center, count]) => ({ center, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10);
-
-        return res.json({ data: rows });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(
-            error?.message || "Failed to load projects per center chart.",
-          ),
-        });
-      }
-    },
-  );
-
-  app.get(
-    "/api/dashboard/charts/outputs-by-department",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
-
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const { knownCenterIds, departmentNameById } =
-          await loadDashboardLookups({
-            orgId,
-          });
-
-        const counts = new Map();
-        (datasets || []).forEach((dataset) => {
-          if (isAwardDataset(dataset)) return;
-          const meta = extrasToMap(dataset?.extras);
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          const resources = Array.isArray(dataset?.resources)
-            ? dataset.resources
-            : [];
-          resources.forEach((resource) => {
-            if (isMoaResource(resource)) return;
-            const scope = {
-              centerId,
-              departmentId,
-              created_at: resource?.created || dataset?.metadata_created,
-              updated_at: resource?.last_modified || dataset?.metadata_modified,
-            };
-            if (!matchesFilters(scope, filters)) return;
-
-            const label =
-              asTrimmedString(departmentNameById[departmentId]) ||
-              asTrimmedString(meta.program_department) ||
-              "Unassigned";
-            counts.set(label, (counts.get(label) || 0) + 1);
-          });
-        });
-
-        const rows = [...counts.entries()]
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 8);
-
-        return res.json({ data: rows });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(
-            error?.message || "Failed to load outputs by department chart.",
-          ),
-        });
-      }
-    },
-  );
-
-  app.get(
-    "/api/dashboard/charts/outputs-over-time",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
-
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const { knownCenterIds } = await loadDashboardLookups({ orgId });
-
-        const monthMap = buildLast12MonthsSeries();
-        const bump = (rawTimestamp, incrementBy = 1) => {
-          const value = asTrimmedString(rawTimestamp);
-          if (!value) return;
-          const d = new Date(value);
-          if (Number.isNaN(d.getTime())) return;
-          const key = monthKey(new Date(d.getFullYear(), d.getMonth(), 1));
-          if (!monthMap.has(key)) return;
-          monthMap.get(key).outputs += incrementBy;
-        };
-
-        let submittedCount = 0;
-        (datasets || []).forEach((dataset) => {
-          if (isAwardDataset(dataset)) return;
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          const resources = Array.isArray(dataset?.resources)
-            ? dataset.resources
-            : [];
-          resources.forEach((resource) => {
-            if (isMoaResource(resource)) return;
-            const scope = {
-              centerId,
-              departmentId,
-              created_at: resource?.created || dataset?.metadata_created,
-              updated_at: resource?.last_modified || dataset?.metadata_modified,
-            };
-            if (!matchesFilters(scope, filters)) return;
-            submittedCount += 1;
-            bump(
-              resource?.created ||
-                resource?.last_modified ||
-                dataset?.metadata_modified,
-              1,
-            );
-          });
-        });
-
-        if (submittedCount === 0) {
-          (datasets || []).forEach((dataset) => {
-            if (isAwardDataset(dataset)) return;
-            const meta = extrasToMap(dataset?.extras);
-            const { centerId, departmentId } = extractDatasetScopeIds(
-              dataset,
-              knownCenterIds,
-            );
-            const timestamp =
-              dataset?.metadata_modified ||
-              dataset?.metadata_created ||
-              meta.submitted_at;
-            const expectedMetaRows = parseExpectedOutputMetadata(
-              meta.expected_outputs_meta,
-            );
-
-            if (expectedMetaRows.length) {
-              expectedMetaRows.forEach(() => {
-                const scope = { centerId, departmentId, updated_at: timestamp };
-                if (!matchesFilters(scope, filters)) return;
-                bump(timestamp, 1);
-              });
-              return;
-            }
-
-            const summary = asTrimmedString(meta.expected_outputs_summary);
-            if (!summary) return;
-            summary
-              .split(",")
-              .map((chunk) => chunk.trim())
-              .filter(Boolean)
-              .forEach(() => {
-                const scope = { centerId, departmentId, updated_at: timestamp };
-                if (!matchesFilters(scope, filters)) return;
-                bump(timestamp, 1);
-              });
-          });
-        }
-
-        return res.json({ data: Array.from(monthMap.values()) });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(
-            error?.message || "Failed to load outputs over time chart.",
-          ),
-        });
-      }
-    },
-  );
-
-  app.get(
-    "/api/dashboard/charts/awards-by-category",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
-
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const { knownCenterIds } = await loadDashboardLookups({ orgId });
-
-        const counts = new Map();
-        (datasets || []).forEach((dataset) => {
-          if (!isAwardDataset(dataset)) return;
-          const meta = extrasToMap(dataset?.extras);
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          const scope = {
-            centerId,
-            departmentId,
-            year_received: asTrimmedString(meta.year_received),
-            created_at: meta.submitted_at || dataset?.metadata_created,
-            updated_at: dataset?.metadata_modified || dataset?.metadata_created,
-          };
-          if (!matchesFilters(scope, filters)) return;
-          const category = asTrimmedString(meta.level) || "Unspecified";
-          counts.set(category, (counts.get(category) || 0) + 1);
-        });
-
-        const rows = [...counts.entries()]
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 8);
-
-        return res.json({ data: rows });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(
-            error?.message || "Failed to load awards by category chart.",
-          ),
-        });
-      }
-    },
-  );
-
-  app.get(
-    "/api/dashboard/recent/projects",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const limit = Math.max(1, Math.min(20, Number(req.query?.limit || 6)));
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-        };
-
-        const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-        const {
-          agendaNameById,
-          centerNameById,
-          departmentNameById,
-          knownCenterIds,
-        } = await loadDashboardLookups({ orgId });
-
-        const rows = (datasets || [])
-          .filter((dataset) => !isAwardDataset(dataset))
-          .map((dataset) => {
-            const project = toDashboardProjectRow(dataset, {
-              groupNameById: departmentNameById,
-              agendaNameById,
-            });
-            const { centerId, departmentId } = extractDatasetScopeIds(
-              dataset,
-              knownCenterIds,
-            );
-
-            return {
-              ...project,
-              research_center_id: centerId,
-              research_center_name:
-                asTrimmedString(centerNameById[centerId]) ||
-                asTrimmedString(dataset?.organization?.title) ||
-                asTrimmedString(dataset?.organization?.name) ||
-                null,
-              department_id: departmentId || project.department_id,
-              department_name:
-                asTrimmedString(departmentNameById[departmentId]) ||
-                project.department_name ||
-                null,
-            };
-          })
-          .filter((project) => {
-            const scope = {
-              centerId: normalizeCenterId(
-                project?.research_center_id,
-                knownCenterIds,
-              ),
-              departmentId: asTrimmedString(project?.department_id),
-              year: asTrimmedString(project?.year),
-              updated_at: project?.updated_at,
-              submitted_at: project?.submitted_at,
-            };
-            return matchesFilters(scope, filters);
-          })
-          .sort(
-            (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
-          )
-          .slice(0, limit);
-
-        return res.json({ data: rows });
-      } catch (error) {
-        return res.status(500).json({
-          error: String(error?.message || "Failed to load recent projects."),
-        });
-      }
-    },
-  );
-
-  app.get("/api/dashboard/recent/outputs", authMiddleware, async (req, res) => {
-    try {
-      const limit = Math.max(1, Math.min(20, Number(req.query?.limit || 6)));
-      const filters = {
-        centerId: asTrimmedString(req.query?.centerId),
-        departmentId: asTrimmedString(req.query?.departmentId),
-        year: asTrimmedString(req.query?.year),
+    const awardsByCategoryCounts = new Map();
+    (datasets || []).forEach((dataset) => {
+      if (!isAwardDataset(dataset)) return;
+      const meta = extrasToMap(dataset?.extras);
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const scope = {
+        centerId,
+        departmentId,
+        year_received: asTrimmedString(meta.year_received),
+        created_at: meta.submitted_at || dataset?.metadata_created,
+        updated_at: dataset?.metadata_modified || dataset?.metadata_created,
       };
+      if (!matchesFilters(scope, filters)) return;
+      const category = asTrimmedString(meta.level) || "Unspecified";
+      awardsByCategoryCounts.set(
+        category,
+        (awardsByCategoryCounts.get(category) || 0) + 1,
+      );
+    });
 
-      const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-      const { knownCenterIds } = await loadDashboardLookups({ orgId });
+    const awardsByCategoryData = [...awardsByCategoryCounts.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
 
-      const submitted = [];
-      (datasets || []).forEach((dataset) => {
-        if (isAwardDataset(dataset)) return;
+    const recentProjects = (datasets || [])
+      .filter((dataset) => !isAwardDataset(dataset))
+      .map((dataset) => {
+        const project = toDashboardProjectRow(dataset, {
+          groupNameById: departmentNameById,
+          agendaNameById,
+        });
         const { centerId, departmentId } = extractDatasetScopeIds(
           dataset,
           knownCenterIds,
         );
-        const resources = Array.isArray(dataset?.resources)
-          ? dataset.resources
-          : [];
-        resources.forEach((resource) => {
-          if (isMoaResource(resource)) return;
-          const row = {
-            id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
-            file_name: resource?.name || null,
-            output_type: asTrimmedString(resource?.format) || "resource",
-            created_at: resource?.created || dataset?.metadata_created || null,
-            updated_at:
-              resource?.last_modified || dataset?.metadata_modified || null,
-            centerId,
-            departmentId,
-          };
-          const scope = {
-            centerId,
-            departmentId,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-          };
-          if (!matchesFilters(scope, filters)) return;
-          submitted.push(row);
-        });
+
+        return {
+          ...project,
+          research_center_id: centerId,
+          research_center_name:
+            asTrimmedString(centerNameById[centerId]) ||
+            asTrimmedString(dataset?.organization?.title) ||
+            asTrimmedString(dataset?.organization?.name) ||
+            null,
+          department_id: departmentId || project.department_id,
+          department_name:
+            asTrimmedString(departmentNameById[departmentId]) ||
+            project.department_name ||
+            null,
+        };
+      })
+      .filter((project) => {
+        const scope = {
+          centerId: normalizeCenterId(
+            project?.research_center_id,
+            knownCenterIds,
+          ),
+          departmentId: asTrimmedString(project?.department_id),
+          year: asTrimmedString(project?.year),
+          updated_at: project?.updated_at,
+          submitted_at: project?.submitted_at,
+        };
+        return matchesFilters(scope, filters);
+      })
+      .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+      .slice(0, limit);
+
+    const submittedOutputs = [];
+    (datasets || []).forEach((dataset) => {
+      if (isAwardDataset(dataset)) return;
+      const { centerId, departmentId } = extractDatasetScopeIds(
+        dataset,
+        knownCenterIds,
+      );
+      const resources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
+      resources.forEach((resource) => {
+        if (isMoaResource(resource)) return;
+        const row = {
+          id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
+          file_name: resource?.name || null,
+          output_type: asTrimmedString(resource?.format) || "resource",
+          created_at: resource?.created || dataset?.metadata_created || null,
+          updated_at:
+            resource?.last_modified || dataset?.metadata_modified || null,
+          centerId,
+          departmentId,
+        };
+        const scope = {
+          centerId,
+          departmentId,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        if (!matchesFilters(scope, filters)) return;
+        submittedOutputs.push(row);
       });
+    });
 
-      if (submitted.length) {
-        submitted.sort(
-          (a, b) =>
-            new Date(b.updated_at || b.created_at || 0) -
-            new Date(a.updated_at || a.created_at || 0),
-        );
-        return res.json({
-          data: { mode: "submitted", rows: submitted.slice(0, limit) },
-        });
-      }
-
+    let recentOutputs = { mode: "submitted", rows: [] };
+    if (submittedOutputs.length) {
+      submittedOutputs.sort(
+        (a, b) =>
+          new Date(b.updated_at || b.created_at || 0) -
+          new Date(a.updated_at || a.created_at || 0),
+      );
+      recentOutputs = {
+        mode: "submitted",
+        rows: submittedOutputs.slice(0, limit),
+      };
+    } else {
       const expectedByProject = new Map();
       (datasets || []).forEach((dataset) => {
         if (isAwardDataset(dataset)) return;
@@ -1316,7 +1166,321 @@ export function registerDashboardRoutes(app, deps) {
         .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
         .slice(0, limit);
 
-      return res.json({ data: { mode: "expected", rows: expectedRows } });
+      recentOutputs = { mode: "expected", rows: expectedRows };
+    }
+
+    const recentAwards = (datasets || [])
+      .filter((dataset) => isAwardDataset(dataset))
+      .map((dataset) => {
+        const meta = extrasToMap(dataset?.extras);
+        const { centerId, departmentId } = extractDatasetScopeIds(
+          dataset,
+          knownCenterIds,
+        );
+        return {
+          id: dataset?.id || dataset?.name || null,
+          award_recognition:
+            asTrimmedString(meta.award_recognition) ||
+            asTrimmedString(dataset?.title) ||
+            "Award / Recognition",
+          recipients: asTrimmedString(meta.recipients),
+          level: asTrimmedString(meta.level),
+          year_received: asTrimmedString(meta.year_received),
+          research_center_id: centerId,
+          department_id: departmentId,
+          created_at:
+            asTrimmedString(meta.submitted_at) ||
+            asTrimmedString(dataset?.metadata_created) ||
+            null,
+          updated_at:
+            asTrimmedString(dataset?.metadata_modified) ||
+            asTrimmedString(dataset?.metadata_created) ||
+            null,
+        };
+      })
+      .filter((award) => {
+        const scope = {
+          centerId: award.research_center_id,
+          departmentId: award.department_id,
+          year_received: award.year_received,
+          created_at: award.created_at,
+          updated_at: award.updated_at,
+        };
+        return matchesFilters(scope, filters);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updated_at || b.created_at || 0) -
+          new Date(a.updated_at || a.created_at || 0),
+      )
+      .slice(0, limit);
+
+    return {
+      yearOptions,
+      overview,
+      centerBreakdownRows,
+      projectsPerCenterData,
+      outputsByDepartmentData,
+      outputsOverTimeData,
+      awardsByCategoryData,
+      recentProjects,
+      recentOutputs,
+      recentAwards,
+    };
+  }
+
+  async function getDashboardSummary({ req, filters, limit }) {
+    const cacheKey = buildSummaryCacheKey(req, filters, limit);
+    const now = Date.now();
+    const cached = DASHBOARD_SUMMARY_CACHE.get(cacheKey);
+    if (cached && now - cached.ts < DASHBOARD_SUMMARY_TTL_MS) {
+      return cached.data;
+    }
+
+    const data = await computeDashboardSummary({ req, filters, limit });
+    DASHBOARD_SUMMARY_CACHE.set(cacheKey, { ts: now, data });
+    return data;
+  }
+
+  app.get("/api/dashboard/projects", authMiddleware, async (req, res) => {
+    try {
+      const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+      const orgId = isAdmin ? "" : asTrimmedString(req.user?.ckan_org_id);
+      if (!isAdmin && !orgId) {
+        // Non-admin users without org scope cannot have dashboard project visibility.
+        return res.json({ data: [] });
+      }
+
+      const [datasets, groups, agendas] = await Promise.all([
+        listAllDatasetsForDashboard({ orgId }),
+        listGroups(),
+        orgId ? listOrganizationAgendas(orgId) : Promise.resolve([]),
+      ]);
+
+      const groupNameById = (groups || []).reduce((acc, row) => {
+        const id = asTrimmedString(row?.name || row?.id);
+        if (!id) return acc;
+        acc[id] =
+          asTrimmedString(row?.title || row?.display_name || row?.name) || id;
+        return acc;
+      }, {});
+      const agendaNameById = (agendas || []).reduce((acc, row) => {
+        const id = asTrimmedString(row?.id || row?.name);
+        if (!id) return acc;
+        acc[id] = asTrimmedString(row?.name || row?.title || row?.id) || id;
+        return acc;
+      }, {});
+
+      const rows = (datasets || [])
+        .filter((dataset) =>
+          isAdmin ? true : isDatasetOwnedByUser(dataset, req.user),
+        )
+        .map((dataset) =>
+          toDashboardProjectRow(dataset, { groupNameById, agendaNameById }),
+        )
+        // Show most recently updated projects first for dashboard relevance.
+        .sort(
+          (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
+        );
+
+      return res.json({ data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load dashboard projects."),
+      });
+    }
+  });
+
+  app.get("/api/dashboard/filters/years", authMiddleware, async (req, res) => {
+    try {
+      const filters = {
+        centerId: asTrimmedString(req.query?.centerId),
+        departmentId: asTrimmedString(req.query?.departmentId),
+        year: asTrimmedString(req.query?.year),
+      };
+      const data = await getDashboardSummary({ req, filters, limit: 6 });
+      return res.json({ data: data.yearOptions });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(
+          error?.message || "Failed to load dashboard year options.",
+        ),
+      });
+    }
+  });
+
+  app.get("/api/dashboard/overview", authMiddleware, async (req, res) => {
+    try {
+      const filters = {
+        centerId: asTrimmedString(req.query?.centerId),
+        departmentId: asTrimmedString(req.query?.departmentId),
+        year: asTrimmedString(req.query?.year),
+      };
+      const data = await getDashboardSummary({ req, filters, limit: 6 });
+      return res.json({ data: data.overview });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load dashboard overview."),
+      });
+    }
+  });
+
+  app.get("/api/dashboard/summary", authMiddleware, async (req, res) => {
+    try {
+      const limit = Math.max(1, Math.min(20, Number(req.query?.limit || 6)));
+      const filters = {
+        centerId: asTrimmedString(req.query?.centerId),
+        departmentId: asTrimmedString(req.query?.departmentId),
+        year: asTrimmedString(req.query?.year),
+      };
+      const data = await getDashboardSummary({ req, filters, limit });
+      return res.json({ data });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Failed to load dashboard summary."),
+      });
+    }
+  });
+
+  app.get(
+    "/api/dashboard/center-breakdown",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit: 6 });
+        return res.json({ data: data.centerBreakdownRows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load center breakdown."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dashboard/charts/projects-per-center",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit: 6 });
+        return res.json({ data: data.projectsPerCenterData });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load projects per center chart.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dashboard/charts/outputs-by-department",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit: 6 });
+        return res.json({ data: data.outputsByDepartmentData });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load outputs by department chart.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dashboard/charts/outputs-over-time",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit: 6 });
+        return res.json({ data: data.outputsOverTimeData });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load outputs over time chart.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dashboard/charts/awards-by-category",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit: 6 });
+        return res.json({ data: data.awardsByCategoryData });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load awards by category chart.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dashboard/recent/projects",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const limit = Math.max(1, Math.min(20, Number(req.query?.limit || 6)));
+        const filters = {
+          centerId: asTrimmedString(req.query?.centerId),
+          departmentId: asTrimmedString(req.query?.departmentId),
+          year: asTrimmedString(req.query?.year),
+        };
+        const data = await getDashboardSummary({ req, filters, limit });
+        return res.json({ data: data.recentProjects });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load recent projects."),
+        });
+      }
+    },
+  );
+
+  app.get("/api/dashboard/recent/outputs", authMiddleware, async (req, res) => {
+    try {
+      const limit = Math.max(1, Math.min(20, Number(req.query?.limit || 6)));
+      const filters = {
+        centerId: asTrimmedString(req.query?.centerId),
+        departmentId: asTrimmedString(req.query?.departmentId),
+        year: asTrimmedString(req.query?.year),
+      };
+      const data = await getDashboardSummary({ req, filters, limit });
+      return res.json({ data: data.recentOutputs });
     } catch (error) {
       return res.status(500).json({
         error: String(error?.message || "Failed to load recent outputs."),
@@ -1332,57 +1496,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
       };
-
-      const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
-      const { knownCenterIds } = await loadDashboardLookups({ orgId });
-
-      const rows = (datasets || [])
-        .filter((dataset) => isAwardDataset(dataset))
-        .map((dataset) => {
-          const meta = extrasToMap(dataset?.extras);
-          const { centerId, departmentId } = extractDatasetScopeIds(
-            dataset,
-            knownCenterIds,
-          );
-          return {
-            id: dataset?.id || dataset?.name || null,
-            award_recognition:
-              asTrimmedString(meta.award_recognition) ||
-              asTrimmedString(dataset?.title) ||
-              "Award / Recognition",
-            recipients: asTrimmedString(meta.recipients),
-            level: asTrimmedString(meta.level),
-            year_received: asTrimmedString(meta.year_received),
-            research_center_id: centerId,
-            department_id: departmentId,
-            created_at:
-              asTrimmedString(meta.submitted_at) ||
-              asTrimmedString(dataset?.metadata_created) ||
-              null,
-            updated_at:
-              asTrimmedString(dataset?.metadata_modified) ||
-              asTrimmedString(dataset?.metadata_created) ||
-              null,
-          };
-        })
-        .filter((award) => {
-          const scope = {
-            centerId: award.research_center_id,
-            departmentId: award.department_id,
-            year_received: award.year_received,
-            created_at: award.created_at,
-            updated_at: award.updated_at,
-          };
-          return matchesFilters(scope, filters);
-        })
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at || b.created_at || 0) -
-            new Date(a.updated_at || a.created_at || 0),
-        )
-        .slice(0, limit);
-
-      return res.json({ data: rows });
+      const data = await getDashboardSummary({ req, filters, limit });
+      return res.json({ data: data.recentAwards });
     } catch (error) {
       return res.status(500).json({
         error: String(error?.message || "Failed to load recent awards."),
