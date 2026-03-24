@@ -41,10 +41,10 @@ const PALETTE = [
   "#9f86c0",
 ];
 const PANEL_CARD_CLASS =
-  "border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
+  "min-h-[420px] flex flex-col border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
 const PANEL_HEADER_CLASS =
   "bg-gradient-to-r from-slate-50 via-white to-slate-100";
-const PANEL_BODY_CLASS = "p-6";
+const PANEL_BODY_CLASS = "p-6 flex-1";
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -151,13 +151,16 @@ export default function DashboardPage() {
     const totalAgenda = effectiveAgendas.length;
 
     const totalAffiliates = affiliateRows.length;
-    const activeAffiliates = affiliateRows.filter((row) => row.is_active)
-      .length;
+    const activeAffiliates = affiliateRows.filter(
+      (row) => row.is_active,
+    ).length;
     const inactiveAffiliates = Math.max(0, totalAffiliates - activeAffiliates);
-    const facultyCount = affiliateRows.filter((row) => row.role === "faculty")
-      .length;
-    const studentCount = affiliateRows.filter((row) => row.role === "student")
-      .length;
+    const facultyCount = affiliateRows.filter(
+      (row) => row.role === "faculty",
+    ).length;
+    const studentCount = affiliateRows.filter(
+      (row) => row.role === "student",
+    ).length;
 
     return {
       researchCenters: {
@@ -377,7 +380,8 @@ export default function DashboardPage() {
     }
 
     chartProjects.forEach((project) => {
-      const rawDate = project.submitted_at || project.updated_at || project.created_at;
+      const rawDate =
+        project.submitted_at || project.updated_at || project.created_at;
       if (!rawDate) return;
       const d = new Date(rawDate);
       if (Number.isNaN(d.getTime())) return;
@@ -411,9 +415,7 @@ export default function DashboardPage() {
       map.get(label).count += count;
     });
 
-    return [...map.values()]
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
+    return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 6);
   }, [affiliateRows]);
 
   const awardsSummaryData = useMemo(() => {
@@ -659,9 +661,6 @@ export default function DashboardPage() {
               <Tooltip />
             </RadialBarChart>
           </ChartFrame>
-          <p className="mt-4 text-sm text-slate-600">
-            Composite data quality score: {crossModuleHealth.dataQualityScore}%.
-          </p>
         </DashboardPanel>
       </div>
 
@@ -704,8 +703,12 @@ export default function DashboardPage() {
             </PieChart>
           </ChartFrame>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
-            <div>Total centers: {adminSummaries.researchCenters.totalCenters}</div>
-            <div>Total agendas: {adminSummaries.researchCenters.totalAgenda}</div>
+            <div>
+              Total centers: {adminSummaries.researchCenters.totalCenters}
+            </div>
+            <div>
+              Total agendas: {adminSummaries.researchCenters.totalAgenda}
+            </div>
           </div>
         </DashboardPanel>
 
@@ -725,7 +728,11 @@ export default function DashboardPage() {
                 margin={{ top: 8, right: 12, left: 24, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                <XAxis
+                  type="number"
+                  allowDecimals={false}
+                  tick={{ fontSize: 12 }}
+                />
                 <YAxis
                   type="category"
                   dataKey="label"
@@ -738,7 +745,9 @@ export default function DashboardPage() {
             </ChartFrame>
           )}
         </DashboardPanel>
+      </div>
 
+      <div className="grid gap-4 xl:grid-cols-1">
         <DashboardPanel
           title="Department Mix (Projects vs Affiliates)"
           cardClassName={PANEL_CARD_CLASS}
@@ -748,7 +757,7 @@ export default function DashboardPage() {
           {departmentMixData.length === 0 ? (
             <p className="text-sm text-slate-600">No department data yet.</p>
           ) : (
-            <ChartFrame height={260}>
+            <ChartFrame height={300}>
               <BarChart
                 data={departmentMixData}
                 margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
