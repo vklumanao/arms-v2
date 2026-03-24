@@ -659,6 +659,7 @@ registerDashboardRoutes(app, {
   authMiddleware,
   asTrimmedString,
   listDatasets,
+  listOrganizations,
   listGroups,
   listOrganizationAgendas,
 });
