@@ -24,7 +24,7 @@ export function buildProjectPayload(form, userId) {
     research_center_id: form.research_center_id,
     research_agenda_id: form.research_agenda_id || null,
     department_id: form.department_id || null,
-    funding_type: form.funding_type,
+    funding_type: form.funding_type || "internal",
     funding_category: form.funding_category || null,
     industry_partner: form.industry_partner || null,
     funding_source: form.funding_source || null,
