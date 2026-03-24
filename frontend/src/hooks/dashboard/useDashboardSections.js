@@ -1,16 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  fetchDashboardAwardsByCategory,
-  fetchDashboardCenterBreakdown,
-  fetchDashboardOverview,
-  fetchDashboardOutputsByDepartment,
-  fetchDashboardOutputsOverTime,
-  fetchDashboardProjectsPerCenter,
-  fetchDashboardRecentAwards,
-  fetchDashboardRecentOutputs,
-  fetchDashboardRecentProjects,
-  fetchDashboardYearOptions,
-} from "@/services/dashboard";
+import { fetchDashboardSummary } from "@/services/dashboard";
 
 function safeString(value) {
   return String(value ?? "").trim();
@@ -26,6 +15,10 @@ function normalizeFilters(filters) {
 
 export function useDashboardSections({ filters } = {}) {
   const normalizedFilters = useMemo(() => normalizeFilters(filters), [filters]);
+  const now =
+    typeof performance !== "undefined" && typeof performance.now === "function"
+      ? () => performance.now()
+      : () => Date.now();
 
   const [yearOptions, setYearOptions] = useState([]);
   const [overview, setOverview] = useState(null);
@@ -35,7 +28,10 @@ export function useDashboardSections({ filters } = {}) {
   const [outputsOverTimeData, setOutputsOverTimeData] = useState([]);
   const [awardsByCategoryData, setAwardsByCategoryData] = useState([]);
   const [recentProjects, setRecentProjects] = useState([]);
-  const [recentOutputs, setRecentOutputs] = useState({ mode: "submitted", rows: [] });
+  const [recentOutputs, setRecentOutputs] = useState({
+    mode: "submitted",
+    rows: [],
+  });
   const [recentAwards, setRecentAwards] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -45,60 +41,81 @@ export function useDashboardSections({ filters } = {}) {
     setLoading(true);
     setError("");
 
-    const [
-      yearsRes,
-      overviewRes,
-      breakdownRes,
-      projectsPerCenterRes,
-      outputsByDeptRes,
-      outputsOverTimeRes,
-      awardsByCategoryRes,
-      recentProjectsRes,
-      recentOutputsRes,
-      recentAwardsRes,
-    ] = await Promise.all([
-      fetchDashboardYearOptions(),
-      fetchDashboardOverview(normalizedFilters),
-      fetchDashboardCenterBreakdown(normalizedFilters),
-      fetchDashboardProjectsPerCenter(normalizedFilters),
-      fetchDashboardOutputsByDepartment(normalizedFilters),
-      fetchDashboardOutputsOverTime(normalizedFilters),
-      fetchDashboardAwardsByCategory(normalizedFilters),
-      fetchDashboardRecentProjects(normalizedFilters, { limit: 6 }),
-      fetchDashboardRecentOutputs(normalizedFilters, { limit: 6 }),
-      fetchDashboardRecentAwards(normalizedFilters, { limit: 6 }),
-    ]);
+    const startedAt = now();
+    const summaryRes = await fetchDashboardSummary(normalizedFilters, {
+      limit: 6,
+    });
 
-    if (yearsRes.error) setError(yearsRes.error?.message || "Failed to load years.");
-    else setYearOptions(Array.isArray(yearsRes.data) ? yearsRes.data : []);
+    if (summaryRes.error) {
+      setError(summaryRes.error?.message || "Failed to load dashboard data.");
+      setYearOptions([]);
+      setOverview(null);
+      setCenterBreakdownRows([]);
+      setProjectsPerCenterData([]);
+      setOutputsByDepartmentData([]);
+      setOutputsOverTimeData([]);
+      setAwardsByCategoryData([]);
+      setRecentProjects([]);
+      setRecentOutputs({ mode: "submitted", rows: [] });
+      setRecentAwards([]);
+      setLoading(false);
+      return;
+    }
 
-    if (overviewRes.error) setError(overviewRes.error?.message || "Failed to load overview.");
-    else setOverview(overviewRes.data && typeof overviewRes.data === "object" ? overviewRes.data : null);
+    const payload =
+      summaryRes.data && typeof summaryRes.data === "object"
+        ? summaryRes.data
+        : {};
 
-    if (breakdownRes.error) setError(breakdownRes.error?.message || "Failed to load breakdown.");
-    else setCenterBreakdownRows(Array.isArray(breakdownRes.data) ? breakdownRes.data : []);
+    setYearOptions(
+      Array.isArray(payload.yearOptions) ? payload.yearOptions : [],
+    );
+    setOverview(
+      payload.overview && typeof payload.overview === "object"
+        ? payload.overview
+        : null,
+    );
+    setCenterBreakdownRows(
+      Array.isArray(payload.centerBreakdownRows)
+        ? payload.centerBreakdownRows
+        : [],
+    );
+    setProjectsPerCenterData(
+      Array.isArray(payload.projectsPerCenterData)
+        ? payload.projectsPerCenterData
+        : [],
+    );
+    setOutputsByDepartmentData(
+      Array.isArray(payload.outputsByDepartmentData)
+        ? payload.outputsByDepartmentData
+        : [],
+    );
+    setOutputsOverTimeData(
+      Array.isArray(payload.outputsOverTimeData)
+        ? payload.outputsOverTimeData
+        : [],
+    );
+    setAwardsByCategoryData(
+      Array.isArray(payload.awardsByCategoryData)
+        ? payload.awardsByCategoryData
+        : [],
+    );
+    setRecentProjects(
+      Array.isArray(payload.recentProjects) ? payload.recentProjects : [],
+    );
+    setRecentOutputs(
+      payload.recentOutputs && typeof payload.recentOutputs === "object"
+        ? payload.recentOutputs
+        : { mode: "submitted", rows: [] },
+    );
+    setRecentAwards(
+      Array.isArray(payload.recentAwards) ? payload.recentAwards : [],
+    );
 
-    if (projectsPerCenterRes.error) setError(projectsPerCenterRes.error?.message || "Failed to load chart.");
-    else setProjectsPerCenterData(Array.isArray(projectsPerCenterRes.data) ? projectsPerCenterRes.data : []);
-
-    if (outputsByDeptRes.error) setError(outputsByDeptRes.error?.message || "Failed to load chart.");
-    else setOutputsByDepartmentData(Array.isArray(outputsByDeptRes.data) ? outputsByDeptRes.data : []);
-
-    if (outputsOverTimeRes.error) setError(outputsOverTimeRes.error?.message || "Failed to load chart.");
-    else setOutputsOverTimeData(Array.isArray(outputsOverTimeRes.data) ? outputsOverTimeRes.data : []);
-
-    if (awardsByCategoryRes.error) setError(awardsByCategoryRes.error?.message || "Failed to load chart.");
-    else setAwardsByCategoryData(Array.isArray(awardsByCategoryRes.data) ? awardsByCategoryRes.data : []);
-
-    if (recentProjectsRes.error) setError(recentProjectsRes.error?.message || "Failed to load recent projects.");
-    else setRecentProjects(Array.isArray(recentProjectsRes.data) ? recentProjectsRes.data : []);
-
-    if (recentOutputsRes.error) setError(recentOutputsRes.error?.message || "Failed to load recent outputs.");
-    else setRecentOutputs(recentOutputsRes.data && typeof recentOutputsRes.data === "object" ? recentOutputsRes.data : { mode: "submitted", rows: [] });
-
-    if (recentAwardsRes.error) setError(recentAwardsRes.error?.message || "Failed to load recent awards.");
-    else setRecentAwards(Array.isArray(recentAwardsRes.data) ? recentAwardsRes.data : []);
-
+    const elapsed = Math.round(now() - startedAt);
+    if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+      console.info(`Dashboard summary loaded in ${elapsed}ms`);
+    }
     setLoading(false);
   }, [normalizedFilters]);
 
