@@ -248,12 +248,12 @@ export default function PublicResearchCenterDetailPage() {
     };
   }, [centerRecords, normalizedAffiliateRows.length]);
 
-  const agendaDisplay = useMemo(() => {
+  const agendaDisplay = (() => {
     if (Array.isArray(center?.agenda_names) && center.agenda_names.length > 0) {
       return center.agenda_names;
     }
     return centerInfo.agendas;
-  }, [center?.agenda_names, centerInfo.agendas]);
+  })();
 
   const paginatedAffiliates = useMemo(() => {
     const start = (affiliatesPage - 1) * PAGE_SIZE;
