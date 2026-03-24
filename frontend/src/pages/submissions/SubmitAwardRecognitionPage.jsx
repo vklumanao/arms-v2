@@ -386,18 +386,7 @@ export default function SubmitAwardRecognitionPage() {
     }
     return errors;
   };
-  const fieldErrors = useMemo(
-    () => validateFields(),
-    [
-      form.award_recognition,
-      form.awarding_body,
-      form.level,
-      form.recipient_users,
-      form.work_title,
-      form.year_received,
-      movFile,
-    ],
-  );
+  const fieldErrors = validateFields();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
