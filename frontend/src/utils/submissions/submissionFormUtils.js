@@ -28,7 +28,7 @@ export const INITIAL_SUBMISSION_FORM = {
   research_center_id: "",
   research_agenda_id: "",
   department_id: "",
-  funding_type: "",
+  funding_type: "internal",
   funding_category: "",
   industry_partner: "",
   funding_source: "",
@@ -63,7 +63,7 @@ export function mapProjectToSubmissionForm(project) {
     research_center_id: project?.research_center_id || "",
     research_agenda_id: project?.research_agenda_id || "",
     department_id: project?.department_id || "",
-    funding_type: project?.funding_type || "",
+    funding_type: project?.funding_type || "internal",
     funding_category: project?.funding_category || "",
     industry_partner: project?.industry_partner || "",
     funding_source: project?.funding_source || "",
@@ -123,11 +123,6 @@ const SUBMISSION_STEP_RULES = {
       field: "title",
       message: "Project title is required.",
       check: (form) => Boolean(form.title?.trim()),
-    },
-    {
-      field: "abstract",
-      message: "Abstract is required.",
-      check: (form) => Boolean(form.abstract?.trim()),
     },
     {
       field: "lead_researcher",
@@ -198,8 +193,25 @@ const SUBMISSION_STEP_RULES = {
     },
     {
       field: "industry_partner",
-      message: "Industry/Agency partner is required.",
-      check: (form) => Boolean(form.industry_partner?.trim()),
+      message: "Industry/Agency partner is required for industry projects.",
+      check: (form) => {
+        const classification = String(form.classification || "")
+          .trim()
+          .toLowerCase();
+        const fundingType = String(form.funding_type || "")
+          .trim()
+          .toLowerCase();
+        const fundingCategory = String(form.funding_category || "")
+          .trim()
+          .toLowerCase();
+
+        const requiresPartner =
+          classification.includes("industry") ||
+          fundingType.includes("industry") ||
+          fundingCategory.includes("industry");
+        if (!requiresPartner) return true;
+        return Boolean(form.industry_partner?.trim());
+      },
     },
     {
       field: "start_date",
