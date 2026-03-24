@@ -299,6 +299,9 @@ const projectSubmissionFormSchema = z
     const fundingCategory = String(value.funding_category || "")
       .trim()
       .toLowerCase();
+    const classification = String(value.classification || "")
+      .trim()
+      .toLowerCase();
     if (fundingType !== "none" && !String(value.funding_source || "").trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -307,6 +310,7 @@ const projectSubmissionFormSchema = z
       });
     }
     if (
+      classification.includes("industry") ||
       fundingType.includes("industry") ||
       fundingCategory.includes("industry")
     ) {
