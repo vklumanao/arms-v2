@@ -119,20 +119,23 @@ export default function StepProjectInfo({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
-                Lead Researcher
-              </span>
-              <Input
-                value={selectedLeadResearcher || form.lead_researcher || ""}
-                readOnly
-                disabled
-                className={errors?.lead_researcher ? "input-error" : ""}
-              />
-              {errors?.lead_researcher && (
-                <p className="field-error">{errors.lead_researcher}</p>
-              )}
-            </label>
+            <UserMultiSelect
+              label="Lead Researcher"
+              placeholder="Type a Student or Faculty name"
+              searchValue={leadSearch}
+              onSearchChange={setLeadSearch}
+              dropdownOpen={leadDropdownOpen}
+              setDropdownOpen={setLeadDropdownOpen}
+              suggestions={leadSuggestions}
+              onSelect={(user) => setLeadResearcherSelection(user)}
+              selections={selectedLeadResearcher ? [selectedLeadResearcher] : []}
+              onRemove={() => setLeadResearcherSelection(null)}
+              fieldRef={leadFieldRef}
+              emptyText="No lead researcher selected yet."
+              helperText="Type to search and select exactly one lead researcher."
+              allowMultiple={false}
+              error={errors?.lead_researcher}
+            />
 
             <UserMultiSelect
               label="Research Team (Faculty)"
