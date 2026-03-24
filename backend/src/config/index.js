@@ -72,7 +72,7 @@ export const config = {
   ),
   exposeResetTokenInResponse: readBool(
     process.env.ARMS_EXPOSE_RESET_TOKEN_IN_RESPONSE,
-    true,
+    false,
   ),
   dataFile: path.resolve(
     backendRoot,
@@ -91,10 +91,9 @@ export const config = {
   ckanApiKey: String(process.env.CKAN_API_KEY || ""),
   ckanVerifyTls: readBool(process.env.CKAN_VERIFY_TLS, false),
   ckanTokenNamePrefix: String(process.env.CKAN_TOKEN_NAME_PREFIX || "arms"),
-  serviceBotEmails: readCsv(
-    process.env.ARMS_SERVICE_BOT_EMAILS,
-    ["arms.service@example.com"],
-  ).map((value) => value.toLowerCase()),
+  serviceBotEmails: readCsv(process.env.ARMS_SERVICE_BOT_EMAILS, [
+    "arms.service@example.com",
+  ]).map((value) => value.toLowerCase()),
   serviceBotNames: readCsv(process.env.ARMS_SERVICE_BOT_NAMES, [
     "ARMS Service Bot",
   ]).map((value) => value.toLowerCase()),
@@ -104,7 +103,8 @@ export const config = {
   authCookieName: readString(process.env.ARMS_AUTH_COOKIE_NAME, "arms_session"),
   authCookieSecure: readBool(
     process.env.ARMS_AUTH_COOKIE_SECURE,
-    String(process.env.NODE_ENV || "development").toLowerCase() === "production",
+    String(process.env.NODE_ENV || "development").toLowerCase() ===
+      "production",
   ),
 };
 
@@ -128,6 +128,33 @@ export function assertConfig() {
   }
   if (config.jwtSecret === "change-me") {
     console.warn("[WARN] ARMS_JWT_SECRET is using the default value.");
+  }
+
+  if (String(config.nodeEnv).toLowerCase() === "production") {
+    const jwtSecret = String(config.jwtSecret || "").trim();
+    if (
+      !jwtSecret ||
+      /^change-me$/i.test(jwtSecret) ||
+      /^change_me$/i.test(jwtSecret)
+    ) {
+      throw new Error(
+        "ARMS_JWT_SECRET must be set to a strong random value in production.",
+      );
+    }
+
+    const defaultAdminPassword = String(
+      config.defaultAdminPassword || "",
+    ).trim();
+    if (
+      !defaultAdminPassword ||
+      /^admin123$/i.test(defaultAdminPassword) ||
+      /^change-me$/i.test(defaultAdminPassword) ||
+      /^change_me$/i.test(defaultAdminPassword)
+    ) {
+      throw new Error(
+        "ARMS_DEFAULT_ADMIN_PASSWORD must be changed in production.",
+      );
+    }
   }
   if (!/^[a-fA-F0-9]{64}$/.test(config.encryptionKeyHex)) {
     throw new Error(
