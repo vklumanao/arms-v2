@@ -866,7 +866,7 @@ export default function SubmitAffiliationPage() {
       expected_outputs: summaryText,
       expected_outputs_items: expectedOutputRows.map((row) => ({
         output_type: row.output_type || "",
-        target_count: 1,
+        target_count: Math.max(1, Number(row.target_count) || 1),
         specific_output: row.specific_output || "",
         publication_authors: row.publication_authors || "",
         output_link: row.output_link || "",
