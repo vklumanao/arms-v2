@@ -128,7 +128,6 @@ export default function AwardsRecognitionPage() {
       .toLowerCase();
     return rows.filter((row) => {
       const haystack = [
-        row?.program_department,
         row?.work_title,
         row?.award_recognition,
         row?.awarding_body,
@@ -253,7 +252,6 @@ export default function AwardsRecognitionPage() {
   const buildExportRows = () =>
     filteredRows.map((row, index) => ({
       no: index + 1,
-      department: row.program_department || "-",
       title: row.work_title || "-",
       project:
         projectTitleById.get(String(row?.project_id || "").trim()) ||
@@ -273,7 +271,6 @@ export default function AwardsRecognitionPage() {
     try {
       const headers = [
         "No.",
-        "Department",
         "Title of Research",
         "Project",
         "Award/Recognition",
@@ -286,7 +283,6 @@ export default function AwardsRecognitionPage() {
       const lines = buildExportRows().map((row) =>
         [
           row.no,
-          row.department,
           row.title,
           row.project,
           row.award,
@@ -321,7 +317,6 @@ export default function AwardsRecognitionPage() {
           (row) => `
             <tr>
               <td>${row.no}</td>
-              <td>${row.department}</td>
               <td>${row.title}</td>
               <td>${row.project}</td>
               <td>${row.award}</td>
@@ -364,7 +359,6 @@ export default function AwardsRecognitionPage() {
               <thead>
                 <tr>
                   <th>No.</th>
-                  <th>Department</th>
                   <th>Title of Research</th>
                   <th>Project</th>
                   <th>Award/Recognition</th>
@@ -541,7 +535,6 @@ export default function AwardsRecognitionPage() {
                 <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
-                    <TableHead>Department</TableHead>
                     <TableHead>Title of Research/Creative Work</TableHead>
                     <TableHead>Award/Recognition</TableHead>
                     <TableHead>Awarding Body</TableHead>
@@ -558,7 +551,6 @@ export default function AwardsRecognitionPage() {
                       <TableCell>
                         {(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}
                       </TableCell>
-                      <TableCell>{row.program_department || "-"}</TableCell>
                       <TableCell>{row.work_title || "-"}</TableCell>
                       <TableCell>{row.award_recognition || "-"}</TableCell>
                       <TableCell>{row.awarding_body || "-"}</TableCell>
@@ -661,7 +653,7 @@ export default function AwardsRecognitionPage() {
                 {totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={11} className="px-3 py-3">
+                      <TableCell colSpan={10} className="px-3 py-3">
                         <PaginationControls
                           page={currentPage}
                           totalPages={totalPages}
