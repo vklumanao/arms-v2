@@ -26,6 +26,13 @@ export function fetchDashboardYearOptions() {
   return safeFetch("/dashboard/filters/years");
 }
 
+export function fetchDashboardSummary(filters = {}, { limit = 6 } = {}) {
+  const query = new URLSearchParams(buildQuery(filters));
+  if (limit) query.set("limit", String(limit));
+  const queryString = query.toString();
+  return safeFetch(`/dashboard/summary${queryString ? `?${queryString}` : ""}`);
+}
+
 export function fetchDashboardOverview(filters = {}) {
   const query = buildQuery(filters);
   return safeFetch(`/dashboard/overview${query ? `?${query}` : ""}`);
