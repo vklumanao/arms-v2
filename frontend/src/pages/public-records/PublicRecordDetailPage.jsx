@@ -294,7 +294,7 @@ export default function PublicRecordDetailPage() {
       }, {}),
     [],
   );
-  const moaDownloadUrl = useMemo(() => {
+  const moaDownloadUrl = (() => {
     const resources = Array.isArray(resourcePanel?.resources)
       ? resourcePanel.resources
       : [];
@@ -308,7 +308,7 @@ export default function PublicRecordDetailPage() {
     return `${apiBaseUrl}/public-records/resources/${encodeURIComponent(
       moaResource.id,
     )}/download?download=1`;
-  }, [apiBaseUrl, resourcePanel?.resources]);
+  })();
 
   const selectedCenter = record
     ? centerById[record.research_center_id] || "-"
