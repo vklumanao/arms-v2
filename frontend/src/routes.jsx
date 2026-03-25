@@ -23,6 +23,7 @@ import {
   LoginPage,
   RegisterPage,
   ResetPasswordPage,
+  VerifyEmailPage,
 } from "@/pages/auth";
 import {
   PublicRecordDetailPage,
@@ -120,6 +121,10 @@ export default function AppRoutes() {
 
         <Route path="/login" element={withBoundary(<LoginPage />)} />
         <Route path="/register" element={withBoundary(<RegisterPage />)} />
+        <Route
+          path="/verify-email"
+          element={withBoundary(<VerifyEmailPage />)}
+        />
         <Route
           path="/forgot-password"
           element={withBoundary(<ForgotPasswordPage />)}
