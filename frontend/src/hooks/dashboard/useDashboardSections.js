@@ -11,6 +11,7 @@ function normalizeFilters(filters) {
     departmentId: safeString(filters?.departmentId),
     year: safeString(filters?.year),
     range: safeString(filters?.range),
+    ownerOnly: Boolean(filters?.ownerOnly),
   };
 }
 
@@ -32,6 +33,7 @@ export function useDashboardSections({ filters } = {}) {
   const [awardsByLevelData, setAwardsByLevelData] = useState([]);
   const [fundingOverview, setFundingOverview] = useState(null);
   const [outputsVisibility, setOutputsVisibility] = useState(null);
+  const [projectStatusCounts, setProjectStatusCounts] = useState([]);
   const [topContributors, setTopContributors] = useState(null);
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentOutputs, setRecentOutputs] = useState({
@@ -65,6 +67,7 @@ export function useDashboardSections({ filters } = {}) {
       setAwardsByLevelData([]);
       setFundingOverview(null);
       setOutputsVisibility(null);
+      setProjectStatusCounts([]);
       setTopContributors(null);
       setRecentProjects([]);
       setRecentOutputs({ mode: "submitted", rows: [] });
@@ -130,6 +133,11 @@ export function useDashboardSections({ filters } = {}) {
         ? payload.outputsVisibility
         : null,
     );
+    setProjectStatusCounts(
+      Array.isArray(payload.projectStatusCounts)
+        ? payload.projectStatusCounts
+        : [],
+    );
     setTopContributors(
       payload.topContributors && typeof payload.topContributors === "object"
         ? payload.topContributors
@@ -147,10 +155,6 @@ export function useDashboardSections({ filters } = {}) {
       Array.isArray(payload.recentAwards) ? payload.recentAwards : [],
     );
 
-    const elapsed = Math.round(now() - startedAt);
-    if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-      console.info(`Dashboard summary loaded in ${elapsed}ms`);
-    }
     setLoading(false);
   }, [normalizedFilters]);
 
@@ -170,6 +174,7 @@ export function useDashboardSections({ filters } = {}) {
     awardsByLevelData,
     fundingOverview,
     outputsVisibility,
+    projectStatusCounts,
     topContributors,
     recentProjects,
     recentOutputs,
