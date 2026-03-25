@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { fetchCkanGroups, fetchCkanOrganizations } from "@/services/ckanApi";
-import {
-  isValidEmail,
-  validatePasswordStrength,
-} from "@/utils/validation";
+import { isValidEmail, validatePasswordStrength } from "@/utils/validation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -198,277 +200,269 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md">
-      <Card>
-      <CardHeader>
-        <h1 className="text-3xl font-bold text-center">Create Account</h1>
-        <p className="mt-1 text-sm text-slate-600 text-center">
-          Register as student or faculty to manage research projects.
-        </p>
-      </CardHeader>
-      <CardContent>
-      <form className="space-y-3" onSubmit={onSubmit}>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">First name</span>
-            <Input
-              placeholder="Juan"
-              required
-              value={form.first_name}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, first_name: e.target.value }))
-              }
-            />
-          </label>
-          <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Middle initial</span>
-            <Input
-              placeholder="M"
-              maxLength={2}
-              value={form.middle_initial}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, middle_initial: e.target.value }))
-              }
-            />
-          </label>
-          <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Last name</span>
-            <Input
-              placeholder="Dela Cruz"
-              required
-              value={form.last_name}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, last_name: e.target.value }))
-              }
-            />
-          </label>
-        </div>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Email</span>
-          <Input
-            placeholder="Enter your email address"
-            type="email"
-            required
-            value={form.email}
-            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Password</span>
-          <div className="relative">
-            <Input
-              className="pr-10"
-              placeholder="Create a password"
-              type={showPassword ? "text" : "password"}
-              required
-              value={form.password}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, password: e.target.value }))
-              }
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => setShowPassword((prev) => !prev)}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </Button>
-          </div>
-          <div className="mt-2 space-y-1 text-xs text-slate-600">
-            <div className="flex items-center gap-2">
-              {passwordChecks.length ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-slate-400" />
-              )}
-              <span>Use 8+ characters</span>
+    <section className="mx-auto max-w-lg px-4 py-10">
+      <Card className="shadow-lg border border-slate-200 rounded-2xl">
+        <CardHeader className="space-y-2 text-center pb-2">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Create your account
+          </h1>
+          <p className="text-sm text-slate-500">
+            Join as a student or faculty to manage research projects
+          </p>
+        </CardHeader>
+
+        <CardContent className="pt-4">
+          <form className="space-y-5" onSubmit={onSubmit}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">
+                  First name
+                </label>
+                <Input
+                  className="rounded-lg"
+                  placeholder="Juan"
+                  required
+                  value={form.first_name}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, first_name: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">
+                  M.I.
+                </label>
+                <Input
+                  className="rounded-lg"
+                  placeholder="M"
+                  maxLength={2}
+                  value={form.middle_initial}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, middle_initial: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">
+                  Last name
+                </label>
+                <Input
+                  className="rounded-lg"
+                  placeholder="Dela Cruz"
+                  required
+                  value={form.last_name}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, last_name: e.target.value }))
+                  }
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {passwordChecks.uppercase ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-slate-400" />
-              )}
-              <span>Add an uppercase letter (A-Z)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {passwordChecks.lowercase ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-slate-400" />
-              )}
-              <span>Add a lowercase letter (a-z)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {passwordChecks.number ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-slate-400" />
-              )}
-              <span>Add a number (0-9)</span>
-            </div>
-          </div>
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Confirm password</span>
-          <div className="relative">
-            <Input
-              className="pr-10"
-              placeholder="Re-enter your password"
-              type={showConfirmPassword ? "text" : "password"}
-              required
-              value={form.confirm_password}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, confirm_password: e.target.value }))
-              }
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-              aria-label={
-                showConfirmPassword ? "Hide password" : "Show password"
-              }
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-            >
-              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </Button>
-          </div>
-          {form.confirm_password ? (
-            <p
-              className={`text-xs ${
-                passwordsMatch ? "text-emerald-600" : "text-[var(--danger)]"
-              }`}
-            >
-              {passwordsMatch ? "Passwords match." : "Passwords do not match."}
-            </p>
-          ) : null}
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Role</span>
-          <Select
-            value={form.role}
-            onValueChange={(value) => setForm((p) => ({ ...p, role: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="student">Student</SelectItem>
-              <SelectItem value="faculty">Faculty</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Research Center</span>
-          <Select
-            value={form.ckan_org_id || NONE_SELECT_VALUE}
-            onValueChange={(value) =>
-              setForm((p) => ({
-                ...p,
-                ckan_org_id: value === NONE_SELECT_VALUE ? "" : value,
-              }))
-            }
-            disabled={ckanLoading}
-          >
-            <SelectTrigger>
-              <SelectValue
-                placeholder={
-                  ckanLoading
-                    ? "Loading Research Centers..."
-                    : "Optional: Select Research Center"
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">
+                Email address
+              </label>
+              <Input
+                className="rounded-lg"
+                placeholder="you@example.com"
+                type="email"
+                required
+                value={form.email}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, email: e.target.value }))
                 }
               />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE_SELECT_VALUE}>
-                Optional: Select Research Center
-              </SelectItem>
-              {ckanOrganizations.map((org) => (
-                <SelectItem key={org.id} value={org.name || org.id}>
-                  {org.title || org.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">Department</span>
-          <Select
-            value={form.ckan_group_id || NONE_SELECT_VALUE}
-            onValueChange={(value) =>
-              setForm((p) => {
-                if (value === NONE_SELECT_VALUE) {
-                  return { ...p, ckan_group_id: "", department: "" };
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-500">
+                Password
+              </label>
+
+              <div className="relative">
+                <Input
+                  className="pr-10 rounded-lg"
+                  placeholder="Create a secure password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, password: e.target.value }))
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  {passwordChecks.length ? (
+                    <Check className="text-emerald-500 w-3 h-3" />
+                  ) : (
+                    <X className="text-slate-300 w-3 h-3" />
+                  )}
+                  <span>8+ chars</span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {passwordChecks.uppercase ? (
+                    <Check className="text-emerald-500 w-3 h-3" />
+                  ) : (
+                    <X className="text-slate-300 w-3 h-3" />
+                  )}
+                  <span>Uppercase</span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {passwordChecks.lowercase ? (
+                    <Check className="text-emerald-500 w-3 h-3" />
+                  ) : (
+                    <X className="text-slate-300 w-3 h-3" />
+                  )}
+                  <span>Lowercase</span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {passwordChecks.number ? (
+                    <Check className="text-emerald-500 w-3 h-3" />
+                  ) : (
+                    <X className="text-slate-300 w-3 h-3" />
+                  )}
+                  <span>Number</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">
+                Confirm password
+              </label>
+
+              <div className="relative">
+                <Input
+                  className="pr-10 rounded-lg"
+                  placeholder="Re-enter password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={form.confirm_password}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      confirm_password: e.target.value,
+                    }))
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={16} />
+                  ) : (
+                    <Eye size={16} />
+                  )}
+                </Button>
+              </div>
+
+              {form.confirm_password && (
+                <p
+                  className={`text-xs ${
+                    passwordsMatch ? "text-emerald-600" : "text-red-500"
+                  }`}
+                >
+                  {passwordsMatch
+                    ? "Passwords match"
+                    : "Passwords do not match"}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                value={form.role}
+                onValueChange={(value) =>
+                  setForm((p) => ({ ...p, role: value }))
                 }
-                const selectedGroup = ckanGroups.find(
-                  (group) => String(group.name || group.id) === String(value),
-                );
-                return {
-                  ...p,
-                  ckan_group_id: value,
-                  department: selectedGroup?.title || selectedGroup?.name || "",
-                };
-              })
-            }
-            disabled={ckanGroupsLoading}
+              >
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="faculty">Faculty</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={form.ckan_org_id || NONE_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setForm((p) => ({
+                    ...p,
+                    ckan_org_id: value === NONE_SELECT_VALUE ? "" : value,
+                  }))
+                }
+                disabled={ckanLoading}
+              >
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue
+                    placeholder={
+                      ckanLoading
+                        ? "Loading centers..."
+                        : "Research Center (optional)"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                  {ckanOrganizations.map((org) => (
+                    <SelectItem key={org.id} value={org.name || org.id}>
+                      {org.title || org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1 text-sm">
+              {error && <p className="text-red-500">{error}</p>}
+              {message && <p className="text-emerald-600">{message}</p>}
+            </div>
+
+            <Button
+              disabled={loading || cooldownSeconds > 0}
+              className="w-full rounded-lg h-11 text-sm font-medium"
+            >
+              {loading
+                ? "Creating account..."
+                : cooldownSeconds > 0
+                  ? `Retry in ${cooldownSeconds}s`
+                  : "Create account"}
+            </Button>
+          </form>
+        </CardContent>
+
+        <CardFooter className="flex justify-center text-sm text-slate-500">
+          Already have an account?
+          <Link
+            className="ml-1 font-medium text-blue-600 hover:underline"
+            to="/login"
           >
-            <SelectTrigger>
-              <SelectValue
-                placeholder={
-                  ckanGroupsLoading
-                    ? "Loading department..."
-                    : "Optional: Select department"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE_SELECT_VALUE}>
-                Optional: Select department
-              </SelectItem>
-              {ckanGroups.map((group) => (
-                <SelectItem key={group.id} value={group.name || group.id}>
-                  {group.title || group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
-
-        {ckanError && (
-          <p className="text-sm text-[var(--danger)]">{ckanError}</p>
-        )}
-        {ckanGroupsError && (
-          <p className="text-sm text-[var(--danger)]">{ckanGroupsError}</p>
-        )}
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        {message && <p className="text-sm text-[var(--success)]">{message}</p>}
-
-        <Button
-          disabled={loading || cooldownSeconds > 0}
-          className="w-full"
-        >
-          {loading
-            ? "Creating account..."
-            : cooldownSeconds > 0
-              ? `Retry in ${cooldownSeconds}s`
-              : "Register"}
-        </Button>
-      </form>
-      </CardContent>
-
-      <CardFooter className="text-sm text-slate-600">
-        Already have an account?{" "}
-        <Link className="text-blue-700" to="/login">
-          Login
-        </Link>
-      </CardFooter>
+            Sign in
+          </Link>
+        </CardFooter>
       </Card>
     </section>
   );
 }
-
