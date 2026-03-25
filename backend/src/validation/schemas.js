@@ -65,6 +65,24 @@ export const resetPasswordSchema = z.object({
 });
 
 /**
+ * Email verification token payload validator.
+ *
+ * Expected by `/api/auth/verify-email` route.
+ */
+export const verifyEmailSchema = z.object({
+  token: z.string().trim().min(16),
+});
+
+/**
+ * Resend verification payload validator.
+ *
+ * Expected by `/api/auth/resend-verification` route.
+ */
+export const resendVerificationSchema = z.object({
+  email,
+});
+
+/**
  * Authenticated change-password payload validator.
  *
  * Expected by `/api/auth/change-password` route.
