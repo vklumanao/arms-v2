@@ -85,6 +85,12 @@ export async function runMigrations() {
   await query(
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_count INTEGER NOT NULL DEFAULT 0`,
   );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE`,
+  );
+  await query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`,
+  );
 
   await query(
     `
@@ -153,6 +159,25 @@ export async function runMigrations() {
   );
   await query(
     `CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens (user_id)`,
+  );
+
+  // Email verification tokens enable one-time email confirmation for new accounts.
+  await query(`
+    CREATE TABLE IF NOT EXISTS email_verification_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_email_verification_token_hash ON email_verification_tokens (token_hash)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_email_verification_user_id ON email_verification_tokens (user_id)`,
   );
 
   // Audit table tracks security and admin activity for traceability.
