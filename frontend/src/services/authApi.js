@@ -32,6 +32,20 @@ export async function resetPasswordWithToken({ token, password }) {
   });
 }
 
+export async function verifyEmailWithToken(token) {
+  return apiFetch("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerificationEmail(email) {
+  return apiFetch("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function logoutSession() {
   return apiFetch("/auth/logout", { method: "POST" });
 }
