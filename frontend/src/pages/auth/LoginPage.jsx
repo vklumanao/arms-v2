@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [showVerifyHint, setShowVerifyHint] = useState(false);
 
   const rawFrom = location.state?.from?.pathname;
   const from =
@@ -60,6 +61,7 @@ export default function LoginPage() {
     if (loading || cooldownSeconds > 0) return;
     setLoading(true);
     setError("");
+    setShowVerifyHint(false);
 
     const normalizedEmail = form.email.trim().toLowerCase();
     if (!isValidEmail(normalizedEmail)) {
@@ -98,6 +100,9 @@ export default function LoginPage() {
           `Too many login attempts. Please wait ${retryAfterSeconds} seconds before trying again.`,
         );
         return;
+      }
+      if (message.toLowerCase().includes("not verified")) {
+        setShowVerifyHint(true);
       }
       setError(message);
     } finally {
@@ -154,6 +159,15 @@ export default function LoginPage() {
               </div>
             </label>
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+            {showVerifyHint && (
+              <p className="text-xs text-slate-600">
+                Need a new verification link?{" "}
+                <Link className="text-[var(--brand)]" to="/verify-email">
+                  Verify your email
+                </Link>
+                .
+              </p>
+            )}
             <Button
               disabled={loading || cooldownSeconds > 0}
               className="w-full"
