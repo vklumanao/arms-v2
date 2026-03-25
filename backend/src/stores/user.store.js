@@ -41,6 +41,8 @@ function sanitizeProfile(user) {
     full_name: user.full_name,
     role: user.role,
     is_active: user.is_active !== false,
+    email_verified: user.email_verified === true,
+    email_verified_at: user.email_verified_at || null,
     department: user.department || null,
     ckan_org_id: user.ckan_org_id || null,
     ckan_group_id: user.ckan_group_id || null,
@@ -94,6 +96,8 @@ function mapUserRow(row) {
     awards_count: row.awards_count,
     ip_count: row.ip_count,
     is_active: row.is_active,
+    email_verified: row.email_verified,
+    email_verified_at: row.email_verified_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -204,6 +208,9 @@ export async function createUser(input) {
     awards_count: Math.max(0, Number(input.awards_count || 0) || 0),
     ip_count: Math.max(0, Number(input.ip_count || 0) || 0),
     is_active: input.is_active !== false,
+    email_verified:
+      input.email_verified === undefined ? true : input.email_verified === true,
+    email_verified_at: input.email_verified_at || null,
     created_at: input.created_at || nowIso(),
     updated_at: input.updated_at || nowIso(),
   };
@@ -216,13 +223,13 @@ export async function createUser(input) {
       ckan_api_token, ckan_api_token_created_at,
       google_scholar_link, employment_status, designation, is_gs_faculty,
       publication_count, research_project_count, creative_work_count, awards_count, ip_count,
-      is_active, created_at, updated_at
+      is_active, email_verified, email_verified_at, created_at, updated_at
     ) VALUES (
       $1,$2,$3,$4,$5,$6,
       $7,$8,$9,$10,
       $11,$12,$13,$14,$15,$16,
       $17,$18,$19,$20,$21,
-      $22,$23,$24
+      $22,$23,$24,$25,$26
     )
     RETURNING *
     `,
@@ -249,6 +256,8 @@ export async function createUser(input) {
       user.awards_count,
       user.ip_count,
       user.is_active,
+      user.email_verified,
+      user.email_verified_at,
       user.created_at,
       user.updated_at,
     ],
@@ -294,6 +303,8 @@ export async function updateUser(id, patch) {
     "awards_count",
     "ip_count",
     "is_active",
+    "email_verified",
+    "email_verified_at",
   ]);
 
   const entries = Object.entries(patch || {}).filter(([key]) =>
@@ -322,6 +333,9 @@ export async function updateUser(id, patch) {
     }
     if (key === "is_gs_faculty") {
       nextValue = Boolean(value);
+    }
+    if (key === "email_verified") {
+      nextValue = value === true;
     }
     if (
       key === "publication_count" ||
