@@ -1,8 +1,4 @@
-import {
-  Navigate,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import PublicLayout from "@/components/layout/PublicLayout";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
