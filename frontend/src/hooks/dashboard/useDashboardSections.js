@@ -10,6 +10,7 @@ function normalizeFilters(filters) {
     centerId: safeString(filters?.centerId),
     departmentId: safeString(filters?.departmentId),
     year: safeString(filters?.year),
+    range: safeString(filters?.range),
   };
 }
 
@@ -22,11 +23,16 @@ export function useDashboardSections({ filters } = {}) {
 
   const [yearOptions, setYearOptions] = useState([]);
   const [overview, setOverview] = useState(null);
+  const [activityThisMonth, setActivityThisMonth] = useState(null);
   const [centerBreakdownRows, setCenterBreakdownRows] = useState([]);
   const [projectsPerCenterData, setProjectsPerCenterData] = useState([]);
   const [outputsByDepartmentData, setOutputsByDepartmentData] = useState([]);
   const [outputsOverTimeData, setOutputsOverTimeData] = useState([]);
   const [awardsByCategoryData, setAwardsByCategoryData] = useState([]);
+  const [awardsByLevelData, setAwardsByLevelData] = useState([]);
+  const [fundingOverview, setFundingOverview] = useState(null);
+  const [outputsVisibility, setOutputsVisibility] = useState(null);
+  const [topContributors, setTopContributors] = useState(null);
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentOutputs, setRecentOutputs] = useState({
     mode: "submitted",
@@ -50,11 +56,16 @@ export function useDashboardSections({ filters } = {}) {
       setError(summaryRes.error?.message || "Failed to load dashboard data.");
       setYearOptions([]);
       setOverview(null);
+      setActivityThisMonth(null);
       setCenterBreakdownRows([]);
       setProjectsPerCenterData([]);
       setOutputsByDepartmentData([]);
       setOutputsOverTimeData([]);
       setAwardsByCategoryData([]);
+      setAwardsByLevelData([]);
+      setFundingOverview(null);
+      setOutputsVisibility(null);
+      setTopContributors(null);
       setRecentProjects([]);
       setRecentOutputs({ mode: "submitted", rows: [] });
       setRecentAwards([]);
@@ -73,6 +84,12 @@ export function useDashboardSections({ filters } = {}) {
     setOverview(
       payload.overview && typeof payload.overview === "object"
         ? payload.overview
+        : null,
+    );
+    setActivityThisMonth(
+      payload.overview?.activityThisMonth &&
+        typeof payload.overview.activityThisMonth === "object"
+        ? payload.overview.activityThisMonth
         : null,
     );
     setCenterBreakdownRows(
@@ -100,6 +117,24 @@ export function useDashboardSections({ filters } = {}) {
         ? payload.awardsByCategoryData
         : [],
     );
+    setAwardsByLevelData(
+      Array.isArray(payload.awardsByLevelData) ? payload.awardsByLevelData : [],
+    );
+    setFundingOverview(
+      payload.fundingOverview && typeof payload.fundingOverview === "object"
+        ? payload.fundingOverview
+        : null,
+    );
+    setOutputsVisibility(
+      payload.outputsVisibility && typeof payload.outputsVisibility === "object"
+        ? payload.outputsVisibility
+        : null,
+    );
+    setTopContributors(
+      payload.topContributors && typeof payload.topContributors === "object"
+        ? payload.topContributors
+        : null,
+    );
     setRecentProjects(
       Array.isArray(payload.recentProjects) ? payload.recentProjects : [],
     );
@@ -126,11 +161,16 @@ export function useDashboardSections({ filters } = {}) {
   return {
     yearOptions,
     overview,
+    activityThisMonth,
     centerBreakdownRows,
     projectsPerCenterData,
     outputsByDepartmentData,
     outputsOverTimeData,
     awardsByCategoryData,
+    awardsByLevelData,
+    fundingOverview,
+    outputsVisibility,
+    topContributors,
     recentProjects,
     recentOutputs,
     recentAwards,
