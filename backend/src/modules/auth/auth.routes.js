@@ -24,6 +24,8 @@ export function registerAuthRoutes(app, deps) {
     loginSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
+    verifyEmailSchema,
+    resendVerificationSchema,
     changePasswordSchema,
     config,
     DEFAULT_ROLE_PERMISSIONS,
@@ -52,6 +54,9 @@ export function registerAuthRoutes(app, deps) {
     updateCkanUserPassword,
     createPasswordResetToken,
     consumePasswordResetToken,
+    createEmailVerificationToken,
+    consumeEmailVerificationToken,
+    sendEmail,
     logAuditEvent,
   } = deps;
 
@@ -68,6 +73,64 @@ export function registerAuthRoutes(app, deps) {
       middle ? `${middle}.` : "",
     ].filter(Boolean);
     return parts.join(" ").replace(/\s+/g, " ").trim();
+  };
+
+  const buildVerificationLink = (token) => {
+    const base = String(config.publicAppUrl || "").replace(/\/$/, "");
+    return `${base}/verify-email?token=${encodeURIComponent(String(token))}`;
+  };
+
+  const buildVerificationEmailHtml = ({ fullName, link }) => {
+    const safeName = String(fullName || "there").trim() || "there";
+    return `
+      <div style="margin:0;padding:0;background:#f5f7fb;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+                <tr>
+                  <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
+                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">ARMS</div>
+                    <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Verify your email</div>
+                    <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Activate your account in seconds</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
+                    <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
+                    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
+                      Welcome to ARMS. Please confirm your email to activate your account and start managing your research workflows.
+                    </p>
+                    <p style="margin:0 0 20px 0;">
+                      <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
+                        Verify Email
+                      </a>
+                    </p>
+                    <p style="margin:0 0 8px 0;font-size:13px;color:#475569;">
+                      If the button does not work, copy and paste this link into your browser:
+                    </p>
+                    <p style="margin:0 0 18px 0;font-size:12px;color:#0f4c81;word-break:break-all;">
+                      ${link}
+                    </p>
+                    <div style="margin-top:8px;padding:12px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;font-size:12px;color:#475569;">
+                      This verification link will expire soon for your security.
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px 24px 24px;font-family:Arial,sans-serif;color:#64748b;font-size:12px;border-top:1px solid #e2e8f0;">
+                    If you did not create this account, you can ignore this email.
+                  </td>
+                </tr>
+              </table>
+              <div style="font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;margin-top:12px;">
+                ARMS Platform
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
   };
 
   app.get("/api/health", (req, res) => {
@@ -172,6 +235,10 @@ export function registerAuthRoutes(app, deps) {
         ckan_group_id: selectedGroup?.name || selectedGroup?.id || null,
         ckan_username: ckanUser.name,
         ckan_user_id: ckanUser.id || null,
+        email_verified: config.emailVerificationEnabled ? false : true,
+        email_verified_at: config.emailVerificationEnabled
+          ? null
+          : new Date().toISOString(),
       });
 
       await logAuditEvent({
@@ -184,6 +251,34 @@ export function registerAuthRoutes(app, deps) {
           ckan_group_id: created.ckan_group_id,
         },
       });
+
+      if (config.emailVerificationEnabled) {
+        const token = await createEmailVerificationToken(
+          created.id,
+          config.emailVerifyTokenTtlMinutes,
+        );
+        const link = buildVerificationLink(token);
+        await sendEmail({
+          to: created.email,
+          subject: "Verify your ARMS account",
+          html: buildVerificationEmailHtml({
+            fullName: created.full_name,
+            link,
+          }),
+        });
+
+        await logAuditEvent({
+          actorUserId: created.id,
+          eventType: "auth.verify_email_sent",
+          details: { email: created.email },
+        });
+
+        return res.status(201).json({
+          ok: true,
+          requires_verification: true,
+          email: created.email,
+        });
+      }
 
       const authUser = await resolveCenterChiefContext(created);
       const token = signSession(authUser);
@@ -199,6 +294,102 @@ export function registerAuthRoutes(app, deps) {
         .json({ error: String(error?.message || "Registration failed.") });
     }
   });
+
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      if (!config.emailVerificationEnabled) {
+        return badRequest(res, "Email verification is disabled.");
+      }
+      const parsed = parseOrThrow(
+        verifyEmailSchema,
+        req.body,
+        "Invalid verification payload.",
+      );
+      const consumed = await consumeEmailVerificationToken(parsed.token);
+      if (!consumed) {
+        return res
+          .status(400)
+          .json({ error: "Invalid or expired verification token." });
+      }
+
+      const user = await findUserById(consumed.user_id);
+      if (!user) {
+        return res
+          .status(400)
+          .json({ error: "User not found for verification token." });
+      }
+
+      if (user.email_verified === true) {
+        return res.json({ ok: true, already_verified: true });
+      }
+
+      await updateUser(user.id, {
+        email_verified: true,
+        email_verified_at: new Date().toISOString(),
+      });
+
+      await logAuditEvent({
+        actorUserId: user.id,
+        eventType: "auth.email_verified",
+        details: { email: user.email },
+      });
+
+      return res.json({ ok: true });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(error?.message || "Email verification failed."),
+      });
+    }
+  });
+
+  app.post(
+    "/api/auth/resend-verification",
+    forgotRateLimit,
+    async (req, res) => {
+      try {
+        if (!config.emailVerificationEnabled) {
+          return badRequest(res, "Email verification is disabled.");
+        }
+        const parsed = parseOrThrow(
+          resendVerificationSchema,
+          req.body,
+          "Invalid resend payload.",
+        );
+
+        const email = parsed.email.trim().toLowerCase();
+        const user = await findUserByEmail(email);
+        if (!user || user.email_verified === true) {
+          return res.json({ ok: true });
+        }
+
+        const token = await createEmailVerificationToken(
+          user.id,
+          config.emailVerifyTokenTtlMinutes,
+        );
+        const link = buildVerificationLink(token);
+        await sendEmail({
+          to: user.email,
+          subject: "Verify your ARMS account",
+          html: buildVerificationEmailHtml({
+            fullName: user.full_name,
+            link,
+          }),
+        });
+
+        await logAuditEvent({
+          actorUserId: user.id,
+          eventType: "auth.verify_email_resent",
+          details: { email: user.email },
+        });
+
+        return res.json({ ok: true });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ error: String(error?.message || "Resend failed.") });
+      }
+    },
+  );
 
   // Login flow:
   // 1) Validate credentials.
@@ -230,6 +421,17 @@ export function registerAuthRoutes(app, deps) {
           details: { reason: "inactive" },
         });
         return unauthorized(res, "Account is deactivated.");
+      }
+      if (config.emailVerificationEnabled && user.email_verified !== true) {
+        await logAuditEvent({
+          actorUserId: user.id,
+          eventType: "auth.login_blocked",
+          details: { reason: "email_unverified" },
+        });
+        return res.status(403).json({
+          error: "Email is not verified. Please check your inbox.",
+          code: "EMAIL_NOT_VERIFIED",
+        });
       }
 
       const ok = await verifyPassword(user, password);
@@ -347,7 +549,10 @@ export function registerAuthRoutes(app, deps) {
         let warning = "";
         if (user.ckan_username) {
           try {
-            await updateCkanUserPassword(user.ckan_username, parsed.new_password);
+            await updateCkanUserPassword(
+              user.ckan_username,
+              parsed.new_password,
+            );
             await logAuditEvent({
               actorUserId: user.id,
               eventType: "ckan.password_sync_success",
@@ -414,7 +619,10 @@ export function registerAuthRoutes(app, deps) {
 
       const payload = { ok: true };
       // Only expose reset tokens in explicit local development debug mode.
-      if (config.nodeEnv === "development" && config.exposeResetTokenInResponse) {
+      if (
+        config.nodeEnv === "development" &&
+        config.exposeResetTokenInResponse
+      ) {
         payload.reset_token = token;
       }
 
@@ -441,7 +649,9 @@ export function registerAuthRoutes(app, deps) {
 
       const consumed = await consumePasswordResetToken(parsed.token);
       if (!consumed) {
-        return res.status(400).json({ error: "Invalid or expired reset token." });
+        return res
+          .status(400)
+          .json({ error: "Invalid or expired reset token." });
       }
 
       const user = await findUserById(consumed.user_id);
@@ -514,7 +724,9 @@ export function registerAuthRoutes(app, deps) {
   }
 
   function normalizeRolePermissionMap(rawMap) {
-    const roles = Object.keys(DEFAULT_ROLE_PERMISSIONS || ROLE_PERMISSIONS || {});
+    const roles = Object.keys(
+      DEFAULT_ROLE_PERMISSIONS || ROLE_PERMISSIONS || {},
+    );
     const next = {};
     for (const role of roles) {
       next[role] = normalizePermissionList(rawMap?.[role] || []);
@@ -545,7 +757,11 @@ export function registerAuthRoutes(app, deps) {
     const nextMap = normalizeRolePermissionMap(rawMap);
     for (const role of Object.keys(nextMap)) {
       if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
-      ROLE_PERMISSIONS[role].splice(0, ROLE_PERMISSIONS[role].length, ...nextMap[role]);
+      ROLE_PERMISSIONS[role].splice(
+        0,
+        ROLE_PERMISSIONS[role].length,
+        ...nextMap[role],
+      );
     }
 
     await logAuditEvent({
@@ -557,27 +773,31 @@ export function registerAuthRoutes(app, deps) {
     return res.json({ ok: true, map: ROLE_PERMISSIONS });
   });
 
-  app.post("/api/permissions/role-map/reset", authMiddleware, async (req, res) => {
-    if (!userHasPermission(req.user, "admin.controls.manage")) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+  app.post(
+    "/api/permissions/role-map/reset",
+    authMiddleware,
+    async (req, res) => {
+      if (!userHasPermission(req.user, "admin.controls.manage")) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
 
-    const defaults = normalizeRolePermissionMap(DEFAULT_ROLE_PERMISSIONS);
-    for (const role of Object.keys(defaults)) {
-      if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
-      ROLE_PERMISSIONS[role].splice(
-        0,
-        ROLE_PERMISSIONS[role].length,
-        ...defaults[role],
-      );
-    }
+      const defaults = normalizeRolePermissionMap(DEFAULT_ROLE_PERMISSIONS);
+      for (const role of Object.keys(defaults)) {
+        if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
+        ROLE_PERMISSIONS[role].splice(
+          0,
+          ROLE_PERMISSIONS[role].length,
+          ...defaults[role],
+        );
+      }
 
-    await logAuditEvent({
-      actorUserId: req.user?.id || null,
-      eventType: "permissions.role_map_reset",
-      details: {},
-    });
+      await logAuditEvent({
+        actorUserId: req.user?.id || null,
+        eventType: "permissions.role_map_reset",
+        details: {},
+      });
 
-    return res.json({ ok: true, map: ROLE_PERMISSIONS });
-  });
+      return res.json({ ok: true, map: ROLE_PERMISSIONS });
+    },
+  );
 }
