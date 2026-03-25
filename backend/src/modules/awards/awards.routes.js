@@ -48,12 +48,17 @@ export function registerAwardsRoutes(app, deps) {
   function isAwardOwnedByUser(dataset, user) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const submittedByUserId = getExtra(extras, "submitted_by_user_id");
-    const submittedByEmail = getExtra(extras, "submitted_by_email").toLowerCase();
+    const submittedByEmail = getExtra(
+      extras,
+      "submitted_by_email",
+    ).toLowerCase();
     const userId = asTrimmedString(user?.id);
     const userEmail = asTrimmedString(user?.email).toLowerCase();
 
-    if (submittedByUserId && userId && submittedByUserId === userId) return true;
-    if (submittedByEmail && userEmail && submittedByEmail === userEmail) return true;
+    if (submittedByUserId && userId && submittedByUserId === userId)
+      return true;
+    if (submittedByEmail && userEmail && submittedByEmail === userEmail)
+      return true;
     return false;
   }
 
@@ -88,18 +93,83 @@ export function registerAwardsRoutes(app, deps) {
     }
   }
 
+  function parseSelectedUsers(rawValue) {
+    const raw = asTrimmedString(rawValue);
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      const rows = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+      return rows
+        .map((row) => ({
+          id: asTrimmedString(row?.id),
+          username: asTrimmedString(row?.username),
+          email: asTrimmedString(row?.email).toLowerCase(),
+        }))
+        .filter((row) => row.id || row.username || row.email);
+    } catch {
+      return [];
+    }
+  }
+
+  async function isUserLinkedToProject(projectId, user) {
+    const cleanId = asTrimmedString(projectId);
+    if (!cleanId || !user) return false;
+    try {
+      const dataset = await getDataset(cleanId);
+      if (!dataset) return false;
+      const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+      const leadUsers = parseSelectedUsers(
+        getExtra(extras, "lead_researcher_user"),
+      );
+      const facultyUsers = parseSelectedUsers(
+        getExtra(extras, "faculty_team_users"),
+      );
+      const selectedUsers = [...leadUsers, ...facultyUsers];
+      if (!selectedUsers.length) return false;
+
+      const candidateIds = new Set(
+        [user?.ckan_user_id, user?.id]
+          .map((value) => asTrimmedString(value))
+          .filter(Boolean),
+      );
+      const candidateEmails = new Set(
+        [user?.email]
+          .map((value) => asTrimmedString(value).toLowerCase())
+          .filter(Boolean),
+      );
+      const candidateUsername = asTrimmedString(
+        user?.ckan_username,
+      ).toLowerCase();
+
+      return selectedUsers.some((row) => {
+        const id = asTrimmedString(row?.id);
+        const email = asTrimmedString(row?.email).toLowerCase();
+        const username = asTrimmedString(row?.username).toLowerCase();
+        if (id && candidateIds.has(id)) return true;
+        if (email && candidateEmails.has(email)) return true;
+        if (candidateUsername && username && username === candidateUsername)
+          return true;
+        return false;
+      });
+    } catch {
+      return false;
+    }
+  }
+
   function buildAwardExtras(payload, user, existingExtras = []) {
     let extras = [];
     extras = upsertExtra(extras, "record_type", "award");
     extras = upsertExtra(
       extras,
       "submitted_by_user_id",
-      getExtra(existingExtras, "submitted_by_user_id") || asTrimmedString(user?.id),
+      getExtra(existingExtras, "submitted_by_user_id") ||
+        asTrimmedString(user?.id),
     );
     extras = upsertExtra(
       extras,
       "submitted_by_email",
-      getExtra(existingExtras, "submitted_by_email") || asTrimmedString(user?.email),
+      getExtra(existingExtras, "submitted_by_email") ||
+        asTrimmedString(user?.email),
     );
     extras = upsertExtra(
       extras,
@@ -113,29 +183,57 @@ export function registerAwardsRoutes(app, deps) {
       "submitted_at",
       getExtra(existingExtras, "submitted_at") || new Date().toISOString(),
     );
-    extras = upsertExtra(extras, "work_title", asTrimmedString(payload.work_title));
-    extras = upsertExtra(extras, "project_id", asTrimmedString(payload.project_id));
+    extras = upsertExtra(
+      extras,
+      "work_title",
+      asTrimmedString(payload.work_title),
+    );
+    extras = upsertExtra(
+      extras,
+      "project_id",
+      asTrimmedString(payload.project_id),
+    );
     extras = upsertExtra(
       extras,
       "award_recognition",
       asTrimmedString(payload.award_recognition),
     );
-    extras = upsertExtra(extras, "awarding_body", asTrimmedString(payload.awarding_body));
-    extras = upsertExtra(extras, "year_received", asTrimmedString(payload.year_received));
+    extras = upsertExtra(
+      extras,
+      "awarding_body",
+      asTrimmedString(payload.awarding_body),
+    );
+    extras = upsertExtra(
+      extras,
+      "year_received",
+      asTrimmedString(payload.year_received),
+    );
     extras = upsertExtra(extras, "level", asTrimmedString(payload.level));
-    extras = upsertExtra(extras, "recipients", asTrimmedString(payload.recipients));
+    extras = upsertExtra(
+      extras,
+      "recipients",
+      asTrimmedString(payload.recipients),
+    );
     extras = upsertExtra(
       extras,
       "recipient_users",
       JSON.stringify(normalizeRecipientUsers(payload.recipient_users)),
     );
-    extras = upsertExtra(extras, "supporting_movs", asTrimmedString(payload.supporting_movs));
+    extras = upsertExtra(
+      extras,
+      "supporting_movs",
+      asTrimmedString(payload.supporting_movs),
+    );
     extras = upsertExtra(
       extras,
       "research_center_id",
       asTrimmedString(payload.research_center_id),
     );
-    extras = upsertExtra(extras, "department_id", asTrimmedString(payload.department_id));
+    extras = upsertExtra(
+      extras,
+      "department_id",
+      asTrimmedString(payload.department_id),
+    );
     extras = upsertExtra(
       extras,
       "program_department",
@@ -147,11 +245,15 @@ export function registerAwardsRoutes(app, deps) {
   function mapDatasetToAwardRecord(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const groups = Array.isArray(dataset?.groups) ? dataset.groups : [];
-    const resources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+    const resources = Array.isArray(dataset?.resources)
+      ? dataset.resources
+      : [];
     const movResource = resources[0] || null;
     const recipientUsers = parseRecipientUsers(extras);
     const departmentTitle =
-      groups[0]?.title || groups[0]?.display_name || getExtra(extras, "program_department");
+      groups[0]?.title ||
+      groups[0]?.display_name ||
+      getExtra(extras, "program_department");
 
     return {
       id: dataset?.id || dataset?.name || null,
@@ -159,7 +261,8 @@ export function registerAwardsRoutes(app, deps) {
       ckan_dataset_name: dataset?.name || null,
       title: dataset?.title || "",
       work_title: getExtra(extras, "work_title") || dataset?.title || "",
-      award_recognition: getExtra(extras, "award_recognition") || dataset?.title || "",
+      award_recognition:
+        getExtra(extras, "award_recognition") || dataset?.title || "",
       awarding_body: getExtra(extras, "awarding_body"),
       year_received: getExtra(extras, "year_received"),
       level: getExtra(extras, "level"),
@@ -169,7 +272,8 @@ export function registerAwardsRoutes(app, deps) {
       supporting_movs: getExtra(extras, "supporting_movs"),
       notes: getExtra(extras, "notes") || dataset?.notes || "",
       research_center_id:
-        getExtra(extras, "research_center_id") || asTrimmedString(dataset?.owner_org),
+        getExtra(extras, "research_center_id") ||
+        asTrimmedString(dataset?.owner_org),
       research_center_name:
         asTrimmedString(dataset?.organization?.title) ||
         asTrimmedString(dataset?.organization?.display_name) ||
@@ -192,7 +296,8 @@ export function registerAwardsRoutes(app, deps) {
         dataset?.metadata_created ||
         dataset?.metadata_modified ||
         null,
-      updated_at: dataset?.metadata_modified || dataset?.metadata_created || null,
+      updated_at:
+        dataset?.metadata_modified || dataset?.metadata_created || null,
       private: Boolean(dataset?.private),
     };
   }
@@ -263,13 +368,23 @@ export function registerAwardsRoutes(app, deps) {
       page += 1;
     }
 
+    const targetProjectId = asTrimmedString(projectId);
+    const linkedToProject = targetProjectId
+      ? await isUserLinkedToProject(targetProjectId, user)
+      : false;
+
     const filtered = allRows.filter((dataset) => {
       if (!isAwardDataset(dataset)) return false;
       if (isAdmin) return true;
+      if (targetProjectId) {
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const matchesProject =
+          getExtra(extras, "project_id") === targetProjectId;
+        if (matchesProject && linkedToProject) return true;
+      }
       return isAwardOwnedByUser(dataset, user);
     });
 
-    const targetProjectId = asTrimmedString(projectId);
     if (!targetProjectId) return filtered;
     return filtered.filter((dataset) => {
       const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
@@ -278,7 +393,9 @@ export function registerAwardsRoutes(app, deps) {
   }
 
   async function listEligibleRecipientUsers(orgId = "") {
-    const rows = orgId ? await listOrganizationMembers(orgId) : await listUsers();
+    const rows = orgId
+      ? await listOrganizationMembers(orgId)
+      : await listUsers();
     const users = Array.isArray(rows) ? rows : [];
     const resolved = await Promise.all(
       users.map(async (row) => {
@@ -306,10 +423,11 @@ export function registerAwardsRoutes(app, deps) {
     return resolved
       .filter(
         (row) =>
-          row &&
-          String(row?.state || "active").toLowerCase() !== "deleted",
+          row && String(row?.state || "active").toLowerCase() !== "deleted",
       )
-      .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+      .sort((a, b) =>
+        String(a?.name || "").localeCompare(String(b?.name || "")),
+      );
   }
 
   app.get("/api/awards", authMiddleware, async (req, res) => {
@@ -344,10 +462,17 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const isAdmin = asTrimmedString(req.user?.role).toLowerCase() === "admin";
-      if (!isAdmin && !isAwardOwnedByUser(dataset, req.user)) {
-        return res
-          .status(403)
-          .json({ error: "You are not allowed to view this award record." });
+      if (!isAdmin) {
+        const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+        const projectId = getExtra(extras, "project_id");
+        const linkedToProject = projectId
+          ? await isUserLinkedToProject(projectId, req.user)
+          : false;
+        if (!isAwardOwnedByUser(dataset, req.user) && !linkedToProject) {
+          return res
+            .status(403)
+            .json({ error: "You are not allowed to view this award record." });
+        }
       }
 
       return res.json({ data: mapDatasetToAwardRecord(dataset) });
@@ -371,7 +496,10 @@ export function registerAwardsRoutes(app, deps) {
         req.user?.ckan_org_id,
       );
       if (!ownerOrg) {
-        return badRequest(res, "Research center (CKAN organization) is required.");
+        return badRequest(
+          res,
+          "Research center (CKAN organization) is required.",
+        );
       }
 
       const groupName = await resolveDepartmentGroupName(payload.department_id);
@@ -379,19 +507,28 @@ export function registerAwardsRoutes(app, deps) {
       const dataset = await createDataset({
         name: toAwardSlug(payload.award_recognition || payload.work_title),
         title:
-          asTrimmedString(payload.award_recognition) || asTrimmedString(payload.work_title),
+          asTrimmedString(payload.award_recognition) ||
+          asTrimmedString(payload.work_title),
         notes:
           asTrimmedString(payload.notes) ||
           `Award received for ${asTrimmedString(payload.work_title) || "research work"}.`,
         owner_org: ownerOrg,
         author:
-          asTrimmedString(req.user?.full_name) || asTrimmedString(req.user?.email) || null,
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
         author_email: asTrimmedString(req.user?.email) || null,
         maintainer:
-          asTrimmedString(req.user?.full_name) || asTrimmedString(req.user?.email) || null,
+          asTrimmedString(req.user?.full_name) ||
+          asTrimmedString(req.user?.email) ||
+          null,
         maintainer_email: asTrimmedString(req.user?.email) || null,
         private: projectIsPublic ? false : true,
-        tags: ["award-record", asTrimmedString(payload.level).toLowerCase(), "award"]
+        tags: [
+          "award-record",
+          asTrimmedString(payload.level).toLowerCase(),
+          "award",
+        ]
           .filter(Boolean)
           .map((value) => ({
             name: value.replace(/[^a-z0-9]+/g, "-"),
@@ -433,7 +570,10 @@ export function registerAwardsRoutes(app, deps) {
         existingDataset?.owner_org || req.user?.ckan_org_id,
       );
       if (!ownerOrg) {
-        return badRequest(res, "Research center (CKAN organization) is required.");
+        return badRequest(
+          res,
+          "Research center (CKAN organization) is required.",
+        );
       }
 
       const groupName = await resolveDepartmentGroupName(payload.department_id);
@@ -444,7 +584,8 @@ export function registerAwardsRoutes(app, deps) {
           asTrimmedString(existingDataset?.name) ||
           toAwardSlug(payload.award_recognition || payload.work_title),
         title:
-          asTrimmedString(payload.award_recognition) || asTrimmedString(payload.work_title),
+          asTrimmedString(payload.award_recognition) ||
+          asTrimmedString(payload.work_title),
         notes:
           asTrimmedString(payload.notes) ||
           asTrimmedString(existingDataset?.notes) ||
@@ -472,7 +613,11 @@ export function registerAwardsRoutes(app, deps) {
         resources: Array.isArray(existingDataset?.resources)
           ? existingDataset.resources
           : [],
-        tags: ["award-record", asTrimmedString(payload.level).toLowerCase(), "award"]
+        tags: [
+          "award-record",
+          asTrimmedString(payload.level).toLowerCase(),
+          "award",
+        ]
           .filter(Boolean)
           .map((value) => ({
             name: value.replace(/[^a-z0-9]+/g, "-"),
@@ -549,7 +694,9 @@ export function registerAwardsRoutes(app, deps) {
         return badRequest(res, "MOV file must be 25MB or smaller.");
       }
 
-      const existingResources = Array.isArray(dataset?.resources) ? dataset.resources : [];
+      const existingResources = Array.isArray(dataset?.resources)
+        ? dataset.resources
+        : [];
       for (const resource of existingResources) {
         const resourceId = asTrimmedString(resource?.id);
         if (!resourceId) continue;
