@@ -5,10 +5,12 @@ import {
   fetchDashboardProjects,
   notifyDashboardUpcomingDeadlines,
 } from "@/services/dashboard";
+import { fetchLinkedProjects } from "@/services/submissions";
 import { ENABLE_DEADLINE_NOTIFY_RPC } from "@/utils/dashboard";
 
 export function useDashboardData({ user, profile, isAdmin }) {
   const [projects, setProjects] = useState([]);
+  const [linkedProjects, setLinkedProjects] = useState([]);
   const [liveCenters, setLiveCenters] = useState([]);
   const [liveAgendas, setLiveAgendas] = useState([]);
   const [liveDepartments, setLiveDepartments] = useState([]);
@@ -27,21 +29,24 @@ export function useDashboardData({ user, profile, isAdmin }) {
       setError("");
       setLoading(true);
 
-      const { data: projectData, error: projectsError } =
-        await fetchDashboardProjects({
+      const [projectResult, linkedResult] = await Promise.all([
+        fetchDashboardProjects({
           userId: user?.id,
           role: profile?.role || "",
-        });
+        }),
+        isAdmin ? Promise.resolve({ data: [], error: null }) : fetchLinkedProjects(),
+      ]);
 
-      if (projectsError) {
+      if (projectResult.error) {
         setError(
-          projectsError.message ||
+          projectResult.error.message ||
             "Unable to load dashboard data. Please refresh.",
         );
       }
 
-      const rows = projectData || [];
+      const rows = projectResult.data || [];
       setProjects(rows);
+      setLinkedProjects(Array.isArray(linkedResult?.data) ? linkedResult.data : []);
 
       if (isAdmin) {
         try {
@@ -87,6 +92,7 @@ export function useDashboardData({ user, profile, isAdmin }) {
 
   return {
     projects,
+    linkedProjects,
     loading,
     error,
     referenceError,
