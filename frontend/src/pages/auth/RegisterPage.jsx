@@ -166,7 +166,7 @@ export default function RegisterPage() {
       return;
     }
     try {
-      await register({
+      const result = await register({
         first_name: form.first_name.trim(),
         middle_initial: form.middle_initial.trim() || null,
         last_name: form.last_name.trim(),
@@ -177,6 +177,14 @@ export default function RegisterPage() {
         ckan_org_id: form.ckan_org_id || null,
         ckan_group_id: form.ckan_group_id || null,
       });
+
+      if (result?.requires_verification) {
+        setMessage(
+          "Registration successful. Please check your email to verify your account.",
+        );
+        window.localStorage.removeItem(SIGNUP_COOLDOWN_KEY);
+        return;
+      }
 
       setMessage("Registration successful. Redirecting to dashboard...");
       window.localStorage.removeItem(SIGNUP_COOLDOWN_KEY);
