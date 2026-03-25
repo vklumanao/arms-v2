@@ -106,6 +106,23 @@ export const config = {
     String(process.env.NODE_ENV || "development").toLowerCase() ===
       "production",
   ),
+  emailVerificationEnabled: readBool(
+    process.env.ARMS_EMAIL_VERIFICATION_ENABLED,
+    true,
+  ),
+  emailVerifyTokenTtlMinutes: readNumber(
+    process.env.ARMS_EMAIL_VERIFY_TTL_MINUTES,
+    60 * 24,
+  ),
+  publicAppUrl: readString(process.env.ARMS_PUBLIC_APP_URL, ""),
+  gmailClientId: readString(process.env.GMAIL_CLIENT_ID, ""),
+  gmailClientSecret: readString(process.env.GMAIL_CLIENT_SECRET, ""),
+  gmailRefreshToken: readString(process.env.GMAIL_REFRESH_TOKEN, ""),
+  gmailSender: readString(process.env.GMAIL_SENDER, ""),
+  gmailRedirectUri: readString(
+    process.env.GMAIL_REDIRECT_URI,
+    "https://developers.google.com/oauthplayground",
+  ),
 };
 
 /**
@@ -160,5 +177,19 @@ export function assertConfig() {
     throw new Error(
       "ARMS_ENCRYPTION_KEY must be a 64-char hex string (32-byte key).",
     );
+  }
+
+  if (config.emailVerificationEnabled) {
+    const missing = [];
+    if (!config.publicAppUrl) missing.push("ARMS_PUBLIC_APP_URL");
+    if (!config.gmailClientId) missing.push("GMAIL_CLIENT_ID");
+    if (!config.gmailClientSecret) missing.push("GMAIL_CLIENT_SECRET");
+    if (!config.gmailRefreshToken) missing.push("GMAIL_REFRESH_TOKEN");
+    if (!config.gmailSender) missing.push("GMAIL_SENDER");
+    if (missing.length > 0) {
+      throw new Error(
+        `Email verification requires: ${missing.join(", ")}.`,
+      );
+    }
   }
 }
