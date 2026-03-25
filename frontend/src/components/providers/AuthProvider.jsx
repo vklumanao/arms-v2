@@ -103,9 +103,11 @@ export function AuthProvider({ children }) {
       },
       register: async (payload) => {
         const authPayload = await registerAccount(payload);
-        applyAuthPayload(authPayload);
-        sessionStorage.setItem(SESSION_HINT_KEY, "1");
-        await syncRolePermissionMapFromServer();
+        if (!authPayload?.requires_verification) {
+          applyAuthPayload(authPayload);
+          sessionStorage.setItem(SESSION_HINT_KEY, "1");
+          await syncRolePermissionMapFromServer();
+        }
         return authPayload;
       },
       signOut: async () => {
