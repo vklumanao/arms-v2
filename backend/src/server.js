@@ -73,13 +73,20 @@ import {
   registerSchema,
   changePasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
 } from "./validation/schemas.js";
 import { createRateLimiter } from "./security/rateLimit.js";
 import {
   consumePasswordResetToken,
   createPasswordResetToken,
 } from "./stores/passwordReset.store.js";
+import {
+  consumeEmailVerificationToken,
+  createEmailVerificationToken,
+} from "./stores/emailVerification.store.js";
 import { logAuditEvent } from "./stores/audit.store.js";
+import { sendEmail } from "./integrations/gmail/mailer.js";
 import { registerAuthRoutes } from "./modules/auth/auth.routes.js";
 import { registerProfileRoutes } from "./modules/profile/profile.routes.js";
 import { registerCkanIntegrationRoutes } from "./modules/integrations/ckan.routes.js";
@@ -586,6 +593,8 @@ registerAuthRoutes(app, {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
   changePasswordSchema,
   config,
   DEFAULT_ROLE_PERMISSIONS,
@@ -614,6 +623,9 @@ registerAuthRoutes(app, {
   updateCkanUserPassword,
   createPasswordResetToken,
   consumePasswordResetToken,
+  createEmailVerificationToken,
+  consumeEmailVerificationToken,
+  sendEmail,
   logAuditEvent,
 });
 
