@@ -31,20 +31,18 @@ import {
   Users,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  LabelList,
-  Pie,
-  PieChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip as ChartTooltip,
+  Legend as ChartLegend,
+  Filler,
+} from "chart.js";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
 import {
   ALL_VALUE,
   MAX_BAR_LABELS,
@@ -55,28 +53,75 @@ import {
   formatCurrencyPHP,
   formatDateLabel,
   formatPercentage,
-  getTopIndices,
   resolveYearFromRecord,
   safeString,
   toNumber,
 } from "./dashboardUtils";
+import { normalizeStatus } from "@/utils/status";
 
-const PALETTE = [
-  "#0f4c81",
-  "#2f7bbd",
-  "#36b7a6",
-  "#f0b429",
-  "#e56b6f",
-  "#9f86c0",
-  "#0ea5e9",
-  "#22c55e",
+const CHART_COLORS = [
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#d62728",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#bcbd22",
+  "#17becf",
 ];
+
+const STATUS_COLOR_MAP = {
+  Completed: CHART_COLORS[2],
+  Ongoing: CHART_COLORS[0],
+  Proposal: CHART_COLORS[1],
+  Rejected: CHART_COLORS[3],
+};
+
+const tintColor = (hex, amount) => {
+  const normalized = String(hex || "").replace("#", "");
+  if (normalized.length !== 6) return hex;
+  const num = Number.parseInt(normalized, 16);
+  if (Number.isNaN(num)) return hex;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const mix = (channel) =>
+    Math.round(channel + (255 - channel) * amount)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+};
+
+const getChartColor = (index) => {
+  const base = CHART_COLORS[index % CHART_COLORS.length];
+  const cycle = Math.floor(index / CHART_COLORS.length);
+  if (!cycle) return base;
+  const tintAmount = Math.min(0.6, cycle * 0.15);
+  return tintColor(base, tintAmount);
+};
+
+const getChartColors = (count) =>
+  Array.from({ length: count }, (_, index) => getChartColor(index));
 
 const PANEL_CARD_CLASS =
   "min-h-[420px] flex flex-col border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
 const PANEL_HEADER_CLASS =
   "bg-gradient-to-r from-slate-50 via-white to-slate-100";
 const PANEL_BODY_CLASS = "p-6 flex-1";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  ChartTooltip,
+  ChartLegend,
+  Filler,
+);
 
 function SummaryCard({ label, value, hint, Icon = null }) {
   return (
@@ -208,6 +253,8 @@ export function DashboardHeader({
   onClearFilters,
   onApplyPreset,
   presetFlags,
+  chartTheme,
+  onChartThemeChange,
 }) {
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
@@ -215,6 +262,26 @@ export function DashboardHeader({
         title={title}
         actions={
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <div className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1">
+              <Button
+                type="button"
+                variant={chartTheme === "default" ? "default" : "outline"}
+                className="h-7 rounded-full px-2 text-[11px]"
+                onClick={() => onChartThemeChange?.("default")}
+                aria-pressed={chartTheme === "default"}
+              >
+                Default charts
+              </Button>
+              <Button
+                type="button"
+                variant={chartTheme === "branded" ? "default" : "outline"}
+                className="h-7 rounded-full px-2 text-[11px]"
+                onClick={() => onChartThemeChange?.("branded")}
+                aria-pressed={chartTheme === "branded"}
+              >
+                Branded charts
+              </Button>
+            </div>
             {activeFilterCount ? (
               <span className="rounded-full border border-slate-200/80 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Filtered view - {activeFilterCount}
@@ -621,6 +688,7 @@ export function FundingOverviewSection({ loading, fundingOverview }) {
       <p className="mb-3 text-xs text-slate-600">
         Aggregated funding totals across current filters.
       </p>
+
       {loading ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -628,62 +696,73 @@ export function FundingOverviewSection({ loading, fundingOverview }) {
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-3">
           <SummaryCard
             label="Total Funding"
             value={formatCurrencyPHP(totalAmount)}
             hint={`Funded projects: ${formatCount(totalProjects)}`}
             Icon={Banknote}
           />
-          <SummaryCard
-            label="Internal Funding"
-            value={formatCurrencyPHP(internalAmount)}
-            hint={`${formatCount(internalProjects)} projects`}
-            Icon={Banknote}
-          />
-          <SummaryCard
-            label="External Funding"
-            value={formatCurrencyPHP(externalAmount)}
-            hint={`${formatCount(externalProjects)} projects`}
-            Icon={Banknote}
-          />
-          {showUnknown ? (
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <SummaryCard
-              label="Unclassified Funding"
-              value={formatCurrencyPHP(unknownAmount)}
-              hint={`${formatCount(unknownProjects)} projects`}
+              label="Internal Funding"
+              value={formatCurrencyPHP(internalAmount)}
+              hint={`${formatCount(internalProjects)} projects`}
               Icon={Banknote}
             />
-          ) : null}
+            <SummaryCard
+              label="External Funding"
+              value={formatCurrencyPHP(externalAmount)}
+              hint={`${formatCount(externalProjects)} projects`}
+              Icon={Banknote}
+            />
+          </div>
         </div>
       )}
     </DashboardPanel>
   );
 }
 
-export function AwardsByLevelSection({ loading, awardsByLevelData }) {
+export function AwardsByLevelSection({
+  loading,
+  awardsByLevelData,
+  chartTheme = "branded",
+}) {
+  const useBrandedCharts = chartTheme !== "default";
   const totalAwards = awardsByLevelData.reduce(
     (sum, entry) => sum + toNumber(entry?.value),
     0,
   );
-  const levelMap = awardsByLevelData.reduce((acc, entry) => {
-    const key = safeString(entry?.level) || "Other";
-    acc[key] = toNumber(entry?.value);
-    return acc;
-  }, {});
-  const showOther = toNumber(levelMap.Other) > 0;
+  const levelRows = awardsByLevelData.map((entry) => ({
+    label: safeString(entry?.level) || "Other",
+    value: toNumber(entry?.value),
+  }));
 
-  const stackedData = [
-    {
-      name: "Awards",
-      Institutional: levelMap.Institutional || 0,
-      Local: levelMap.Local || 0,
-      Regional: levelMap.Regional || 0,
-      National: levelMap.National || 0,
-      International: levelMap.International || 0,
-      Other: levelMap.Other || 0,
+  const awardsByLevelChartData = {
+    labels: levelRows.map((row) => row.label),
+    datasets: [
+      {
+        label: "Awards",
+        data: levelRows.map((row) => row.value),
+        backgroundColor: useBrandedCharts
+          ? getChartColors(levelRows.length)
+          : undefined,
+      },
+    ],
+  };
+  const awardsByLevelOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => `Awards: ${formatCount(context.parsed.y)}`,
+        },
+      },
     },
-  ];
+  };
 
   return (
     <DashboardPanel
@@ -705,49 +784,9 @@ export function AwardsByLevelSection({ loading, awardsByLevelData }) {
           No awards recorded for the current scope.
         </p>
       ) : (
-        <div role="img" aria-label="Stacked bar chart showing awards by level">
+        <div role="img" aria-label="Bar chart showing awards by level">
           <ChartFrame height={220}>
-            <BarChart
-              data={stackedData}
-              layout="vertical"
-              margin={{ top: 8, right: 16, left: 16, bottom: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis type="number" allowDecimals={false} />
-              <YAxis type="category" dataKey="name" width={80} />
-              <Tooltip
-                formatter={(value) => formatCountAndPercent(value, totalAwards)}
-              />
-              <Legend />
-              <Bar
-                dataKey="Institutional"
-                stackId="a"
-                fill="#0f4c81"
-                name="Institutional"
-              />
-              <Bar dataKey="Local" stackId="a" fill="#2f7bbd" name="Local" />
-              <Bar
-                dataKey="Regional"
-                stackId="a"
-                fill="#36b7a6"
-                name="Regional"
-              />
-              <Bar
-                dataKey="National"
-                stackId="a"
-                fill="#0ea5e9"
-                name="National"
-              />
-              <Bar
-                dataKey="International"
-                stackId="a"
-                fill="#f59e0b"
-                name="International"
-              />
-              {showOther ? (
-                <Bar dataKey="Other" stackId="a" fill="#9f86c0" name="Other" />
-              ) : null}
-            </BarChart>
+            <Bar data={awardsByLevelChartData} options={awardsByLevelOptions} />
           </ChartFrame>
           <p className="sr-only">
             {`Awards by level totals ${formatCount(totalAwards)}.`}
@@ -851,46 +890,81 @@ export function FacultyActivitySection({ loading, activity }) {
   );
 }
 
-export function FacultyStatusSection({ loading, projects }) {
+export function FacultyStatusSection({
+  loading,
+  projects,
+  statusCounts,
+  ownerId = "",
+  title = "My Project Status",
+  description = "A quick snapshot of your project pipeline.",
+  chartTheme = "branded",
+}) {
+  const useBrandedCharts = chartTheme !== "default";
   const statusData = useMemo(() => {
-    const buckets = new Map([
-      ["Ongoing", 0],
+    const normalizedBuckets = new Map([
       ["Completed", 0],
-      ["Proposed", 0],
-      ["Other", 0],
+      ["Ongoing", 0],
+      ["Proposal", 0],
+      ["Rejected", 0],
     ]);
 
-    (projects || []).forEach((project) => {
-      const raw = safeString(project?.status).toLowerCase();
-      let key = "Other";
-      if (["completed", "complete", "approved"].includes(raw)) {
-        key = "Completed";
-      } else if (["ongoing", "in progress", "active"].includes(raw)) {
-        key = "Ongoing";
-      } else if (["proposal", "proposed", "pending"].includes(raw)) {
-        key = "Proposed";
+    const mapNormalizedStatusToLabel = (normalized) => {
+      if (normalized === "completed") return "Completed";
+      if (normalized === "ongoing") return "Ongoing";
+      if (normalized === "proposal") return "Proposal";
+      if (normalized === "rejected") return "Rejected";
+      if (normalized === "other") return "Rejected";
+      if (normalized === "proposed") return "Proposal";
+      return "";
+    };
+
+    if (statusCounts != null) {
+      if (Array.isArray(statusCounts)) {
+        statusCounts.forEach((row) => {
+          const key = mapNormalizedStatusToLabel(normalizeStatus(row?.name));
+          const value = toNumber(row?.value);
+          if (!key) return;
+          normalizedBuckets.set(key, value);
+        });
       }
-      buckets.set(key, (buckets.get(key) || 0) + 1);
+      return Array.from(normalizedBuckets.entries()).map(([name, value]) => ({
+        name,
+        value,
+      }));
+    }
+
+    const scopedProjects = ownerId
+      ? (projects || []).filter(
+          (project) => safeString(project?.submitted_by) === ownerId,
+        )
+      : projects || [];
+
+    scopedProjects.forEach((project) => {
+      const normalized = normalizeStatus(project?.status);
+      const key = mapNormalizedStatusToLabel(normalized);
+      if (!key) return;
+      normalizedBuckets.set(key, (normalizedBuckets.get(key) || 0) + 1);
     });
 
-    return [...buckets.entries()].map(([name, value]) => ({
+    return [...normalizedBuckets.entries()].map(([name, value]) => ({
       name,
       value,
     }));
-  }, [projects]);
+  }, [projects, statusCounts, ownerId]);
 
   const total = statusData.reduce((sum, row) => sum + toNumber(row.value), 0);
+  const statusColors = statusData.map(
+    (row, index) => STATUS_COLOR_MAP[row.name] || getChartColor(index),
+  );
 
   return (
     <DashboardPanel
-      title="My Project Status"
+      title={title}
       cardClassName={PANEL_CARD_CLASS}
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
-        A quick snapshot of your project pipeline.
-      </p>
+      <p className="mb-3 text-xs text-slate-600">{description}</p>
       {loading ? (
         <LoadingBlock
           label="Loading project status..."
@@ -901,46 +975,34 @@ export function FacultyStatusSection({ loading, projects }) {
       ) : (
         <div role="img" aria-label="Bar chart showing project status counts">
           <ChartFrame height={260}>
-            <BarChart
-              data={statusData}
-              layout="vertical"
-              margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis
-                type="number"
-                allowDecimals={false}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={120}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip formatter={(value) => formatCount(value)} />
-              <Bar
-                dataKey="value"
-                name="Projects"
-                fill="#0f4c81"
-                radius={[0, 10, 10, 0]}
-              >
-                <LabelList
-                  dataKey="value"
-                  content={({ x, y, width, height, value }) => (
-                    <text
-                      x={x + width + 8}
-                      y={y + height / 2}
-                      dy={4}
-                      fill="#0f172a"
-                      fontSize={11}
-                    >
-                      {formatCount(value)}
-                    </text>
-                  )}
-                />
-              </Bar>
-            </BarChart>
+            <Bar
+              data={{
+                labels: statusData.map((row) => row.name),
+                datasets: [
+                  {
+                    label: "Projects",
+                    data: statusData.map((row) => row.value),
+                    backgroundColor: useBrandedCharts
+                      ? statusColors
+                      : undefined,
+                  },
+                ],
+              }}
+              options={{
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) =>
+                        `Projects: ${formatCount(context.parsed.x)}`,
+                    },
+                  },
+                },
+              }}
+            />
           </ChartFrame>
         </div>
       )}
@@ -1200,39 +1262,45 @@ export function ProjectsPerCenterSection({
   loading,
   projectsPerCenterData,
   totalProjectsPerCenter,
+  chartTheme = "branded",
 }) {
+  const useBrandedCharts = chartTheme !== "default";
   const projectsBarIsHorizontal = projectsPerCenterData.length > 12;
-  const renderBarLabel = ({ x, y, width, height, value, index }) => {
-    if (index >= MAX_BAR_LABELS || value === undefined || value === null)
-      return null;
-    const formatted = formatCountAndPercent(
-      toNumber(value),
-      totalProjectsPerCenter,
-    );
-    if (projectsBarIsHorizontal) {
-      return (
-        <text
-          x={x + width + 8}
-          y={y + height / 2}
-          dy={4}
-          fill="#0f172a"
-          fontSize={11}
-        >
-          {formatted}
-        </text>
-      );
-    }
-    return (
-      <text
-        x={x + width / 2}
-        y={y - 6}
-        textAnchor="middle"
-        fill="#0f172a"
-        fontSize={11}
-      >
-        {formatted}
-      </text>
-    );
+  const totalProjects =
+    Number.isFinite(totalProjectsPerCenter) && totalProjectsPerCenter > 0
+      ? totalProjectsPerCenter
+      : projectsPerCenterData.reduce(
+          (sum, row) => sum + toNumber(row.count),
+          0,
+        );
+  const projectsPerCenterChartData = {
+    labels: projectsPerCenterData.map((row) => row.center),
+    datasets: [
+      {
+        label: "Projects",
+        data: projectsPerCenterData.map((row) => toNumber(row.count)),
+        backgroundColor: useBrandedCharts
+          ? getChartColors(projectsPerCenterData.length)
+          : undefined,
+      },
+    ],
+  };
+  const projectsPerCenterOptions = {
+    indexAxis: projectsBarIsHorizontal ? "y" : "x",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `Projects: ${formatCountAndPercent(
+              projectsBarIsHorizontal ? context.parsed.x : context.parsed.y,
+              totalProjects,
+            )}`,
+        },
+      },
+    },
   };
 
   return (
@@ -1255,55 +1323,10 @@ export function ProjectsPerCenterSection({
           aria-label="Bar chart showing projects per research center"
         >
           <ChartFrame height={420}>
-            <BarChart
-              data={projectsPerCenterData}
-              layout={projectsBarIsHorizontal ? "vertical" : "horizontal"}
-              margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              {projectsBarIsHorizontal ? (
-                <>
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="center"
-                    width={180}
-                    tick={{ fontSize: 12 }}
-                  />
-                </>
-              ) : (
-                <>
-                  <XAxis
-                    dataKey="center"
-                    tick={{ fontSize: 12 }}
-                    interval={0}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                </>
-              )}
-              <Tooltip
-                formatter={(value) =>
-                  formatCountAndPercent(value, totalProjectsPerCenter)
-                }
-              />
-              <Legend />
-              <Bar
-                dataKey="count"
-                name="Projects"
-                radius={
-                  projectsBarIsHorizontal ? [0, 10, 10, 0] : [10, 10, 0, 0]
-                }
-                fill="#0f4c81"
-              >
-                <LabelList dataKey="count" content={renderBarLabel} />
-              </Bar>
-            </BarChart>
+            <Bar
+              data={projectsPerCenterChartData}
+              options={projectsPerCenterOptions}
+            />
           </ChartFrame>
           <p className="sr-only">
             {`Projects per research center across ${projectsPerCenterData.length} center${
@@ -1325,10 +1348,69 @@ export function OutputsByDepartmentSection({
   loading,
   outputsByDepartmentData,
   totalOutputsByDepartment,
+  chartTheme = "branded",
 }) {
+  const useBrandedCharts = chartTheme !== "default";
   const outputsByDepartmentIsBar =
     outputsByDepartmentData.length > MAX_PIE_CATEGORIES;
-  const outputsTopIndices = getTopIndices(outputsByDepartmentData, 4);
+  const totalOutputs =
+    Number.isFinite(totalOutputsByDepartment) && totalOutputsByDepartment > 0
+      ? totalOutputsByDepartment
+      : outputsByDepartmentData.reduce(
+          (sum, row) => sum + toNumber(row.value),
+          0,
+        );
+  const outputsByDepartmentBarData = {
+    labels: outputsByDepartmentData.map((row) => row.name),
+    datasets: [
+      {
+        label: "Outputs",
+        data: outputsByDepartmentData.map((row) => toNumber(row.value)),
+        backgroundColor: useBrandedCharts ? CHART_COLORS[1] : undefined,
+      },
+    ],
+  };
+  const outputsByDepartmentBarOptions = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `Outputs: ${formatCountAndPercent(context.parsed.x, totalOutputs)}`,
+        },
+      },
+    },
+  };
+  const outputsByDepartmentPieData = {
+    labels: outputsByDepartmentData.map((row) => row.name),
+    datasets: [
+      {
+        data: outputsByDepartmentData.map((row) => toNumber(row.value)),
+        backgroundColor: useBrandedCharts
+          ? getChartColors(outputsByDepartmentData.length)
+          : undefined,
+      },
+    ],
+  };
+  const outputsByDepartmentPieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `${context.label}: ${formatCountAndPercent(
+              context.parsed,
+              totalOutputs,
+            )}`,
+        },
+      },
+    },
+  };
 
   return (
     <DashboardPanel
@@ -1353,96 +1435,15 @@ export function OutputsByDepartmentSection({
         >
           <ChartFrame height={320}>
             {outputsByDepartmentIsBar ? (
-              <BarChart
-                data={outputsByDepartmentData}
-                layout="vertical"
-                margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  type="number"
-                  allowDecimals={false}
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={140}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip
-                  formatter={(value) =>
-                    formatCountAndPercent(value, totalOutputsByDepartment)
-                  }
-                />
-                <Legend />
-                <Bar
-                  dataKey="value"
-                  name="Outputs"
-                  fill="#36b7a6"
-                  radius={[0, 10, 10, 0]}
-                >
-                  <LabelList
-                    dataKey="value"
-                    content={({ x, y, width, height, value, index }) => {
-                      if (index >= MAX_BAR_LABELS) return null;
-                      return (
-                        <text
-                          x={x + width + 8}
-                          y={y + height / 2}
-                          dy={4}
-                          fill="#0f172a"
-                          fontSize={11}
-                        >
-                          {formatCountAndPercent(
-                            value,
-                            totalOutputsByDepartment,
-                          )}
-                        </text>
-                      );
-                    }}
-                  />
-                </Bar>
-              </BarChart>
+              <Bar
+                data={outputsByDepartmentBarData}
+                options={outputsByDepartmentBarOptions}
+              />
             ) : (
-              <PieChart>
-                <Tooltip
-                  formatter={(value) =>
-                    formatCountAndPercent(value, totalOutputsByDepartment)
-                  }
-                />
-                <Legend />
-                <Pie
-                  data={outputsByDepartmentData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  label={({ value, index }) =>
-                    outputsTopIndices.includes(index)
-                      ? formatCountAndPercent(value, totalOutputsByDepartment)
-                      : ""
-                  }
-                >
-                  {outputsByDepartmentData.map((entry, index) => (
-                    <Cell
-                      key={`outputs-dept-${entry.name}`}
-                      fill={PALETTE[index % PALETTE.length]}
-                    />
-                  ))}
-                </Pie>
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={14}
-                  fill="#0f172a"
-                >
-                  {formatCount(totalOutputsByDepartment)}
-                </text>
-              </PieChart>
+              <Doughnut
+                data={outputsByDepartmentPieData}
+                options={outputsByDepartmentPieOptions}
+              />
             )}
           </ChartFrame>
           <p className="sr-only">
@@ -1470,7 +1471,37 @@ export function OutputsOverTimeSection({
   onRangeChange,
   isAdmin,
   totalOutputsTrend,
+  chartTheme = "branded",
 }) {
+  const useBrandedCharts = chartTheme !== "default";
+  const totalOutputs =
+    Number.isFinite(totalOutputsTrend) && totalOutputsTrend > 0
+      ? totalOutputsTrend
+      : outputsTrendData.reduce((sum, row) => sum + toNumber(row.outputs), 0);
+  const outputsOverTimeChartData = {
+    labels: outputsTrendData.map((row) => row.month),
+    datasets: [
+      {
+        label: "Outputs",
+        data: outputsTrendData.map((row) => toNumber(row.outputs)),
+        borderColor: useBrandedCharts ? CHART_COLORS[0] : undefined,
+        backgroundColor: useBrandedCharts ? CHART_COLORS[0] : undefined,
+      },
+    ],
+  };
+  const outputsOverTimeOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `Outputs: ${formatCountAndPercent(context.parsed.y, totalOutputs)}`,
+        },
+      },
+    },
+  };
   return (
     <DashboardPanel
       title={`Research Outputs Over Time${loading ? " (Loading...)" : ""}`}
@@ -1536,31 +1567,10 @@ export function OutputsOverTimeSection({
           aria-label="Line chart showing research outputs over time"
         >
           <ChartFrame height={320}>
-            <AreaChart
-              data={outputsTrendData}
-              margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip
-                formatter={(value) =>
-                  formatCountAndPercent(value, totalOutputsTrend)
-                }
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="outputs"
-                name="Outputs"
-                stroke="#0f4c81"
-                strokeWidth={2}
-                fill="#cfe3f6"
-                fillOpacity={0.6}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </AreaChart>
+            <Line
+              data={outputsOverTimeChartData}
+              options={outputsOverTimeOptions}
+            />
           </ChartFrame>
           <p className="sr-only">
             {`Outputs trend over ${outputsTrendData.length} time period${
@@ -1577,10 +1587,66 @@ export function AwardsByCategorySection({
   loading,
   awardsByCategoryData,
   totalAwardsByCategory,
+  chartTheme = "branded",
 }) {
+  const useBrandedCharts = chartTheme !== "default";
   const awardsByCategoryIsBar =
     awardsByCategoryData.length > MAX_PIE_CATEGORIES;
-  const awardsTopIndices = getTopIndices(awardsByCategoryData, 4);
+  const totalAwards =
+    Number.isFinite(totalAwardsByCategory) && totalAwardsByCategory > 0
+      ? totalAwardsByCategory
+      : awardsByCategoryData.reduce((sum, row) => sum + toNumber(row.value), 0);
+  const awardsByCategoryBarData = {
+    labels: awardsByCategoryData.map((row) => row.name),
+    datasets: [
+      {
+        label: "Awards",
+        data: awardsByCategoryData.map((row) => toNumber(row.value)),
+        backgroundColor: useBrandedCharts ? CHART_COLORS[2] : undefined,
+      },
+    ],
+  };
+  const awardsByCategoryBarOptions = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `Awards: ${formatCountAndPercent(context.parsed.x, totalAwards)}`,
+        },
+      },
+    },
+  };
+  const awardsByCategoryPieData = {
+    labels: awardsByCategoryData.map((row) => row.name),
+    datasets: [
+      {
+        data: awardsByCategoryData.map((row) => toNumber(row.value)),
+        backgroundColor: useBrandedCharts
+          ? getChartColors(awardsByCategoryData.length)
+          : undefined,
+      },
+    ],
+  };
+  const awardsByCategoryPieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: (context) =>
+            `${context.label}: ${formatCountAndPercent(
+              context.parsed,
+              totalAwards,
+            )}`,
+        },
+      },
+    },
+  };
 
   return (
     <DashboardPanel
@@ -1602,93 +1668,15 @@ export function AwardsByCategorySection({
         <div role="img" aria-label="Pie chart showing awards by category">
           <ChartFrame height={320}>
             {awardsByCategoryIsBar ? (
-              <BarChart
-                data={awardsByCategoryData}
-                layout="vertical"
-                margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  type="number"
-                  allowDecimals={false}
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={140}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip
-                  formatter={(value) =>
-                    formatCountAndPercent(value, totalAwardsByCategory)
-                  }
-                />
-                <Legend />
-                <Bar
-                  dataKey="value"
-                  name="Awards"
-                  fill="#e56b6f"
-                  radius={[0, 10, 10, 0]}
-                >
-                  <LabelList
-                    dataKey="value"
-                    content={({ x, y, width, height, value, index }) => {
-                      if (index >= MAX_BAR_LABELS) return null;
-                      return (
-                        <text
-                          x={x + width + 8}
-                          y={y + height / 2}
-                          dy={4}
-                          fill="#0f172a"
-                          fontSize={11}
-                        >
-                          {formatCountAndPercent(value, totalAwardsByCategory)}
-                        </text>
-                      );
-                    }}
-                  />
-                </Bar>
-              </BarChart>
+              <Bar
+                data={awardsByCategoryBarData}
+                options={awardsByCategoryBarOptions}
+              />
             ) : (
-              <PieChart>
-                <Tooltip
-                  formatter={(value) =>
-                    formatCountAndPercent(value, totalAwardsByCategory)
-                  }
-                />
-                <Legend />
-                <Pie
-                  data={awardsByCategoryData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  label={({ value, index }) =>
-                    awardsTopIndices.includes(index)
-                      ? formatCountAndPercent(value, totalAwardsByCategory)
-                      : ""
-                  }
-                >
-                  {awardsByCategoryData.map((entry, index) => (
-                    <Cell
-                      key={`awards-cat-${entry.name}`}
-                      fill={PALETTE[index % PALETTE.length]}
-                    />
-                  ))}
-                </Pie>
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={14}
-                  fill="#0f172a"
-                >
-                  {formatCount(totalAwardsByCategory)}
-                </text>
-              </PieChart>
+              <Doughnut
+                data={awardsByCategoryPieData}
+                options={awardsByCategoryPieOptions}
+              />
             )}
           </ChartFrame>
           <p className="sr-only">
