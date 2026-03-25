@@ -51,6 +51,17 @@ export function formatCount(value) {
   return toNumber(value).toLocaleString();
 }
 
+export function formatCurrencyPHP(value) {
+  const numericValue = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(safeValue);
+}
+
 export function formatDateLabel(value) {
   if (!value) return "";
   const d = new Date(value);
