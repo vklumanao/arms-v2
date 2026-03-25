@@ -176,7 +176,7 @@ function SortableHeader({ label, sortKey, sortConfig, onChange }) {
 
 function ActivityItem({ colorClass, title, meta, secondary }) {
   return (
-    <li className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+    <div className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
       <div className="flex items-start gap-3">
         <span className={`mt-1 h-2 w-2 rounded-full ${colorClass}`} />
         <div>
@@ -187,7 +187,7 @@ function ActivityItem({ colorClass, title, meta, secondary }) {
           {meta ? <p className="mt-1 text-xs text-slate-500">{meta}</p> : null}
         </div>
       </div>
-    </li>
+    </div>
   );
 }
 
