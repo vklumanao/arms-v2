@@ -4,13 +4,20 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useDashboardData, useDashboardSections } from "@/hooks/dashboard";
 import {
   AwardsByCategorySection,
+  AwardsByLevelSection,
   CenterBreakdownSection,
   DashboardHeader,
+  FacultyActivitySection,
+  FacultyStatusSection,
+  FundingOverviewSection,
+  LinkedProjectsSection,
   OverviewSection,
+  OutputVisibilitySection,
   OutputsByDepartmentSection,
   OutputsOverTimeSection,
   ProjectsPerCenterSection,
   RecentActivitySection,
+  TopContributorsSection,
 } from "./DashboardSections";
 import {
   formatDateTimeLabel,
@@ -18,6 +25,7 @@ import {
   normalizeCenterId,
   safeString,
   toNumber,
+  UNASSIGNED_VALUE,
 } from "./dashboardUtils";
 
 export default function DashboardPage() {
@@ -31,6 +39,7 @@ export default function DashboardPage() {
     referenceError,
     effectiveCenters,
     effectiveDepartments,
+    linkedProjects,
   } = useDashboardData({ user, profile, isAdmin });
 
   const knownCenterIds = useMemo(
@@ -54,14 +63,35 @@ export default function DashboardPage() {
 
   const visibleProjects = scopedProjects;
 
+  const facultyProjects = useMemo(() => {
+    if (isAdmin) return visibleProjects || [];
+    const owned = Array.isArray(visibleProjects) ? visibleProjects : [];
+    const linked = Array.isArray(linkedProjects) ? linkedProjects : [];
+    const seen = new Set();
+    const merged = [];
+    [...owned, ...linked].forEach((project) => {
+      const key =
+        safeString(project?.ckan_dataset_id) ||
+        safeString(project?.id) ||
+        safeString(project?.title);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push(project);
+    });
+    return merged;
+  }, [isAdmin, linkedProjects, visibleProjects]);
+
   const [filters, setFilters] = useState({
     centerId: "",
     departmentId: "",
     year: "",
+    range: "",
   });
   const [showAllCenters, setShowAllCenters] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [trendView, setTrendView] = useState("monthly");
+  const [outputsRange, setOutputsRange] = useState("last12");
+  const [contributorView, setContributorView] = useState("month");
   const [sortConfig, setSortConfig] = useState({
     key: "projects",
     direction: "desc",
@@ -76,9 +106,14 @@ export default function DashboardPage() {
     outputsByDepartmentData: dashboardOutputsByDepartmentData,
     outputsOverTimeData: dashboardOutputsOverTimeData,
     awardsByCategoryData: dashboardAwardsByCategoryData,
+    awardsByLevelData: dashboardAwardsByLevelData,
+    fundingOverview: dashboardFundingOverview,
+    outputsVisibility: dashboardOutputsVisibility,
+    topContributors: dashboardTopContributors,
     recentProjects: dashboardRecentProjects,
     recentOutputs: dashboardRecentOutputs,
     recentAwards: dashboardRecentAwards,
+    activityThisMonth: dashboardActivityThisMonth,
     loading: dashboardLoading,
     error: dashboardError,
   } = useDashboardSections({ filters });
@@ -198,6 +233,39 @@ export default function DashboardPage() {
     [dashboardAwardsByCategoryData],
   );
 
+  const awardsByLevelData = useMemo(
+    () =>
+      Array.isArray(dashboardAwardsByLevelData)
+        ? dashboardAwardsByLevelData
+        : [],
+    [dashboardAwardsByLevelData],
+  );
+
+  const fundingOverview = useMemo(
+    () =>
+      dashboardFundingOverview && typeof dashboardFundingOverview === "object"
+        ? dashboardFundingOverview
+        : null,
+    [dashboardFundingOverview],
+  );
+
+  const outputsVisibility = useMemo(
+    () =>
+      dashboardOutputsVisibility &&
+      typeof dashboardOutputsVisibility === "object"
+        ? dashboardOutputsVisibility
+        : null,
+    [dashboardOutputsVisibility],
+  );
+
+  const topContributors = useMemo(
+    () =>
+      dashboardTopContributors && typeof dashboardTopContributors === "object"
+        ? dashboardTopContributors
+        : null,
+    [dashboardTopContributors],
+  );
+
   const centerBreakdownRows = useMemo(
     () =>
       Array.isArray(dashboardCenterBreakdownRows)
@@ -227,9 +295,13 @@ export default function DashboardPage() {
 
   const activeFilterCount = useMemo(
     () =>
-      [filters.centerId, filters.departmentId, filters.year].filter(Boolean)
-        .length,
-    [filters.centerId, filters.departmentId, filters.year],
+      [
+        filters.centerId,
+        filters.departmentId,
+        filters.year,
+        filters.range,
+      ].filter(Boolean).length,
+    [filters.centerId, filters.departmentId, filters.range, filters.year],
   );
 
   const outputsTrendData = useMemo(
@@ -239,6 +311,14 @@ export default function DashboardPage() {
         : outputsOverTimeData,
     [outputsOverTimeData, trendView],
   );
+
+  const outputsTrendDataScoped = useMemo(() => {
+    if (isAdmin) return outputsTrendData;
+    if (outputsRange === "last6") {
+      return outputsTrendData.slice(-6);
+    }
+    return outputsTrendData;
+  }, [isAdmin, outputsRange, outputsTrendData]);
 
   const totalOutputsByDepartment = useMemo(
     () =>
@@ -269,16 +349,17 @@ export default function DashboardPage() {
 
   const totalOutputsTrend = useMemo(
     () =>
-      outputsTrendData.reduce(
+      outputsTrendDataScoped.reduce(
         (sum, entry) => sum + toNumber(entry?.outputs),
         0,
       ),
-    [outputsTrendData],
+    [outputsTrendDataScoped],
   );
 
   const loadIssueMessage =
     error || dashboardError || referenceError?.message || "";
   const lastUpdatedLabel = lastUpdated ? formatDateTimeLabel(lastUpdated) : "";
+  const currentYear = useMemo(() => String(new Date().getFullYear()), []);
 
   const handleToggleFilters = useCallback(
     () => setShowFilters((prev) => !prev),
@@ -286,7 +367,7 @@ export default function DashboardPage() {
   );
 
   const handleClearFilters = useCallback(() => {
-    setFilters({ centerId: "", departmentId: "", year: "" });
+    setFilters({ centerId: "", departmentId: "", year: "", range: "" });
     setShowFilters(false);
   }, []);
 
@@ -299,11 +380,72 @@ export default function DashboardPage() {
     [],
   );
 
+  const presetFlags = useMemo(
+    () => ({
+      thisYear: filters.year === currentYear && !filters.range,
+      last12: filters.range === "last12",
+      topCenters: !filters.centerId && !filters.departmentId && !showAllCenters,
+      unassigned: filters.centerId === UNASSIGNED_VALUE,
+    }),
+    [
+      currentYear,
+      filters.centerId,
+      filters.departmentId,
+      filters.range,
+      filters.year,
+      showAllCenters,
+    ],
+  );
+
+  const handleApplyPreset = useCallback(
+    (preset) => {
+      if (preset === "thisYear") {
+        setFilters((prev) => ({
+          ...prev,
+          year: currentYear,
+          range: "",
+        }));
+        return;
+      }
+      if (preset === "last12") {
+        setFilters((prev) => ({
+          ...prev,
+          year: "",
+          range: "last12",
+        }));
+        return;
+      }
+      if (preset === "topCenters") {
+        setFilters((prev) => ({
+          ...prev,
+          centerId: "",
+          departmentId: "",
+        }));
+        setShowAllCenters(false);
+        setSortConfig({ key: "projects", direction: "desc" });
+        return;
+      }
+      if (preset === "unassigned") {
+        setFilters((prev) => ({
+          ...prev,
+          centerId: UNASSIGNED_VALUE,
+        }));
+      }
+    },
+    [currentYear],
+  );
+
   useEffect(() => {
     if (!dashboardLoading) {
       setLastUpdated(new Date());
     }
-  }, [dashboardLoading, filters.centerId, filters.departmentId, filters.year]);
+  }, [
+    dashboardLoading,
+    filters.centerId,
+    filters.departmentId,
+    filters.range,
+    filters.year,
+  ]);
 
   return (
     <section className="page-stack-lg">
@@ -328,6 +470,8 @@ export default function DashboardPage() {
         onToggleFilters={handleToggleFilters}
         onUpdateFilters={setFilters}
         onClearFilters={handleClearFilters}
+        onApplyPreset={handleApplyPreset}
+        presetFlags={presetFlags}
       />
 
       {loadIssueMessage ? (
@@ -345,21 +489,59 @@ export default function DashboardPage() {
         loading={dashboardLoading}
       />
 
-      <CenterBreakdownSection
-        isAdmin={isAdmin}
-        loading={dashboardLoading}
-        centerBreakdownRows={centerBreakdownRows}
-        showAllCenters={showAllCenters}
-        onToggleShowAll={handleToggleShowAll}
-        sortConfig={sortConfig}
-        onSortChange={setSortConfig}
-      />
+      {isAdmin ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <TopContributorsSection
+            loading={dashboardLoading}
+            contributors={topContributors}
+            view={contributorView}
+            onViewChange={setContributorView}
+          />
+          <FundingOverviewSection
+            loading={dashboardLoading}
+            fundingOverview={fundingOverview}
+          />
+          <AwardsByLevelSection
+            loading={dashboardLoading}
+            awardsByLevelData={awardsByLevelData}
+          />
+          <OutputVisibilitySection
+            loading={dashboardLoading}
+            visibility={outputsVisibility}
+          />
+        </div>
+      ) : null}
 
-      <ProjectsPerCenterSection
-        loading={dashboardLoading}
-        projectsPerCenterData={projectsPerCenterData}
-        totalProjectsPerCenter={totalProjectsPerCenter}
-      />
+      {isAdmin ? (
+        <CenterBreakdownSection
+          isAdmin={isAdmin}
+          loading={dashboardLoading}
+          centerBreakdownRows={centerBreakdownRows}
+          showAllCenters={showAllCenters}
+          onToggleShowAll={handleToggleShowAll}
+          sortConfig={sortConfig}
+          onSortChange={setSortConfig}
+        />
+      ) : (
+        <>
+          <FacultyActivitySection
+            loading={dashboardLoading}
+            activity={dashboardActivityThisMonth}
+          />
+          <FacultyStatusSection
+            loading={dashboardLoading}
+            projects={facultyProjects}
+          />
+        </>
+      )}
+
+      {isAdmin ? (
+        <ProjectsPerCenterSection
+          loading={dashboardLoading}
+          projectsPerCenterData={projectsPerCenterData}
+          totalProjectsPerCenter={totalProjectsPerCenter}
+        />
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <OutputsByDepartmentSection
@@ -370,9 +552,12 @@ export default function DashboardPage() {
 
         <OutputsOverTimeSection
           loading={dashboardLoading}
-          outputsTrendData={outputsTrendData}
+          outputsTrendData={outputsTrendDataScoped}
           trendView={trendView}
           onTrendChange={handleTrendChange}
+          rangeView={outputsRange}
+          onRangeChange={setOutputsRange}
+          isAdmin={isAdmin}
           totalOutputsTrend={totalOutputsTrend}
         />
 
@@ -382,6 +567,13 @@ export default function DashboardPage() {
           totalAwardsByCategory={totalAwardsByCategory}
         />
       </div>
+
+      {!isAdmin ? (
+        <LinkedProjectsSection
+          loading={dashboardLoading}
+          linkedProjects={linkedProjects}
+        />
+      ) : null}
 
       <RecentActivitySection
         loading={dashboardLoading}
