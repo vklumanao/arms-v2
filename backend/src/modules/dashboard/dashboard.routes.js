@@ -305,6 +305,11 @@ export function registerDashboardRoutes(app, deps) {
     return "Other";
   }
 
+  function parseOwnerOnly(query) {
+    const raw = asTrimmedString(query?.ownerOnly).toLowerCase();
+    return raw === "1" || raw === "true" || raw === "yes";
+  }
+
   function parseContributorNames(raw) {
     const text = asTrimmedString(raw);
     if (!text) return [];
@@ -583,13 +588,14 @@ export function registerDashboardRoutes(app, deps) {
     };
   }
 
-  async function listVisibleDatasetsForUser(user) {
+  async function listVisibleDatasetsForUser(user, { ownerOnly = false } = {}) {
     const isAdmin = String(user?.role || "").toLowerCase() === "admin";
     const orgId = isAdmin ? "" : asTrimmedString(user?.ckan_org_id);
     if (!isAdmin && !orgId) return { orgId: "", datasets: [] };
     const datasets = await listAllDatasetsForDashboard({ orgId });
+    const shouldFilterByOwner = ownerOnly || !isAdmin;
     const visibleDatasets = (datasets || []).filter((dataset) =>
-      isAdmin ? true : isDatasetOwnedByUser(dataset, user),
+      shouldFilterByOwner ? isDatasetOwnedByUser(dataset, user) : true,
     );
     return { orgId, datasets: visibleDatasets };
   }
@@ -642,7 +648,7 @@ export function registerDashboardRoutes(app, deps) {
   const DASHBOARD_SUMMARY_CACHE = new Map();
   const DASHBOARD_SUMMARY_TTL_MS = 30 * 1000;
 
-  function buildSummaryCacheKey(req, filters, limit) {
+  function buildSummaryCacheKey(req, filters, limit, ownerOnly) {
     const userId = asTrimmedString(req.user?.id);
     const userRole = asTrimmedString(req.user?.role);
     const orgId = asTrimmedString(req.user?.ckan_org_id);
@@ -655,11 +661,14 @@ export function registerDashboardRoutes(app, deps) {
       asTrimmedString(filters?.year) || "-",
       asTrimmedString(filters?.range) || "-",
       String(limit || 0),
+      ownerOnly ? "owned" : "all",
     ].join("|");
   }
 
-  async function computeDashboardSummary({ req, filters, limit }) {
-    const { orgId, datasets } = await listVisibleDatasetsForUser(req.user);
+  async function computeDashboardSummary({ req, filters, limit, ownerOnly }) {
+    const { orgId, datasets } = await listVisibleDatasetsForUser(req.user, {
+      ownerOnly,
+    });
     const {
       knownCenterIds,
       centerNameById,
@@ -783,7 +792,7 @@ export function registerDashboardRoutes(app, deps) {
     });
 
     let linkedProjectsCount = 0;
-    if (!isAdmin && orgId) {
+    if (!ownerOnly && !isAdmin && orgId) {
       const allOrgDatasets = await listAllDatasetsForDashboard({ orgId });
       const linkedSet = new Set();
       (allOrgDatasets || []).forEach((dataset) => {
@@ -804,6 +813,12 @@ export function registerDashboardRoutes(app, deps) {
     let outputsSubmittedCount = 0;
     let outputsExpectedCount = 0;
     let awardsCount = 0;
+    const projectStatusBuckets = new Map([
+      ["Completed", 0],
+      ["Ongoing", 0],
+      ["Proposal", 0],
+      ["Rejected", 0],
+    ]);
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -931,6 +946,23 @@ export function registerDashboardRoutes(app, deps) {
       if (centerId) centerIdsInScope.add(centerId);
       if (departmentId) departmentIdsInScope.add(departmentId);
       projectsCount += 1;
+      const rawStatus = asTrimmedString(
+        meta.project_status || meta.status || "",
+      ).toLowerCase();
+      let statusKey = "Rejected";
+      if (["completed", "complete", "approved"].includes(rawStatus)) {
+        statusKey = "Completed";
+      } else if (["ongoing", "in progress", "active"].includes(rawStatus)) {
+        statusKey = "Ongoing";
+      } else if (["proposal", "proposed", "pending"].includes(rawStatus)) {
+        statusKey = "Proposal";
+      } else if (["rejected"].includes(rawStatus)) {
+        statusKey = "Rejected";
+      }
+      projectStatusBuckets.set(
+        statusKey,
+        (projectStatusBuckets.get(statusKey) || 0) + 1,
+      );
       const projectTimestamp =
         asTrimmedString(dataset?.metadata_modified) ||
         asTrimmedString(dataset?.metadata_created) ||
@@ -1640,6 +1672,12 @@ export function registerDashboardRoutes(app, deps) {
         ...outputsVisibility,
         total: outputsVisibility.public + outputsVisibility.private,
       },
+      projectStatusCounts: Array.from(projectStatusBuckets.entries()).map(
+        ([name, value]) => ({
+          name,
+          value,
+        }),
+      ),
       topContributors,
       recentProjects,
       recentOutputs,
@@ -1647,15 +1685,20 @@ export function registerDashboardRoutes(app, deps) {
     };
   }
 
-  async function getDashboardSummary({ req, filters, limit }) {
-    const cacheKey = buildSummaryCacheKey(req, filters, limit);
+  async function getDashboardSummary({ req, filters, limit, ownerOnly }) {
+    const cacheKey = buildSummaryCacheKey(req, filters, limit, ownerOnly);
     const now = Date.now();
     const cached = DASHBOARD_SUMMARY_CACHE.get(cacheKey);
     if (cached && now - cached.ts < DASHBOARD_SUMMARY_TTL_MS) {
       return cached.data;
     }
 
-    const data = await computeDashboardSummary({ req, filters, limit });
+    const data = await computeDashboardSummary({
+      req,
+      filters,
+      limit,
+      ownerOnly,
+    });
     DASHBOARD_SUMMARY_CACHE.set(cacheKey, { ts: now, data });
     return data;
   }
@@ -1754,7 +1797,12 @@ export function registerDashboardRoutes(app, deps) {
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
       };
-      const data = await getDashboardSummary({ req, filters, limit });
+      const data = await getDashboardSummary({
+        req,
+        filters,
+        limit,
+        ownerOnly: parseOwnerOnly(req.query),
+      });
       return res.json({ data });
     } catch (error) {
       return res.status(500).json({
