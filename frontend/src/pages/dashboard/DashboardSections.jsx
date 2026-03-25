@@ -20,11 +20,14 @@ import PageHeader from "@/components/layout/PageHeader";
 import { ChartFrame, DashboardPanel } from "@/components/dashboard";
 import {
   Award,
+  Banknote,
   BookOpen,
   Building2,
   FileText,
   FolderKanban,
   Link2,
+  Lock,
+  Unlock,
   Users,
 } from "lucide-react";
 import {
@@ -49,7 +52,9 @@ import {
   TOP_CENTER_ROWS,
   formatCount,
   formatCountAndPercent,
+  formatCurrencyPHP,
   formatDateLabel,
+  formatPercentage,
   getTopIndices,
   resolveYearFromRecord,
   safeString,
@@ -201,6 +206,8 @@ export function DashboardHeader({
   onToggleFilters,
   onUpdateFilters,
   onClearFilters,
+  onApplyPreset,
+  presetFlags,
 }) {
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
@@ -211,6 +218,16 @@ export function DashboardHeader({
             {activeFilterCount ? (
               <span className="rounded-full border border-slate-200/80 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Filtered view - {activeFilterCount}
+              </span>
+            ) : null}
+            {!isAdmin ? (
+              <span className="rounded-full border border-slate-200/70 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
+                My scope
+              </span>
+            ) : null}
+            {filters?.range ? (
+              <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {filters.range === "last12" ? "Last 12 months" : filters.range}
               </span>
             ) : null}
             <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1">
@@ -321,6 +338,7 @@ export function DashboardHeader({
                   onUpdateFilters((prev) => ({
                     ...prev,
                     year: value === ALL_VALUE ? "" : value,
+                    range: "",
                   }))
                 }
                 disabled={yearOptions.length <= 1}
@@ -355,6 +373,48 @@ export function DashboardHeader({
               ) : null}
             </div>
           </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Presets
+            </span>
+            <Button
+              type="button"
+              variant={presetFlags?.thisYear ? "default" : "outline"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onApplyPreset?.("thisYear")}
+              aria-pressed={presetFlags?.thisYear}
+            >
+              This year
+            </Button>
+            <Button
+              type="button"
+              variant={presetFlags?.last12 ? "default" : "outline"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onApplyPreset?.("last12")}
+              aria-pressed={presetFlags?.last12}
+            >
+              Last 12 months
+            </Button>
+            <Button
+              type="button"
+              variant={presetFlags?.topCenters ? "default" : "outline"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onApplyPreset?.("topCenters")}
+              aria-pressed={presetFlags?.topCenters}
+            >
+              Top centers
+            </Button>
+            <Button
+              type="button"
+              variant={presetFlags?.unassigned ? "default" : "outline"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onApplyPreset?.("unassigned")}
+              aria-pressed={presetFlags?.unassigned}
+            >
+              Unassigned
+            </Button>
+          </div>
         </>
       ) : null}
     </div>
@@ -382,42 +442,41 @@ export function OverviewSection({ isAdmin, summaryCounts, filters, loading }) {
               <SummaryCard
                 label="Research Centers"
                 value={formatCount(summaryCounts.centers)}
-                hint="Institution-wide"
+                hint="All centers"
                 Icon={Building2}
+              />
+              <SummaryCard
+                label="Research Projects"
+                value={formatCount(summaryCounts.projects)}
+                hint="Filtered projects"
+                Icon={FolderKanban}
               />
               <SummaryCard
                 label="Departments"
                 value={formatCount(summaryCounts.departments)}
-                hint="Institution-wide"
+                hint="All departments"
                 Icon={BookOpen}
               />
               <SummaryCard
                 label="Affiliates"
                 value={formatCount(summaryCounts.affiliates)}
-                hint="Unique collaborators in scoped projects"
+                hint="Active faculty + students"
                 Icon={Users}
               />
             </>
           ) : (
-            <SummaryCard
-              label="Linked Projects"
-              value={formatCount(summaryCounts.linkedProjects)}
-              hint="Projects where you are part of the research team"
-              Icon={Link2}
-            />
+            <>
+              <SummaryCard
+                label="My Projects"
+                value={formatCount(summaryCounts.projects)}
+                hint="Projects I submitted"
+                Icon={FolderKanban}
+              />
+            </>
           )}
+
           <SummaryCard
-            label={isAdmin ? "Research Projects" : "My Submitted Projects"}
-            value={formatCount(summaryCounts.projects)}
-            hint={
-              isAdmin
-                ? "Based on current filters"
-                : "Projects you submitted (based on current filters)"
-            }
-            Icon={FolderKanban}
-          />
-          <SummaryCard
-            label="Research Outputs"
+            label={isAdmin ? "Research Outputs" : "My Outputs"}
             value={formatCount(summaryCounts.outputs)}
             hint={
               summaryCounts.outputsSubmitted && summaryCounts.outputsExpected
@@ -425,26 +484,545 @@ export function OverviewSection({ isAdmin, summaryCounts, filters, loading }) {
                     summaryCounts.outputsExpected,
                   )}`
                 : summaryCounts.outputsSubmitted
-                  ? "Submitted research outputs"
+                  ? "Submitted outputs"
                   : summaryCounts.outputsExpected
-                    ? "Expected outputs from projects"
-                    : "No outputs in scope"
+                    ? "Expected outputs"
+                    : "No outputs"
             }
             Icon={FileText}
           />
           <SummaryCard
-            label="Awards & Recognitions"
+            label={isAdmin ? "Awards & Recognitions" : "My Awards"}
             value={formatCount(summaryCounts.awards)}
             hint={
               summaryCounts.awards
-                ? "From awards records"
+                ? "Awards recorded"
                 : safeString(filters.year)
-                  ? "No awards for selected year"
-                  : "No awards in scope"
+                  ? "No awards this year"
+                  : "No awards"
             }
             Icon={Award}
           />
+          {!isAdmin ? (
+            <SummaryCard
+              label="Team Projects"
+              value={formatCount(summaryCounts.linkedProjects)}
+              hint="Projects I am part of"
+              Icon={Link2}
+            />
+          ) : null}
         </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function TopContributorsSection({
+  loading,
+  contributors,
+  view,
+  onViewChange,
+}) {
+  const active = view === "year" ? contributors?.year : contributors?.month;
+  const rows = Array.isArray(active?.rows) ? active.rows : [];
+  const label = active?.label || (view === "year" ? "This year" : "This month");
+
+  return (
+    <DashboardPanel
+      title={`Top Contributors${loading ? " (Loading...)" : ""}`}
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+      action={
+        <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+          <Button
+            type="button"
+            variant={view === "month" ? "outline" : "ghost"}
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={() => onViewChange?.("month")}
+            aria-pressed={view === "month"}
+          >
+            Month
+          </Button>
+          <Button
+            type="button"
+            variant={view === "year" ? "outline" : "ghost"}
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={() => onViewChange?.("year")}
+            aria-pressed={view === "year"}
+          >
+            Year
+          </Button>
+        </div>
+      }
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        Top 5 faculty by owned projects ({label}).
+      </p>
+      {loading ? (
+        <LoadingListBlock label="Loading top contributors..." rows={4} />
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-slate-600">
+          No contributor activity yet for this period.
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="bg-slate-50/90">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Contributor
+                </TableHead>
+                <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Projects
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow
+                  key={`contrib-${safeString(row?.key) || safeString(row?.name)}`}
+                  className="hover:bg-slate-100/70"
+                >
+                  <TableCell className="py-3 font-medium text-slate-900">
+                    {safeString(row?.name) || "Unnamed"}
+                  </TableCell>
+                  <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                    {formatCount(row?.projects)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function FundingOverviewSection({ loading, fundingOverview }) {
+  const totalAmount = toNumber(fundingOverview?.totalAmount);
+  const totalProjects = toNumber(fundingOverview?.totalProjects);
+  const internalAmount = toNumber(fundingOverview?.internalAmount);
+  const internalProjects = toNumber(fundingOverview?.internalProjects);
+  const externalAmount = toNumber(fundingOverview?.externalAmount);
+  const externalProjects = toNumber(fundingOverview?.externalProjects);
+  const unknownAmount = toNumber(fundingOverview?.unknownAmount);
+  const unknownProjects = toNumber(fundingOverview?.unknownProjects);
+  const showUnknown = unknownProjects > 0 || unknownAmount > 0;
+
+  return (
+    <DashboardPanel
+      title={`Funding Overview${loading ? " (Loading...)" : ""}`}
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        Aggregated funding totals across current filters.
+      </p>
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SummaryCardSkeleton key={`funding-skeleton-${index}`} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SummaryCard
+            label="Total Funding"
+            value={formatCurrencyPHP(totalAmount)}
+            hint={`Funded projects: ${formatCount(totalProjects)}`}
+            Icon={Banknote}
+          />
+          <SummaryCard
+            label="Internal Funding"
+            value={formatCurrencyPHP(internalAmount)}
+            hint={`${formatCount(internalProjects)} projects`}
+            Icon={Banknote}
+          />
+          <SummaryCard
+            label="External Funding"
+            value={formatCurrencyPHP(externalAmount)}
+            hint={`${formatCount(externalProjects)} projects`}
+            Icon={Banknote}
+          />
+          {showUnknown ? (
+            <SummaryCard
+              label="Unclassified Funding"
+              value={formatCurrencyPHP(unknownAmount)}
+              hint={`${formatCount(unknownProjects)} projects`}
+              Icon={Banknote}
+            />
+          ) : null}
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function AwardsByLevelSection({ loading, awardsByLevelData }) {
+  const totalAwards = awardsByLevelData.reduce(
+    (sum, entry) => sum + toNumber(entry?.value),
+    0,
+  );
+  const levelMap = awardsByLevelData.reduce((acc, entry) => {
+    const key = safeString(entry?.level) || "Other";
+    acc[key] = toNumber(entry?.value);
+    return acc;
+  }, {});
+  const showOther = toNumber(levelMap.Other) > 0;
+
+  const stackedData = [
+    {
+      name: "Awards",
+      Institutional: levelMap.Institutional || 0,
+      Local: levelMap.Local || 0,
+      Regional: levelMap.Regional || 0,
+      National: levelMap.National || 0,
+      International: levelMap.International || 0,
+      Other: levelMap.Other || 0,
+    },
+  ];
+
+  return (
+    <DashboardPanel
+      title={`Awards by Level${loading ? " (Loading...)" : ""}`}
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        Distribution of awards across recognition levels.
+      </p>
+      {loading ? (
+        <LoadingBlock
+          label="Loading awards by level..."
+          chartHeightClass="h-40"
+        />
+      ) : totalAwards === 0 ? (
+        <p className="text-sm text-slate-600">
+          No awards recorded for the current scope.
+        </p>
+      ) : (
+        <div role="img" aria-label="Stacked bar chart showing awards by level">
+          <ChartFrame height={220}>
+            <BarChart
+              data={stackedData}
+              layout="vertical"
+              margin={{ top: 8, right: 16, left: 16, bottom: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis type="category" dataKey="name" width={80} />
+              <Tooltip
+                formatter={(value) => formatCountAndPercent(value, totalAwards)}
+              />
+              <Legend />
+              <Bar
+                dataKey="Institutional"
+                stackId="a"
+                fill="#0f4c81"
+                name="Institutional"
+              />
+              <Bar dataKey="Local" stackId="a" fill="#2f7bbd" name="Local" />
+              <Bar
+                dataKey="Regional"
+                stackId="a"
+                fill="#36b7a6"
+                name="Regional"
+              />
+              <Bar
+                dataKey="National"
+                stackId="a"
+                fill="#0ea5e9"
+                name="National"
+              />
+              <Bar
+                dataKey="International"
+                stackId="a"
+                fill="#f59e0b"
+                name="International"
+              />
+              {showOther ? (
+                <Bar dataKey="Other" stackId="a" fill="#9f86c0" name="Other" />
+              ) : null}
+            </BarChart>
+          </ChartFrame>
+          <p className="sr-only">
+            {`Awards by level totals ${formatCount(totalAwards)}.`}
+          </p>
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function OutputVisibilitySection({ loading, visibility }) {
+  const publicCount = toNumber(visibility?.public);
+  const privateCount = toNumber(visibility?.private);
+  const total = toNumber(visibility?.total ?? publicCount + privateCount);
+
+  return (
+    <DashboardPanel
+      title={`Output Visibility${loading ? " (Loading...)" : ""}`}
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        Public vs private research outputs for compliance tracking.
+      </p>
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <SummaryCardSkeleton key={`visibility-skeleton-${index}`} />
+          ))}
+        </div>
+      ) : total === 0 ? (
+        <p className="text-sm text-slate-600">No outputs recorded yet.</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SummaryCard
+            label="Public Outputs"
+            value={formatCount(publicCount)}
+            hint={formatPercentage(publicCount, total)}
+            Icon={Unlock}
+          />
+          <SummaryCard
+            label="Private Outputs"
+            value={formatCount(privateCount)}
+            hint={formatPercentage(privateCount, total)}
+            Icon={Lock}
+          />
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function FacultyActivitySection({ loading, activity }) {
+  const items = [
+    {
+      label: "Projects Updated",
+      value: formatCount(activity?.projects),
+    },
+    {
+      label: "Outputs Added",
+      value: formatCount(activity?.outputs),
+    },
+    {
+      label: "Awards Logged",
+      value: formatCount(activity?.awards),
+    },
+  ];
+
+  return (
+    <DashboardPanel
+      title="My Activity This Month"
+      cardClassName="border-slate-200/70 bg-white/90 shadow-sm"
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName="p-6"
+    >
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {items.map((item) => (
+            <SummaryCardSkeleton key={`activity-skeleton-${item.label}`} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {items.map((item) => (
+            <div
+              key={`activity-${item.label}`}
+              className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {item.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function FacultyStatusSection({ loading, projects }) {
+  const statusData = useMemo(() => {
+    const buckets = new Map([
+      ["Ongoing", 0],
+      ["Completed", 0],
+      ["Proposed", 0],
+      ["Other", 0],
+    ]);
+
+    (projects || []).forEach((project) => {
+      const raw = safeString(project?.status).toLowerCase();
+      let key = "Other";
+      if (["completed", "complete", "approved"].includes(raw)) {
+        key = "Completed";
+      } else if (["ongoing", "in progress", "active"].includes(raw)) {
+        key = "Ongoing";
+      } else if (["proposal", "proposed", "pending"].includes(raw)) {
+        key = "Proposed";
+      }
+      buckets.set(key, (buckets.get(key) || 0) + 1);
+    });
+
+    return [...buckets.entries()].map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [projects]);
+
+  const total = statusData.reduce((sum, row) => sum + toNumber(row.value), 0);
+
+  return (
+    <DashboardPanel
+      title="My Project Status"
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        A quick snapshot of your project pipeline.
+      </p>
+      {loading ? (
+        <LoadingBlock
+          label="Loading project status..."
+          chartHeightClass="h-40"
+        />
+      ) : total === 0 ? (
+        <p className="text-sm text-slate-600">No projects found.</p>
+      ) : (
+        <div role="img" aria-label="Bar chart showing project status counts">
+          <ChartFrame height={260}>
+            <BarChart
+              data={statusData}
+              layout="vertical"
+              margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis
+                type="number"
+                allowDecimals={false}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={120}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip formatter={(value) => formatCount(value)} />
+              <Bar
+                dataKey="value"
+                name="Projects"
+                fill="#0f4c81"
+                radius={[0, 10, 10, 0]}
+              >
+                <LabelList
+                  dataKey="value"
+                  content={({ x, y, width, height, value }) => (
+                    <text
+                      x={x + width + 8}
+                      y={y + height / 2}
+                      dy={4}
+                      fill="#0f172a"
+                      fontSize={11}
+                    >
+                      {formatCount(value)}
+                    </text>
+                  )}
+                />
+              </Bar>
+            </BarChart>
+          </ChartFrame>
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+export function LinkedProjectsSection({ loading, linkedProjects }) {
+  const rows = useMemo(() => {
+    const items = Array.isArray(linkedProjects) ? linkedProjects : [];
+    return items
+      .map((project) => {
+        const timestamp =
+          project?.updated_at || project?.submitted_at || project?.created_at;
+        return {
+          ...project,
+          _ts: timestamp ? new Date(timestamp).getTime() : 0,
+        };
+      })
+      .sort((a, b) => b._ts - a._ts)
+      .slice(0, 5);
+  }, [linkedProjects]);
+
+  return (
+    <DashboardPanel
+      title="Team Projects"
+      cardClassName={PANEL_CARD_CLASS}
+      headerClassName={PANEL_HEADER_CLASS}
+      bodyClassName={PANEL_BODY_CLASS}
+      action={
+        <Link
+          to="/projects"
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 hover:underline"
+        >
+          View all
+        </Link>
+      }
+    >
+      <p className="mb-3 text-xs text-slate-600">
+        Projects where you are part of the research team.
+      </p>
+      {loading ? (
+        <LoadingListBlock label="Loading linked projects..." rows={3} />
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-slate-600">No linked projects yet.</p>
+      ) : (
+        <ul className="space-y-2 text-sm text-slate-700">
+          {rows.map((project) => {
+            const projectId = safeString(
+              project?.ckan_dataset_id || project?.id,
+            );
+            const updatedLabel = safeString(
+              project?.updated_at ||
+                project?.submitted_at ||
+                project?.created_at,
+            );
+            return (
+              <li
+                key={`linked-project-${projectId || safeString(project?.title)}`}
+                className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
+              >
+                {projectId ? (
+                  <Link
+                    to={`/projects/${encodeURIComponent(projectId)}`}
+                    className="font-medium text-slate-900 hover:underline"
+                  >
+                    {safeString(project?.title) || "Untitled project"}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-slate-900">
+                    {safeString(project?.title) || "Untitled project"}
+                  </span>
+                )}
+                <p className="mt-1 text-xs text-slate-500">
+                  {updatedLabel
+                    ? `Updated ${formatDateLabel(updatedLabel)}`
+                    : "Updated date unavailable"}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </DashboardPanel>
   );
@@ -485,7 +1063,7 @@ export function CenterBreakdownSection({
       bodyClassName={PANEL_BODY_CLASS}
     >
       <p className="mb-3 text-xs text-slate-600">
-        Top centers by activity across projects, outputs, and awards.
+        Top centers by activity across projects and outputs.
       </p>
       {loading ? (
         <LoadingBlock
@@ -508,94 +1086,90 @@ export function CenterBreakdownSection({
               Click a column to sort the table.
             </span>
           </div>
-          <div className="max-h-[420px] overflow-auto rounded-2xl border border-slate-200/70">
-            <Table aria-label="Research center breakdown table">
-              <caption className="sr-only">
-                Research center breakdown showing projects, affiliates, outputs,
-                and awards.
-              </caption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="sticky top-0 z-10 bg-white/90">
-                    <SortableHeader
-                      label="Research Center"
-                      sortKey="name"
-                      sortConfig={sortConfig}
-                      onChange={onSortChange}
-                    />
-                  </TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-white/90 text-right">
-                    <SortableHeader
-                      label="Projects"
-                      sortKey="projects"
-                      sortConfig={sortConfig}
-                      onChange={onSortChange}
-                    />
-                  </TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-white/90 text-right">
-                    <SortableHeader
-                      label="Affiliates"
-                      sortKey="affiliates"
-                      sortConfig={sortConfig}
-                      onChange={onSortChange}
-                    />
-                  </TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-white/90 text-right">
-                    <SortableHeader
-                      label="Outputs"
-                      sortKey="outputs"
-                      sortConfig={sortConfig}
-                      onChange={onSortChange}
-                    />
-                  </TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-white/90 text-right">
-                    <SortableHeader
-                      label="Awards"
-                      sortKey="awards"
-                      sortConfig={sortConfig}
-                      onChange={onSortChange}
-                    />
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayedCenterRows.map((row) => (
-                  <TableRow
-                    key={`center-breakdown-${row.id}`}
-                    className="transition hover:bg-slate-50/80"
-                  >
-                    <TableCell className="font-medium text-slate-900">
-                      {isAdmin && row.id && row.id !== "__unassigned__" ? (
-                        <Link
-                          to={`/admin/research-center/${encodeURIComponent(
-                            String(row.id),
-                          )}`}
-                          className="hover:underline"
-                        >
-                          {row.name}
-                        </Link>
-                      ) : (
-                        row.name
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCount(row.projects)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.affiliates === null
-                        ? "-"
-                        : formatCount(row.affiliates)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCount(row.outputs)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCount(row.awards)}
-                    </TableCell>
+          <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+            <div className="max-h-[420px] overflow-auto">
+              <Table
+                aria-label="Research center breakdown table"
+                className="w-full text-sm"
+              >
+                <caption className="sr-only">
+                  Research center breakdown showing projects, affiliates, and
+                  outputs.
+                </caption>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/90">
+                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <SortableHeader
+                        label="Research Center"
+                        sortKey="name"
+                        sortConfig={sortConfig}
+                        onChange={onSortChange}
+                      />
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <SortableHeader
+                        label="Projects"
+                        sortKey="projects"
+                        sortConfig={sortConfig}
+                        onChange={onSortChange}
+                      />
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <SortableHeader
+                        label="Affiliates"
+                        sortKey="affiliates"
+                        sortConfig={sortConfig}
+                        onChange={onSortChange}
+                      />
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <SortableHeader
+                        label="Outputs"
+                        sortKey="outputs"
+                        sortConfig={sortConfig}
+                        onChange={onSortChange}
+                      />
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {displayedCenterRows.map((row, index) => (
+                    <TableRow
+                      key={`center-breakdown-${row.id}`}
+                      className={`transition ${
+                        index % 2 === 0 ? "bg-white" : "bg-slate-50/40"
+                      } hover:bg-slate-100/70`}
+                    >
+                      <TableCell className="py-3 font-medium text-slate-900">
+                        {isAdmin && row.id && row.id !== "__unassigned__" ? (
+                          <Link
+                            to={`/admin/research-center/${encodeURIComponent(
+                              String(row.id),
+                            )}`}
+                            className="decoration-slate-300 underline-offset-4 hover:underline"
+                          >
+                            {row.name}
+                          </Link>
+                        ) : (
+                          row.name
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                        {formatCount(row.projects)}
+                      </TableCell>
+                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                        {row.affiliates === null
+                          ? "-"
+                          : formatCount(row.affiliates)}
+                      </TableCell>
+                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                        {formatCount(row.outputs)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </>
       )}
@@ -892,6 +1466,9 @@ export function OutputsOverTimeSection({
   outputsTrendData,
   trendView,
   onTrendChange,
+  rangeView,
+  onRangeChange,
+  isAdmin,
   totalOutputsTrend,
 }) {
   return (
@@ -901,25 +1478,49 @@ export function OutputsOverTimeSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
       action={
-        <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
-          <Button
-            type="button"
-            variant={trendView === "monthly" ? "outline" : "ghost"}
-            className="h-8 rounded-full px-3 text-xs"
-            onClick={() => onTrendChange("monthly")}
-            aria-pressed={trendView === "monthly"}
-          >
-            Monthly
-          </Button>
-          <Button
-            type="button"
-            variant={trendView === "quarterly" ? "outline" : "ghost"}
-            className="h-8 rounded-full px-3 text-xs"
-            onClick={() => onTrendChange("quarterly")}
-            aria-pressed={trendView === "quarterly"}
-          >
-            Quarterly
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {!isAdmin ? (
+            <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+              <Button
+                type="button"
+                variant={rangeView === "last6" ? "outline" : "ghost"}
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => onRangeChange?.("last6")}
+                aria-pressed={rangeView === "last6"}
+              >
+                Last 6 months
+              </Button>
+              <Button
+                type="button"
+                variant={rangeView === "last12" ? "outline" : "ghost"}
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => onRangeChange?.("last12")}
+                aria-pressed={rangeView === "last12"}
+              >
+                Last 12 months
+              </Button>
+            </div>
+          ) : null}
+          <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+            <Button
+              type="button"
+              variant={trendView === "monthly" ? "outline" : "ghost"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onTrendChange("monthly")}
+              aria-pressed={trendView === "monthly"}
+            >
+              Monthly
+            </Button>
+            <Button
+              type="button"
+              variant={trendView === "quarterly" ? "outline" : "ghost"}
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => onTrendChange("quarterly")}
+              aria-pressed={trendView === "quarterly"}
+            >
+              Quarterly
+            </Button>
+          </div>
         </div>
       }
     >
