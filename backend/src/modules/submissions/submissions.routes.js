@@ -343,25 +343,41 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     }
   }
 
-  function isDatasetLinkedToFacultyUser(dataset, user) {
+  function isDatasetLinkedToUser(dataset, user) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
-    const selectedUsers = parseSelectedUsers(
+    const leadUsers = parseSelectedUsers(
+      getExtraByKey(extras, "lead_researcher_user"),
+    );
+    const facultyUsers = parseSelectedUsers(
       getExtraByKey(extras, "faculty_team_users"),
     );
+    const selectedUsers = [...leadUsers, ...facultyUsers];
     if (!selectedUsers.length) return false;
 
-    const userId = asTrimmedString(user?.ckan_user_id || user?.id);
-    const username = asTrimmedString(user?.ckan_username);
-    const email = asTrimmedString(user?.email).toLowerCase();
-
-    return selectedUsers.some(
-      (row) =>
-        (userId && asTrimmedString(row?.id) === userId) ||
-        (username &&
-          asTrimmedString(row?.username).toLowerCase() ===
-            username.toLowerCase()) ||
-        (email && asTrimmedString(row?.email).toLowerCase() === email),
+    const candidateIds = new Set(
+      [user?.ckan_user_id, user?.id]
+        .map((value) => asTrimmedString(value))
+        .filter(Boolean),
     );
+    const candidateEmails = new Set(
+      [user?.email]
+        .map((value) => asTrimmedString(value).toLowerCase())
+        .filter(Boolean),
+    );
+    const candidateUsername = asTrimmedString(
+      user?.ckan_username,
+    ).toLowerCase();
+
+    return selectedUsers.some((row) => {
+      const id = asTrimmedString(row?.id);
+      const email = asTrimmedString(row?.email).toLowerCase();
+      const username = asTrimmedString(row?.username).toLowerCase();
+      if (id && candidateIds.has(id)) return true;
+      if (email && candidateEmails.has(email)) return true;
+      if (candidateUsername && username && username === candidateUsername)
+        return true;
+      return false;
+    });
   }
 
   /**
@@ -1177,7 +1193,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         for (const dataset of datasets) {
           if (isAwardDataset(dataset)) continue;
           if (isDatasetOwnedByUser(dataset, req.user)) continue;
-          if (!isDatasetLinkedToFacultyUser(dataset, req.user)) {
+          if (!isDatasetLinkedToUser(dataset, req.user)) {
             continue;
           }
             rows.push(mapDatasetToProjectListRecord(dataset));
@@ -1244,7 +1260,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetLinkedToUser(dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to view this project outputs.",
           });
@@ -1288,7 +1308,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         if (
           !isAdmin &&
           !isCenterChief &&
-          !isDatasetOwnedByUser(dataset, req.user)
+          !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetLinkedToUser(dataset, req.user)
         ) {
           return res.status(403).json({
             error: "You are not allowed to view this project resources.",
@@ -1363,7 +1384,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           if (
             !isAdmin &&
             !isCenterChief &&
-            !isDatasetOwnedByUser(located.dataset, req.user)
+            !isDatasetOwnedByUser(located.dataset, req.user) &&
+            !isDatasetLinkedToUser(located.dataset, req.user)
           ) {
             return res.status(403).json({
               error: "You are not allowed to download this resource.",
