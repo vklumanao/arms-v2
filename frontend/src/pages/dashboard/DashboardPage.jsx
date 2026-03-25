@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const { user, profile } = useAuth();
   const role = safeString(profile?.role).toLowerCase();
   const isAdmin = role === "admin";
+  const [chartTheme, setChartTheme] = useState("branded");
 
   const {
     projects,
@@ -60,26 +61,24 @@ export default function DashboardPage() {
       (project) => safeString(project?.submitted_by) === ownerId,
     );
   }, [isAdmin, profile?.id, projects, user?.id]);
+  const ownerId = safeString(profile?.id || user?.id);
 
   const visibleProjects = scopedProjects;
 
   const facultyProjects = useMemo(() => {
     if (isAdmin) return visibleProjects || [];
     const owned = Array.isArray(visibleProjects) ? visibleProjects : [];
-    const linked = Array.isArray(linkedProjects) ? linkedProjects : [];
     const seen = new Set();
-    const merged = [];
-    [...owned, ...linked].forEach((project) => {
+    return owned.filter((project) => {
       const key =
         safeString(project?.ckan_dataset_id) ||
         safeString(project?.id) ||
         safeString(project?.title);
-      if (!key || seen.has(key)) return;
+      if (!key || seen.has(key)) return false;
       seen.add(key);
-      merged.push(project);
+      return true;
     });
-    return merged;
-  }, [isAdmin, linkedProjects, visibleProjects]);
+  }, [isAdmin, visibleProjects]);
 
   const [filters, setFilters] = useState({
     centerId: "",
@@ -98,6 +97,11 @@ export default function DashboardPage() {
   });
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  const dashboardFilters = useMemo(
+    () => ({ ...filters, ownerOnly: !isAdmin }),
+    [filters, isAdmin],
+  );
+
   const {
     yearOptions: dashboardYearOptions,
     overview: dashboardOverview,
@@ -109,6 +113,7 @@ export default function DashboardPage() {
     awardsByLevelData: dashboardAwardsByLevelData,
     fundingOverview: dashboardFundingOverview,
     outputsVisibility: dashboardOutputsVisibility,
+    projectStatusCounts: dashboardProjectStatusCounts,
     topContributors: dashboardTopContributors,
     recentProjects: dashboardRecentProjects,
     recentOutputs: dashboardRecentOutputs,
@@ -116,7 +121,9 @@ export default function DashboardPage() {
     activityThisMonth: dashboardActivityThisMonth,
     loading: dashboardLoading,
     error: dashboardError,
-  } = useDashboardSections({ filters });
+  } = useDashboardSections({
+    filters: dashboardFilters,
+  });
 
   const visibleCenterIds = useMemo(() => {
     if (isAdmin) {
@@ -356,6 +363,14 @@ export default function DashboardPage() {
     [outputsTrendDataScoped],
   );
 
+  const summaryCountsForView = useMemo(() => {
+    if (isAdmin || !summaryCounts) return summaryCounts;
+    const linkedCount = Array.isArray(linkedProjects)
+      ? linkedProjects.length
+      : 0;
+    return { ...summaryCounts, linkedProjects: linkedCount };
+  }, [isAdmin, linkedProjects, summaryCounts]);
+
   const loadIssueMessage =
     error || dashboardError || referenceError?.message || "";
   const lastUpdatedLabel = lastUpdated ? formatDateTimeLabel(lastUpdated) : "";
@@ -472,6 +487,8 @@ export default function DashboardPage() {
         onClearFilters={handleClearFilters}
         onApplyPreset={handleApplyPreset}
         presetFlags={presetFlags}
+        chartTheme={chartTheme}
+        onChartThemeChange={setChartTheme}
       />
 
       {loadIssueMessage ? (
@@ -484,13 +501,22 @@ export default function DashboardPage() {
 
       <OverviewSection
         isAdmin={isAdmin}
-        summaryCounts={summaryCounts}
+        summaryCounts={summaryCountsForView}
         filters={filters}
         loading={dashboardLoading}
       />
 
       {isAdmin ? (
         <div className="grid gap-4 xl:grid-cols-2">
+          <FacultyStatusSection
+            loading={dashboardLoading}
+            projects={projects}
+            title="All Project Status"
+            description="Snapshot of project status across all research centers."
+            statusCounts={dashboardProjectStatusCounts}
+            chartTheme={chartTheme}
+            ownerId={ownerId}
+          />
           <TopContributorsSection
             loading={dashboardLoading}
             contributors={topContributors}
@@ -504,6 +530,7 @@ export default function DashboardPage() {
           <AwardsByLevelSection
             loading={dashboardLoading}
             awardsByLevelData={awardsByLevelData}
+            chartTheme={chartTheme}
           />
           <OutputVisibilitySection
             loading={dashboardLoading}
@@ -531,6 +558,9 @@ export default function DashboardPage() {
           <FacultyStatusSection
             loading={dashboardLoading}
             projects={facultyProjects}
+            chartTheme={chartTheme}
+            ownerId={ownerId}
+            statusCounts={dashboardProjectStatusCounts}
           />
         </>
       )}
@@ -540,15 +570,19 @@ export default function DashboardPage() {
           loading={dashboardLoading}
           projectsPerCenterData={projectsPerCenterData}
           totalProjectsPerCenter={totalProjectsPerCenter}
+          chartTheme={chartTheme}
         />
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <OutputsByDepartmentSection
-          loading={dashboardLoading}
-          outputsByDepartmentData={outputsByDepartmentData}
-          totalOutputsByDepartment={totalOutputsByDepartment}
-        />
+        {isAdmin ? (
+          <OutputsByDepartmentSection
+            loading={dashboardLoading}
+            outputsByDepartmentData={outputsByDepartmentData}
+            totalOutputsByDepartment={totalOutputsByDepartment}
+            chartTheme={chartTheme}
+          />
+        ) : null}
 
         <OutputsOverTimeSection
           loading={dashboardLoading}
@@ -559,12 +593,14 @@ export default function DashboardPage() {
           onRangeChange={setOutputsRange}
           isAdmin={isAdmin}
           totalOutputsTrend={totalOutputsTrend}
+          chartTheme={chartTheme}
         />
 
         <AwardsByCategorySection
           loading={dashboardLoading}
           awardsByCategoryData={awardsByCategoryData}
           totalAwardsByCategory={totalAwardsByCategory}
+          chartTheme={chartTheme}
         />
       </div>
 
