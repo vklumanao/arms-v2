@@ -206,6 +206,189 @@ export function registerDashboardRoutes(app, deps) {
     return "";
   }
 
+  function parseDateValue(value) {
+    const raw = asTrimmedString(value);
+    if (!raw) return null;
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  }
+
+  function getCandidateDates(record) {
+    const dates = [
+      record?.submitted_at,
+      record?.created_at,
+      record?.updated_at,
+      record?.start_date,
+      record?.end_date,
+    ]
+      .map(parseDateValue)
+      .filter(Boolean);
+
+    const yearValue = asTrimmedString(record?.year || record?.year_received);
+    if (yearValue && /^\d{4}$/.test(yearValue)) {
+      const yearDate = parseDateValue(`${yearValue}-01-01`);
+      if (yearDate) dates.push(yearDate);
+    }
+
+    return dates;
+  }
+
+  function matchesRange(scope, range) {
+    const normalized = asTrimmedString(range).toLowerCase();
+    if (!normalized) return true;
+    const dates = getCandidateDates(scope);
+    if (!dates.length) return false;
+
+    const now = new Date();
+    if (normalized === "last12") {
+      const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      return dates.some((date) => date >= start && date <= now);
+    }
+
+    if (normalized === "thisyear") {
+      const start = new Date(now.getFullYear(), 0, 1);
+      const end = new Date(now.getFullYear() + 1, 0, 1);
+      return dates.some((date) => date >= start && date < end);
+    }
+
+    return true;
+  }
+
+  function parseFundingAmount(value) {
+    const numeric = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  function normalizeFundingBucket({
+    funding_type: fundingType,
+    funding_category: fundingCategory,
+    funding_source: fundingSource,
+  }) {
+    const raw = [fundingType, fundingCategory, fundingSource]
+      .map((value) => asTrimmedString(value).toLowerCase())
+      .filter(Boolean)
+      .join(" ");
+
+    if (!raw) return "unknown";
+    if (
+      raw.includes("internal") ||
+      raw.includes("university") ||
+      raw.includes("school") ||
+      raw.includes("campus") ||
+      raw.includes("institution") ||
+      raw.includes("self")
+    ) {
+      return "internal";
+    }
+    if (
+      raw.includes("external") ||
+      raw.includes("industry") ||
+      raw.includes("private") ||
+      raw.includes("government") ||
+      raw.includes("grant")
+    ) {
+      return "external";
+    }
+    return "unknown";
+  }
+
+  function normalizeAwardLevel(value) {
+    const raw = asTrimmedString(value).toLowerCase();
+    if (!raw) return "Other";
+    if (raw.includes("institutional")) return "Institutional";
+    if (raw.includes("local")) return "Local";
+    if (raw.includes("university")) return "Institutional";
+    if (raw.includes("regional")) return "Regional";
+    if (raw.includes("international")) return "International";
+    if (raw.includes("national")) return "National";
+    return "Other";
+  }
+
+  function parseContributorNames(raw) {
+    const text = asTrimmedString(raw);
+    if (!text) return [];
+    return text
+      .split(/[,;]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  function buildContributorEntries(meta) {
+    const entries = [];
+    const seen = new Set();
+
+    const selectedUsers = [
+      ...parseSelectedUsers(meta?.lead_researcher_user),
+      ...parseSelectedUsers(meta?.faculty_team_users),
+    ];
+
+    selectedUsers.forEach((row) => {
+      const key = resolveAffiliateKey(row);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      entries.push({
+        key,
+        label:
+          asTrimmedString(row?.username) ||
+          asTrimmedString(row?.email) ||
+          asTrimmedString(row?.id),
+      });
+    });
+
+    parseContributorNames(meta?.lead_researcher).forEach((name) => {
+      const key = name.toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      entries.push({ key, label: name });
+    });
+
+    parseContributorNames(meta?.faculty_team).forEach((name) => {
+      const key = name.toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      entries.push({ key, label: name });
+    });
+
+    if (!entries.length) {
+      const fallback =
+        asTrimmedString(meta?.submitted_by_name) ||
+        asTrimmedString(meta?.submitted_by_email) ||
+        asTrimmedString(meta?.submitted_by);
+      if (fallback) {
+        entries.push({ key: fallback.toLowerCase(), label: fallback });
+      }
+    }
+
+    return entries;
+  }
+
+  function buildProjectOwnerEntry(
+    meta,
+    { userNameById = new Map(), userNameByEmail = new Map() } = {},
+  ) {
+    const ownerId = asTrimmedString(meta?.submitted_by_user_id);
+    if (ownerId) {
+      const label = asTrimmedString(userNameById.get(ownerId)) || ownerId;
+      return [{ key: ownerId, label }];
+    }
+    const ownerEmail = asTrimmedString(meta?.submitted_by_email).toLowerCase();
+    if (ownerEmail) {
+      const label =
+        asTrimmedString(userNameByEmail.get(ownerEmail)) || ownerEmail;
+      return [{ key: ownerEmail, label }];
+    }
+    const ownerName = asTrimmedString(meta?.submitted_by_name);
+    if (ownerName) {
+      return [{ key: ownerName.toLowerCase(), label: ownerName }];
+    }
+    const fallback = asTrimmedString(meta?.submitted_by);
+    if (fallback) {
+      return [{ key: fallback.toLowerCase(), label: fallback }];
+    }
+    return [];
+  }
+
   function isAwardDataset(dataset) {
     const meta = extrasToMap(dataset?.extras);
     return asTrimmedString(meta.record_type).toLowerCase() === "award";
@@ -433,6 +616,7 @@ export function registerDashboardRoutes(app, deps) {
     const selectedCenterId = asTrimmedString(filters?.centerId);
     const selectedDepartmentId = asTrimmedString(filters?.departmentId);
     const selectedYear = asTrimmedString(filters?.year);
+    const selectedRange = asTrimmedString(filters?.range);
 
     if (
       selectedCenterId &&
@@ -447,6 +631,9 @@ export function registerDashboardRoutes(app, deps) {
       return false;
     }
     if (selectedYear && resolveYearFromRecord(scope) !== selectedYear) {
+      return false;
+    }
+    if (selectedRange && !matchesRange(scope, selectedRange)) {
       return false;
     }
     return true;
@@ -466,6 +653,7 @@ export function registerDashboardRoutes(app, deps) {
       asTrimmedString(filters?.centerId) || "-",
       asTrimmedString(filters?.departmentId) || "-",
       asTrimmedString(filters?.year) || "-",
+      asTrimmedString(filters?.range) || "-",
       String(limit || 0),
     ].join("|");
   }
@@ -482,7 +670,8 @@ export function registerDashboardRoutes(app, deps) {
     const hasActiveFilters = Boolean(
       asTrimmedString(filters.centerId) ||
       asTrimmedString(filters.departmentId) ||
-      asTrimmedString(filters.year),
+      asTrimmedString(filters.year) ||
+      asTrimmedString(filters.range),
     );
 
     const years = new Set();
@@ -549,10 +738,49 @@ export function registerDashboardRoutes(app, deps) {
       .filter(Boolean)
       .sort((a, b) => Number(b) - Number(a));
 
-    const activeUsersResult = await query(
-      `SELECT COUNT(*)::int AS count FROM users WHERE is_active = TRUE AND role IN ('faculty', 'student')`,
+    const affiliateCountsResult = await query(
+      `
+      SELECT COALESCE(ckan_org_id, '') AS center_id,
+             COUNT(*)::int AS count
+      FROM users
+      WHERE is_active = TRUE
+        AND role IN ('faculty', 'student')
+      GROUP BY COALESCE(ckan_org_id, '')
+      `,
     );
-    const activeUsersCount = Number(activeUsersResult.rows?.[0]?.count || 0);
+    const affiliateCountByCenter = new Map();
+    let totalAffiliateCount = 0;
+    (affiliateCountsResult.rows || []).forEach((row) => {
+      const normalizedCenterId = normalizeCenterId(
+        asTrimmedString(row?.center_id),
+        knownCenterIds,
+      );
+      const count = Number(row?.count || 0);
+      if (!normalizedCenterId) return;
+      affiliateCountByCenter.set(
+        normalizedCenterId,
+        (affiliateCountByCenter.get(normalizedCenterId) || 0) + count,
+      );
+      totalAffiliateCount += count;
+    });
+
+    const userNameById = new Map();
+    const userNameByEmail = new Map();
+    const userLookupResult = await query(
+      `
+      SELECT id, full_name, email
+      FROM users
+      WHERE is_active = TRUE
+      `,
+    );
+    (userLookupResult.rows || []).forEach((row) => {
+      const id = asTrimmedString(row?.id);
+      const email = asTrimmedString(row?.email).toLowerCase();
+      const name =
+        asTrimmedString(row?.full_name) || email || id || "ARMS User";
+      if (id) userNameById.set(id, name);
+      if (email) userNameByEmail.set(email, name);
+    });
 
     let linkedProjectsCount = 0;
     if (!isAdmin && orgId) {
@@ -576,6 +804,76 @@ export function registerDashboardRoutes(app, deps) {
     let outputsSubmittedCount = 0;
     let outputsExpectedCount = 0;
     let awardsCount = 0;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const isWithinCurrentMonth = (value) => {
+      const raw = asTrimmedString(value);
+      if (!raw) return false;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= monthStart && d <= now;
+    };
+
+    let projectsThisMonth = 0;
+    let outputsThisMonth = 0;
+    let awardsThisMonth = 0;
+
+    const fundingOverview = {
+      totalAmount: 0,
+      totalProjects: 0,
+      internalAmount: 0,
+      internalProjects: 0,
+      externalAmount: 0,
+      externalProjects: 0,
+      unknownAmount: 0,
+      unknownProjects: 0,
+    };
+
+    const outputsVisibility = {
+      public: 0,
+      private: 0,
+    };
+
+    const awardsByLevelCounts = new Map();
+    const contributorMonthCounts = new Map();
+    const contributorYearCounts = new Map();
+    const selectedYearRaw = asTrimmedString(filters.year);
+    const selectedYearValue = /^\d{4}$/.test(selectedYearRaw)
+      ? Number(selectedYearRaw)
+      : now.getFullYear();
+    const monthStartForContrib = new Date(selectedYearValue, now.getMonth(), 1);
+    const monthEndForContrib = new Date(
+      selectedYearValue,
+      now.getMonth() + 1,
+      1,
+    );
+    const last12Start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const yearStart = new Date(selectedYearValue, 0, 1);
+    const yearEnd = new Date(selectedYearValue + 1, 0, 1);
+    const rangeKey = asTrimmedString(filters.range).toLowerCase();
+    const yearRangeStart = rangeKey === "last12" ? last12Start : yearStart;
+    const yearRangeEnd = rangeKey === "last12" ? now : yearEnd;
+    const monthLabel = monthStartForContrib.toLocaleDateString(undefined, {
+      month: "long",
+      year: "numeric",
+    });
+    const yearLabel =
+      rangeKey === "last12" ? "Last 12 months" : selectedYearRaw || "This year";
+
+    const inRange = (date, start, end) => date && date >= start && date < end;
+    const addContributorCount = (map, entry) => {
+      if (!entry?.key) return;
+      const existing = map.get(entry.key) || {
+        key: entry.key,
+        name: entry.label || entry.key,
+        projects: 0,
+        total: 0,
+      };
+      existing.projects += 1;
+      existing.total = existing.projects;
+      map.set(entry.key, existing);
+    };
 
     (datasets || []).forEach((dataset) => {
       const meta = extrasToMap(dataset?.extras);
@@ -607,6 +905,25 @@ export function registerDashboardRoutes(app, deps) {
         if (centerId) centerIdsInScope.add(centerId);
         if (departmentId) departmentIdsInScope.add(departmentId);
         awardsCount += 1;
+        const level = normalizeAwardLevel(meta.level);
+        awardsByLevelCounts.set(
+          level,
+          (awardsByLevelCounts.get(level) || 0) + 1,
+        );
+        const awardTimestamp =
+          asTrimmedString(meta.submitted_at) ||
+          asTrimmedString(dataset?.metadata_modified) ||
+          asTrimmedString(dataset?.metadata_created);
+        if (isWithinCurrentMonth(awardTimestamp)) {
+          awardsThisMonth += 1;
+        }
+        const awardDate =
+          parseDateValue(awardTimestamp) ||
+          parseDateValue(
+            asTrimmedString(meta.year_received)
+              ? `${asTrimmedString(meta.year_received)}-01-01`
+              : "",
+          );
         return;
       }
 
@@ -614,6 +931,33 @@ export function registerDashboardRoutes(app, deps) {
       if (centerId) centerIdsInScope.add(centerId);
       if (departmentId) departmentIdsInScope.add(departmentId);
       projectsCount += 1;
+      const projectTimestamp =
+        asTrimmedString(dataset?.metadata_modified) ||
+        asTrimmedString(dataset?.metadata_created) ||
+        submittedAt;
+      if (isWithinCurrentMonth(projectTimestamp)) {
+        projectsThisMonth += 1;
+      }
+
+      const projectContributors = buildProjectOwnerEntry(meta, {
+        userNameById,
+        userNameByEmail,
+      });
+      const projectDate =
+        parseDateValue(projectTimestamp) || parseDateValue(submittedAt);
+      if (projectDate && inRange(projectDate, yearRangeStart, yearRangeEnd)) {
+        projectContributors.forEach((entry) =>
+          addContributorCount(contributorYearCounts, entry),
+        );
+      }
+      if (
+        projectDate &&
+        inRange(projectDate, monthStartForContrib, monthEndForContrib)
+      ) {
+        projectContributors.forEach((entry) =>
+          addContributorCount(contributorMonthCounts, entry),
+        );
+      }
 
       const leadUser = parseSelectedUsers(meta.lead_researcher_user)[0] || null;
       const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
@@ -628,6 +972,30 @@ export function registerDashboardRoutes(app, deps) {
         if (key) affiliateIdsInScope.add(key);
       });
 
+      const fundingAmount = parseFundingAmount(meta.funding_amount);
+      const fundingBucket = normalizeFundingBucket(meta);
+      const hasFunding =
+        fundingAmount > 0 ||
+        Boolean(
+          asTrimmedString(meta.funding_source) ||
+          asTrimmedString(meta.funding_type) ||
+          asTrimmedString(meta.funding_category),
+        );
+      if (hasFunding) {
+        fundingOverview.totalProjects += 1;
+        fundingOverview.totalAmount += fundingAmount;
+        if (fundingBucket === "internal") {
+          fundingOverview.internalProjects += 1;
+          fundingOverview.internalAmount += fundingAmount;
+        } else if (fundingBucket === "external") {
+          fundingOverview.externalProjects += 1;
+          fundingOverview.externalAmount += fundingAmount;
+        } else {
+          fundingOverview.unknownProjects += 1;
+          fundingOverview.unknownAmount += fundingAmount;
+        }
+      }
+
       const resources = Array.isArray(dataset?.resources)
         ? dataset.resources
         : [];
@@ -641,6 +1009,20 @@ export function registerDashboardRoutes(app, deps) {
         };
         if (!matchesFilters(outputScope, filters)) return;
         outputsSubmittedCount += 1;
+        if (dataset?.private) {
+          outputsVisibility.private += 1;
+        } else {
+          outputsVisibility.public += 1;
+        }
+        const outputTimestamp =
+          asTrimmedString(resource?.last_modified) ||
+          asTrimmedString(resource?.created) ||
+          asTrimmedString(dataset?.metadata_modified) ||
+          asTrimmedString(dataset?.metadata_created);
+        if (isWithinCurrentMonth(outputTimestamp)) {
+          outputsThisMonth += 1;
+        }
+        const outputDate = parseDateValue(outputTimestamp);
       });
 
       const expectedMetaRows = parseExpectedOutputMetadata(
@@ -679,6 +1061,10 @@ export function registerDashboardRoutes(app, deps) {
     });
 
     const outputsCount = outputsSubmittedCount || outputsExpectedCount || 0;
+    const resolvedCenterId = asTrimmedString(filters.centerId)
+      ? normalizeCenterId(filters.centerId, knownCenterIds)
+      : normalizeCenterId(req.user?.ckan_org_id, knownCenterIds);
+
     const overview = {
       centers: hasActiveFilters
         ? centerIdsInScope.size
@@ -690,13 +1076,26 @@ export function registerDashboardRoutes(app, deps) {
         : isAdmin
           ? Object.keys(departmentNameById).length
           : departmentIdsInScope.size,
-      affiliates: activeUsersCount,
+      affiliates: isAdmin
+        ? asTrimmedString(filters.centerId)
+          ? affiliateCountByCenter.get(
+              normalizeCenterId(filters.centerId, knownCenterIds),
+            ) || 0
+          : totalAffiliateCount
+        : resolvedCenterId
+          ? affiliateCountByCenter.get(resolvedCenterId) || 0
+          : 0,
       linkedProjects: linkedProjectsCount,
       projects: projectsCount,
       outputs: outputsCount,
       outputsSubmitted: outputsSubmittedCount,
       outputsExpected: outputsExpectedCount,
       awards: awardsCount,
+      activityThisMonth: {
+        projects: projectsThisMonth,
+        outputs: outputsThisMonth,
+        awards: awardsThisMonth,
+      },
     };
 
     if (
@@ -704,8 +1103,12 @@ export function registerDashboardRoutes(app, deps) {
       asTrimmedString(req?.query?.debug_affiliates) === "true"
     ) {
       console.log("[dashboard] affiliates debug", {
-        affiliatesCount: activeUsersCount,
-        affiliatesMode: "active_users",
+        affiliatesCount: asTrimmedString(filters.centerId)
+          ? affiliateCountByCenter.get(
+              normalizeCenterId(filters.centerId, knownCenterIds),
+            ) || 0
+          : totalAffiliateCount,
+        affiliatesMode: "active_users_by_center",
         affiliateIds: [...affiliateIdsInScope],
         filters,
       });
@@ -714,7 +1117,6 @@ export function registerDashboardRoutes(app, deps) {
     const projectCountByCenter = new Map();
     const outputCountByCenter = new Map();
     const awardCountByCenter = new Map();
-    const affiliateIdsByCenter = new Map();
 
     (datasets || []).forEach((dataset) => {
       const meta = extrasToMap(dataset?.extras);
@@ -754,23 +1156,6 @@ export function registerDashboardRoutes(app, deps) {
         (projectCountByCenter.get(centerId) || 0) + 1,
       );
 
-      if (!affiliateIdsByCenter.has(centerId)) {
-        affiliateIdsByCenter.set(centerId, new Set());
-      }
-      const affiliateSet = affiliateIdsByCenter.get(centerId);
-      const leadUser = parseSelectedUsers(meta.lead_researcher_user)[0] || null;
-      const facultyUsers = parseSelectedUsers(meta.faculty_team_users);
-      const submittedById = asTrimmedString(
-        meta.submitted_by_user_id || meta.submitted_by,
-      );
-      if (submittedById) affiliateSet.add(submittedById);
-      const leadKey = resolveAffiliateKey(leadUser);
-      if (leadKey) affiliateSet.add(leadKey);
-      facultyUsers.forEach((row) => {
-        const key = resolveAffiliateKey(row);
-        if (key) affiliateSet.add(key);
-      });
-
       const resources = Array.isArray(dataset?.resources)
         ? dataset.resources
         : [];
@@ -794,7 +1179,7 @@ export function registerDashboardRoutes(app, deps) {
       ...projectCountByCenter.keys(),
       ...outputCountByCenter.keys(),
       ...awardCountByCenter.keys(),
-      ...affiliateIdsByCenter.keys(),
+      ...affiliateCountByCenter.keys(),
     ]);
 
     const selectedCenterId = normalizeCenterId(
@@ -830,9 +1215,7 @@ export function registerDashboardRoutes(app, deps) {
         id: centerId,
         name: resolveCenterName(centerId),
         projects: projectCountByCenter.get(centerId) || 0,
-        affiliates: affiliateIdsByCenter.has(centerId)
-          ? affiliateIdsByCenter.get(centerId).size || 0
-          : null,
+        affiliates: affiliateCountByCenter.get(centerId) || 0,
         outputs: outputCountByCenter.get(centerId) || 0,
         awards: awardCountByCenter.get(centerId) || 0,
       }))
@@ -1020,6 +1403,34 @@ export function registerDashboardRoutes(app, deps) {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
+
+    const awardsLevelOrder = [
+      "Institutional",
+      "Local",
+      "Regional",
+      "National",
+      "International",
+      "Other",
+    ];
+    const awardsByLevelData = awardsLevelOrder.map((level) => ({
+      level,
+      value: awardsByLevelCounts.get(level) || 0,
+    }));
+
+    const topContributors = {
+      month: {
+        label: monthLabel,
+        rows: [...contributorMonthCounts.values()]
+          .sort((a, b) => b.total - a.total || b.outputs - a.outputs)
+          .slice(0, 5),
+      },
+      year: {
+        label: yearLabel,
+        rows: [...contributorYearCounts.values()]
+          .sort((a, b) => b.total - a.total || b.outputs - a.outputs)
+          .slice(0, 5),
+      },
+    };
 
     const recentProjects = (datasets || [])
       .filter((dataset) => !isAwardDataset(dataset))
@@ -1223,6 +1634,13 @@ export function registerDashboardRoutes(app, deps) {
       outputsByDepartmentData,
       outputsOverTimeData,
       awardsByCategoryData,
+      awardsByLevelData,
+      fundingOverview,
+      outputsVisibility: {
+        ...outputsVisibility,
+        total: outputsVisibility.public + outputsVisibility.private,
+      },
+      topContributors,
       recentProjects,
       recentOutputs,
       recentAwards,
@@ -1297,6 +1715,7 @@ export function registerDashboardRoutes(app, deps) {
         centerId: asTrimmedString(req.query?.centerId),
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
+        range: asTrimmedString(req.query?.range),
       };
       const data = await getDashboardSummary({ req, filters, limit: 6 });
       return res.json({ data: data.yearOptions });
@@ -1315,6 +1734,7 @@ export function registerDashboardRoutes(app, deps) {
         centerId: asTrimmedString(req.query?.centerId),
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
+        range: asTrimmedString(req.query?.range),
       };
       const data = await getDashboardSummary({ req, filters, limit: 6 });
       return res.json({ data: data.overview });
@@ -1332,6 +1752,7 @@ export function registerDashboardRoutes(app, deps) {
         centerId: asTrimmedString(req.query?.centerId),
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
+        range: asTrimmedString(req.query?.range),
       };
       const data = await getDashboardSummary({ req, filters, limit });
       return res.json({ data });
@@ -1351,6 +1772,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.centerBreakdownRows });
@@ -1371,6 +1793,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.projectsPerCenterData });
@@ -1393,6 +1816,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.outputsByDepartmentData });
@@ -1415,6 +1839,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.outputsOverTimeData });
@@ -1437,6 +1862,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.awardsByCategoryData });
@@ -1460,6 +1886,7 @@ export function registerDashboardRoutes(app, deps) {
           centerId: asTrimmedString(req.query?.centerId),
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
+          range: asTrimmedString(req.query?.range),
         };
         const data = await getDashboardSummary({ req, filters, limit });
         return res.json({ data: data.recentProjects });
@@ -1478,6 +1905,7 @@ export function registerDashboardRoutes(app, deps) {
         centerId: asTrimmedString(req.query?.centerId),
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
+        range: asTrimmedString(req.query?.range),
       };
       const data = await getDashboardSummary({ req, filters, limit });
       return res.json({ data: data.recentOutputs });
@@ -1495,6 +1923,7 @@ export function registerDashboardRoutes(app, deps) {
         centerId: asTrimmedString(req.query?.centerId),
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
+        range: asTrimmedString(req.query?.range),
       };
       const data = await getDashboardSummary({ req, filters, limit });
       return res.json({ data: data.recentAwards });
