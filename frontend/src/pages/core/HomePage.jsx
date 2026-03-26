@@ -7,11 +7,7 @@ export default function HomePage() {
       <section id="home" className="scroll-mt-28">
         <PublicRecordsPage />
       </section>
-      <AboutSection />
+      {/* <AboutSection /> */}
     </div>
   );
 }
-
-
-
-
