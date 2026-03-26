@@ -251,11 +251,11 @@ const projectSubmissionFormSchema = z
       .string()
       .trim()
       .min(1, "Research center (CKAN organization) is required."),
-    research_agenda_id: z
-      .string()
-      .trim()
-      .min(1, "Research agenda is required."),
-    department_id: z.string().trim().min(1, "Department is required."),
+      research_agenda_id: z
+        .string()
+        .trim()
+        .min(1, "Research agenda is required."),
+      department_id: z.string().trim().optional().nullable(),
     funding_type: z.string().trim().min(1, "Funding type is required."),
     funding_category: z.string().trim().optional().nullable(),
     industry_partner: z.string().trim().optional().nullable(),
