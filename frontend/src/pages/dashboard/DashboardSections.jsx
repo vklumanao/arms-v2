@@ -237,6 +237,71 @@ function ActivityItem({ colorClass, title, meta, secondary }) {
   );
 }
 
+export function DashboardSection({
+  eyebrow,
+  title,
+  description,
+  action,
+  children,
+  tone = "neutral",
+  framed = true,
+}) {
+  const toneClass =
+    tone === "contrast"
+      ? "bg-gradient-to-br from-slate-50 via-white to-slate-100"
+      : "bg-white/80";
+  if (!framed) {
+    return (
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            {eyebrow ? (
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {eyebrow}
+              </p>
+            ) : null}
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+              {title}
+            </h2>
+            {description ? (
+              <p className="mt-1 max-w-3xl text-sm text-slate-600">
+                {description}
+              </p>
+            ) : null}
+          </div>
+          {action ? <div>{action}</div> : null}
+        </div>
+        <div className="space-y-4">{children}</div>
+      </section>
+    );
+  }
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          {eyebrow ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2 className="mt-1 text-xl font-semibold text-slate-900">{title}</h2>
+          {description ? (
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {action ? <div>{action}</div> : null}
+      </div>
+      <div
+        className={`rounded-3xl border border-slate-200/70 ${toneClass} p-5 shadow-sm`}
+      >
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export function DashboardHeader({
   isAdmin,
   title,
@@ -345,6 +410,20 @@ export function DashboardHeader({
               showFilters ? "grid" : "hidden"
             } mt-4 gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-6`}
           >
+            <div className="sm:col-span-2 lg:col-span-6">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Global Filters
+                </p>
+                {activeFilterCount ? (
+                  <span className="rounded-full border border-slate-200/70 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    {activeFilterCount} active filter
+                    {activeFilterCount === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-2 h-px w-full bg-slate-200/70" />
+            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Research Center
@@ -538,7 +617,100 @@ export function DashboardHeader({
   );
 }
 
-export function OverviewSection({ isAdmin, summaryCounts, filters, loading }) {
+export function OverviewSection({
+  isAdmin,
+  summaryCounts,
+  filters,
+  loading,
+  asPanel = true,
+}) {
+  const content = loading ? (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: isAdmin ? 6 : 4 }).map((_, index) => (
+        <SummaryCardSkeleton key={`summary-skeleton-${index}`} />
+      ))}
+    </div>
+  ) : (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {isAdmin ? (
+        <>
+          <SummaryCard
+            label="Research Centers"
+            value={formatCount(summaryCounts.centers)}
+            hint="All centers"
+            Icon={Building2}
+          />
+          <SummaryCard
+            label="Departments"
+            value={formatCount(summaryCounts.departments)}
+            hint="All departments"
+            Icon={BookOpen}
+          />
+          <SummaryCard
+            label="Affiliates"
+            value={formatCount(summaryCounts.affiliates)}
+            hint="Active faculty + students"
+            Icon={Users}
+          />
+          <SummaryCard
+            label="Research Projects"
+            value={formatCount(summaryCounts.projects)}
+            hint="Filtered projects"
+            Icon={FolderKanban}
+          />
+        </>
+      ) : (
+        <>
+          <SummaryCard
+            label="My Projects"
+            value={formatCount(summaryCounts.projects)}
+            hint="Projects I submitted"
+            Icon={FolderKanban}
+          />
+        </>
+      )}
+
+      <SummaryCard
+        label={isAdmin ? "Research Outputs" : "My Outputs"}
+        value={formatCount(summaryCounts.outputs)}
+        hint={
+          summaryCounts.outputsSubmitted && summaryCounts.outputsExpected
+            ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} - Expected: ${formatCount(
+                summaryCounts.outputsExpected,
+              )}`
+            : summaryCounts.outputsSubmitted
+              ? "Submitted outputs"
+              : summaryCounts.outputsExpected
+                ? "Expected outputs"
+                : "No outputs"
+        }
+        Icon={FileText}
+      />
+      <SummaryCard
+        label={isAdmin ? "Awards & Recognitions" : "My Awards"}
+        value={formatCount(summaryCounts.awards)}
+        hint={
+          summaryCounts.awards
+            ? "Awards recorded"
+            : safeString(filters.year)
+              ? "No awards this year"
+              : "No awards"
+        }
+        Icon={Award}
+      />
+      {!isAdmin ? (
+        <SummaryCard
+          label="Team Projects"
+          value={formatCount(summaryCounts.linkedProjects)}
+          hint="Projects where I'm listed"
+          Icon={Users}
+        />
+      ) : null}
+    </div>
+  );
+
+  if (!asPanel) return content;
+
   return (
     <DashboardPanel
       title="Overview"
@@ -546,94 +718,10 @@ export function OverviewSection({ isAdmin, summaryCounts, filters, loading }) {
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName="p-6"
     >
-      {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: isAdmin ? 6 : 4 }).map((_, index) => (
-            <SummaryCardSkeleton key={`summary-skeleton-${index}`} />
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {isAdmin ? (
-            <>
-              <SummaryCard
-                label="Research Centers"
-                value={formatCount(summaryCounts.centers)}
-                hint="All centers"
-                Icon={Building2}
-              />
-              <SummaryCard
-                label="Research Projects"
-                value={formatCount(summaryCounts.projects)}
-                hint="Filtered projects"
-                Icon={FolderKanban}
-              />
-              <SummaryCard
-                label="Departments"
-                value={formatCount(summaryCounts.departments)}
-                hint="All departments"
-                Icon={BookOpen}
-              />
-              <SummaryCard
-                label="Affiliates"
-                value={formatCount(summaryCounts.affiliates)}
-                hint="Active faculty + students"
-                Icon={Users}
-              />
-            </>
-          ) : (
-            <>
-              <SummaryCard
-                label="My Projects"
-                value={formatCount(summaryCounts.projects)}
-                hint="Projects I submitted"
-                Icon={FolderKanban}
-              />
-            </>
-          )}
-
-          <SummaryCard
-            label={isAdmin ? "Research Outputs" : "My Outputs"}
-            value={formatCount(summaryCounts.outputs)}
-            hint={
-              summaryCounts.outputsSubmitted && summaryCounts.outputsExpected
-                ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} - Expected: ${formatCount(
-                    summaryCounts.outputsExpected,
-                  )}`
-                : summaryCounts.outputsSubmitted
-                  ? "Submitted outputs"
-                  : summaryCounts.outputsExpected
-                    ? "Expected outputs"
-                    : "No outputs"
-            }
-            Icon={FileText}
-          />
-          <SummaryCard
-            label={isAdmin ? "Awards & Recognitions" : "My Awards"}
-            value={formatCount(summaryCounts.awards)}
-            hint={
-              summaryCounts.awards
-                ? "Awards recorded"
-                : safeString(filters.year)
-                  ? "No awards this year"
-                  : "No awards"
-            }
-            Icon={Award}
-          />
-          {!isAdmin ? (
-            <SummaryCard
-              label="Team Projects"
-              value={formatCount(summaryCounts.linkedProjects)}
-              hint="Projects I am part of"
-              Icon={Link2}
-            />
-          ) : null}
-        </div>
-      )}
+      {content}
     </DashboardPanel>
   );
 }
-
 export function TopContributorsSection({
   loading,
   contributors,
@@ -1394,58 +1482,29 @@ export function ProjectsPerCenterSection({
   );
 }
 
-export function OutputsByDepartmentSection({
+export function OutputsByTypeSection({
   loading,
-  outputsByDepartmentData,
-  totalOutputsByDepartment,
+  outputsByTypeData,
+  totalOutputsByType,
   chartTheme = "branded",
 }) {
   const useBrandedCharts = chartTheme !== "default";
-  const outputsByDepartmentIsBar =
-    outputsByDepartmentData.length > MAX_PIE_CATEGORIES;
   const totalOutputs =
-    Number.isFinite(totalOutputsByDepartment) && totalOutputsByDepartment > 0
-      ? totalOutputsByDepartment
-      : outputsByDepartmentData.reduce(
-          (sum, row) => sum + toNumber(row.value),
-          0,
-        );
-  const outputsByDepartmentBarData = {
-    labels: outputsByDepartmentData.map((row) => row.name),
+    Number.isFinite(totalOutputsByType) && totalOutputsByType > 0
+      ? totalOutputsByType
+      : outputsByTypeData.reduce((sum, row) => sum + toNumber(row.value), 0);
+  const outputsByTypePieData = {
+    labels: outputsByTypeData.map((row) => row.name),
     datasets: [
       {
-        label: "Outputs",
-        data: outputsByDepartmentData.map((row) => toNumber(row.value)),
-        backgroundColor: useBrandedCharts ? CHART_COLORS[1] : undefined,
-      },
-    ],
-  };
-  const outputsByDepartmentBarOptions = {
-    indexAxis: "y",
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context) =>
-            `Outputs: ${formatCountAndPercent(context.parsed.x, totalOutputs)}`,
-        },
-      },
-    },
-  };
-  const outputsByDepartmentPieData = {
-    labels: outputsByDepartmentData.map((row) => row.name),
-    datasets: [
-      {
-        data: outputsByDepartmentData.map((row) => toNumber(row.value)),
+        data: outputsByTypeData.map((row) => toNumber(row.value)),
         backgroundColor: useBrandedCharts
-          ? getChartColors(outputsByDepartmentData.length)
+          ? getChartColors(outputsByTypeData.length)
           : undefined,
       },
     ],
   };
-  const outputsByDepartmentPieOptions = {
+  const outputsByTypePieOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -1464,48 +1523,30 @@ export function OutputsByDepartmentSection({
 
   return (
     <DashboardPanel
-      title={`Research Outputs by Department${loading ? " (Loading...)" : ""}`}
+      title={`Research Outputs by Type${loading ? " (Loading...)" : ""}`}
       cardClassName={PANEL_CARD_CLASS}
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
       <p className="mb-3 text-xs text-slate-600">
-        Outputs distribution across departments.
+        Output distribution across publication and innovation categories.
       </p>
       {loading ? (
-        <LoadingBlock label="Loading outputs by department..." />
-      ) : outputsByDepartmentData.length === 0 ? (
+        <LoadingBlock label="Loading outputs by type..." />
+      ) : outputsByTypeData.length === 0 ? (
         <p className="text-sm text-slate-600">
           No research outputs available for the current scope.
         </p>
       ) : (
-        <div
-          role="img"
-          aria-label="Pie chart showing research outputs by department"
-        >
+        <div role="img" aria-label="Pie chart showing research outputs by type">
           <ChartFrame height={320}>
-            {outputsByDepartmentIsBar ? (
-              <Bar
-                data={outputsByDepartmentBarData}
-                options={outputsByDepartmentBarOptions}
-              />
-            ) : (
-              <Doughnut
-                data={outputsByDepartmentPieData}
-                options={outputsByDepartmentPieOptions}
-              />
-            )}
+            <Doughnut data={outputsByTypePieData} options={outputsByTypePieOptions} />
           </ChartFrame>
           <p className="sr-only">
-            {`Outputs by department across ${outputsByDepartmentData.length} department${
-              outputsByDepartmentData.length === 1 ? "" : "s"
+            {`Outputs by type across ${outputsByTypeData.length} category${
+              outputsByTypeData.length === 1 ? "" : "ies"
             }.`}
           </p>
-          {outputsByDepartmentData.length > MAX_PIE_CATEGORIES ? (
-            <p className="mt-3 text-xs text-slate-500">
-              Large category set shown as a bar chart for readability.
-            </p>
-          ) : null}
         </div>
       )}
     </DashboardPanel>
@@ -1633,137 +1674,28 @@ export function OutputsOverTimeSection({
   );
 }
 
-export function AwardsByCategorySection({
-  loading,
-  awardsByCategoryData,
-  totalAwardsByCategory,
-  chartTheme = "branded",
-}) {
-  const useBrandedCharts = chartTheme !== "default";
-  const awardsByCategoryIsBar =
-    awardsByCategoryData.length > MAX_PIE_CATEGORIES;
-  const totalAwards =
-    Number.isFinite(totalAwardsByCategory) && totalAwardsByCategory > 0
-      ? totalAwardsByCategory
-      : awardsByCategoryData.reduce((sum, row) => sum + toNumber(row.value), 0);
-  const awardsByCategoryBarData = {
-    labels: awardsByCategoryData.map((row) => row.name),
-    datasets: [
-      {
-        label: "Awards",
-        data: awardsByCategoryData.map((row) => toNumber(row.value)),
-        backgroundColor: useBrandedCharts ? CHART_COLORS[2] : undefined,
-      },
-    ],
-  };
-  const awardsByCategoryBarOptions = {
-    indexAxis: "y",
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context) =>
-            `Awards: ${formatCountAndPercent(context.parsed.x, totalAwards)}`,
-        },
-      },
-    },
-  };
-  const awardsByCategoryPieData = {
-    labels: awardsByCategoryData.map((row) => row.name),
-    datasets: [
-      {
-        data: awardsByCategoryData.map((row) => toNumber(row.value)),
-        backgroundColor: useBrandedCharts
-          ? getChartColors(awardsByCategoryData.length)
-          : undefined,
-      },
-    ],
-  };
-  const awardsByCategoryPieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: "bottom" },
-      tooltip: {
-        callbacks: {
-          label: (context) =>
-            `${context.label}: ${formatCountAndPercent(
-              context.parsed,
-              totalAwards,
-            )}`,
-        },
-      },
-    },
-  };
-
-  return (
-    <DashboardPanel
-      title={`Awards by Category${loading ? " (Loading...)" : ""}`}
-      cardClassName={PANEL_CARD_CLASS}
-      headerClassName={PANEL_HEADER_CLASS}
-      bodyClassName={PANEL_BODY_CLASS}
-    >
-      <p className="mb-3 text-xs text-slate-600">
-        Awards distribution across recognition categories.
-      </p>
-      {loading ? (
-        <LoadingBlock label="Loading awards by category..." />
-      ) : awardsByCategoryData.length === 0 ? (
-        <p className="text-sm text-slate-600">
-          No awards found for the current scope.
-        </p>
-      ) : (
-        <div role="img" aria-label="Pie chart showing awards by category">
-          <ChartFrame height={320}>
-            {awardsByCategoryIsBar ? (
-              <Bar
-                data={awardsByCategoryBarData}
-                options={awardsByCategoryBarOptions}
-              />
-            ) : (
-              <Doughnut
-                data={awardsByCategoryPieData}
-                options={awardsByCategoryPieOptions}
-              />
-            )}
-          </ChartFrame>
-          <p className="sr-only">
-            {`Awards by category across ${awardsByCategoryData.length} categor${
-              awardsByCategoryData.length === 1 ? "y" : "ies"
-            }.`}
-          </p>
-          {awardsByCategoryData.length > MAX_PIE_CATEGORIES ? (
-            <p className="mt-3 text-xs text-slate-500">
-              Large category set shown as a bar chart for readability.
-            </p>
-          ) : null}
-        </div>
-      )}
-    </DashboardPanel>
-  );
-}
-
 export function RecentActivitySection({
   loading,
   recentProjects,
   recentOutputs,
   recentAwards,
+  showHeader = true,
 }) {
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/70 pb-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-            Recent Activity / Highlights
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            Latest updates across projects, outputs, and awards within your
-            current scope.
-          </p>
+      {showHeader ? (
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/70 pb-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Recent Activity / Highlights
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Latest updates across projects, outputs, and awards within your
+              current scope.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-3">
         <DashboardPanel
@@ -1895,7 +1827,11 @@ export function RecentActivitySection({
                             "Project outputs updated"}
                         </Link>
                       }
-                      meta={`${row.labels?.length ? row.labels.join(" - ") : "Expected outputs"}${
+                      meta={`${
+                        row.labels?.length
+                          ? row.labels.join(" - ")
+                          : "Expected outputs"
+                      }${
                         row.timestamp
                           ? ` - ${formatDateLabel(row.timestamp)}`
                           : ""
@@ -1905,7 +1841,11 @@ export function RecentActivitySection({
                     <ActivityItem
                       colorClass="bg-amber-500/70"
                       title="Project outputs updated"
-                      meta={`${row.labels?.length ? row.labels.join(" - ") : "Expected outputs"}${
+                      meta={`${
+                        row.labels?.length
+                          ? row.labels.join(" - ")
+                          : "Expected outputs"
+                      }${
                         row.timestamp
                           ? ` - ${formatDateLabel(row.timestamp)}`
                           : ""
