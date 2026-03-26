@@ -164,11 +164,6 @@ const SUBMISSION_STEP_RULES = {
       message: "Research agenda is required.",
       check: (form) => Boolean(form.research_agenda_id),
     },
-    {
-      field: "department_id",
-      message: "Department is required.",
-      check: (form) => Boolean(form.department_id),
-    },
   ],
   2: [
     {
