@@ -87,8 +87,7 @@ export default function ResearchOutputsPage() {
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
   const missingAffiliation =
     !isAdmin &&
-    (!String(profile?.ckan_org_id || "").trim() ||
-      !String(profile?.department || "").trim());
+    !String(profile?.ckan_org_id || "").trim();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -229,7 +228,7 @@ export default function ResearchOutputsPage() {
             Complete Your Profile First
           </h1>
           <p className="text-sm text-slate-600">
-            Add your organization and department before managing research
+            Add your organization (research center) before managing research
             outputs.
           </p>
         </div>
@@ -237,8 +236,8 @@ export default function ResearchOutputsPage() {
       <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
         <CardContent className="space-y-3 p-5">
           <p className="text-sm text-amber-700">
-            Please set your Organization (Research Center) and Department in My
-            Profile first before accessing Research Outputs.
+            Please set your Organization (Research Center) in My Profile first
+            before accessing Research Outputs.
           </p>
           <Button asChild>
             <Link to="/profile">Go to My Profile</Link>
