@@ -13,6 +13,19 @@ export async function listAwardRecognitionRecords(options = {}) {
   }
 }
 
+export async function listCenterChiefAwardRecognitionRecords(options = {}) {
+  try {
+    const query = new URLSearchParams();
+    if (options?.q) query.set("q", String(options.q).trim());
+    const payload = await apiFetch(
+      `/awards/center-chief${query.toString() ? `?${query}` : ""}`,
+    );
+    return { data: Array.isArray(payload?.data) ? payload.data : [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
 export async function createAwardRecognitionRecord(input) {
   try {
     const payload = await apiFetch("/awards", {
