@@ -20,6 +20,7 @@ export function registerDashboardRoutes(app, deps) {
     listOrganizations,
     listGroups,
     listOrganizationAgendas,
+    updateDatasetResource,
   } = deps;
 
   /**
@@ -430,6 +431,129 @@ export function registerDashboardRoutes(app, deps) {
     return [name, description, notes].some((value) => /\bmoa\b/i.test(value));
   }
 
+  const OUTPUT_TYPE_LABELS = {
+    publication: "Publications",
+    patent_ip: "Patent / Intellectual Property",
+    people_services: "People Services",
+    places_partnerships: "Place and Partnerships",
+    policies: "Policies",
+    product_software: "Product / Software Application",
+  };
+  const OUTPUT_TYPE_ORDER = [
+    "Publications",
+    "Patent / Intellectual Property",
+    "People Services",
+    "Place and Partnerships",
+    "Policies",
+    "Product / Software Application",
+  ];
+
+  function normalizeOutputType(value) {
+    const cleaned = asTrimmedString(value).replace(
+      /\s*\(target:[^)]+\)\s*$/i,
+      "",
+    );
+    const rawType = cleaned
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!rawType) return "";
+    if (rawType === "patent" || rawType === "ip") return "patent_ip";
+    if (rawType === "publications" || rawType === "journal_article") {
+      return "publication";
+    }
+    if (rawType === "people_service") return "people_services";
+    if (
+      rawType === "place_partnerships" ||
+      rawType === "places_partnerships" ||
+      rawType === "places_and_partnerships"
+    ) {
+      return "places_partnerships";
+    }
+    if (rawType === "policy") return "policies";
+    if (
+      rawType === "products_software_application" ||
+      rawType === "product_software_application"
+    ) {
+      return "product_software";
+    }
+    if (rawType.includes("publication")) return "publication";
+    if (rawType.includes("patent") || rawType.includes("intellectual_property"))
+      return "patent_ip";
+    if (rawType.includes("people") && rawType.includes("service"))
+      return "people_services";
+    if (rawType.includes("place") && rawType.includes("partnership"))
+      return "places_partnerships";
+    if (rawType.includes("polic")) return "policies";
+    if (
+      rawType.includes("software") ||
+      rawType.includes("application") ||
+      rawType.includes("product")
+    ) {
+      return "product_software";
+    }
+    return rawType;
+  }
+
+  function resolveOutputTypeLabel(resource) {
+    const candidates = [
+      resource?.output_type,
+      extractOutputTypeFromDescription(resource?.description),
+      extractOutputTypeFromUrl(resource?.url),
+      resource?.name,
+      resource?.description,
+      resource?.format,
+    ];
+    for (const value of candidates) {
+      const normalized = normalizeOutputType(value);
+      if (OUTPUT_TYPE_LABELS[normalized]) {
+        return OUTPUT_TYPE_LABELS[normalized];
+      }
+    }
+    return "";
+  }
+
+  function resolveOutputTypeKey(resource) {
+    const candidates = [
+      resource?.output_type,
+      extractOutputTypeFromDescription(resource?.description),
+      extractOutputTypeFromUrl(resource?.url),
+      resource?.name,
+      resource?.description,
+      resource?.format,
+    ];
+    for (const value of candidates) {
+      const normalized = normalizeOutputType(value);
+      if (OUTPUT_TYPE_LABELS[normalized]) {
+        return normalized;
+      }
+    }
+    return "";
+  }
+
+  function extractOutputTypeFromDescription(description) {
+    const text = asTrimmedString(description);
+    if (!text) return "";
+    const line = text
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .find((entry) => /^output\s*type\s*:/i.test(entry));
+    if (!line) return "";
+    return line.replace(/^output\s*type\s*:/i, "").trim();
+  }
+
+  function extractOutputTypeFromUrl(url) {
+    const value = asTrimmedString(url);
+    if (!value) return "";
+    const match = value.match(/[?&]output_type=([^&#]+)/i);
+    if (!match) return "";
+    try {
+      return decodeURIComponent(match[1] || "").trim();
+    } catch {
+      return asTrimmedString(match[1]);
+    }
+  }
+
   function parseSelectedUsers(rawValue) {
     const normalizeRow = (row) => ({
       id: asTrimmedString(row?.id),
@@ -588,6 +712,17 @@ export function registerDashboardRoutes(app, deps) {
         asTrimmedString(row?.title || row?.display_name || row?.name) || id;
       return acc;
     }, {});
+    const centerCodeById = (organizations || []).reduce((acc, row) => {
+      const id = asTrimmedString(row?.name || row?.id);
+      if (!id) return acc;
+      const meta = extrasToMap(row?.extras);
+      const code =
+        asTrimmedString(meta.code) ||
+        asTrimmedString(row?.name || row?.id) ||
+        "";
+      acc[id] = code || centerNameById[id] || id;
+      return acc;
+    }, {});
 
     const departmentNameById = (groups || []).reduce((acc, row) => {
       const id = asTrimmedString(row?.name || row?.id);
@@ -607,6 +742,7 @@ export function registerDashboardRoutes(app, deps) {
     return {
       knownCenterIds,
       centerNameById,
+      centerCodeById,
       departmentNameById,
       agendaNameById,
     };
@@ -709,6 +845,7 @@ export function registerDashboardRoutes(app, deps) {
     const {
       knownCenterIds,
       centerNameById,
+      centerCodeById,
       departmentNameById,
       agendaNameById,
     } = await loadDashboardLookups({ orgId });
@@ -1317,7 +1454,9 @@ export function registerDashboardRoutes(app, deps) {
       const label =
         centerId === "__unassigned__"
           ? "Unassigned"
-          : asTrimmedString(centerNameById[centerId]) || "Unknown";
+          : asTrimmedString(centerCodeById[centerId]) ||
+            asTrimmedString(centerNameById[centerId]) ||
+            "Unknown";
       projectsPerCenterCounts.set(
         label,
         (projectsPerCenterCounts.get(label) || 0) + 1,
@@ -1329,10 +1468,9 @@ export function registerDashboardRoutes(app, deps) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    const outputsByDepartmentCounts = new Map();
+    const outputsByTypeCounts = new Map();
     (datasets || []).forEach((dataset) => {
       if (isAwardDataset(dataset)) return;
-      const meta = extrasToMap(dataset?.extras);
       const { centerId, departmentId } = extractDatasetScopeIds(
         dataset,
         knownCenterIds,
@@ -1350,21 +1488,19 @@ export function registerDashboardRoutes(app, deps) {
         };
         if (!matchesFilters(scope, filters)) return;
 
-        const label =
-          asTrimmedString(departmentNameById[departmentId]) ||
-          asTrimmedString(meta.program_department) ||
-          "Unassigned";
-        outputsByDepartmentCounts.set(
+        const label = resolveOutputTypeLabel(resource);
+        if (!label) return;
+        outputsByTypeCounts.set(
           label,
-          (outputsByDepartmentCounts.get(label) || 0) + 1,
+          (outputsByTypeCounts.get(label) || 0) + 1,
         );
       });
     });
 
-    const outputsByDepartmentData = [...outputsByDepartmentCounts.entries()]
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
+    const outputsByTypeData = OUTPUT_TYPE_ORDER.map((label) => ({
+      name: label,
+      value: outputsByTypeCounts.get(label) || 0,
+    })).filter((row) => row.value > 0);
 
     const monthMap = buildLast12MonthsSeries();
     const bump = (rawTimestamp, incrementBy = 1) => {
@@ -1446,34 +1582,6 @@ export function registerDashboardRoutes(app, deps) {
     }
 
     const outputsOverTimeData = Array.from(monthMap.values());
-
-    const awardsByCategoryCounts = new Map();
-    (datasets || []).forEach((dataset) => {
-      if (!isAwardDataset(dataset)) return;
-      const meta = extrasToMap(dataset?.extras);
-      const { centerId, departmentId } = extractDatasetScopeIds(
-        dataset,
-        knownCenterIds,
-      );
-      const scope = {
-        centerId,
-        departmentId,
-        year_received: asTrimmedString(meta.year_received),
-        created_at: meta.submitted_at || dataset?.metadata_created,
-        updated_at: dataset?.metadata_modified || dataset?.metadata_created,
-      };
-      if (!matchesFilters(scope, filters)) return;
-      const category = asTrimmedString(meta.level) || "Unspecified";
-      awardsByCategoryCounts.set(
-        category,
-        (awardsByCategoryCounts.get(category) || 0) + 1,
-      );
-    });
-
-    const awardsByCategoryData = [...awardsByCategoryCounts.entries()]
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
 
     const awardsLevelOrder = [
       "Institutional",
@@ -1702,9 +1810,8 @@ export function registerDashboardRoutes(app, deps) {
       overview,
       centerBreakdownRows,
       projectsPerCenterData,
-      outputsByDepartmentData,
+      outputsByTypeData,
       outputsOverTimeData,
-      awardsByCategoryData,
       awardsByLevelData,
       fundingOverview,
       outputsVisibility: {
@@ -1905,7 +2012,7 @@ export function registerDashboardRoutes(app, deps) {
   );
 
   app.get(
-    "/api/dashboard/charts/outputs-by-department",
+    "/api/dashboard/charts/outputs-by-type",
     authMiddleware,
     async (req, res) => {
       try {
@@ -1918,11 +2025,11 @@ export function registerDashboardRoutes(app, deps) {
         endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
-        return res.json({ data: data.outputsByDepartmentData });
+        return res.json({ data: data.outputsByTypeData });
       } catch (error) {
         return res.status(500).json({
           error: String(
-            error?.message || "Failed to load outputs by department chart.",
+            error?.message || "Failed to load outputs by type chart.",
           ),
         });
       }
@@ -1955,24 +2062,233 @@ export function registerDashboardRoutes(app, deps) {
   );
 
   app.get(
-    "/api/dashboard/charts/awards-by-category",
+    "/api/dashboard/debug/output-types",
     authMiddleware,
     async (req, res) => {
       try {
-        const filters = {
-          centerId: asTrimmedString(req.query?.centerId),
-          departmentId: asTrimmedString(req.query?.departmentId),
-          year: asTrimmedString(req.query?.year),
-          range: asTrimmedString(req.query?.range),
-        startDate: asTrimmedString(req.query?.startDate),
-        endDate: asTrimmedString(req.query?.endDate),
-        };
-        const data = await getDashboardSummary({ req, filters, limit: 6 });
-        return res.json({ data: data.awardsByCategoryData });
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin) {
+          return res.status(403).json({ error: "Admin access is required." });
+        }
+
+        const { datasets } = await listVisibleDatasetsForUser(req.user, {
+          ownerOnly: false,
+        });
+        const rawCounts = new Map();
+        const labelCounts = new Map();
+
+        (datasets || []).forEach((dataset) => {
+          if (isAwardDataset(dataset)) return;
+          const resources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+          resources.forEach((resource) => {
+            if (isMoaResource(resource)) return;
+            const raw =
+              asTrimmedString(resource?.format) ||
+              asTrimmedString(resource?.output_type) ||
+              asTrimmedString(resource?.name) ||
+              "unknown";
+            rawCounts.set(raw, (rawCounts.get(raw) || 0) + 1);
+
+            const label = resolveOutputTypeLabel(resource) || "Unmapped";
+            labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
+          });
+        });
+
+        const byRaw = [...rawCounts.entries()]
+          .map(([format, count]) => ({ format, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 25);
+
+        const byLabel = [...labelCounts.entries()]
+          .map(([label, count]) => ({ label, count }))
+          .sort((a, b) => b.count - a.count);
+
+        return res.json({
+          data: {
+            totalFormats: rawCounts.size,
+            totalOutputs: byLabel.reduce((sum, row) => sum + row.count, 0),
+            byLabel,
+            byRaw,
+          },
+        });
       } catch (error) {
         return res.status(500).json({
           error: String(
-            error?.message || "Failed to load awards by category chart.",
+            error?.message || "Failed to debug outputs by type.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/dashboard/debug/output-types/backfill",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin) {
+          return res.status(403).json({ error: "Admin access is required." });
+        }
+
+        const { datasets } = await listVisibleDatasetsForUser(req.user, {
+          ownerOnly: false,
+        });
+        let updated = 0;
+        let skipped = 0;
+
+        for (const dataset of datasets || []) {
+          if (isAwardDataset(dataset)) continue;
+          const resources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+          for (const resource of resources) {
+            if (!resource?.id) {
+              skipped += 1;
+              continue;
+            }
+            if (isMoaResource(resource)) {
+              skipped += 1;
+              continue;
+            }
+            const key = resolveOutputTypeKey(resource);
+            if (!key) {
+              skipped += 1;
+              continue;
+            }
+            const currentDescription = asTrimmedString(resource?.description);
+            if (/^output\s*type\s*:/im.test(currentDescription)) {
+              skipped += 1;
+              continue;
+            }
+            const nextDescription = `Output Type: ${key}${
+              currentDescription ? `\n${currentDescription}` : ""
+            }`;
+            await updateDatasetResource({
+              id: resource.id,
+              package_id: dataset?.id || dataset?.name,
+              description: nextDescription,
+            });
+            updated += 1;
+          }
+        }
+
+        return res.json({
+          data: {
+            updated,
+            skipped,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to backfill output types.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/dashboard/debug/backfill-output-types",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        if (!isAdmin) {
+          return res.status(403).json({ error: "Admin access is required." });
+        }
+
+        const apply = ["1", "true", "yes"].includes(
+          String(req.query?.apply || "").trim().toLowerCase(),
+        );
+
+        const { datasets } = await listVisibleDatasetsForUser(req.user, {
+          ownerOnly: false,
+        });
+
+        const stats = {
+          scanned: 0,
+          updated: 0,
+          skipped: 0,
+          unmapped: 0,
+          errors: 0,
+        };
+        const samples = [];
+
+        for (const dataset of datasets || []) {
+          if (isAwardDataset(dataset)) continue;
+          const meta = extrasToMap(dataset?.extras);
+          const expectedMetaRows = parseExpectedOutputMetadata(
+            meta.expected_outputs_meta,
+          );
+          const resources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+
+          for (let index = 0; index < resources.length; index += 1) {
+            const resource = resources[index];
+            if (isMoaResource(resource)) continue;
+            stats.scanned += 1;
+
+            const currentKey = normalizeOutputType(
+              asTrimmedString(resource?.format) ||
+                asTrimmedString(resource?.output_type) ||
+                asTrimmedString(resource?.name) ||
+                asTrimmedString(resource?.description),
+            );
+            if (OUTPUT_TYPE_LABELS[currentKey]) {
+              stats.skipped += 1;
+              continue;
+            }
+
+            const expectedKey = normalizeOutputType(
+              expectedMetaRows[index]?.output_type,
+            );
+            if (!OUTPUT_TYPE_LABELS[expectedKey]) {
+              stats.unmapped += 1;
+              continue;
+            }
+
+            if (apply) {
+              try {
+                await updateDatasetResource({
+                  id: resource?.id,
+                  package_id: dataset?.id || dataset?.name || null,
+                  format: expectedKey,
+                });
+                stats.updated += 1;
+              } catch {
+                stats.errors += 1;
+              }
+            } else {
+              stats.updated += 1;
+            }
+
+            if (samples.length < 25) {
+              samples.push({
+                dataset_id: dataset?.id || dataset?.name || null,
+                resource_id: resource?.id || null,
+                from: asTrimmedString(resource?.format) || "unknown",
+                to: expectedKey,
+              });
+            }
+          }
+        }
+
+        return res.json({
+          data: {
+            apply,
+            stats,
+            samples,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to backfill output types.",
           ),
         });
       }
