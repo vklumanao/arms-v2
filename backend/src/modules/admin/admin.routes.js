@@ -880,6 +880,8 @@ export function registerAdminRoutes(app, deps) {
 
   app.get("/api/admin/affiliates", authMiddleware, async (req, res) => {
     try {
+      if (!ensureAdminOrCenterChief(res, req.user)) return;
+      const managedCenterId = getManagedCenterId(req.user);
       // Build affiliate rows from CKAN users enriched with org/group membership lookups.
       // Keep this endpoint available even when one CKAN read path is flaky.
       const [centersResult, groupsResult, usersResult, datasetsResult] =
@@ -948,7 +950,13 @@ export function registerAdminRoutes(app, deps) {
       const userOrgMap = {};
       const userDepartmentMap = {};
       await Promise.all(
-        (centers || []).map(async (center) => {
+        (managedCenterId
+          ? (centers || []).filter(
+              (row) =>
+                String(row?.name || row?.id || "").trim() === managedCenterId,
+            )
+          : centers || []
+        ).map(async (center) => {
           const orgId = center?.name || center?.id;
           if (!orgId) return;
           try {
@@ -1107,9 +1115,24 @@ export function registerAdminRoutes(app, deps) {
         })
         .filter((row) => row.role !== "admin");
 
+      const scopedRows = managedCenterId
+        ? rows.filter(
+            (row) =>
+              String(row?.ckan_org_id || "").trim() === managedCenterId,
+          )
+        : rows;
+
+      const visibleCenters = managedCenterId
+        ? (centers || []).filter(
+            (center) =>
+              String(center?.name || center?.id || "").trim() ===
+              managedCenterId,
+          )
+        : centers || [];
+
       return res.json({
-        rows,
-        centers: (centers || []).map((center) => ({
+        rows: scopedRows,
+        centers: (visibleCenters || []).map((center) => ({
           id: center?.name || center?.id,
           name: center?.title || center?.display_name || center?.name || "-",
         })),
@@ -1127,12 +1150,60 @@ export function registerAdminRoutes(app, deps) {
     authMiddleware,
     async (req, res) => {
       try {
+        if (!ensureAdminOrCenterChief(res, req.user)) return;
+        const managedCenterId = getManagedCenterId(req.user);
         const userId = String(req.params?.userId || "").trim();
         if (!userId) return badRequest(res, "Affiliate id is required.");
 
         const existing = await findUserById(userId);
         if (!existing) {
           return res.status(404).json({ error: "Affiliate was not found." });
+        }
+        if (managedCenterId) {
+          const existingOrgId = String(existing?.ckan_org_id || "").trim();
+          let isScopedMember =
+            existingOrgId && existingOrgId === managedCenterId;
+
+          if (!isScopedMember) {
+            const targetUserId = String(existing?.ckan_user_id || "").trim();
+            const targetUsername = String(
+              existing?.ckan_username || "",
+            ).trim();
+            if (targetUserId || targetUsername) {
+              try {
+                const members = await listOrganizationMembers(
+                  managedCenterId,
+                );
+                isScopedMember = (members || []).some((member) => {
+                  const memberId = String(member?.id || "").trim();
+                  const memberName = String(member?.name || "").trim();
+                  return (
+                    (targetUserId && memberId === targetUserId) ||
+                    (targetUsername && memberName === targetUsername)
+                  );
+                });
+              } catch {
+                isScopedMember = false;
+              }
+            }
+          }
+
+          if (!isScopedMember) {
+            return res.status(403).json({
+              error:
+                "You can only manage affiliates assigned to your Research Center.",
+            });
+          }
+
+          if (
+            "ckan_org_id" in req.body &&
+            String(req.body?.ckan_org_id || "").trim() !== managedCenterId
+          ) {
+            return res.status(403).json({
+              error:
+                "Center Chiefs cannot reassign affiliates outside their Research Center.",
+            });
+          }
         }
 
         const requestedGroupId = String(req.body?.ckan_group_id || "").trim();
