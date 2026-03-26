@@ -273,8 +273,6 @@ export default function AdminAffiliateDetailPage() {
   return (
     <section className="page-stack-xl">
       <div className="flex items-center justify-between">
-        <PageHeader title="Affiliate Details" />
-
         <Button
           variant="outline"
           onClick={() => {
@@ -340,18 +338,18 @@ export default function AdminAffiliateDetailPage() {
 
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
                   <div>
-                    <p className="text-slate-500">Department</p>
-                    <p className="font-semibold text-slate-900">
-                      {departmentLabel}
-                    </p>
-                  </div>
-
-                  <div>
                     <p className="text-slate-500">Research Center</p>
                     <p className="font-semibold text-slate-900">
                       {affiliate?.ckan_org_id
                         ? centerNameById[affiliate.ckan_org_id] || "-"
                         : "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500">Department</p>
+                    <p className="font-semibold text-slate-900">
+                      {departmentLabel}
                     </p>
                   </div>
 
