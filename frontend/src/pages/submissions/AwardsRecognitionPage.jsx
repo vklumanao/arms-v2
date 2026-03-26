@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/utils/cn";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ import {
 import {
   deleteAwardRecognitionRecord,
   listAwardRecognitionRecords,
+  listCenterChiefAwardRecognitionRecords,
   fetchAllProjects,
   fetchUserProjects,
 } from "@/services/submissions";
@@ -52,23 +54,42 @@ export default function AwardsRecognitionPage() {
   const { profile } = useAuth();
   const toast = useToast();
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+  const isCenterChief =
+    String(profile?.role || "")
+      .trim()
+      .toLowerCase() === "faculty" &&
+    profile?.is_center_chief === true &&
+    Boolean(profile?.managed_center_id);
+  const hasOrgId = String(profile?.ckan_org_id || "").trim();
+  const canLoadOwnAwards = isAdmin || Boolean(hasOrgId);
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const missingAffiliation =
-    !isAdmin &&
-    !String(profile?.ckan_org_id || "").trim();
+    !canLoadOwnAwards && !isCenterChief;
   const [rows, setRows] = useState([]);
+  const [centerChiefRows, setCenterChiefRows] = useState([]);
+  const [centerChiefSearch, setCenterChiefSearch] = useState("");
+  const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [exportingType, setExportingType] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [centerChiefLoading, setCenterChiefLoading] = useState(false);
+  const [centerChiefError, setCenterChiefError] = useState("");
+  const [centerChiefPage, setCenterChiefPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [projectOptions, setProjectOptions] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   const loadAwards = useCallback(() => {
+    if (!canLoadOwnAwards) {
+      setRows([]);
+      setLoading(false);
+      setLoadError("");
+      return Promise.resolve();
+    }
     setLoading(true);
     setLoadError("");
 
@@ -85,7 +106,7 @@ export default function AwardsRecognitionPage() {
       }
       setLoading(false);
     });
-  }, [toast]);
+  }, [canLoadOwnAwards, toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +118,37 @@ export default function AwardsRecognitionPage() {
       cancelled = true;
     };
   }, [loadAwards]);
+
+  useEffect(() => {
+    if (!isCenterChief) {
+      setCenterChiefRows([]);
+      setCenterChiefLoading(false);
+      setCenterChiefError("");
+      return () => {};
+    }
+
+    let cancelled = false;
+    const loadCenterChiefAwards = async () => {
+      setCenterChiefLoading(true);
+      setCenterChiefError("");
+      const { data, error } = await listCenterChiefAwardRecognitionRecords();
+      if (cancelled) return;
+      if (error) {
+        setCenterChiefRows([]);
+        setCenterChiefError(
+          error.message || "Unable to load center chief award records.",
+        );
+      } else {
+        setCenterChiefRows(Array.isArray(data) ? data : []);
+      }
+      setCenterChiefLoading(false);
+    };
+
+    loadCenterChiefAwards();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCenterChief]);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +192,46 @@ export default function AwardsRecognitionPage() {
       return query ? haystack.includes(query) : true;
     });
   }, [rows, searchTerm]);
+
+  const sortedCenterChiefRows = useMemo(
+    () =>
+      [...centerChiefRows].sort(
+        (a, b) =>
+          new Date(b?.updated_at || b?.created_at || 0).getTime() -
+          new Date(a?.updated_at || a?.created_at || 0).getTime(),
+      ),
+    [centerChiefRows],
+  );
+  const baseCenterChiefRows = useMemo(() => {
+    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    return sortedCenterChiefRows.filter((row) => {
+      const haystack = [
+        row?.work_title,
+        row?.award_recognition,
+        row?.awarding_body,
+        row?.level,
+        row?.year_received,
+        row?.recipients,
+        row?.supporting_movs,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
+    });
+  }, [centerChiefSearch, sortedCenterChiefRows]);
+  const centerChiefFilteredRows = useMemo(() => {
+    const isInternational = (level) =>
+      String(level || "").toLowerCase().includes("international");
+    if (centerChiefQuickFilter === "international") {
+      return baseCenterChiefRows.filter((row) => isInternational(row?.level));
+    }
+    if (centerChiefQuickFilter === "national") {
+      return baseCenterChiefRows.filter(
+        (row) => row?.level && !isInternational(row?.level),
+      );
+    }
+    return baseCenterChiefRows;
+  }, [baseCenterChiefRows, centerChiefQuickFilter]);
 
   const analytics = useMemo(() => {
     const uniqueRecipients = new Set();
@@ -201,6 +293,25 @@ export default function AwardsRecognitionPage() {
     const start = (currentPage - 1) * AWARDS_PAGE_SIZE;
     return filteredRows.slice(start, start + AWARDS_PAGE_SIZE);
   }, [currentPage, filteredRows]);
+
+  const centerChiefTotalPages = useMemo(
+    () =>
+      Math.max(1, Math.ceil(centerChiefFilteredRows.length / AWARDS_PAGE_SIZE)),
+    [centerChiefFilteredRows.length],
+  );
+
+  useEffect(() => {
+    setCenterChiefPage(1);
+  }, [sortedCenterChiefRows.length, centerChiefSearch, centerChiefQuickFilter]);
+
+  useEffect(() => {
+    setCenterChiefPage((prev) => Math.min(prev, centerChiefTotalPages));
+  }, [centerChiefTotalPages]);
+
+  const centerChiefPaginatedRows = useMemo(() => {
+    const start = (centerChiefPage - 1) * AWARDS_PAGE_SIZE;
+    return centerChiefFilteredRows.slice(start, start + AWARDS_PAGE_SIZE);
+  }, [centerChiefPage, centerChiefFilteredRows]);
 
   const openEdit = (row) => {
     const recordId = String(row?.id || row?.ckan_dataset_id || "").trim();
@@ -457,9 +568,9 @@ export default function AwardsRecognitionPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: "Total Awards", value: analytics.total, icon: Award },
+      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Total Awards", value: analytics.total, icon: Award },
             {
               label: "National / Local",
               value: analytics.national,
@@ -494,6 +605,240 @@ export default function AwardsRecognitionPage() {
         </div>
       </div>
 
+      {isCenterChief ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  Managed Center Awards and Recognition
+                </CardTitle>
+                <CardDescription>
+                  Showing {centerChiefFilteredRows.length} record(s) from your
+                  managed research center.
+                </CardDescription>
+              </div>
+              <label className="relative w-full md:max-w-xl">
+                <span className="sr-only">Search managed center awards</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={centerChiefSearch}
+                  onChange={(event) => setCenterChiefSearch(event.target.value)}
+                  placeholder="Search title, award, body, recipient, level, or year"
+                  className="pl-9"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {[
+                {
+                  key: "all",
+                  label: "All Awards",
+                  count: baseCenterChiefRows.length,
+                },
+                {
+                  key: "national",
+                  label: "National / Local",
+                  count: baseCenterChiefRows.filter(
+                    (row) =>
+                      row?.level &&
+                      !String(row.level || "")
+                        .toLowerCase()
+                        .includes("international"),
+                  ).length,
+                },
+                {
+                  key: "international",
+                  label: "International",
+                  count: baseCenterChiefRows.filter((row) =>
+                    String(row.level || "")
+                      .toLowerCase()
+                      .includes("international"),
+                  ).length,
+                },
+              ].map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-slate-200 px-4 text-xs",
+                    centerChiefQuickFilter === chip.key
+                      ? "bg-slate-900 text-white hover:bg-slate-900"
+                      : "bg-white text-slate-600 hover:bg-slate-50",
+                  )}
+                  onClick={() => setCenterChiefQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      centerChiefQuickFilter === chip.key
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                onClick={() => setCenterChiefQuickFilter("all")}
+              >
+                Clear filters
+              </Button>
+            </div>
+          </CardHeader>
+          {centerChiefLoading ? (
+            <CardContent className="p-4 text-sm text-slate-600">
+              Loading managed center awards...
+            </CardContent>
+          ) : centerChiefError ? (
+            <CardContent className="p-4 text-sm text-red-600">
+              {centerChiefError}
+            </CardContent>
+          ) : sortedCenterChiefRows.length === 0 ? (
+            <CardContent className="p-4 text-sm text-slate-600">
+              No awards and recognition records found for your managed research
+              center.
+            </CardContent>
+          ) : centerChiefFilteredRows.length === 0 ? (
+            <CardContent className="p-4 text-sm text-slate-600">
+              No managed center awards match your search.
+            </CardContent>
+          ) : (
+            <CardContent className="p-4">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                <Table className="min-w-[980px]">
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>Title of Research/Creative Work</TableHead>
+                      <TableHead>Award/Recognition</TableHead>
+                      <TableHead>Awarding Body</TableHead>
+                      <TableHead>Year Received</TableHead>
+                      <TableHead>Level</TableHead>
+                      <TableHead>Recipient(s)</TableHead>
+                      <TableHead>Supporting MOVs</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {centerChiefPaginatedRows.map((row, index) => (
+                      <TableRow key={row.id || index}>
+                        <TableCell>
+                          {(centerChiefPage - 1) * AWARDS_PAGE_SIZE +
+                            index +
+                            1}
+                        </TableCell>
+                        <TableCell>{row.work_title || "-"}</TableCell>
+                        <TableCell>{row.award_recognition || "-"}</TableCell>
+                        <TableCell>{row.awarding_body || "-"}</TableCell>
+                        <TableCell>{row.year_received || "-"}</TableCell>
+                        <TableCell>{row.level || "-"}</TableCell>
+                        <TableCell>{row.recipients || "-"}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {row.supporting_movs ? (
+                              <a
+                                href={row.supporting_movs}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex text-sm font-medium text-sky-700 hover:text-sky-900"
+                              >
+                                Link / Reference
+                              </a>
+                            ) : null}
+                            {row.supporting_mov_resource_id ? (
+                              <a
+                                href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                  row.supporting_mov_resource_id,
+                                )}/download?download=1`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
+                              >
+                                {row.supporting_mov_file_name ||
+                                  "Download MOV file"}
+                              </a>
+                            ) : null}
+                            {!row.supporting_movs &&
+                            !row.supporting_mov_resource_id
+                              ? "-"
+                              : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            {row?.project_id ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                asChild
+                              >
+                                <Link
+                                  to={`/projects/${encodeURIComponent(
+                                    String(row.project_id || "").trim(),
+                                  )}`}
+                                  aria-label="Open linked project"
+                                  title="Open project"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEdit(row)}
+                              aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
+                              title="Edit"
+                            >
+                              <PencilLine className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                              onClick={() => setDeleteTarget(row)}
+                              aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  {centerChiefTotalPages > 1 ? (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={10} className="px-3 py-3">
+                          <PaginationControls
+                            page={centerChiefPage}
+                            totalPages={centerChiefTotalPages}
+                            onPageChange={setCenterChiefPage}
+                            className="border-0 rounded-none shadow-none bg-transparent"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  ) : null}
+                </Table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      ) : null}
+
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -521,7 +866,7 @@ export default function AwardsRecognitionPage() {
         {filteredRows.length === 0 ? (
           <CardContent className="p-4">
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
-              {loading
+              {canLoadOwnAwards && loading
                 ? "Loading award records..."
                 : loadError ||
                   "No awards and recognition records found. Try a different search term once award records are available."}
