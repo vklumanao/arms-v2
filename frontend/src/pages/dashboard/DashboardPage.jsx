@@ -3,17 +3,17 @@ import InlineNotice from "@/components/feedback/InlineNotice";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useDashboardData, useDashboardSections } from "@/hooks/dashboard";
 import {
-  AwardsByCategorySection,
   AwardsByLevelSection,
   CenterBreakdownSection,
   DashboardHeader,
+  DashboardSection,
   FacultyActivitySection,
   FacultyStatusSection,
   FundingOverviewSection,
   LinkedProjectsSection,
   OverviewSection,
   OutputVisibilitySection,
-  OutputsByDepartmentSection,
+  OutputsByTypeSection,
   OutputsOverTimeSection,
   ProjectsPerCenterSection,
   RecentActivitySection,
@@ -109,9 +109,8 @@ export default function DashboardPage() {
     overview: dashboardOverview,
     centerBreakdownRows: dashboardCenterBreakdownRows,
     projectsPerCenterData: dashboardProjectsPerCenterData,
-    outputsByDepartmentData: dashboardOutputsByDepartmentData,
+    outputsByTypeData: dashboardOutputsByTypeData,
     outputsOverTimeData: dashboardOutputsOverTimeData,
-    awardsByCategoryData: dashboardAwardsByCategoryData,
     awardsByLevelData: dashboardAwardsByLevelData,
     fundingOverview: dashboardFundingOverview,
     outputsVisibility: dashboardOutputsVisibility,
@@ -218,12 +217,12 @@ export default function DashboardPage() {
     [dashboardProjectsPerCenterData],
   );
 
-  const outputsByDepartmentData = useMemo(
+  const outputsByTypeData = useMemo(
     () =>
-      Array.isArray(dashboardOutputsByDepartmentData)
-        ? dashboardOutputsByDepartmentData
+      Array.isArray(dashboardOutputsByTypeData)
+        ? dashboardOutputsByTypeData
         : [],
-    [dashboardOutputsByDepartmentData],
+    [dashboardOutputsByTypeData],
   );
 
   const outputsOverTimeData = useMemo(
@@ -232,14 +231,6 @@ export default function DashboardPage() {
         ? dashboardOutputsOverTimeData
         : [],
     [dashboardOutputsOverTimeData],
-  );
-
-  const awardsByCategoryData = useMemo(
-    () =>
-      Array.isArray(dashboardAwardsByCategoryData)
-        ? dashboardAwardsByCategoryData
-        : [],
-    [dashboardAwardsByCategoryData],
   );
 
   const awardsByLevelData = useMemo(
@@ -338,22 +329,10 @@ export default function DashboardPage() {
     return outputsTrendData;
   }, [isAdmin, outputsRange, outputsTrendData]);
 
-  const totalOutputsByDepartment = useMemo(
+  const totalOutputsByType = useMemo(
     () =>
-      outputsByDepartmentData.reduce(
-        (sum, entry) => sum + toNumber(entry?.value),
-        0,
-      ),
-    [outputsByDepartmentData],
-  );
-
-  const totalAwardsByCategory = useMemo(
-    () =>
-      awardsByCategoryData.reduce(
-        (sum, entry) => sum + toNumber(entry?.value),
-        0,
-      ),
-    [awardsByCategoryData],
+      outputsByTypeData.reduce((sum, entry) => sum + toNumber(entry?.value), 0),
+    [outputsByTypeData],
   );
 
   const totalProjectsPerCenter = useMemo(
@@ -523,58 +502,137 @@ export default function DashboardPage() {
         />
       ) : null}
 
-      <OverviewSection
-        isAdmin={isAdmin}
-        summaryCounts={summaryCountsForView}
-        filters={filters}
-        loading={dashboardLoading}
-      />
-
       {isAdmin ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          <FacultyStatusSection
-            loading={dashboardLoading}
-            projects={projects}
-            title="All Project Status"
-            description="Snapshot of project status across all research centers."
-            statusCounts={dashboardProjectStatusCounts}
-            chartTheme={chartTheme}
-            ownerId={ownerId}
-          />
-          <TopContributorsSection
-            loading={dashboardLoading}
-            contributors={topContributors}
-            view={contributorView}
-            onViewChange={setContributorView}
-          />
-          <FundingOverviewSection
-            loading={dashboardLoading}
-            fundingOverview={fundingOverview}
-          />
-          <AwardsByLevelSection
-            loading={dashboardLoading}
-            awardsByLevelData={awardsByLevelData}
-            chartTheme={chartTheme}
-          />
-          <OutputVisibilitySection
-            loading={dashboardLoading}
-            visibility={outputsVisibility}
-          />
-        </div>
-      ) : null}
+        <>
+          <DashboardSection
+            eyebrow="Overview Metrics"
+            title="Institution Snapshot"
+            tone="contrast"
+          >
+            <OverviewSection
+              isAdmin={isAdmin}
+              summaryCounts={summaryCountsForView}
+              filters={filters}
+              loading={dashboardLoading}
+              asPanel={false}
+            />
+          </DashboardSection>
 
-      {isAdmin ? (
-        <CenterBreakdownSection
-          isAdmin={isAdmin}
-          loading={dashboardLoading}
-          centerBreakdownRows={centerBreakdownRows}
-          showAllCenters={showAllCenters}
-          onToggleShowAll={handleToggleShowAll}
-          sortConfig={sortConfig}
-          onSortChange={setSortConfig}
-        />
+          <DashboardSection
+            eyebrow="Core Analytics"
+            title="Performance Signals"
+            framed={false}
+          >
+            <div className="grid gap-4 xl:grid-cols-2">
+              <FacultyStatusSection
+                loading={dashboardLoading}
+                projects={projects}
+                title="All Project Status"
+                description="Snapshot of project status across all research centers."
+                statusCounts={dashboardProjectStatusCounts}
+                chartTheme={chartTheme}
+                ownerId={ownerId}
+              />
+              <TopContributorsSection
+                loading={dashboardLoading}
+                contributors={topContributors}
+                view={contributorView}
+                onViewChange={setContributorView}
+              />
+              <FundingOverviewSection
+                loading={dashboardLoading}
+                fundingOverview={fundingOverview}
+              />
+              <OutputVisibilitySection
+                loading={dashboardLoading}
+                visibility={outputsVisibility}
+              />
+            </div>
+
+            <div className="mt-8">
+              <AwardsByLevelSection
+                loading={dashboardLoading}
+                awardsByLevelData={awardsByLevelData}
+                chartTheme={chartTheme}
+              />
+            </div>
+          </DashboardSection>
+
+          <DashboardSection
+            eyebrow="Detailed Data Tables"
+            title="Research Center Breakdown"
+            framed={false}
+          >
+            <CenterBreakdownSection
+              isAdmin={isAdmin}
+              loading={dashboardLoading}
+              centerBreakdownRows={centerBreakdownRows}
+              showAllCenters={showAllCenters}
+              onToggleShowAll={handleToggleShowAll}
+              sortConfig={sortConfig}
+              onSortChange={setSortConfig}
+            />
+          </DashboardSection>
+
+          <DashboardSection
+            eyebrow="Distribution & Trends"
+            title="Coverage and Momentum"
+            framed={false}
+          >
+            <ProjectsPerCenterSection
+              loading={dashboardLoading}
+              projectsPerCenterData={projectsPerCenterData}
+              totalProjectsPerCenter={totalProjectsPerCenter}
+              chartTheme={chartTheme}
+            />
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="col-span-2">
+                <OutputsOverTimeSection
+                  loading={dashboardLoading}
+                  outputsTrendData={outputsTrendDataScoped}
+                  trendView={trendView}
+                  onTrendChange={handleTrendChange}
+                  rangeView={outputsRange}
+                  onRangeChange={setOutputsRange}
+                  isAdmin={isAdmin}
+                  totalOutputsTrend={totalOutputsTrend}
+                  chartTheme={chartTheme}
+                />
+              </div>
+
+              <OutputsByTypeSection
+                loading={dashboardLoading}
+                outputsByTypeData={outputsByTypeData}
+                totalOutputsByType={totalOutputsByType}
+                chartTheme={chartTheme}
+              />
+            </div>
+          </DashboardSection>
+
+          <DashboardSection
+            eyebrow="Recent Activity"
+            title="Latest Updates"
+            framed={false}
+          >
+            <RecentActivitySection
+              loading={dashboardLoading}
+              recentProjects={recentProjects}
+              recentOutputs={recentOutputs}
+              recentAwards={recentAwards}
+              showHeader={false}
+            />
+          </DashboardSection>
+        </>
       ) : (
         <>
+          <OverviewSection
+            isAdmin={isAdmin}
+            summaryCounts={summaryCountsForView}
+            filters={filters}
+            loading={dashboardLoading}
+          />
+
           <FacultyActivitySection
             loading={dashboardLoading}
             activity={dashboardActivityThisMonth}
@@ -586,61 +644,34 @@ export default function DashboardPage() {
             ownerId={ownerId}
             statusCounts={dashboardProjectStatusCounts}
           />
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <OutputsOverTimeSection
+              loading={dashboardLoading}
+              outputsTrendData={outputsTrendDataScoped}
+              trendView={trendView}
+              onTrendChange={handleTrendChange}
+              rangeView={outputsRange}
+              onRangeChange={setOutputsRange}
+              isAdmin={isAdmin}
+              totalOutputsTrend={totalOutputsTrend}
+              chartTheme={chartTheme}
+            />
+          </div>
+
+          <LinkedProjectsSection
+            loading={dashboardLoading}
+            linkedProjects={linkedProjects}
+          />
+
+          <RecentActivitySection
+            loading={dashboardLoading}
+            recentProjects={recentProjects}
+            recentOutputs={recentOutputs}
+            recentAwards={recentAwards}
+          />
         </>
       )}
-
-      {isAdmin ? (
-        <ProjectsPerCenterSection
-          loading={dashboardLoading}
-          projectsPerCenterData={projectsPerCenterData}
-          totalProjectsPerCenter={totalProjectsPerCenter}
-          chartTheme={chartTheme}
-        />
-      ) : null}
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        {isAdmin ? (
-          <OutputsByDepartmentSection
-            loading={dashboardLoading}
-            outputsByDepartmentData={outputsByDepartmentData}
-            totalOutputsByDepartment={totalOutputsByDepartment}
-            chartTheme={chartTheme}
-          />
-        ) : null}
-
-        <OutputsOverTimeSection
-          loading={dashboardLoading}
-          outputsTrendData={outputsTrendDataScoped}
-          trendView={trendView}
-          onTrendChange={handleTrendChange}
-          rangeView={outputsRange}
-          onRangeChange={setOutputsRange}
-          isAdmin={isAdmin}
-          totalOutputsTrend={totalOutputsTrend}
-          chartTheme={chartTheme}
-        />
-
-        <AwardsByCategorySection
-          loading={dashboardLoading}
-          awardsByCategoryData={awardsByCategoryData}
-          totalAwardsByCategory={totalAwardsByCategory}
-          chartTheme={chartTheme}
-        />
-      </div>
-
-      {!isAdmin ? (
-        <LinkedProjectsSection
-          loading={dashboardLoading}
-          linkedProjects={linkedProjects}
-        />
-      ) : null}
-
-      <RecentActivitySection
-        loading={dashboardLoading}
-        recentProjects={recentProjects}
-        recentOutputs={recentOutputs}
-        recentAwards={recentAwards}
-      />
     </section>
   );
 }
