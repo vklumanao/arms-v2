@@ -58,10 +58,10 @@ export function fetchDashboardProjectsPerCenter(filters = {}) {
   );
 }
 
-export function fetchDashboardOutputsByDepartment(filters = {}) {
+export function fetchDashboardOutputsByType(filters = {}) {
   const query = buildQuery(filters);
   return safeFetch(
-    `/dashboard/charts/outputs-by-department${query ? `?${query}` : ""}`,
+    `/dashboard/charts/outputs-by-type${query ? `?${query}` : ""}`,
   );
 }
 
@@ -72,12 +72,6 @@ export function fetchDashboardOutputsOverTime(filters = {}) {
   );
 }
 
-export function fetchDashboardAwardsByCategory(filters = {}) {
-  const query = buildQuery(filters);
-  return safeFetch(
-    `/dashboard/charts/awards-by-category${query ? `?${query}` : ""}`,
-  );
-}
 
 export function fetchDashboardRecentProjects(filters = {}, { limit = 6 } = {}) {
   const query = new URLSearchParams(buildQuery(filters));
