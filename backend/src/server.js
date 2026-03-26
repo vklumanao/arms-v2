@@ -674,6 +674,7 @@ registerDashboardRoutes(app, {
   listOrganizations,
   listGroups,
   listOrganizationAgendas,
+  updateDatasetResource,
 });
 
 registerPublicRecordsRoutes(app, {
