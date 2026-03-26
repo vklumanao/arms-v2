@@ -135,10 +135,9 @@ export default function AdminUsersPage() {
     const total = users.length;
     const active = users.filter((u) => u.is_active).length;
     const inactive = total - active;
-    const admins = users.filter((u) => u.role === "admin").length;
     const faculty = users.filter((u) => u.role === "faculty").length;
     const students = users.filter((u) => u.role === "student").length;
-    return { total, active, inactive, admins, faculty, students };
+    return { total, active, inactive, faculty, students };
   }, [users]);
 
   useEffect(() => {
@@ -384,14 +383,6 @@ export default function AdminUsersPage() {
               <BadgeCheck size={14} /> Inactive
             </p>
             <p className="kpi-value">{metrics.inactive}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
-            <p className="kpi-label flex items-center gap-1">
-              <ShieldCheck size={14} /> Admins
-            </p>
-            <p className="kpi-value">{metrics.admins}</p>
           </CardContent>
         </Card>
         <Card className="flex min-h-28 flex-col justify-between">
