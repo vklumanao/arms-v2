@@ -442,11 +442,18 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     return `Expected Output ${index + 1}`;
   }
 
-  function formatOutputDescription(notes, outputLink, publicationAuthors) {
+  function formatOutputDescription(
+    outputType,
+    notes,
+    outputLink,
+    publicationAuthors,
+  ) {
     const trimmedNotes = asTrimmedString(notes);
     const trimmedLink = asTrimmedString(outputLink);
     const trimmedAuthors = asTrimmedString(publicationAuthors);
     const lines = [];
+    const trimmedType = asTrimmedString(outputType);
+    if (trimmedType) lines.push(`Output Type: ${trimmedType}`);
     if (trimmedNotes) lines.push(trimmedNotes);
     if (trimmedAuthors) lines.push(`Authors/Proponents: ${trimmedAuthors}`);
     if (trimmedLink) lines.push(`Output Link: ${trimmedLink}`);
@@ -1763,6 +1770,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             const row = mergedExpectedOutputs[i] || {};
             const name = formatOutputResourceName(row, i);
             const description = formatOutputDescription(
+              row.output_type,
               row.notes,
               row.output_link || row.outputLink,
               row.publication_authors || row.publicationAuthors,
@@ -1854,6 +1862,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
 
             const name = formatOutputResourceName(row, i);
             const description = formatOutputDescription(
+              row.output_type,
               row.notes,
               row.output_link || row.outputLink,
               row.publication_authors || row.publicationAuthors,
@@ -2310,10 +2319,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             package_id: dataset?.id || projectId,
             name: targetName,
             description: formatOutputDescription(
-              notes,
-              outputLink,
-              req.body?.publication_authors,
-            ),
+                outputType,
+                notes,
+                outputLink,
+                req.body?.publication_authors,
+              ),
             url,
             format: outputType,
             mimetype: mimeType || null,
@@ -2417,8 +2427,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           const resource = await createDatasetResourceUpload({
             fields: {
               package_id: dataset?.id || projectId,
-              name: uploadName,
+              name: targetName,
               description: formatOutputDescription(
+                outputType,
                 notes,
                 outputLink,
                 req.body?.publication_authors,
