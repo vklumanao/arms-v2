@@ -111,13 +111,18 @@ export default function StepClassification({
           </label>
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Department</span>
+            <span className="font-semibold text-slate-700">
+              Department (optional)
+            </span>
             <Input
               value={departmentName === "-" ? "" : departmentName}
               readOnly
               disabled
               className={errors?.department_id ? "input-error" : ""}
             />
+            <p className="text-xs text-slate-500">
+              Optional. You can leave this blank.
+            </p>
             {errors?.department_id && (
               <p className="field-error">{errors.department_id}</p>
             )}
