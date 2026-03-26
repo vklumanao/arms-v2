@@ -662,6 +662,26 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     return false;
   }
 
+  function isCenterChiefUser(user) {
+    const role = asTrimmedString(user?.role).toLowerCase();
+    return (
+      role === "faculty" &&
+      user?.is_center_chief === true &&
+      Boolean(asTrimmedString(user?.managed_center_id))
+    );
+  }
+
+  function isDatasetInManagedCenter(dataset, user) {
+    if (!isCenterChiefUser(user)) return false;
+    const managedCenterId = asTrimmedString(user?.managed_center_id);
+    const datasetOrgId =
+      asTrimmedString(dataset?.organization?.name) ||
+      asTrimmedString(dataset?.organization?.id) ||
+      asTrimmedString(dataset?.owner_org);
+    if (!managedCenterId || !datasetOrgId) return false;
+    return managedCenterId === datasetOrgId;
+  }
+
   function isAwardDataset(dataset) {
     const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
     const recordType = asTrimmedString(
@@ -999,8 +1019,15 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     if (!id) return null;
 
     const isAdmin = String(user?.role || "").toLowerCase() === "admin";
-    const orgId = isAdmin ? "" : asTrimmedString(user?.ckan_org_id);
-    if (!isAdmin && !orgId) return null;
+    let orgId = "";
+    if (!isAdmin) {
+      if (isCenterChiefUser(user)) {
+        orgId = asTrimmedString(user?.managed_center_id);
+      } else {
+        orgId = asTrimmedString(user?.ckan_org_id);
+      }
+      if (!orgId) return null;
+    }
 
     const limit = 100;
     let page = 1;
@@ -1137,6 +1164,128 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   );
 
   app.get(
+    "/api/submissions/center-chief/research-outputs",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const role = String(req.user?.role || "").trim().toLowerCase();
+        const managedCenterId = asTrimmedString(req.user?.managed_center_id);
+        const isCenterChief =
+          role === "faculty" &&
+          req.user?.is_center_chief === true &&
+          Boolean(managedCenterId);
+
+        if (!isCenterChief) {
+          return res.status(403).json({
+            error: "Center Chief access is required.",
+          });
+        }
+
+        const page = Math.max(1, Number(req.query?.page || 1));
+        const limit = Math.max(
+          1,
+          Math.min(100, Number(req.query?.limit || 100)),
+        );
+        const q = asTrimmedString(req.query?.q || "");
+
+        const result = await listDatasets({
+          orgId: managedCenterId,
+          q,
+          page,
+          limit,
+        });
+        const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+        const rows = [];
+
+        for (const dataset of datasets) {
+          if (isAwardDataset(dataset)) continue;
+          const resources = Array.isArray(dataset?.resources)
+            ? dataset.resources
+            : [];
+          const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+          const expectedOutputMetaRows = parseExpectedOutputMetadata(
+            getExtraByKey(extras, "expected_outputs_meta"),
+          );
+          const projectStatus =
+            getExtraByKey(extras, "project_status") ||
+            getExtraByKey(extras, "status") ||
+            dataset?.state ||
+            null;
+
+          for (const [index, resource] of resources.entries()) {
+            if (isMoaResource(resource)) {
+              continue;
+            }
+            const resourceNameBase = asTrimmedString(resource?.name).replace(
+              /\s*\(target:[^)]+\)\s*$/i,
+              "",
+            );
+            const metaRow = expectedOutputMetaRows[index] || null;
+            const outputTypeFromMeta = asTrimmedString(metaRow?.output_type);
+            const normalizedOutputType = normalizeOutputType(
+              asTrimmedString(resource?.format) ||
+                resourceNameBase ||
+                "resource",
+            );
+            const resolvedOutputType = outputTypeFromMeta || normalizedOutputType;
+            rows.push({
+              id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
+              output_type: resolvedOutputType || "resource",
+              output_link:
+                asTrimmedString(metaRow?.output_link) ||
+                extractOutputLinkFromDescription(resource?.description),
+              publication_authors:
+                asTrimmedString(metaRow?.publication_authors) ||
+                extractAuthorsFromDescription(resource?.description),
+              file_name: resource?.name || null,
+              file_path: resource?.url || null,
+              mime_type: resource?.mimetype || resource?.format || null,
+              file_size: resource?.size || null,
+              notes: resource?.description || null,
+              ckan_resource_id: resource?.id || null,
+              ckan_dataset_id: dataset?.id || null,
+              ckan_dataset_name: dataset?.title || dataset?.name || null,
+              project_title: dataset?.title || dataset?.name || null,
+              project_ckan_org_id:
+                dataset?.organization?.name || dataset?.owner_org || null,
+              project_org_name:
+                dataset?.organization?.title ||
+                dataset?.organization?.display_name ||
+                dataset?.organization?.name ||
+                dataset?.owner_org ||
+                null,
+              project_public_visible: !Boolean(dataset?.private),
+              project_status: projectStatus,
+              ckan_sync_status: dataset?.state || null,
+              ckan_last_synced_at:
+                resource?.last_modified ||
+                dataset?.metadata_modified ||
+                dataset?.metadata_created ||
+                null,
+              created_at:
+                resource?.created || dataset?.metadata_created || null,
+              updated_at:
+                resource?.last_modified ||
+                dataset?.metadata_modified ||
+                dataset?.metadata_created ||
+                null,
+            });
+          }
+        }
+
+        return res.json({ data: rows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message ||
+              "Failed to load center chief research outputs.",
+          ),
+        });
+      }
+    },
+  );
+
+  app.get(
     "/api/submissions/mine/projects",
     authMiddleware,
     async (req, res) => {
@@ -1172,6 +1321,61 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to load user projects."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/submissions/center-chief/projects",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const role = String(req.user?.role || "").trim().toLowerCase();
+        const managedCenterId = asTrimmedString(req.user?.managed_center_id);
+        const isCenterChief =
+          role === "faculty" &&
+          req.user?.is_center_chief === true &&
+          Boolean(managedCenterId);
+
+        if (!isCenterChief) {
+          return res.status(403).json({
+            error: "Center Chief access is required.",
+          });
+        }
+
+        const rows = [];
+        const limit = 100;
+        let page = 1;
+        while (page <= 20) {
+          const result = await listDatasets({
+            orgId: managedCenterId,
+            page,
+            limit,
+          });
+          const datasets = Array.isArray(result?.datasets)
+            ? result.datasets
+            : [];
+          if (!datasets.length) break;
+
+          for (const dataset of datasets) {
+            if (isAwardDataset(dataset)) continue;
+            rows.push(mapDatasetToProjectListRecord(dataset));
+          }
+
+          const total = Number(result?.count || 0);
+          if (datasets.length < limit || (total > 0 && page * limit >= total)) {
+            break;
+          }
+          page += 1;
+        }
+
+        return res.json({ data: rows });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(
+            error?.message || "Failed to load center chief projects.",
+          ),
         });
       }
     },
@@ -1236,7 +1440,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetInManagedCenter(dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to edit this project.",
           });
@@ -1270,6 +1478,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         if (
           !isAdmin &&
           !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetInManagedCenter(dataset, req.user) &&
           !isDatasetLinkedToUser(dataset, req.user)
         ) {
           return res.status(403).json({
@@ -1310,8 +1519,10 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             return res.status(404).json({ error: "Project dataset not found." });
           }
 
-          const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        const isCenterChief = await isCenterChiefForDataset(dataset, req.user);
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        const isCenterChief =
+          isDatasetInManagedCenter(dataset, req.user) ||
+          (await isCenterChiefForDataset(dataset, req.user));
         if (
           !isAdmin &&
           !isCenterChief &&
@@ -1384,10 +1595,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             return res.status(404).json({ error: "Resource not found." });
           }
           const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-          const isCenterChief = await isCenterChiefForDataset(
-            located.dataset,
-            req.user,
-          );
+          const isCenterChief =
+            isDatasetInManagedCenter(located.dataset, req.user) ||
+            (await isCenterChiefForDataset(located.dataset, req.user));
           if (
             !isAdmin &&
             !isCenterChief &&
@@ -1672,7 +1882,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       if (
         existingDataset &&
         !isAdmin &&
-        !isDatasetOwnedByUser(existingDataset, req.user)
+        !isDatasetOwnedByUser(existingDataset, req.user) &&
+        !isDatasetInManagedCenter(existingDataset, req.user)
       ) {
         return res.status(403).json({
           error: "You are not allowed to edit this project.",
@@ -1962,7 +2173,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         const extrasRows = Array.isArray(dataset?.extras) ? dataset.extras : [];
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetInManagedCenter(dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to edit this project.",
           });
@@ -2079,7 +2294,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(dataset, req.user) &&
+          !isDatasetInManagedCenter(dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to delete this project.",
           });
@@ -2164,7 +2383,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(located.dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(located.dataset, req.user) &&
+          !isDatasetInManagedCenter(located.dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to edit this resource.",
           });
@@ -2484,7 +2707,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-        if (!isAdmin && !isDatasetOwnedByUser(located.dataset, req.user)) {
+        if (
+          !isAdmin &&
+          !isDatasetOwnedByUser(located.dataset, req.user) &&
+          !isDatasetInManagedCenter(located.dataset, req.user)
+        ) {
           return res.status(403).json({
             error: "You are not allowed to delete this resource.",
           });
