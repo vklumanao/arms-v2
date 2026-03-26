@@ -168,6 +168,10 @@ export default function AppShell() {
       .toLowerCase();
     const isAdmin = role === "admin";
     const isFaculty = role === "faculty";
+    const isCenterChief =
+      isFaculty &&
+      profile?.is_center_chief === true &&
+      Boolean(profile?.managed_center_id);
 
     const links = [
       {
@@ -207,7 +211,7 @@ export default function AppShell() {
       });
     }
 
-    if (isAdmin) {
+    if (isAdmin || isCenterChief) {
       links.push({
         to: "/admin/affiliates",
         label: "Affiliates",
