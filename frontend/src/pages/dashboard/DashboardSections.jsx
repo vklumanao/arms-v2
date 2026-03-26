@@ -1112,7 +1112,7 @@ export function FacultyStatusSection({
         <p className="text-sm text-slate-600">No projects found.</p>
       ) : (
         <div role="img" aria-label="Bar chart showing project status counts">
-          <ChartFrame height={260}>
+          <ChartFrame height={350}>
             <Bar
               data={{
                 labels: statusData.map((row) => row.name),
@@ -1130,6 +1130,15 @@ export function FacultyStatusSection({
                 indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                  x: {
+                    beginAtZero: true,
+                    ticks: {
+                      precision: 0,
+                      callback: (value) => formatCount(Number(value) || 0),
+                    },
+                  },
+                },
                 plugins: {
                   legend: { display: false },
                   tooltip: {
@@ -1540,7 +1549,10 @@ export function OutputsByTypeSection({
       ) : (
         <div role="img" aria-label="Pie chart showing research outputs by type">
           <ChartFrame height={320}>
-            <Doughnut data={outputsByTypePieData} options={outputsByTypePieOptions} />
+            <Doughnut
+              data={outputsByTypePieData}
+              options={outputsByTypePieOptions}
+            />
           </ChartFrame>
           <p className="sr-only">
             {`Outputs by type across ${outputsByTypeData.length} category${

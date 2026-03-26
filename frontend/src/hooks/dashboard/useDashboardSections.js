@@ -106,9 +106,7 @@ export function useDashboardSections({ filters } = {}) {
         : [],
     );
     setOutputsByTypeData(
-      Array.isArray(payload.outputsByTypeData)
-        ? payload.outputsByTypeData
-        : [],
+      Array.isArray(payload.outputsByTypeData) ? payload.outputsByTypeData : [],
     );
     setOutputsOverTimeData(
       Array.isArray(payload.outputsOverTimeData)
