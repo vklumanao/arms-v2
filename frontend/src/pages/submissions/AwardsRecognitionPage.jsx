@@ -56,8 +56,7 @@ export default function AwardsRecognitionPage() {
     import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const missingAffiliation =
     !isAdmin &&
-    (!String(profile?.ckan_org_id || "").trim() ||
-      !String(profile?.department || "").trim());
+    !String(profile?.ckan_org_id || "").trim();
   const [rows, setRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -396,16 +395,16 @@ export default function AwardsRecognitionPage() {
               Complete Your Profile First
             </h1>
             <p className="text-sm text-slate-600">
-              Add your organization and department before reviewing awards and
-              recognition records.
+              Add your organization (research center) before reviewing awards
+              and recognition records.
             </p>
           </div>
         </div>
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
           <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) and Department in
-              My Profile first before accessing Awards and Recognition.
+              Please set your Organization (Research Center) in My Profile
+              first before accessing Awards and Recognition.
             </p>
             <Button asChild>
               <Link to="/profile">Go to My Profile</Link>
