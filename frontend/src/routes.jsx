@@ -4,6 +4,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
 import RoleRoute from "@/components/guards/RoleRoute";
 import AdminOrManagedCenterRoute from "@/components/guards/AdminOrManagedCenterRoute";
+import AdminOrCenterChiefRoute from "@/components/guards/AdminOrCenterChiefRoute";
 import PermissionRoute from "@/components/guards/PermissionRoute";
 import RouteErrorBoundary from "@/components/feedback/RouteErrorBoundary";
 import { PERMISSIONS } from "@/services/permissions";
@@ -237,17 +238,20 @@ export default function AppRoutes() {
                 <AdminUsersPage />,
               )}
             />
+          </Route>
+
+          <Route element={<AdminOrCenterChiefRoute />}>
             <Route
               path="/admin/affiliates"
               element={withPermission(
-                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+                PERMISSIONS.DASHBOARD_VIEW,
                 <AdminAffiliatesModulePage />,
               )}
             />
             <Route
               path="/admin/affiliates/:id"
               element={withPermission(
-                PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+                PERMISSIONS.DASHBOARD_VIEW,
                 <AdminAffiliateDetailPage />,
               )}
             />
