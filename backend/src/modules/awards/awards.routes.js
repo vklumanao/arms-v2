@@ -62,6 +62,28 @@ export function registerAwardsRoutes(app, deps) {
     return false;
   }
 
+  function isCenterChiefUser(user) {
+    const role = asTrimmedString(user?.role).toLowerCase();
+    return (
+      role === "faculty" &&
+      user?.is_center_chief === true &&
+      Boolean(asTrimmedString(user?.managed_center_id))
+    );
+  }
+
+  function isAwardInManagedCenter(dataset, user) {
+    if (!isCenterChiefUser(user)) return false;
+    const managedCenterId = asTrimmedString(user?.managed_center_id);
+    const extras = Array.isArray(dataset?.extras) ? dataset.extras : [];
+    const datasetOrgId =
+      asTrimmedString(dataset?.organization?.name) ||
+      asTrimmedString(dataset?.organization?.id) ||
+      asTrimmedString(dataset?.owner_org) ||
+      getExtra(extras, "research_center_id");
+    if (!managedCenterId || !datasetOrgId) return false;
+    return managedCenterId === datasetOrgId;
+  }
+
   function upsertExtra(extras, key, value) {
     const normalizedKey = asTrimmedString(key).toLowerCase();
     const base = (Array.isArray(extras) ? extras : []).filter(
@@ -392,6 +414,29 @@ export function registerAwardsRoutes(app, deps) {
     });
   }
 
+  async function listCenterChiefAwardDatasets(user, query = "") {
+    const managedCenterId = asTrimmedString(user?.managed_center_id);
+    let page = 1;
+    let allRows = [];
+    let total = 0;
+
+    while (page <= MAX_PAGES) {
+      const result = await listDatasets({
+        orgId: managedCenterId,
+        q: query,
+        page,
+        limit: PAGE_LIMIT,
+      });
+      const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
+      total = Number(result?.count || datasets.length || 0);
+      allRows = allRows.concat(datasets);
+      if (datasets.length < PAGE_LIMIT || allRows.length >= total) break;
+      page += 1;
+    }
+
+    return allRows.filter((dataset) => isAwardDataset(dataset));
+  }
+
   async function listEligibleRecipientUsers(orgId = "") {
     const rows = orgId
       ? await listOrganizationMembers(orgId)
@@ -443,6 +488,33 @@ export function registerAwardsRoutes(app, deps) {
     }
   });
 
+  app.get("/api/awards/center-chief", authMiddleware, async (req, res) => {
+    try {
+      const role = asTrimmedString(req.user?.role).toLowerCase();
+      const managedCenterId = asTrimmedString(req.user?.managed_center_id);
+      const isCenterChief =
+        role === "faculty" &&
+        req.user?.is_center_chief === true &&
+        Boolean(managedCenterId);
+
+      if (!isCenterChief) {
+        return res.status(403).json({
+          error: "Center Chief access is required.",
+        });
+      }
+
+      const q = asTrimmedString(req.query?.q);
+      const rows = await listCenterChiefAwardDatasets(req.user, q);
+      return res.json({ data: rows.map(mapDatasetToAwardRecord) });
+    } catch (error) {
+      return res.status(500).json({
+        error: String(
+          error?.message || "Failed to load center chief award records.",
+        ),
+      });
+    }
+  });
+
   app.get("/api/awards/recipient-options", authMiddleware, async (req, res) => {
     try {
       const rows = await listEligibleRecipientUsers("");
@@ -468,7 +540,11 @@ export function registerAwardsRoutes(app, deps) {
         const linkedToProject = projectId
           ? await isUserLinkedToProject(projectId, req.user)
           : false;
-        if (!isAwardOwnedByUser(dataset, req.user) && !linkedToProject) {
+        if (
+          !isAwardOwnedByUser(dataset, req.user) &&
+          !linkedToProject &&
+          !isAwardInManagedCenter(dataset, req.user)
+        ) {
           return res
             .status(403)
             .json({ error: "You are not allowed to view this award record." });
@@ -553,7 +629,11 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const isAdmin = asTrimmedString(req.user?.role).toLowerCase() === "admin";
-      if (!isAdmin && !isAwardOwnedByUser(existingDataset, req.user)) {
+      if (
+        !isAdmin &&
+        !isAwardOwnedByUser(existingDataset, req.user) &&
+        !isAwardInManagedCenter(existingDataset, req.user)
+      ) {
         return res
           .status(403)
           .json({ error: "You are not allowed to edit this award record." });
@@ -646,7 +726,11 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const isAdmin = asTrimmedString(req.user?.role).toLowerCase() === "admin";
-      if (!isAdmin && !isAwardOwnedByUser(dataset, req.user)) {
+      if (
+        !isAdmin &&
+        !isAwardOwnedByUser(dataset, req.user) &&
+        !isAwardInManagedCenter(dataset, req.user)
+      ) {
         return res
           .status(403)
           .json({ error: "You are not allowed to delete this award record." });
@@ -674,7 +758,11 @@ export function registerAwardsRoutes(app, deps) {
       }
 
       const isAdmin = asTrimmedString(req.user?.role).toLowerCase() === "admin";
-      if (!isAdmin && !isAwardOwnedByUser(dataset, req.user)) {
+      if (
+        !isAdmin &&
+        !isAwardOwnedByUser(dataset, req.user) &&
+        !isAwardInManagedCenter(dataset, req.user)
+      ) {
         return res.status(403).json({
           error: "You are not allowed to upload MOVs for this award record.",
         });
