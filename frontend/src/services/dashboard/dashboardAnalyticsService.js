@@ -6,12 +6,16 @@ function buildQuery(filters = {}) {
   const departmentId = String(filters?.departmentId || "").trim();
   const year = String(filters?.year || "").trim();
   const range = String(filters?.range || "").trim();
+  const startDate = String(filters?.startDate || "").trim();
+  const endDate = String(filters?.endDate || "").trim();
   const ownerOnly = Boolean(filters?.ownerOnly);
 
   if (centerId) query.set("centerId", centerId);
   if (departmentId) query.set("departmentId", departmentId);
   if (year) query.set("year", year);
   if (range) query.set("range", range);
+  if (startDate) query.set("startDate", startDate);
+  if (endDate) query.set("endDate", endDate);
   if (ownerOnly) query.set("ownerOnly", "1");
 
   return query.toString();

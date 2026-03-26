@@ -85,6 +85,8 @@ export default function DashboardPage() {
     departmentId: "",
     year: "",
     range: "",
+    startDate: "",
+    endDate: "",
   });
   const [showAllCenters, setShowAllCenters] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -307,8 +309,17 @@ export default function DashboardPage() {
         filters.departmentId,
         filters.year,
         filters.range,
+        filters.startDate,
+        filters.endDate,
       ].filter(Boolean).length,
-    [filters.centerId, filters.departmentId, filters.range, filters.year],
+    [
+      filters.centerId,
+      filters.departmentId,
+      filters.endDate,
+      filters.range,
+      filters.startDate,
+      filters.year,
+    ],
   );
 
   const outputsTrendData = useMemo(
@@ -382,7 +393,14 @@ export default function DashboardPage() {
   );
 
   const handleClearFilters = useCallback(() => {
-    setFilters({ centerId: "", departmentId: "", year: "", range: "" });
+    setFilters({
+      centerId: "",
+      departmentId: "",
+      year: "",
+      range: "",
+      startDate: "",
+      endDate: "",
+    });
     setShowFilters(false);
   }, []);
 
@@ -419,6 +437,8 @@ export default function DashboardPage() {
           ...prev,
           year: currentYear,
           range: "",
+          startDate: "",
+          endDate: "",
         }));
         return;
       }
@@ -427,6 +447,8 @@ export default function DashboardPage() {
           ...prev,
           year: "",
           range: "last12",
+          startDate: "",
+          endDate: "",
         }));
         return;
       }
@@ -458,7 +480,9 @@ export default function DashboardPage() {
     dashboardLoading,
     filters.centerId,
     filters.departmentId,
+    filters.endDate,
     filters.range,
+    filters.startDate,
     filters.year,
   ]);
 

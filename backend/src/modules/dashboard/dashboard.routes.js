@@ -255,6 +255,30 @@ export function registerDashboardRoutes(app, deps) {
     return true;
   }
 
+  function matchesDateRange(scope, { startDate, endDate } = {}) {
+    const start = parseDateValue(startDate);
+    const end = parseDateValue(endDate);
+    if (!start && !end) return true;
+
+    const dates = getCandidateDates(scope);
+    if (!dates.length) return false;
+
+    const startTime = start ? start.getTime() : null;
+    let endTime = null;
+    if (end) {
+      const endOfDay = new Date(end);
+      endOfDay.setHours(23, 59, 59, 999);
+      endTime = endOfDay.getTime();
+    }
+
+    return dates.some((date) => {
+      const time = date.getTime();
+      if (startTime !== null && time < startTime) return false;
+      if (endTime !== null && time > endTime) return false;
+      return true;
+    });
+  }
+
   function parseFundingAmount(value) {
     const numeric = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
     return Number.isFinite(numeric) ? numeric : 0;
@@ -623,6 +647,8 @@ export function registerDashboardRoutes(app, deps) {
     const selectedDepartmentId = asTrimmedString(filters?.departmentId);
     const selectedYear = asTrimmedString(filters?.year);
     const selectedRange = asTrimmedString(filters?.range);
+    const selectedStartDate = asTrimmedString(filters?.startDate);
+    const selectedEndDate = asTrimmedString(filters?.endDate);
 
     if (
       selectedCenterId &&
@@ -640,6 +666,15 @@ export function registerDashboardRoutes(app, deps) {
       return false;
     }
     if (selectedRange && !matchesRange(scope, selectedRange)) {
+      return false;
+    }
+    if (
+      (selectedStartDate || selectedEndDate) &&
+      !matchesDateRange(scope, {
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+      })
+    ) {
       return false;
     }
     return true;
@@ -660,6 +695,8 @@ export function registerDashboardRoutes(app, deps) {
       asTrimmedString(filters?.departmentId) || "-",
       asTrimmedString(filters?.year) || "-",
       asTrimmedString(filters?.range) || "-",
+      asTrimmedString(filters?.startDate) || "-",
+      asTrimmedString(filters?.endDate) || "-",
       String(limit || 0),
       ownerOnly ? "owned" : "all",
     ].join("|");
@@ -680,7 +717,9 @@ export function registerDashboardRoutes(app, deps) {
       asTrimmedString(filters.centerId) ||
       asTrimmedString(filters.departmentId) ||
       asTrimmedString(filters.year) ||
-      asTrimmedString(filters.range),
+      asTrimmedString(filters.range) ||
+      asTrimmedString(filters.startDate) ||
+      asTrimmedString(filters.endDate),
     );
 
     const years = new Set();
@@ -1759,6 +1798,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
       };
       const data = await getDashboardSummary({ req, filters, limit: 6 });
       return res.json({ data: data.yearOptions });
@@ -1778,6 +1819,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
       };
       const data = await getDashboardSummary({ req, filters, limit: 6 });
       return res.json({ data: data.overview });
@@ -1796,6 +1839,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
       };
       const data = await getDashboardSummary({
         req,
@@ -1821,6 +1866,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.centerBreakdownRows });
@@ -1842,6 +1889,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.projectsPerCenterData });
@@ -1865,6 +1914,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.outputsByDepartmentData });
@@ -1888,6 +1939,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.outputsOverTimeData });
@@ -1911,6 +1964,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit: 6 });
         return res.json({ data: data.awardsByCategoryData });
@@ -1935,6 +1990,8 @@ export function registerDashboardRoutes(app, deps) {
           departmentId: asTrimmedString(req.query?.departmentId),
           year: asTrimmedString(req.query?.year),
           range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
         };
         const data = await getDashboardSummary({ req, filters, limit });
         return res.json({ data: data.recentProjects });
@@ -1954,6 +2011,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
       };
       const data = await getDashboardSummary({ req, filters, limit });
       return res.json({ data: data.recentOutputs });
@@ -1972,6 +2031,8 @@ export function registerDashboardRoutes(app, deps) {
         departmentId: asTrimmedString(req.query?.departmentId),
         year: asTrimmedString(req.query?.year),
         range: asTrimmedString(req.query?.range),
+        startDate: asTrimmedString(req.query?.startDate),
+        endDate: asTrimmedString(req.query?.endDate),
       };
       const data = await getDashboardSummary({ req, filters, limit });
       return res.json({ data: data.recentAwards });
@@ -2003,3 +2064,4 @@ export function registerDashboardRoutes(app, deps) {
     },
   );
 }
+

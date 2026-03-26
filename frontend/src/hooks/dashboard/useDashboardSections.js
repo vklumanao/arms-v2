@@ -11,6 +11,8 @@ function normalizeFilters(filters) {
     departmentId: safeString(filters?.departmentId),
     year: safeString(filters?.year),
     range: safeString(filters?.range),
+    startDate: safeString(filters?.startDate),
+    endDate: safeString(filters?.endDate),
     ownerOnly: Boolean(filters?.ownerOnly),
   };
 }

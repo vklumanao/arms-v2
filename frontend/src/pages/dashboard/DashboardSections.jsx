@@ -57,6 +57,7 @@ import {
   safeString,
   toNumber,
 } from "./dashboardUtils";
+import { Input } from "@/components/ui/input";
 import { normalizeStatus } from "@/utils/status";
 
 const CHART_COLORS = [
@@ -297,6 +298,15 @@ export function DashboardHeader({
                 {filters.range === "last12" ? "Last 12 months" : filters.range}
               </span>
             ) : null}
+            {filters?.startDate || filters?.endDate ? (
+              <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {`From ${
+                  filters?.startDate ? formatDateLabel(filters.startDate) : "--"
+                } to ${
+                  filters?.endDate ? formatDateLabel(filters.endDate) : "--"
+                }`}
+              </span>
+            ) : null}
             <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1">
               {lastUpdatedLabel
                 ? `Last updated ${lastUpdatedLabel}`
@@ -333,7 +343,7 @@ export function DashboardHeader({
           <div
             className={`${
               showFilters ? "grid" : "hidden"
-            } mt-4 gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4`}
+            } mt-4 gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-6`}
           >
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -406,6 +416,8 @@ export function DashboardHeader({
                     ...prev,
                     year: value === ALL_VALUE ? "" : value,
                     range: "",
+                    startDate: "",
+                    endDate: "",
                   }))
                 }
                 disabled={yearOptions.length <= 1}
@@ -424,7 +436,45 @@ export function DashboardHeader({
               </Select>
             </div>
 
-            <div className="flex items-end justify-between sm:col-span-2 lg:col-span-1">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Date from
+              </p>
+              <Input
+                type="date"
+                value={filters.startDate || ""}
+                onChange={(event) =>
+                  onUpdateFilters((prev) => ({
+                    ...prev,
+                    startDate: event.target.value,
+                    year: "",
+                    range: "",
+                  }))
+                }
+                className="mt-2 bg-white/80"
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Date to
+              </p>
+              <Input
+                type="date"
+                value={filters.endDate || ""}
+                onChange={(event) =>
+                  onUpdateFilters((prev) => ({
+                    ...prev,
+                    endDate: event.target.value,
+                    year: "",
+                    range: "",
+                  }))
+                }
+                className="mt-2 bg-white/80"
+              />
+            </div>
+
+            <div className="flex items-end justify-between sm:col-span-2 lg:col-span-2">
               <Button
                 type="button"
                 variant="outline"
