@@ -69,8 +69,7 @@ export default function ResearchProjectsHubPage() {
       .toLowerCase() === "admin";
   const missingAffiliation =
     !isAdmin &&
-    (!String(profile?.ckan_org_id || "").trim() ||
-      !String(profile?.department || "").trim());
+    !String(profile?.ckan_org_id || "").trim();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
@@ -560,11 +559,11 @@ export default function ResearchProjectsHubPage() {
           </div>
         </div>
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-          <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) and Department in
-              My Profile first before accessing Research Projects.
-            </p>
+            <CardContent className="space-y-3 p-5">
+              <p className="text-sm text-amber-700">
+                Please set your Organization (Research Center) in My Profile
+                first before accessing Research Projects.
+              </p>
             <Button asChild>
               <Link to="/profile">Go to My Profile</Link>
             </Button>
