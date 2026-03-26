@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/utils/cn";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ import {
 import {
   createResearchOutput,
   createResearchOutputWithFile,
+  fetchCenterChiefResearchOutputs,
   fetchUserProjects,
   fetchMyResearchOutputs,
   deleteResearchOutput,
@@ -85,12 +87,25 @@ export default function ResearchOutputsPage() {
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
   const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+  const isCenterChief =
+    String(profile?.role || "")
+      .trim()
+      .toLowerCase() === "faculty" &&
+    profile?.is_center_chief === true &&
+    Boolean(profile?.managed_center_id);
+  const hasOrgId = String(profile?.ckan_org_id || "").trim();
+  const canLoadOwnOutputs = isAdmin || Boolean(hasOrgId);
   const missingAffiliation =
-    !isAdmin &&
-    !String(profile?.ckan_org_id || "").trim();
+    !canLoadOwnOutputs && !isCenterChief;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [centerChiefOutputs, setCenterChiefOutputs] = useState([]);
+  const [centerChiefLoading, setCenterChiefLoading] = useState(false);
+  const [centerChiefError, setCenterChiefError] = useState("");
+  const [centerChiefPage, setCenterChiefPage] = useState(1);
+  const [centerChiefSearch, setCenterChiefSearch] = useState("");
+  const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingTarget, setEditingTarget] = useState(null);
@@ -153,7 +168,7 @@ export default function ResearchOutputsPage() {
   }, [error, toast]);
 
   useEffect(() => {
-    if (missingAffiliation) {
+    if (!canLoadOwnOutputs) {
       setRows([]);
       setLoading(false);
       return () => {};
@@ -195,10 +210,10 @@ export default function ResearchOutputsPage() {
     return () => {
       cancelled = true;
     };
-  }, [missingAffiliation, profile?.id]);
+  }, [canLoadOwnOutputs, profile?.id]);
 
   useEffect(() => {
-    if (missingAffiliation) {
+    if (!canLoadOwnOutputs) {
       setProjectOptions([]);
       return;
     }
@@ -215,7 +230,44 @@ export default function ResearchOutputsPage() {
     return () => {
       cancelled = true;
     };
-  }, [missingAffiliation, profile?.id]);
+  }, [canLoadOwnOutputs, profile?.id]);
+
+  useEffect(() => {
+    if (!isCenterChief) {
+      setCenterChiefOutputs([]);
+      setCenterChiefLoading(false);
+      setCenterChiefError("");
+      return () => {};
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setCenterChiefLoading(true);
+        setCenterChiefError("");
+        const payload = await fetchCenterChiefResearchOutputs();
+        if (!cancelled) {
+          setCenterChiefOutputs(Array.isArray(payload?.data) ? payload.data : []);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setCenterChiefError(
+            String(
+              e?.message ||
+                "Unable to load research outputs for the managed center.",
+            ),
+          );
+        }
+      } finally {
+        if (!cancelled) setCenterChiefLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCenterChief, profile?.id]);
 
   const missingAffiliationContent = (
     <section className="page-stack-lg">
@@ -300,59 +352,109 @@ export default function ResearchOutputsPage() {
     [outputTypeLabelByValue],
   );
 
-  const baseRows = useMemo(
-    () =>
-      sortedRows.map((row) => {
-        const outputTypeRaw = String(row?.output_type || "").trim();
-        const outputType = outputTypeLabelByValue[outputTypeRaw] || "-";
-        const orgRef = String(row?.project_ckan_org_id || "").trim();
-        const orgLabel =
-          String(row?.project_org_name || "").trim() ||
-          centerNameById[orgRef] ||
-          orgRef ||
-          "-";
-        const rawFileName = String(row?.file_name || "").trim();
-        const resourceName = normalizeResourceName(rawFileName);
-        const targetMatch = rawFileName.match(/\(target:\s*(\d+)\)/i);
-        const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
-        const projectTitle = String(row?.project_title || "").trim();
-        const datasetName =
-          String(row?.ckan_dataset_name || "").trim() ||
-          String(row?.ckan_dataset_id || "").trim() ||
-          "-";
-        const resourceUrl = String(row?.file_path || "").trim();
-        const resourceMime = String(row?.mime_type || "").trim();
-        const resourceSize = Number(row?.file_size || 0) || null;
-        const isFallbackUrl = /\/dataset\/?$/.test(resourceUrl);
-        const isPendingOutput = isFallbackUrl && !resourceSize && !resourceMime;
+  const mapOutputRow = useMemo(
+    () => (row) => {
+      const outputTypeRaw = String(row?.output_type || "").trim();
+      const outputType = outputTypeLabelByValue[outputTypeRaw] || "-";
+      const orgRef = String(row?.project_ckan_org_id || "").trim();
+      const orgLabel =
+        String(row?.project_org_name || "").trim() ||
+        centerNameById[orgRef] ||
+        orgRef ||
+        "-";
+      const rawFileName = String(row?.file_name || "").trim();
+      const resourceName = normalizeResourceName(rawFileName);
+      const targetMatch = rawFileName.match(/\(target:\s*(\d+)\)/i);
+      const targetCount = Math.max(1, Number(targetMatch?.[1] || 1) || 1);
+      const projectTitle = String(row?.project_title || "").trim();
+      const datasetName =
+        String(row?.ckan_dataset_name || "").trim() ||
+        String(row?.ckan_dataset_id || "").trim() ||
+        "-";
+      const resourceUrl = String(row?.file_path || "").trim();
+      const resourceMime = String(row?.mime_type || "").trim();
+      const resourceSize = Number(row?.file_size || 0) || null;
+      const isFallbackUrl = /\/dataset\/?$/.test(resourceUrl);
+      const isPendingOutput = isFallbackUrl && !resourceSize && !resourceMime;
 
-        return {
-          id: row.id,
-          title:
-            resourceName ||
-            [projectTitle, outputType].filter(Boolean).join(" - ") ||
-            "Expected output file",
-          subtitle: projectTitle || null,
-          datasetName,
-          datasetId: row?.ckan_dataset_id || null,
-          resourceId: row?.ckan_resource_id || null,
-          outputType,
-          outputTypeValue: outputTypeRaw || "",
-          targetCount,
-          resourceUrl: resourceUrl || null,
-          mimeType: resourceMime || null,
-          fileSize: resourceSize,
-          notes: row?.notes || null,
-          organization: orgLabel,
-          private: !row?.project_public_visible,
-          state: row?.ckan_sync_status || row?.project_status || "-",
-          metadataModified:
-            row?.updated_at || row?.created_at || row?.ckan_last_synced_at,
-          isPendingOutput,
-        };
-      }),
-    [centerNameById, normalizeResourceName, outputTypeLabelByValue, sortedRows],
+      return {
+        id: row.id,
+        title:
+          resourceName ||
+          [projectTitle, outputType].filter(Boolean).join(" - ") ||
+          "Expected output file",
+        subtitle: projectTitle || null,
+        datasetName,
+        datasetId: row?.ckan_dataset_id || null,
+        resourceId: row?.ckan_resource_id || null,
+        outputType,
+        outputTypeValue: outputTypeRaw || "",
+        targetCount,
+        resourceUrl: resourceUrl || null,
+        mimeType: resourceMime || null,
+        fileSize: resourceSize,
+        notes: row?.notes || null,
+        organization: orgLabel,
+        private: !row?.project_public_visible,
+        state: row?.ckan_sync_status || row?.project_status || "-",
+        metadataModified:
+          row?.updated_at || row?.created_at || row?.ckan_last_synced_at,
+        isPendingOutput,
+      };
+    },
+    [centerNameById, normalizeResourceName, outputTypeLabelByValue],
   );
+
+  const baseRows = useMemo(
+    () => sortedRows.map(mapOutputRow),
+    [mapOutputRow, sortedRows],
+  );
+  const sortedCenterChiefRows = useMemo(
+    () =>
+      [...centerChiefOutputs].sort(
+        (a, b) =>
+          new Date(
+            b?.updated_at || b?.created_at || b?.ckan_last_synced_at || 0,
+          ).getTime() -
+          new Date(
+            a?.updated_at || a?.created_at || a?.ckan_last_synced_at || 0,
+          ).getTime(),
+      ),
+    [centerChiefOutputs],
+  );
+  const centerChiefRows = useMemo(
+    () => sortedCenterChiefRows.map(mapOutputRow),
+    [mapOutputRow, sortedCenterChiefRows],
+  );
+  const baseCenterChiefSearchRows = useMemo(() => {
+    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    return centerChiefRows.filter((row) => {
+      const haystack = [
+        row.title,
+        row.subtitle,
+        row.datasetName,
+        row.organization,
+        row.outputType,
+        row.state,
+        row.private ? "private" : "public",
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
+    });
+  }, [centerChiefRows, centerChiefSearch]);
+  const centerChiefFilteredRows = useMemo(() => {
+    if (centerChiefQuickFilter === "pending") {
+      return baseCenterChiefSearchRows.filter((row) => row.isPendingOutput);
+    }
+    if (centerChiefQuickFilter === "public") {
+      return baseCenterChiefSearchRows.filter((row) => !row.private);
+    }
+    if (centerChiefQuickFilter === "private") {
+      return baseCenterChiefSearchRows.filter((row) => row.private);
+    }
+    return baseCenterChiefSearchRows;
+  }, [baseCenterChiefSearchRows, centerChiefQuickFilter]);
   const pendingOutputRows = useMemo(() => {
     const expectedByKey = new Map();
     const uploadedCountByKey = new Map();
@@ -559,6 +661,24 @@ export default function ResearchOutputsPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredRows.slice(start, start + pageSize);
   }, [currentPage, filteredRows]);
+
+  const centerChiefTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(centerChiefFilteredRows.length / pageSize)),
+    [centerChiefFilteredRows.length, pageSize],
+  );
+
+  useEffect(() => {
+    setCenterChiefPage(1);
+  }, [centerChiefRows.length, centerChiefSearch, centerChiefQuickFilter]);
+
+  useEffect(() => {
+    setCenterChiefPage((prev) => Math.min(prev, centerChiefTotalPages));
+  }, [centerChiefTotalPages]);
+
+  const centerChiefPaginatedRows = useMemo(() => {
+    const start = (centerChiefPage - 1) * pageSize;
+    return centerChiefFilteredRows.slice(start, start + pageSize);
+  }, [centerChiefPage, centerChiefFilteredRows, pageSize]);
 
   const sanitizeDigits = (value) => String(value || "").replace(/[^\d]/g, "");
 
@@ -1053,7 +1173,253 @@ export default function ResearchOutputsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isCenterChief ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  Managed Center Research Outputs
+                </CardTitle>
+                <CardDescription>
+                  Showing {centerChiefFilteredRows.length} output(s) from your
+                  managed research center.
+                </CardDescription>
+              </div>
+              <label className="relative w-full md:max-w-xl">
+                <span className="sr-only">Search managed center outputs</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={centerChiefSearch}
+                  onChange={(event) => setCenterChiefSearch(event.target.value)}
+                  placeholder="Search file, dataset, project, center, state, or visibility"
+                  className="pl-9"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {[
+                {
+                  key: "all",
+                  label: "All Outputs",
+                  count: baseCenterChiefSearchRows.length,
+                },
+                {
+                  key: "public",
+                  label: "Public",
+                  count: baseCenterChiefSearchRows.filter((row) => !row.private)
+                    .length,
+                },
+                {
+                  key: "private",
+                  label: "Private",
+                  count: baseCenterChiefSearchRows.filter((row) => row.private)
+                    .length,
+                },
+                {
+                  key: "pending",
+                  label: "Pending",
+                  count: baseCenterChiefSearchRows.filter(
+                    (row) => row.isPendingOutput,
+                  ).length,
+                },
+              ].map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-slate-200 px-4 text-xs",
+                    centerChiefQuickFilter === chip.key
+                      ? "bg-slate-900 text-white hover:bg-slate-900"
+                      : "bg-white text-slate-600 hover:bg-slate-50",
+                  )}
+                  onClick={() => setCenterChiefQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      centerChiefQuickFilter === chip.key
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                onClick={() => setCenterChiefQuickFilter("all")}
+              >
+                Clear filters
+              </Button>
+            </div>
+          </CardHeader>
+          {centerChiefLoading ? (
+            <CardContent className="p-5 text-sm text-slate-600">
+              Loading managed center outputs...
+            </CardContent>
+          ) : centerChiefError ? (
+            <CardContent className="p-5 text-sm text-red-600">
+              {centerChiefError}
+            </CardContent>
+          ) : centerChiefRows.length === 0 ? (
+            <CardContent className="p-5 text-sm text-slate-600">
+              No research outputs found for your managed research center.
+            </CardContent>
+          ) : centerChiefFilteredRows.length === 0 ? (
+            <CardContent className="p-5 text-sm text-slate-600">
+              No managed center outputs match your search.
+            </CardContent>
+          ) : (
+            <CardContent className="p-4">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                <Table className="min-w-[980px]">
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>Resource/File</TableHead>
+                      <TableHead>Output Type</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Research Center</TableHead>
+                      <TableHead>Visibility</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {centerChiefPaginatedRows.map((row, index) => (
+                      <TableRow key={row.id}>
+                        <TableCell>
+                          {(centerChiefPage - 1) * pageSize + index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{row.title}</div>
+                          {row.subtitle ? (
+                            <div className="text-xs text-slate-500">
+                              {row.subtitle}
+                            </div>
+                          ) : null}
+                          {row.isPendingOutput ? (
+                            <div className="space-y-1 text-xs text-amber-700">
+                              <div>No file attached yet.</div>
+                            </div>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>{row.outputType || "-"}</TableCell>
+                        <TableCell>{row.datasetName || "-"}</TableCell>
+                        <TableCell>{row.organization || "-"}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                              variant={row.private ? "destructive" : "secondary"}
+                            >
+                              {row.private ? "Private" : "Public"}
+                            </Badge>
+                            {row.isPendingOutput ? (
+                              <Badge variant="outline">Pending</Badge>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {row.metadataModified
+                            ? new Date(row.metadataModified).toLocaleString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => goToOutputProject(row)}
+                              aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
+                              title="Open project"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {!row.isPendingOutput && Boolean(row.resourceId) ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleOpenEdit(row)}
+                                  aria-label={`Edit ${row?.title || "research output"}`}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                {!row.isPendingOutput &&
+                                row.resourceId &&
+                                /\/resource\/.+\/download\//i.test(
+                                  String(row.resourceUrl || ""),
+                                ) ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    aria-label={`Download ${row?.title || "resource"}`}
+                                    title="Download"
+                                    onClick={() => {
+                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                        row.resourceId,
+                                      )}/download?download=1`;
+                                      window.open(
+                                        url,
+                                        "_blank",
+                                        "noopener,noreferrer",
+                                      );
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                  onClick={() => setDeleteTarget(row)}
+                                  aria-label={`Delete ${row?.title || "research output"}`}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  {centerChiefTotalPages > 1 ? (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={8} className="px-3 py-3">
+                          <PaginationControls
+                            page={centerChiefPage}
+                            totalPages={centerChiefTotalPages}
+                            onPageChange={setCenterChiefPage}
+                            className="border-0 rounded-none shadow-none bg-transparent"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  ) : null}
+                </Table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      ) : null}
+
+      {canLoadOwnOutputs && loading ? (
         <Card>
           <CardContent className="p-5 text-sm text-slate-600">
             Loading research outputs...
@@ -1061,7 +1427,7 @@ export default function ResearchOutputsPage() {
         </Card>
       ) : null}
 
-      {!loading && !error && !tableRows.length ? (
+      {canLoadOwnOutputs && !loading && !error && !tableRows.length ? (
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
           <CardContent className="p-6">
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
@@ -1072,7 +1438,7 @@ export default function ResearchOutputsPage() {
         </Card>
       ) : null}
 
-      {!loading && !error && tableRows.length ? (
+      {canLoadOwnOutputs && !loading && !error && tableRows.length ? (
         <div className="page-stack">
           <Card className="overflow-hidden">
             <CardHeader className="border-b border-[var(--border)] px-6 py-5">
