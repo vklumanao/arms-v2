@@ -523,22 +523,30 @@ export default function DashboardPage() {
             title="Performance Signals"
             framed={false}
           >
-            <div className="grid gap-4 xl:grid-cols-2">
-              <FacultyStatusSection
-                loading={dashboardLoading}
-                projects={projects}
-                title="All Project Status"
-                description="Snapshot of project status across all research centers."
-                statusCounts={dashboardProjectStatusCounts}
-                chartTheme={chartTheme}
-                ownerId={ownerId}
-              />
-              <TopContributorsSection
-                loading={dashboardLoading}
-                contributors={topContributors}
-                view={contributorView}
-                onViewChange={setContributorView}
-              />
+            <div className="grid gap-4 xl:grid-cols-3">
+              <div className="xl:col-span-2">
+                <FacultyStatusSection
+                  loading={dashboardLoading}
+                  projects={projects}
+                  title="All Project Status"
+                  description="Snapshot of project status across all research centers."
+                  statusCounts={dashboardProjectStatusCounts}
+                  chartTheme={chartTheme}
+                  ownerId={ownerId}
+                />
+              </div>
+
+              <div className="xl:col-span-1">
+                <TopContributorsSection
+                  loading={dashboardLoading}
+                  contributors={topContributors}
+                  view={contributorView}
+                  onViewChange={setContributorView}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2 mt-4">
               <FundingOverviewSection
                 loading={dashboardLoading}
                 fundingOverview={fundingOverview}
@@ -549,6 +557,7 @@ export default function DashboardPage() {
               />
             </div>
 
+            {/* Full-width AwardsByLevelSection */}
             <div className="mt-8">
               <AwardsByLevelSection
                 loading={dashboardLoading}
