@@ -29,9 +29,8 @@ export function useDashboardSections({ filters } = {}) {
   const [activityThisMonth, setActivityThisMonth] = useState(null);
   const [centerBreakdownRows, setCenterBreakdownRows] = useState([]);
   const [projectsPerCenterData, setProjectsPerCenterData] = useState([]);
-  const [outputsByDepartmentData, setOutputsByDepartmentData] = useState([]);
+  const [outputsByTypeData, setOutputsByTypeData] = useState([]);
   const [outputsOverTimeData, setOutputsOverTimeData] = useState([]);
-  const [awardsByCategoryData, setAwardsByCategoryData] = useState([]);
   const [awardsByLevelData, setAwardsByLevelData] = useState([]);
   const [fundingOverview, setFundingOverview] = useState(null);
   const [outputsVisibility, setOutputsVisibility] = useState(null);
@@ -63,9 +62,8 @@ export function useDashboardSections({ filters } = {}) {
       setActivityThisMonth(null);
       setCenterBreakdownRows([]);
       setProjectsPerCenterData([]);
-      setOutputsByDepartmentData([]);
+      setOutputsByTypeData([]);
       setOutputsOverTimeData([]);
-      setAwardsByCategoryData([]);
       setAwardsByLevelData([]);
       setFundingOverview(null);
       setOutputsVisibility(null);
@@ -107,19 +105,14 @@ export function useDashboardSections({ filters } = {}) {
         ? payload.projectsPerCenterData
         : [],
     );
-    setOutputsByDepartmentData(
-      Array.isArray(payload.outputsByDepartmentData)
-        ? payload.outputsByDepartmentData
+    setOutputsByTypeData(
+      Array.isArray(payload.outputsByTypeData)
+        ? payload.outputsByTypeData
         : [],
     );
     setOutputsOverTimeData(
       Array.isArray(payload.outputsOverTimeData)
         ? payload.outputsOverTimeData
-        : [],
-    );
-    setAwardsByCategoryData(
-      Array.isArray(payload.awardsByCategoryData)
-        ? payload.awardsByCategoryData
         : [],
     );
     setAwardsByLevelData(
@@ -170,9 +163,8 @@ export function useDashboardSections({ filters } = {}) {
     activityThisMonth,
     centerBreakdownRows,
     projectsPerCenterData,
-    outputsByDepartmentData,
+    outputsByTypeData,
     outputsOverTimeData,
-    awardsByCategoryData,
     awardsByLevelData,
     fundingOverview,
     outputsVisibility,
