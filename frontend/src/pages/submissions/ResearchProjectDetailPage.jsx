@@ -32,6 +32,11 @@ import {
   Trophy,
 } from "lucide-react";
 
+const OUTPUT_TYPE_LABELS = EXPECTED_OUTPUT_TYPE_OPTIONS.reduce((acc, item) => {
+  acc[item.value] = item.label;
+  return acc;
+}, {});
+
 const formatCurrencyPHP = (value) => {
   if (value === null || value === undefined || value === "") return "-";
   const numericValue = Number(String(value).replace(/[^0-9.-]/g, ""));
@@ -772,6 +777,27 @@ export default function ResearchProjectDetailPage() {
                           const descriptionText = String(
                             resource.description || "",
                           ).trim();
+                          const outputTypeFromDescription = descriptionText
+                            .split("\n")
+                            .map((line) => line.trim())
+                            .find((line) =>
+                              line.toLowerCase().startsWith("output type:"),
+                            )
+                            ?.split("output type:")
+                            .slice(1)
+                            .join("output type:")
+                            .trim();
+                          const resolvedOutputType =
+                            String(resource.output_type || "").trim() ||
+                            outputTypeFromDescription ||
+                            "";
+                          const outputTypeKey = resolvedOutputType
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "_")
+                            .replace(/^_+|_+$/g, "");
+                          const outputTypeLabel =
+                            OUTPUT_TYPE_LABELS[outputTypeKey] ||
+                            resolvedOutputType;
                           const outputLinkFromDescription = descriptionText
                             .split("\n")
                             .map((line) => line.trim())
@@ -842,6 +868,11 @@ export default function ResearchProjectDetailPage() {
                                         </p>
                                       );
                                     })()}
+                                    {resolvedOutputType ? (
+                                      <p className="text-base text-slate-600">
+                                        Output Type: {outputTypeLabel}
+                                      </p>
+                                    ) : null}
                                     <p className="text-base text-slate-600">
                                       Format: {resource.format || "-"} | Size:{" "}
                                       {formatBytes(resource.size)}
