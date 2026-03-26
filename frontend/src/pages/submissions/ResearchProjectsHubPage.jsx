@@ -40,6 +40,7 @@ import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
 import {
   deleteOwnedProject,
+  fetchCenterChiefProjects,
   fetchLinkedProjects,
   fetchUserProjects,
   updateResearchOutputVisibility,
@@ -67,14 +68,26 @@ export default function ResearchProjectsHubPage() {
     String(profile?.role || user?.role || "")
       .trim()
       .toLowerCase() === "admin";
+  const isCenterChief =
+    String(profile?.role || user?.role || "")
+      .trim()
+      .toLowerCase() === "faculty" &&
+    profile?.is_center_chief === true &&
+    Boolean(profile?.managed_center_id);
   const missingAffiliation =
     !isAdmin &&
+    !isCenterChief &&
     !String(profile?.ckan_org_id || "").trim();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
   const [projects, setProjects] = useState([]);
   const [linkedProjects, setLinkedProjects] = useState([]);
+  const [centerChiefProjects, setCenterChiefProjects] = useState([]);
+  const [centerChiefLoading, setCenterChiefLoading] = useState(false);
+  const [centerChiefPage, setCenterChiefPage] = useState(1);
+  const [centerChiefSearch, setCenterChiefSearch] = useState("");
+  const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
   const [filters, setFilters] = useState({
     search: "",
     sortBy: "submitted_desc",
@@ -119,6 +132,7 @@ export default function ResearchProjectsHubPage() {
     if (missingAffiliation) {
       setProjects([]);
       setLinkedProjects([]);
+      setCenterChiefProjects([]);
       return;
     }
 
@@ -151,10 +165,41 @@ export default function ResearchProjectsHubPage() {
         setError(queryError.message || "Unable to load linked projects.");
       });
 
+    if (isCenterChief) {
+      setCenterChiefLoading(true);
+      fetchCenterChiefProjects()
+        .then(({ data, error: loadError }) => {
+          if (!isMounted) return;
+          if (loadError) {
+            setError(
+              loadError.message ||
+                "Unable to load managed center projects.",
+            );
+            setCenterChiefProjects([]);
+            return;
+          }
+          setCenterChiefProjects(Array.isArray(data) ? data : []);
+        })
+        .catch((queryError) => {
+          if (!isMounted) return;
+          setError(
+            queryError.message ||
+              "Unable to load managed center projects.",
+          );
+          setCenterChiefProjects([]);
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setCenterChiefLoading(false);
+        });
+    } else {
+      setCenterChiefProjects([]);
+    }
+
     return () => {
       isMounted = false;
     };
-  }, [missingAffiliation, profile?.id, user?.id]);
+  }, [isCenterChief, missingAffiliation, profile?.id, user?.id]);
 
   const centerById = useMemo(
     () =>
@@ -308,6 +353,79 @@ export default function ResearchProjectsHubPage() {
       })),
     [getProjectOrganization, linkedProjects],
   );
+
+  const centerChiefRows = useMemo(
+    () =>
+      centerChiefProjects
+        .map((project) => ({
+          id: project.id,
+          title: project.title || "-",
+          lead_researcher: project.lead_researcher || "-",
+          research_center: getProjectOrganization(project),
+          year: project.year || "-",
+          status: normalizeStatus(project.status),
+          submission_state: project.submission_state || "",
+          submitted_at: project.submitted_at || null,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0),
+        ),
+    [centerChiefProjects, getProjectOrganization],
+  );
+  const baseCenterChiefRows = useMemo(() => {
+    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    return centerChiefRows.filter((row) => {
+      const haystack = [
+        row.title,
+        row.lead_researcher,
+        row.status,
+        row.year,
+        row.research_center,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return query ? haystack.includes(query) : true;
+    });
+  }, [centerChiefRows, centerChiefSearch]);
+  const centerChiefFilteredRows = useMemo(() => {
+    if (centerChiefQuickFilter === "draft") {
+      return baseCenterChiefRows.filter(
+        (row) =>
+          String(row?.submission_state || "")
+            .trim()
+            .toLowerCase() === "draft",
+      );
+    }
+    if (centerChiefQuickFilter !== "all") {
+      return baseCenterChiefRows.filter(
+        (row) => normalizeStatus(row.status) === centerChiefQuickFilter,
+      );
+    }
+    return baseCenterChiefRows;
+  }, [baseCenterChiefRows, centerChiefQuickFilter]);
+
+  const centerChiefTotalPages = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.ceil(centerChiefFilteredRows.length / PROJECTS_PAGE_SIZE),
+      ),
+    [centerChiefFilteredRows.length],
+  );
+
+  useEffect(() => {
+    setCenterChiefPage(1);
+  }, [centerChiefRows.length, centerChiefSearch, centerChiefQuickFilter]);
+
+  useEffect(() => {
+    setCenterChiefPage((prev) => Math.min(prev, centerChiefTotalPages));
+  }, [centerChiefTotalPages]);
+
+  const paginatedCenterChiefRows = useMemo(() => {
+    const start = (centerChiefPage - 1) * PROJECTS_PAGE_SIZE;
+    return centerChiefFilteredRows.slice(start, start + PROJECTS_PAGE_SIZE);
+  }, [centerChiefPage, centerChiefFilteredRows]);
 
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -666,6 +784,252 @@ export default function ResearchProjectsHubPage() {
           </div>
         </div>
       </div>
+
+      {isCenterChief ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  Managed Center Projects
+                </CardTitle>
+                <CardDescription>
+                  Showing {centerChiefFilteredRows.length} project(s) linked to
+                  your research center.
+                </CardDescription>
+              </div>
+              <div className="flex w-full flex-col gap-2 md:max-w-xl md:items-end">
+                <label className="relative w-full">
+                  <span className="sr-only">Search managed center projects</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={centerChiefSearch}
+                    onChange={(event) => setCenterChiefSearch(event.target.value)}
+                    placeholder="Search title, lead, status, year, or center"
+                    className="pl-9"
+                  />
+                </label>
+                <span className="text-xs text-slate-500">
+                  Scope: {profile?.managed_center_name || "My Center"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {[
+                {
+                  key: "all",
+                  label: "All Projects",
+                  count: baseCenterChiefRows.length,
+                },
+                {
+                  key: "proposal",
+                  label: "Proposal",
+                  count: baseCenterChiefRows.filter(
+                    (project) => normalizeStatus(project.status) === "proposal",
+                  ).length,
+                },
+                {
+                  key: "ongoing",
+                  label: "Ongoing",
+                  count: baseCenterChiefRows.filter(
+                    (project) => normalizeStatus(project.status) === "ongoing",
+                  ).length,
+                },
+                {
+                  key: "completed",
+                  label: "Completed",
+                  count: baseCenterChiefRows.filter(
+                    (project) => normalizeStatus(project.status) === "completed",
+                  ).length,
+                },
+                {
+                  key: "rejected",
+                  label: "Rejected",
+                  count: baseCenterChiefRows.filter(
+                    (project) => normalizeStatus(project.status) === "rejected",
+                  ).length,
+                },
+                {
+                  key: "draft",
+                  label: "Drafts",
+                  count: baseCenterChiefRows.filter(
+                    (project) =>
+                      String(project?.submission_state || "")
+                        .trim()
+                        .toLowerCase() === "draft",
+                  ).length,
+                },
+              ].map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-slate-200 px-4 text-xs",
+                    centerChiefQuickFilter === chip.key
+                      ? "bg-slate-900 text-white hover:bg-slate-900"
+                      : "bg-white text-slate-600 hover:bg-slate-50",
+                  )}
+                  onClick={() => setCenterChiefQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      centerChiefQuickFilter === chip.key
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                onClick={() => setCenterChiefQuickFilter("all")}
+              >
+                Clear filters
+              </Button>
+            </div>
+          </CardHeader>
+          {centerChiefLoading ? (
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+                Loading managed center projects...
+              </div>
+            </CardContent>
+          ) : centerChiefRows.length === 0 ? (
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+                No projects found for your research center yet.
+              </div>
+            </CardContent>
+          ) : centerChiefFilteredRows.length === 0 ? (
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+                No managed center projects match your search.
+              </div>
+            </CardContent>
+          ) : (
+            <CardContent className="p-4">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                <Table className="min-w-[860px]">
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow>
+                      <TableHead className="w-[40px]">No.</TableHead>
+                      <TableHead className="w-[320px]">Title</TableHead>
+                      <TableHead className="w-[160px]">
+                        Lead Researcher
+                      </TableHead>
+                      <TableHead className="w-[90px]">Status</TableHead>
+                      <TableHead className="w-[80px]">Year</TableHead>
+                      <TableHead className="w-[110px]">Submitted</TableHead>
+                      <TableHead className="w-[70px] text-right">
+                        Action
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedCenterChiefRows.map((project, index) => {
+                      const statusLabel =
+                        formatStatusLabel(project.status) || "-";
+                      const statusBadgeClass = getStatusBadgeClass(
+                        project.status,
+                      );
+                      return (
+                        <TableRow key={`managed-${project.id}-${index}`}>
+                          <TableCell>
+                            {(centerChiefPage - 1) * PROJECTS_PAGE_SIZE +
+                              index +
+                              1}
+                          </TableCell>
+                          <TableCell className="whitespace-normal break-words font-medium text-slate-900">
+                            {project.title || "-"}
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {project.lead_researcher || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusBadgeClass}
+                            >
+                              {statusLabel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {project.year || "-"}
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {formatDate(project.submitted_at)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => goToProjectDetail(project)}
+                                aria-label={`View ${project?.title || "project"}`}
+                                title="View"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEditModal(project)}
+                                aria-label={`Edit ${project?.title || "project"}`}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                onClick={() => handleDeleteProject(project)}
+                                aria-label={`Delete ${project?.title || "project"}`}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                  {centerChiefTotalPages > 1 ? (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={7} className="px-3 py-3">
+                          <PaginationControls
+                            page={centerChiefPage}
+                            totalPages={centerChiefTotalPages}
+                            onPageChange={setCenterChiefPage}
+                            className="border-0 rounded-none shadow-none bg-transparent"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  ) : null}
+                </Table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      ) : null}
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
@@ -1100,17 +1464,41 @@ export default function ResearchProjectsHubPage() {
                         {formatDate(project.submitted_at)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => goToProjectDetail(project)}
-                          aria-label={`View ${project?.title || "project"}`}
-                          title="View"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => goToProjectDetail(project)}
+                            aria-label={`View ${project?.title || "project"}`}
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEditModal(project)}
+                            aria-label={`Edit ${project?.title || "project"}`}
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                            onClick={() => handleDeleteProject(project)}
+                            aria-label={`Delete ${project?.title || "project"}`}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
