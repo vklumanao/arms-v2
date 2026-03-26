@@ -16,6 +16,15 @@ export async function fetchUserProjects({ userId }) {
   }
 }
 
+export async function fetchCenterChiefProjects() {
+  try {
+    const payload = await apiFetch("/submissions/center-chief/projects");
+    return { data: payload?.data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
 export async function fetchLinkedProjects() {
   try {
     const payload = await apiFetch("/submissions/mine/linked-projects");
@@ -58,6 +67,15 @@ export async function fetchProjectResources({ projectId }) {
 export async function fetchMyResearchOutputs() {
   try {
     const payload = await apiFetch("/submissions/mine/research-outputs");
+    return { data: payload?.data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
+export async function fetchCenterChiefResearchOutputs() {
+  try {
+    const payload = await apiFetch("/submissions/center-chief/research-outputs");
     return { data: payload?.data || [], error: null };
   } catch (error) {
     return { data: [], error };
