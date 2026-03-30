@@ -75,9 +75,7 @@ export default function ResearchProjectsHubPage() {
     profile?.is_center_chief === true &&
     Boolean(profile?.managed_center_id);
   const missingAffiliation =
-    !isAdmin &&
-    !isCenterChief &&
-    !String(profile?.ckan_org_id || "").trim();
+    !isAdmin && !isCenterChief && !String(profile?.ckan_org_id || "").trim();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
@@ -172,8 +170,7 @@ export default function ResearchProjectsHubPage() {
           if (!isMounted) return;
           if (loadError) {
             setError(
-              loadError.message ||
-                "Unable to load managed center projects.",
+              loadError.message || "Unable to load managed center projects.",
             );
             setCenterChiefProjects([]);
             return;
@@ -183,8 +180,7 @@ export default function ResearchProjectsHubPage() {
         .catch((queryError) => {
           if (!isMounted) return;
           setError(
-            queryError.message ||
-              "Unable to load managed center projects.",
+            queryError.message || "Unable to load managed center projects.",
           );
           setCenterChiefProjects([]);
         })
@@ -374,7 +370,9 @@ export default function ResearchProjectsHubPage() {
     [centerChiefProjects, getProjectOrganization],
   );
   const baseCenterChiefRows = useMemo(() => {
-    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    const query = String(centerChiefSearch || "")
+      .trim()
+      .toLowerCase();
     return centerChiefRows.filter((row) => {
       const haystack = [
         row.title,
@@ -666,7 +664,7 @@ export default function ResearchProjectsHubPage() {
   if (missingAffiliation) {
     return (
       <section className="page-stack-lg">
-        <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Research Projects
@@ -677,11 +675,11 @@ export default function ResearchProjectsHubPage() {
           </div>
         </div>
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-            <CardContent className="space-y-3 p-5">
-              <p className="text-sm text-amber-700">
-                Please set your Organization (Research Center) in My Profile
-                first before accessing Research Projects.
-              </p>
+          <CardContent className="space-y-3 p-5">
+            <p className="text-sm text-amber-700">
+              Please set your Organization (Research Center) in My Profile first
+              before accessing Research Projects.
+            </p>
             <Button asChild>
               <Link to="/profile">Go to My Profile</Link>
             </Button>
@@ -693,7 +691,7 @@ export default function ResearchProjectsHubPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -800,11 +798,15 @@ export default function ResearchProjectsHubPage() {
               </div>
               <div className="flex w-full flex-col gap-2 md:max-w-xl md:items-end">
                 <label className="relative w-full">
-                  <span className="sr-only">Search managed center projects</span>
+                  <span className="sr-only">
+                    Search managed center projects
+                  </span>
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     value={centerChiefSearch}
-                    onChange={(event) => setCenterChiefSearch(event.target.value)}
+                    onChange={(event) =>
+                      setCenterChiefSearch(event.target.value)
+                    }
                     placeholder="Search title, lead, status, year, or center"
                     className="pl-9"
                   />
@@ -840,7 +842,8 @@ export default function ResearchProjectsHubPage() {
                   key: "completed",
                   label: "Completed",
                   count: baseCenterChiefRows.filter(
-                    (project) => normalizeStatus(project.status) === "completed",
+                    (project) =>
+                      normalizeStatus(project.status) === "completed",
                   ).length,
                 },
                 {
