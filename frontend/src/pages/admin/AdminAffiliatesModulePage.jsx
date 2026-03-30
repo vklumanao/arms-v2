@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import {
   buildAffiliateExportRows,
@@ -77,6 +78,11 @@ export default function AdminAffiliatesModulePage() {
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
   const [savingEdit, setSavingEdit] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const { profile } = useAuth();
+  const isAdmin =
+    String(profile?.role || "")
+      .trim()
+      .toLowerCase() === "admin";
   const toast = useToast();
   const { departments: referenceDepartments } = useReferenceData();
 
@@ -159,6 +165,22 @@ export default function AdminAffiliatesModulePage() {
   const filteredRows = useMemo(() => {
     if (quickFilter === "gs") {
       return baseFilteredRows.filter((row) => row.is_gs_faculty);
+    }
+    if (quickFilter === "faculty") {
+      return baseFilteredRows.filter(
+        (row) =>
+          String(row.role || "")
+            .trim()
+            .toLowerCase() === "faculty",
+      );
+    }
+    if (quickFilter === "student") {
+      return baseFilteredRows.filter(
+        (row) =>
+          String(row.role || "")
+            .trim()
+            .toLowerCase() === "student",
+      );
     }
     return baseFilteredRows;
   }, [baseFilteredRows, quickFilter]);
@@ -494,12 +516,121 @@ export default function AdminAffiliatesModulePage() {
               </Select>
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-x-auto">
             {[
               {
                 key: "all",
                 label: "All Affiliates",
                 count: filteredRows.length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  quickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    quickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            {isAdmin ? (
+              <Select
+                value={filters.centerId}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    centerId: value,
+                  }))
+                }
+              >
+                <SelectTrigger
+                  className={cn(
+                    "h-8 w-[140px] rounded-full border-slate-200 px-4 text-xs shrink-0",
+                    filters.centerId !== "all"
+                      ? "bg-slate-900 text-white hover:bg-slate-900"
+                      : "bg-white text-slate-600 hover:bg-slate-50",
+                  )}
+                >
+                  <SelectValue placeholder="Research Center" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Research Center</SelectItem>
+                  {centers.map((center) => (
+                    <SelectItem key={center.id} value={center.id}>
+                      {center.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <Select
+              value={filters.department}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  department: value,
+                }))
+              }
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-8 w-[140px] rounded-full border-slate-200 px-4 text-xs shrink-0",
+                  filters.department !== "all"
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+              >
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Department</SelectItem>
+                {departmentOptions.map((department) => (
+                  <SelectItem
+                    key={department.id}
+                    value={String(department.name || "").trim()}
+                  >
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {[
+              {
+                key: "faculty",
+                label: "Faculty",
+                count: rows.filter(
+                  (row) =>
+                    String(row.role || "")
+                      .trim()
+                      .toLowerCase() === "faculty",
+                ).length,
+              },
+              {
+                key: "student",
+                label: "Student",
+                count: rows.filter(
+                  (row) =>
+                    String(row.role || "")
+                      .trim()
+                      .toLowerCase() === "student",
+                ).length,
               },
               {
                 key: "gs",
