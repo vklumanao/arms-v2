@@ -62,7 +62,7 @@ import {
 } from "lucide-react";
 
 const PROJECTS_PAGE_SIZE = 10;
-export default function ResearchProjectsHubPage() {
+export default function ResearchProjectsPage() {
   const { user, profile } = useAuth();
   const isAdmin =
     String(profile?.role || user?.role || "")

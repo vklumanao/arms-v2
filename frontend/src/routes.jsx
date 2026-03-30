@@ -33,8 +33,8 @@ import {
   AwardsRecognitionPage,
   ResearchProjectDetailPage,
   ResearchOutputsPage,
-  ResearchProjectsHubPage,
-  SubmitAffiliationPage,
+  ResearchProjectsPage,
+  SubmitProjectPage,
   SubmitAwardRecognitionPage,
 } from "@/pages/submissions";
 import {
@@ -156,7 +156,7 @@ export default function AppRoutes() {
               path="/projects"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
-                <ResearchProjectsHubPage />,
+                <ResearchProjectsPage />,
               )}
             />
             <Route
@@ -170,7 +170,7 @@ export default function AppRoutes() {
               path="/projects/submit"
               element={withPermission(
                 PERMISSIONS.AFFILIATIONS_MANAGE,
-                <SubmitAffiliationPage />,
+                <SubmitProjectPage />,
               )}
             />
             <Route
