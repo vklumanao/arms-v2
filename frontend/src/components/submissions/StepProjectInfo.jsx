@@ -34,7 +34,10 @@ export default function StepProjectInfo({
           <div className="form-section-head">
             <p className="form-section-title">Basic Project Information</p>
             <p className="form-section-note">
-              Start with the core project details to establish context.
+              Provide essential details about your project, including its name,
+              purpose, and key objectives. This information helps establish a
+              clear foundation and ensures all stakeholders understand the
+              project’s scope and direction.
             </p>
           </div>
 
@@ -128,7 +131,9 @@ export default function StepProjectInfo({
               setDropdownOpen={setLeadDropdownOpen}
               suggestions={leadSuggestions}
               onSelect={(user) => setLeadResearcherSelection(user)}
-              selections={selectedLeadResearcher ? [selectedLeadResearcher] : []}
+              selections={
+                selectedLeadResearcher ? [selectedLeadResearcher] : []
+              }
               onRemove={() => setLeadResearcherSelection(null)}
               fieldRef={leadFieldRef}
               emptyText="No lead researcher selected yet."
