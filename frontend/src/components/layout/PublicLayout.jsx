@@ -21,12 +21,11 @@ export default function PublicLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
         <div className="public-layout-inner flex items-center justify-between gap-4">
-          <Link to="/home" className="flex items-center">
-            <img
-              src="/arms-logo-v2.svg"
-              alt="ARMS Logo"
-              className="h-11 w-auto object-contain sm:h-12"
-            />
+          <Link
+            to="/home"
+            className="shrink-0 text-lg font-bold text-black-600"
+          >
+            CCIS - ARMS
           </Link>
           <nav className="hidden items-center gap-2 sm:flex">
             {landingLinks.map((item) => (

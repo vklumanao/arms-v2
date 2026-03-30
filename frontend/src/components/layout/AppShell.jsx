@@ -555,14 +555,14 @@ export default function AppShell() {
                 onClick={onNavigate}
                 className="flex w-full items-center gap-2"
               >
-                <User className="h-4 w-4 text-slate-500" />
+                <User className="h-4 w-4 text-black-500" />
                 <span className="min-w-0 flex-1 truncate">My Profile</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-700 focus:bg-red-50 focus:text-red-700"
+            className="text-red-700 focus:bg-red-50 focus:text-red-700 flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
@@ -619,9 +619,6 @@ export default function AppShell() {
                 <div className="min-w-0 leading-tight">
                   <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
                     CCIS - ARMS
-                  </div>
-                  <div className="truncate text-xs font-medium text-slate-500">
-                    Affiliation and Research Management
                   </div>
                 </div>
               ) : null}
@@ -719,12 +716,11 @@ export default function AppShell() {
         <header className="border-b border-border bg-white/88 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-5">
-              <Link to="/home" className="flex items-center">
-                <img
-                  src="/arms-logo-v2.svg"
-                  alt="ARMS Logo"
-                  className="h-12 w-auto object-contain"
-                />
+              <Link
+                to="/home"
+                className="shrink-0 text-lg font-bold text-blue-600"
+              >
+                CCIS - ARMS
               </Link>
             </div>
             <div className="flex items-center gap-2">
@@ -821,12 +817,11 @@ export default function AppShell() {
         <header className="topbar-shell">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {isLandingPage && !user ? (
-              <Link to="/home" className="shrink-0">
-                <img
-                  src="/arms-logo-v2.svg"
-                  alt="ARMS Logo"
-                  className="h-11 w-auto object-contain sm:h-12"
-                />
+              <Link
+                to="/home"
+                className="shrink-0 text-lg font-bold text-blue-600"
+              >
+                CCIS - ARMS
               </Link>
             ) : null}
 
