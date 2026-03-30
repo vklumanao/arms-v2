@@ -51,8 +51,10 @@ export default function StepOutputs({
           <div className="form-section-head">
             <p className="form-section-title">Outputs and Resources</p>
             <p className="form-section-note">
-              Optional step: add outputs now, or add them later in Research
-              Outputs.
+              Add expected project outputs and required resources, such as
+              deliverables, materials, or supporting assets. This step is
+              optional—you may complete it now or provide these details later in
+              the Research Outputs section.
             </p>
           </div>
 
