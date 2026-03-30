@@ -42,8 +42,13 @@ export default function PublicLayout() {
               </NavLink>
             ))}
           </nav>
-          <Button asChild variant="outline">
-            <Link to="/login">Login</Link>
+          <Button
+            asChild
+            className="bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)] shadow-sm"
+          >
+            <Link to="/login" className="px-4 py-2 font-semibold">
+              Login
+            </Link>
           </Button>
         </div>
         <div className="public-layout-inner mt-3 flex flex-wrap items-center gap-1 sm:hidden">
