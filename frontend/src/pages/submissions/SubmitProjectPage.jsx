@@ -281,10 +281,11 @@ export default function SubmitProjectPage() {
   const highestUnlockedStep = useMemo(() => {
     return getHighestUnlockedSubmissionStep(form, expectedOutputRows);
   }, [form, expectedOutputRows]);
-  const progressPercent = useMemo(
-    () => Math.round(((step + 1) / SUBMISSION_STEPS.length) * 100),
-    [step],
-  );
+  const progressPercent = useMemo(() => {
+    const steps = SUBMISSION_STEPS.length;
+    if (steps <= 1) return 100;
+    return Math.round((step / (steps - 1)) * 100);
+  }, [step]);
 
   const expectedOutputsTotalPages = useMemo(
     () =>
@@ -1045,28 +1046,31 @@ export default function SubmitProjectPage() {
         }
       />
 
-      <div className="rounded-[var(--radius-sm)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-600">
-              Progressive Flow
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Progress
             </p>
-            <p className="text-xs text-slate-500">
-              Complete current step to unlock the next stage.
+            <p className="text-sm text-slate-600">
+              Complete each step to continue
             </p>
           </div>
-          <p className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-            {step + 1}/{SUBMISSION_STEPS.length}
+
+          <p className="text-xs font-medium text-slate-600">
+            {step + 1} of {SUBMISSION_STEPS.length}
           </p>
         </div>
 
-        <div className="relative mt-5">
-          <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-200" />
-          <div
-            className="absolute left-0 top-4 h-1 rounded-full bg-[linear-gradient(90deg,#0284c7,#10b981)] transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
-          <div className="relative grid grid-cols-5 gap-2">
+        <div className="relative mt-6">
+          <div className="absolute left-7 right-11 top-4 h-px bg-slate-200">
+            <div
+              className="h-px bg-slate-700 transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="relative flex justify-between px-3.5">
             {SUBMISSION_STEPS.map((item) => {
               const locked = !canAccessSubmissionStep(
                 form,
@@ -1075,57 +1079,43 @@ export default function SubmitProjectPage() {
               );
               const completed = item.id < step && !locked;
               const active = step === item.id;
-              const Icon = completed ? CheckCircle2 : active ? CircleDot : Lock;
-              const statusText = locked
-                ? "Locked"
-                : active
-                  ? "Current"
-                  : completed
-                    ? "Done"
-                    : "Ready";
 
               return (
                 <button
-                  type="button"
                   key={item.id}
-                  className="text-left"
-                  onClick={() => {
-                    if (locked) return;
-                    setStep(item.id);
-                  }}
+                  type="button"
                   disabled={locked}
-                  title={locked ? "Complete previous steps first." : ""}
+                  onClick={() => {
+                    if (!locked) setStep(item.id);
+                  }}
+                  className="group flex flex-col items-center gap-2"
                 >
                   <div
-                    className={`mx-auto inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm ${
-                      active
-                        ? "border-sky-300 bg-sky-100 text-sky-700"
-                        : completed
-                          ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                          : locked
-                            ? "border-slate-300 bg-slate-100 text-slate-400"
-                            : "border-slate-300 bg-white text-slate-600"
-                    }`}
+                    className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold bg-white transition-colors
+                ${
+                  completed
+                    ? "bg-slate-700 border-slate-700 text-white"
+                    : active
+                      ? "border-slate-700 text-slate-900"
+                      : locked
+                        ? "border-slate-200 text-slate-300"
+                        : "border-slate-300 text-slate-500 group-hover:border-slate-400"
+                }
+              `}
                   >
-                    <Icon size={14} aria-hidden="true" />
+                    {completed ? "✓" : item.id + 1}
                   </div>
+
                   <p
-                    className={`mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] ${
-                      locked
-                        ? "text-slate-400"
-                        : active
-                          ? "text-sky-700"
-                          : completed
-                            ? "text-emerald-700"
-                            : "text-slate-600"
-                    }`}
-                  >
-                    {statusText}
-                  </p>
-                  <p
-                    className={`text-center text-xs font-semibold ${
-                      locked ? "text-slate-400" : "text-slate-800"
-                    }`}
+                    className={`text-[11px] leading-tight text-center transition-colors
+                ${
+                  active
+                    ? "text-slate-900 font-medium"
+                    : locked
+                      ? "text-slate-400"
+                      : "text-slate-600 group-hover:text-slate-800"
+                }
+              `}
                   >
                     {item.label}
                   </p>
