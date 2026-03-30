@@ -19,7 +19,10 @@ export default function StepClassification({
       <div className="form-section-head">
         <p className="form-section-title">Classification Details</p>
         <p className="form-section-note">
-          Classify the project for reporting, routing, and review.
+          Specify how this project should be categorized, including its type,
+          priority level, and relevant classifications. This information ensures
+          accurate reporting, proper routing, and efficient review by the
+          appropriate teams.
         </p>
       </div>
 
@@ -110,23 +113,20 @@ export default function StepClassification({
             {errors?.status && <p className="field-error">{errors.status}</p>}
           </label>
 
-          <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
-              Department (optional)
-            </span>
-            <Input
-              value={departmentName === "-" ? "" : departmentName}
-              readOnly
-              disabled
-              className={errors?.department_id ? "input-error" : ""}
-            />
-            <p className="text-xs text-slate-500">
-              Optional. You can leave this blank.
-            </p>
-            {errors?.department_id && (
-              <p className="field-error">{errors.department_id}</p>
-            )}
-          </label>
+          {departmentName && departmentName !== "-" ? (
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-700">Department</span>
+              <Input
+                value={departmentName}
+                readOnly
+                disabled
+                className={errors?.department_id ? "input-error" : ""}
+              />
+              {errors?.department_id && (
+                <p className="field-error">{errors.department_id}</p>
+              )}
+            </label>
+          ) : null}
         </div>
       </div>
     </div>
