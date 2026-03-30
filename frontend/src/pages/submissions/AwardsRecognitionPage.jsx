@@ -44,7 +44,6 @@ import {
   PencilLine,
   Search,
   Trash2,
-  Users,
 } from "lucide-react";
 
 const AWARDS_PAGE_SIZE = 10;
@@ -69,6 +68,7 @@ export default function AwardsRecognitionPage() {
   const [centerChiefRows, setCenterChiefRows] = useState([]);
   const [centerChiefSearch, setCenterChiefSearch] = useState("");
   const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
+  const [recordsQuickFilter, setRecordsQuickFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [exportingType, setExportingType] = useState("");
@@ -81,6 +81,19 @@ export default function AwardsRecognitionPage() {
   const [deleting, setDeleting] = useState(false);
   const [projectOptions, setProjectOptions] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+
+  const getLevelCategory = (level) => {
+    const value = String(level || "")
+      .trim()
+      .toLowerCase();
+    if (!value) return "";
+    if (value.includes("international")) return "international";
+    if (value.includes("national")) return "national";
+    if (value.includes("regional")) return "regional";
+    if (value.includes("local")) return "local";
+    if (value.includes("institutional")) return "institutional";
+    return "";
+  };
 
   const loadAwards = useCallback(() => {
     if (!canLoadOwnAwards) {
@@ -172,7 +185,7 @@ export default function AwardsRecognitionPage() {
     };
   }, [isAdmin, profile?.id]);
 
-  const filteredRows = useMemo(() => {
+  const baseSearchRows = useMemo(() => {
     const query = String(searchTerm || "")
       .trim()
       .toLowerCase();
@@ -191,6 +204,12 @@ export default function AwardsRecognitionPage() {
       return query ? haystack.includes(query) : true;
     });
   }, [rows, searchTerm]);
+  const filteredRows = useMemo(() => {
+    if (recordsQuickFilter === "all") return baseSearchRows;
+    return baseSearchRows.filter(
+      (row) => getLevelCategory(row?.level) === recordsQuickFilter,
+    );
+  }, [baseSearchRows, getLevelCategory, recordsQuickFilter]);
 
   const sortedCenterChiefRows = useMemo(
     () =>
@@ -201,6 +220,7 @@ export default function AwardsRecognitionPage() {
       ),
     [centerChiefRows],
   );
+
   const baseCenterChiefRows = useMemo(() => {
     const query = String(centerChiefSearch || "")
       .trim()
@@ -221,50 +241,30 @@ export default function AwardsRecognitionPage() {
     });
   }, [centerChiefSearch, sortedCenterChiefRows]);
   const centerChiefFilteredRows = useMemo(() => {
-    const isInternational = (level) =>
-      String(level || "")
-        .toLowerCase()
-        .includes("international");
-    if (centerChiefQuickFilter === "international") {
-      return baseCenterChiefRows.filter((row) => isInternational(row?.level));
-    }
-    if (centerChiefQuickFilter === "national") {
-      return baseCenterChiefRows.filter(
-        (row) => row?.level && !isInternational(row?.level),
-      );
-    }
-    return baseCenterChiefRows;
-  }, [baseCenterChiefRows, centerChiefQuickFilter]);
+    if (centerChiefQuickFilter === "all") return baseCenterChiefRows;
+    return baseCenterChiefRows.filter(
+      (row) => getLevelCategory(row?.level) === centerChiefQuickFilter,
+    );
+  }, [baseCenterChiefRows, centerChiefQuickFilter, getLevelCategory]);
 
   const analytics = useMemo(() => {
-    const uniqueRecipients = new Set();
     const base = {
       total: rows.length,
+      institutional: 0,
+      local: 0,
+      regional: 0,
       national: 0,
       international: 0,
-      recipients: 0,
     };
 
     rows.forEach((row) => {
-      const level = String(row?.level || "")
-        .trim()
-        .toLowerCase();
-      if (level.includes("international")) {
-        base.international += 1;
-      } else if (level) {
-        base.national += 1;
-      }
-
-      String(row?.recipients || "")
-        .split(/[,;]+/)
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .forEach((recipient) => uniqueRecipients.add(recipient));
+      const category = getLevelCategory(row?.level);
+      if (!category) return;
+      base[category] += 1;
     });
 
-    base.recipients = uniqueRecipients.size;
     return base;
-  }, [rows]);
+  }, [getLevelCategory, rows]);
 
   const projectTitleById = useMemo(() => {
     const map = new Map();
@@ -281,7 +281,7 @@ export default function AwardsRecognitionPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [recordsQuickFilter, searchTerm]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(filteredRows.length / AWARDS_PAGE_SIZE)),
@@ -575,7 +575,22 @@ export default function AwardsRecognitionPage() {
           {[
             { label: "Total Awards", value: analytics.total, icon: Award },
             {
-              label: "National / Local",
+              label: "Institutional",
+              value: analytics.institutional,
+              icon: Building2,
+            },
+            {
+              label: "Local",
+              value: analytics.local,
+              icon: Building2,
+            },
+            {
+              label: "Regional",
+              value: analytics.regional,
+              icon: Building2,
+            },
+            {
+              label: "National",
               value: analytics.national,
               icon: Building2,
             },
@@ -583,11 +598,6 @@ export default function AwardsRecognitionPage() {
               label: "International",
               value: analytics.international,
               icon: Award,
-            },
-            {
-              label: "Recognized Recipients",
-              value: analytics.recipients,
-              icon: Users,
             },
           ].map(({ label, value, icon: Icon }) => (
             <Card
@@ -640,23 +650,38 @@ export default function AwardsRecognitionPage() {
                   count: baseCenterChiefRows.length,
                 },
                 {
-                  key: "national",
-                  label: "National / Local",
+                  key: "institutional",
+                  label: "Institutional",
                   count: baseCenterChiefRows.filter(
-                    (row) =>
-                      row?.level &&
-                      !String(row.level || "")
-                        .toLowerCase()
-                        .includes("international"),
+                    (row) => getLevelCategory(row?.level) === "institutional",
+                  ).length,
+                },
+                {
+                  key: "local",
+                  label: "Local",
+                  count: baseCenterChiefRows.filter(
+                    (row) => getLevelCategory(row?.level) === "local",
+                  ).length,
+                },
+                {
+                  key: "regional",
+                  label: "Regional",
+                  count: baseCenterChiefRows.filter(
+                    (row) => getLevelCategory(row?.level) === "regional",
+                  ).length,
+                },
+                {
+                  key: "national",
+                  label: "National",
+                  count: baseCenterChiefRows.filter(
+                    (row) => getLevelCategory(row?.level) === "national",
                   ).length,
                 },
                 {
                   key: "international",
                   label: "International",
-                  count: baseCenterChiefRows.filter((row) =>
-                    String(row.level || "")
-                      .toLowerCase()
-                      .includes("international"),
+                  count: baseCenterChiefRows.filter(
+                    (row) => getLevelCategory(row?.level) === "international",
                   ).length,
                 },
               ].map((chip) => (
@@ -862,6 +887,85 @@ export default function AwardsRecognitionPage() {
                 className="pl-9"
               />
             </label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Awards",
+                count: baseSearchRows.length,
+              },
+              {
+                key: "institutional",
+                label: "Institutional",
+                count: baseSearchRows.filter(
+                  (row) => getLevelCategory(row?.level) === "institutional",
+                ).length,
+              },
+              {
+                key: "local",
+                label: "Local",
+                count: baseSearchRows.filter(
+                  (row) => getLevelCategory(row?.level) === "local",
+                ).length,
+              },
+              {
+                key: "regional",
+                label: "Regional",
+                count: baseSearchRows.filter(
+                  (row) => getLevelCategory(row?.level) === "regional",
+                ).length,
+              },
+              {
+                key: "national",
+                label: "National",
+                count: baseSearchRows.filter(
+                  (row) => getLevelCategory(row?.level) === "national",
+                ).length,
+              },
+              {
+                key: "international",
+                label: "International",
+                count: baseSearchRows.filter(
+                  (row) => getLevelCategory(row?.level) === "international",
+                ).length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  recordsQuickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setRecordsQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    recordsQuickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setRecordsQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
           </div>
         </CardHeader>
         {filteredRows.length === 0 ? (
