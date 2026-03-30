@@ -6,13 +6,16 @@ import {
 
 export default function useSubmissionOptions({ orgId, userId }) {
   const [orgAgendaOptions, setOrgAgendaOptions] = useState([]);
+  const [agendasLoaded, setAgendasLoaded] = useState(false);
   const [ckanUsers, setCkanUsers] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     const normalizedOrgId = String(orgId || "").trim();
+    setAgendasLoaded(false);
     if (!normalizedOrgId) {
       setOrgAgendaOptions([]);
+      setAgendasLoaded(true);
       return () => {
         cancelled = true;
       };
@@ -22,10 +25,12 @@ export default function useSubmissionOptions({ orgId, userId }) {
         if (cancelled) return;
         const rows = Array.isArray(payload?.data) ? payload.data : [];
         setOrgAgendaOptions(rows);
+        setAgendasLoaded(true);
       })
       .catch(() => {
         if (cancelled) return;
         setOrgAgendaOptions([]);
+        setAgendasLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -54,6 +59,7 @@ export default function useSubmissionOptions({ orgId, userId }) {
   return {
     orgAgendaOptions,
     effectiveAgendas,
+    agendasLoaded,
     ckanUsers,
   };
 }
