@@ -42,7 +42,10 @@ export default function StepFundingTimeline({
           <div className="form-section-head">
             <p className="form-section-title">Funding Details</p>
             <p className="form-section-note">
-              Enter funding values and source details as accurately as possible.
+              Provide comprehensive funding information, including budget
+              amounts, funding sources, and allocation details. Accurate entries
+              ensure proper financial tracking, transparency, and accountability
+              throughout the project.
             </p>
           </div>
 
