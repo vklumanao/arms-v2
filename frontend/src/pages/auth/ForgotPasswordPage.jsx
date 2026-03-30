@@ -47,30 +47,27 @@ export default function ForgotPasswordPage() {
   return (
     <section className="mx-auto max-w-md">
       <Card>
-        <CardHeader>
-        <img
-          src="/arms-logo-v2.svg"
-          alt="ARMS Logo"
-          className="mb-3 h-12 w-auto"
-        />
-        <h1 className="text-2xl font-bold">Forgot Password</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Enter your email and we will send a reset link.
-        </p>
+        <CardHeader className="space-y-1 text-center">
+          <h1 className="text-2xl font-bold">Forgot Password</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Enter your email and we will send a reset link.
+          </p>
         </CardHeader>
         <CardContent>
-      <form className="space-y-3" onSubmit={submit}>
-        <Input
-          placeholder="Enter your account email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        {message && <p className="text-sm text-[var(--success)]">{message}</p>}
-        <Button className="w-full">Send reset link</Button>
-      </form>
+          <form className="space-y-3" onSubmit={submit}>
+            <Input
+              placeholder="Enter your account email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+            {message && (
+              <p className="text-sm text-[var(--success)]">{message}</p>
+            )}
+            <Button className="w-full">Send reset link</Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -86,4 +83,3 @@ export default function ForgotPasswordPage() {
     </section>
   );
 }
-
