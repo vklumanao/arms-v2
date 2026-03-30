@@ -618,7 +618,7 @@ export default function AppShell() {
               {!collapsed ? (
                 <div className="min-w-0 leading-tight">
                   <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
-                    ARMS
+                    CCIS - ARMS
                   </div>
                   <div className="truncate text-xs font-medium text-slate-500">
                     Affiliation and Research Management
