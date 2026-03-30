@@ -32,10 +32,33 @@ function buildRawMessage({ to, subject, html, text }) {
     `To: ${to}`,
     `Subject: ${subject}`,
     "MIME-Version: 1.0",
-    'Content-Type: text/html; charset="UTF-8"',
   ];
-  const body = html || text || "";
-  return base64UrlEncode(`${headers.join("\r\n")}\r\n\r\n${body}`);
+
+  if (html && text) {
+    const boundary = `arms-multipart-${Date.now()}`;
+    headers.push(`Content-Type: multipart/alternative; boundary=${boundary}`);
+    const body = [
+      `--${boundary}`,
+      'Content-Type: text/plain; charset="UTF-8"',
+      "",
+      text,
+      `--${boundary}`,
+      'Content-Type: text/html; charset="UTF-8"',
+      "",
+      html,
+      `--${boundary}--`,
+      "",
+    ].join("\r\n");
+    return base64UrlEncode(`${headers.join("\r\n")}\r\n\r\n${body}`);
+  }
+
+  if (html) {
+    headers.push('Content-Type: text/html; charset="UTF-8"');
+    return base64UrlEncode(`${headers.join("\r\n")}\r\n\r\n${html}`);
+  }
+
+  headers.push('Content-Type: text/plain; charset="UTF-8"');
+  return base64UrlEncode(`${headers.join("\r\n")}\r\n\r\n${text || ""}`);
 }
 
 export async function sendEmail({ to, subject, html, text }) {
