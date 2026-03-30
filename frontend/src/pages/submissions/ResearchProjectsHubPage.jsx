@@ -86,6 +86,8 @@ export default function ResearchProjectsHubPage() {
   const [centerChiefPage, setCenterChiefPage] = useState(1);
   const [centerChiefSearch, setCenterChiefSearch] = useState("");
   const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
+  const [linkedProjectsQuickFilter, setLinkedProjectsQuickFilter] =
+    useState("all");
   const [filters, setFilters] = useState({
     search: "",
     sortBy: "submitted_desc",
@@ -349,6 +351,12 @@ export default function ResearchProjectsHubPage() {
       })),
     [getProjectOrganization, linkedProjects],
   );
+  const linkedProjectFilteredRows = useMemo(() => {
+    if (linkedProjectsQuickFilter === "all") return linkedProjectRows;
+    return linkedProjectRows.filter(
+      (row) => normalizeStatus(row.status) === linkedProjectsQuickFilter,
+    );
+  }, [linkedProjectRows, linkedProjectsQuickFilter]);
 
   const centerChiefRows = useMemo(
     () =>
@@ -1402,11 +1410,83 @@ export default function ResearchProjectsHubPage() {
               </CardDescription>
             </div>
             <p className="text-sm text-slate-600">
-              {linkedProjectRows.length} row(s).
+              {linkedProjectFilteredRows.length} row(s).
             </p>
           </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {[
+              {
+                key: "all",
+                label: "All Projects",
+                count: linkedProjectRows.length,
+              },
+              {
+                key: "proposal",
+                label: "Proposal",
+                count: linkedProjectRows.filter(
+                  (project) => normalizeStatus(project.status) === "proposal",
+                ).length,
+              },
+              {
+                key: "ongoing",
+                label: "Ongoing",
+                count: linkedProjectRows.filter(
+                  (project) => normalizeStatus(project.status) === "ongoing",
+                ).length,
+              },
+              {
+                key: "completed",
+                label: "Completed",
+                count: linkedProjectRows.filter(
+                  (project) => normalizeStatus(project.status) === "completed",
+                ).length,
+              },
+              {
+                key: "rejected",
+                label: "Rejected",
+                count: linkedProjectRows.filter(
+                  (project) => normalizeStatus(project.status) === "rejected",
+                ).length,
+              },
+            ].map((chip) => (
+              <Button
+                key={chip.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "rounded-full border-slate-200 px-4 text-xs",
+                  linkedProjectsQuickFilter === chip.key
+                    ? "bg-slate-900 text-white hover:bg-slate-900"
+                    : "bg-white text-slate-600 hover:bg-slate-50",
+                )}
+                onClick={() => setLinkedProjectsQuickFilter(chip.key)}
+              >
+                {chip.label}
+                <span
+                  className={cn(
+                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    linkedProjectsQuickFilter === chip.key
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => setLinkedProjectsQuickFilter("all")}
+            >
+              Clear filters
+            </Button>
+          </div>
         </CardHeader>
-        {linkedProjectRows.length === 0 ? (
+        {linkedProjectFilteredRows.length === 0 ? (
           <CardContent className="p-4">
             <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
               This section will display project summaries once you are assigned
@@ -1432,7 +1512,7 @@ export default function ResearchProjectsHubPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {linkedProjectRows.map((project, index) => (
+                  {linkedProjectFilteredRows.map((project, index) => (
                     <TableRow key={`linked-${project.id}`}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell className="font-medium text-slate-900">
