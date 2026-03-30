@@ -70,6 +70,10 @@ export const config = {
     process.env.ARMS_RESET_TOKEN_TTL_MINUTES,
     30,
   ),
+  resetEmailCooldownSeconds: readNumber(
+    process.env.ARMS_RESET_EMAIL_COOLDOWN_SECONDS,
+    60,
+  ),
   exposeResetTokenInResponse: readBool(
     process.env.ARMS_EXPOSE_RESET_TOKEN_IN_RESPONSE,
     false,
