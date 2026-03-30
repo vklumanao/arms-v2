@@ -11,6 +11,38 @@ export default function StepReview({
   expectedOutputRows,
   moaFile,
 }) {
+  const normalizeText = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "-";
+    const cleaned = raw.replace(/[_\s]+/g, " ").trim();
+    return cleaned.replace(/\b\w/g, (match) => match.toUpperCase());
+  };
+  const normalizePlain = (value) => {
+    const raw = String(value ?? "").trim();
+    return raw || "-";
+  };
+  const normalizeNumber = (value, fallback = "-") => {
+    if (value === null || value === undefined || value === "") return fallback;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return fallback;
+    return String(num);
+  };
+  const formatPeso = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "-";
+    return new Intl.NumberFormat("en-PH", {
+      style: "currency",
+      currency: "PHP",
+      minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
+      maximumFractionDigits: Number.isInteger(num) ? 0 : 2,
+    }).format(num);
+  };
+  const normalizeLink = (value) => {
+    const raw = String(value ?? "").trim();
+    return raw || "-";
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--brand-soft)] p-3 text-sm text-[var(--brand-strong)]">
@@ -32,25 +64,25 @@ export default function StepReview({
                 <span className="font-semibold text-slate-700">
                   Project Title
                 </span>
-                <Input value={form.title || "-"} readOnly />
+                <Input value={normalizePlain(form.title)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Lead Researcher
                 </span>
-                <Input value={form.lead_researcher || "-"} readOnly />
+                <Input value={normalizePlain(form.lead_researcher)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Project Year
                 </span>
-                <Input value={form.year || "-"} readOnly />
+                <Input value={normalizeNumber(form.year)} readOnly />
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">
                 <span className="font-semibold text-slate-700">
                   Research Center
                 </span>
-                <Input value={centerName} readOnly />
+                <Input value={normalizePlain(centerName)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
@@ -58,7 +90,7 @@ export default function StepReview({
                 </span>
                 <Textarea
                   className="min-h-20"
-                  value={form.faculty_team || "-"}
+                  value={normalizePlain(form.faculty_team)}
                   readOnly
                 />
               </label>
@@ -68,7 +100,7 @@ export default function StepReview({
                 </span>
                 <Textarea
                   className="min-h-20"
-                  value={form.student_team || "-"}
+                  value={normalizePlain(form.student_team)}
                   readOnly
                 />
               </label>
@@ -76,7 +108,7 @@ export default function StepReview({
                 <span className="font-semibold text-slate-700">Abstract</span>
                 <Textarea
                   className="min-h-24"
-                  value={form.abstract || "-"}
+                  value={normalizePlain(form.abstract)}
                   readOnly
                 />
               </label>
@@ -92,23 +124,23 @@ export default function StepReview({
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Status</span>
-                <Input value={form.status || "-"} readOnly />
+                <Input value={normalizeText(form.status)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Classification
                 </span>
-                <Input value={form.classification || "-"} readOnly />
+                <Input value={normalizeText(form.classification)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Research Agenda
                 </span>
-                <Input value={agendaName || "-"} readOnly />
+                <Input value={normalizePlain(agendaName)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Department</span>
-                <Input value={departmentName || "-"} readOnly />
+                <Input value={normalizePlain(departmentName)} readOnly />
               </label>
             </div>
           </CardContent>
@@ -124,42 +156,44 @@ export default function StepReview({
                 <span className="font-semibold text-slate-700">
                   Funding Type
                 </span>
-                <Input value={form.funding_type || "-"} readOnly />
+                <Input value={normalizeText(form.funding_type)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Funding Source
                 </span>
-                <Input value={form.funding_source || "-"} readOnly />
+                <Input value={normalizePlain(form.funding_source)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Funding Amount
                 </span>
-                <Input value={form.funding_amount || "0"} readOnly />
+                <Input value={formatPeso(form.funding_amount)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Industry/Agency Partner
                 </span>
-                <Input value={form.industry_partner || "-"} readOnly />
+                <Input value={normalizePlain(form.industry_partner)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">
                   Signed MOA Reference
                 </span>
                 <Input
-                  value={moaFile?.name || form.signed_moa_reference || "-"}
+                  value={normalizePlain(
+                    moaFile?.name || form.signed_moa_reference,
+                  )}
                   readOnly
                 />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">Start Date</span>
-                <Input value={form.start_date || "-"} readOnly />
+                <Input value={normalizePlain(form.start_date)} readOnly />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-700">End Date</span>
-                <Input value={form.end_date || "-"} readOnly />
+                <Input value={normalizePlain(form.end_date)} readOnly />
               </label>
             </div>
           </CardContent>
@@ -188,35 +222,37 @@ export default function StepReview({
                           <p className="font-semibold text-slate-800">
                             {EXPECTED_OUTPUT_TYPE_OPTIONS.find(
                               (item) => item.value === row.output_type,
-                            )?.label ||
-                              row.output_type ||
-                              "-"}
+                            )?.label || normalizeText(row.output_type)}
                           </p>
                           {String(row.specific_output || "").trim() ? (
                             <p className="text-slate-600">
-                              Specific: {row.specific_output}
+                              Specific: {normalizePlain(row.specific_output)}
                             </p>
                           ) : null}
                           {String(row.publication_authors || "").trim() ? (
                             <p className="text-slate-600">
-                              Proponents: {row.publication_authors}
+                              Proponents:{" "}
+                              {normalizePlain(row.publication_authors)}
                             </p>
                           ) : null}
                           <p className="text-slate-600">
                             Target: {Math.max(1, Number(row.target_count) || 1)}{" "}
-                            | Notes: {row.notes || "-"}
+                            | Notes: {normalizePlain(row.notes)}
                           </p>
                           <p className="text-slate-600 break-all">
                             Output Link:{" "}
-                            {row.output_link ||
-                              (/^https?:\/\//i.test(
-                                String(row.file_path || "").trim(),
-                              )
-                                ? row.file_path
-                                : "-")}
+                            {normalizeLink(
+                              row.output_link ||
+                                (/^https?:\/\//i.test(
+                                  String(row.file_path || "").trim(),
+                                )
+                                  ? row.file_path
+                                  : ""),
+                            )}
                           </p>
                           <p className="text-slate-600 break-all">
-                            File: {row.file?.name || row.file_name || "-"}
+                            File:{" "}
+                            {normalizePlain(row.file?.name || row.file_name)}
                           </p>
                         </CardContent>
                       </Card>
@@ -228,7 +264,10 @@ export default function StepReview({
                 <span className="font-semibold text-slate-700">
                   Supporting MOV Link
                 </span>
-                <Input value={form.supporting_mov_link || "-"} readOnly />
+                <Input
+                  value={normalizeLink(form.supporting_mov_link)}
+                  readOnly
+                />
               </label>
             </div>
           </CardContent>
