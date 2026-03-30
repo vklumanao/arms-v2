@@ -95,8 +95,7 @@ export default function ResearchOutputsPage() {
     Boolean(profile?.managed_center_id);
   const hasOrgId = String(profile?.ckan_org_id || "").trim();
   const canLoadOwnOutputs = isAdmin || Boolean(hasOrgId);
-  const missingAffiliation =
-    !canLoadOwnOutputs && !isCenterChief;
+  const missingAffiliation = !canLoadOwnOutputs && !isCenterChief;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -247,7 +246,9 @@ export default function ResearchOutputsPage() {
         setCenterChiefError("");
         const payload = await fetchCenterChiefResearchOutputs();
         if (!cancelled) {
-          setCenterChiefOutputs(Array.isArray(payload?.data) ? payload.data : []);
+          setCenterChiefOutputs(
+            Array.isArray(payload?.data) ? payload.data : [],
+          );
         }
       } catch (e) {
         if (!cancelled) {
@@ -427,7 +428,9 @@ export default function ResearchOutputsPage() {
     [mapOutputRow, sortedCenterChiefRows],
   );
   const baseCenterChiefSearchRows = useMemo(() => {
-    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    const query = String(centerChiefSearch || "")
+      .trim()
+      .toLowerCase();
     return centerChiefRows.filter((row) => {
       const haystack = [
         row.title,
@@ -1104,7 +1107,7 @@ export default function ResearchOutputsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -1318,7 +1321,9 @@ export default function ResearchOutputsPage() {
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge
-                              variant={row.private ? "destructive" : "secondary"}
+                              variant={
+                                row.private ? "destructive" : "secondary"
+                              }
                             >
                               {row.private ? "Private" : "Public"}
                             </Badge>
