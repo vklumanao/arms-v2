@@ -105,6 +105,7 @@ export default function ResearchOutputsPage() {
   const [centerChiefPage, setCenterChiefPage] = useState(1);
   const [centerChiefSearch, setCenterChiefSearch] = useState("");
   const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
+  const [recordsQuickFilter, setRecordsQuickFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingTarget, setEditingTarget] = useState(null);
@@ -447,16 +448,11 @@ export default function ResearchOutputsPage() {
     });
   }, [centerChiefRows, centerChiefSearch]);
   const centerChiefFilteredRows = useMemo(() => {
-    if (centerChiefQuickFilter === "pending") {
-      return baseCenterChiefSearchRows.filter((row) => row.isPendingOutput);
-    }
-    if (centerChiefQuickFilter === "public") {
-      return baseCenterChiefSearchRows.filter((row) => !row.private);
-    }
-    if (centerChiefQuickFilter === "private") {
-      return baseCenterChiefSearchRows.filter((row) => row.private);
-    }
-    return baseCenterChiefSearchRows;
+    if (centerChiefQuickFilter === "all") return baseCenterChiefSearchRows;
+    return baseCenterChiefSearchRows.filter(
+      (row) =>
+        String(row?.outputTypeValue || "").trim() === centerChiefQuickFilter,
+    );
   }, [baseCenterChiefSearchRows, centerChiefQuickFilter]);
   const pendingOutputRows = useMemo(() => {
     const expectedByKey = new Map();
@@ -606,7 +602,7 @@ export default function ResearchOutputsPage() {
     return Array.from(byId.values());
   }, [projectOptions, projectOptionsFromRows]);
 
-  const filteredRows = useMemo(() => {
+  const baseSearchRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return tableRows.filter((row) => {
       const haystack = [
@@ -624,6 +620,13 @@ export default function ResearchOutputsPage() {
       return query ? haystack.includes(query) : true;
     });
   }, [searchTerm, tableRows]);
+  const filteredRows = useMemo(() => {
+    if (recordsQuickFilter === "all") return baseSearchRows;
+    return baseSearchRows.filter(
+      (row) =>
+        String(row?.outputTypeValue || "").trim() === recordsQuickFilter,
+    );
+  }, [baseSearchRows, recordsQuickFilter]);
 
   const analytics = useMemo(() => {
     const linkedProjectIds = new Set();
@@ -652,7 +655,7 @@ export default function ResearchOutputsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [recordsQuickFilter, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
 
@@ -1207,25 +1210,19 @@ export default function ResearchOutputsPage() {
                   label: "All Outputs",
                   count: baseCenterChiefSearchRows.length,
                 },
-                {
-                  key: "public",
-                  label: "Public",
-                  count: baseCenterChiefSearchRows.filter((row) => !row.private)
-                    .length,
-                },
-                {
-                  key: "private",
-                  label: "Private",
-                  count: baseCenterChiefSearchRows.filter((row) => row.private)
-                    .length,
-                },
-                {
-                  key: "pending",
-                  label: "Pending",
-                  count: baseCenterChiefSearchRows.filter(
-                    (row) => row.isPendingOutput,
-                  ).length,
-                },
+                ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
+                  const key = String(item?.value || "").trim();
+                  const label =
+                    outputTypeLabelByValue[key] || String(item?.label || key);
+                  return {
+                    key,
+                    label,
+                    count: baseCenterChiefSearchRows.filter(
+                      (row) =>
+                        String(row?.outputTypeValue || "").trim() === key,
+                    ).length,
+                  };
+                }),
               ].map((chip) => (
                 <Button
                   key={chip.key}
@@ -1466,6 +1463,63 @@ export default function ResearchOutputsPage() {
                     className="pl-9"
                   />
                 </label>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {[
+                  {
+                    key: "all",
+                    label: "All Outputs",
+                    count: baseSearchRows.length,
+                  },
+                  ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
+                    const key = String(item?.value || "").trim();
+                    const label =
+                      outputTypeLabelByValue[key] || String(item?.label || key);
+                    return {
+                      key,
+                      label,
+                      count: baseSearchRows.filter(
+                        (row) =>
+                          String(row?.outputTypeValue || "").trim() === key,
+                      ).length,
+                    };
+                  }),
+                ].map((chip) => (
+                  <Button
+                    key={chip.key}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn(
+                      "rounded-full border-slate-200 px-4 text-xs",
+                      recordsQuickFilter === chip.key
+                        ? "bg-slate-900 text-white hover:bg-slate-900"
+                        : "bg-white text-slate-600 hover:bg-slate-50",
+                    )}
+                    onClick={() => setRecordsQuickFilter(chip.key)}
+                  >
+                    {chip.label}
+                    <span
+                      className={cn(
+                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        recordsQuickFilter === chip.key
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 text-slate-600",
+                      )}
+                    >
+                      {chip.count}
+                    </span>
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                  onClick={() => setRecordsQuickFilter("all")}
+                >
+                  Clear filters
+                </Button>
               </div>
             </CardHeader>
             {filteredRows.length === 0 ? (
