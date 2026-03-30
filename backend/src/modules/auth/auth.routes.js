@@ -1,3 +1,11 @@
+import {
+  buildResetLink,
+  buildResetPasswordEmailHtml,
+  buildResetPasswordEmailText,
+  buildVerificationEmailHtml,
+  buildVerificationLink,
+} from "./auth.email.js";
+
 /**
  * Registers auth- and permission-related API routes.
  *
@@ -75,62 +83,26 @@ export function registerAuthRoutes(app, deps) {
     return parts.join(" ").replace(/\s+/g, " ").trim();
   };
 
-  const buildVerificationLink = (token) => {
-    const base = String(config.publicAppUrl || "").replace(/\/$/, "");
-    return `${base}/verify-email?token=${encodeURIComponent(String(token))}`;
+  const resetEmailCooldowns = new Map();
+
+  const getResetCooldownSeconds = (email) => {
+    const until = resetEmailCooldowns.get(email);
+    if (!until) return 0;
+    const remainingMs = Math.max(until - Date.now(), 0);
+    if (remainingMs === 0) {
+      resetEmailCooldowns.delete(email);
+      return 0;
+    }
+    return Math.ceil(remainingMs / 1000);
   };
 
-  const buildVerificationEmailHtml = ({ fullName, link }) => {
-    const safeName = String(fullName || "there").trim() || "there";
-    return `
-      <div style="margin:0;padding:0;background:#f5f7fb;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:24px 0;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
-                <tr>
-                  <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
-                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">ARMS</div>
-                    <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Verify your email</div>
-                    <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Activate your account in seconds</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
-                    <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
-                    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
-                      Welcome to ARMS. Please confirm your email to activate your account and start managing your research workflows.
-                    </p>
-                    <p style="margin:0 0 20px 0;">
-                      <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
-                        Verify Email
-                      </a>
-                    </p>
-                    <p style="margin:0 0 8px 0;font-size:13px;color:#475569;">
-                      If the button does not work, copy and paste this link into your browser:
-                    </p>
-                    <p style="margin:0 0 18px 0;font-size:12px;color:#0f4c81;word-break:break-all;">
-                      ${link}
-                    </p>
-                    <div style="margin-top:8px;padding:12px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;font-size:12px;color:#475569;">
-                      This verification link will expire soon for your security.
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:16px 24px 24px 24px;font-family:Arial,sans-serif;color:#64748b;font-size:12px;border-top:1px solid #e2e8f0;">
-                    If you did not create this account, you can ignore this email.
-                  </td>
-                </tr>
-              </table>
-              <div style="font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;margin-top:12px;">
-                ARMS Platform
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    `;
+  const setResetCooldown = (email) => {
+    const cooldownSeconds = Number(config.resetEmailCooldownSeconds || 0);
+    if (!Number.isFinite(cooldownSeconds) || cooldownSeconds <= 0) return;
+    resetEmailCooldowns.set(
+      email,
+      Date.now() + Math.round(cooldownSeconds * 1000),
+    );
   };
 
   app.get("/api/health", (req, res) => {
@@ -257,7 +229,7 @@ export function registerAuthRoutes(app, deps) {
           created.id,
           config.emailVerifyTokenTtlMinutes,
         );
-        const link = buildVerificationLink(token);
+        const link = buildVerificationLink(config.publicAppUrl, token);
         await sendEmail({
           to: created.email,
           subject: "Verify your ARMS account",
@@ -366,7 +338,7 @@ export function registerAuthRoutes(app, deps) {
           user.id,
           config.emailVerifyTokenTtlMinutes,
         );
-        const link = buildVerificationLink(token);
+        const link = buildVerificationLink(config.publicAppUrl, token);
         await sendEmail({
           to: user.email,
           subject: "Verify your ARMS account",
@@ -596,6 +568,16 @@ export function registerAuthRoutes(app, deps) {
         "Invalid forgot-password payload.",
       );
       const email = parsed.email.trim().toLowerCase();
+      const cooldownSeconds = getResetCooldownSeconds(email);
+      if (cooldownSeconds > 0) {
+        res.setHeader("Retry-After", String(cooldownSeconds));
+        return res.status(429).json({
+          error: `Please wait ${cooldownSeconds} seconds before requesting another reset email.`,
+          code: "RESET_EMAIL_COOLDOWN",
+          retry_after_seconds: cooldownSeconds,
+        });
+      }
+
       const user = await findUserByEmail(email);
 
       if (!user || user.is_active === false) {
@@ -603,6 +585,7 @@ export function registerAuthRoutes(app, deps) {
           eventType: "auth.forgot_password_ignored",
           details: { email },
         });
+        setResetCooldown(email);
         return res.json({ ok: true });
       }
 
@@ -610,6 +593,26 @@ export function registerAuthRoutes(app, deps) {
         user.id,
         config.resetTokenTtlMinutes,
       );
+
+      const link = buildResetLink(config.publicAppUrl, token);
+      if (String(config.nodeEnv || "").toLowerCase() === "development") {
+        console.log(
+          `[AUTH] Password reset link for ${user.email}: ${link}`,
+        );
+      }
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your ARMS password",
+        html: buildResetPasswordEmailHtml({
+          fullName: user.full_name,
+          link,
+        }),
+        text: buildResetPasswordEmailText({
+          fullName: user.full_name,
+          link,
+        }),
+      });
+      setResetCooldown(email);
 
       await logAuditEvent({
         actorUserId: user.id,
