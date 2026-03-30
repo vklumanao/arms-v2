@@ -1,6 +1,8 @@
 export function createAffiliateModuleFilters() {
   return {
     search: "",
+    centerId: "all",
+    department: "all",
     sortBy: "name_asc",
   };
 }
@@ -24,12 +26,24 @@ export function filterAndSortAffiliates(rows, filters) {
   const keyword = String(filters.search || "")
     .trim()
     .toLowerCase();
+  const centerFilter = String(filters.centerId || "all").trim().toLowerCase();
+  const departmentFilter = String(filters.department || "all")
+    .trim()
+    .toLowerCase();
 
   const filtered = (rows || []).filter((row) => {
     if (keyword) {
       const target =
         `${row.full_name || ""} ${row.email || ""} ${row.role || ""} ${row.department || ""} ${row.id || ""} ${row.ckan_org_id || ""} ${row.is_active ? "active" : "inactive"}`.toLowerCase();
       if (!target.includes(keyword)) return false;
+    }
+    if (centerFilter !== "all") {
+      const orgId = String(row.ckan_org_id || "").trim().toLowerCase();
+      if (!orgId || orgId !== centerFilter) return false;
+    }
+    if (departmentFilter !== "all") {
+      const dept = String(row.department || "").trim().toLowerCase();
+      if (!dept || dept !== departmentFilter) return false;
     }
     return true;
   });
