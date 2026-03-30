@@ -181,7 +181,7 @@ export default function SubmitAffiliationPage() {
     () => validateSubmissionFields(form, step, expectedOutputRows),
     [expectedOutputRows, form, step],
   );
-  const { effectiveAgendas, ckanUsers } = useSubmissionOptions({
+  const { effectiveAgendas, agendasLoaded, ckanUsers } = useSubmissionOptions({
     orgId: profile?.ckan_org_id || "",
     userId: user?.id,
   });
@@ -253,6 +253,7 @@ export default function SubmitAffiliationPage() {
   }, [editId, user?.id]);
 
   useEffect(() => {
+    if (!agendasLoaded) return;
     if (!form.research_agenda_id) return;
     const stillExists = effectiveAgendas.some(
       (item) =>
@@ -260,7 +261,7 @@ export default function SubmitAffiliationPage() {
     );
     if (stillExists) return;
     setField("research_agenda_id", "");
-  }, [effectiveAgendas, form.research_agenda_id, setField]);
+  }, [agendasLoaded, effectiveAgendas, form.research_agenda_id, setField]);
 
   useEffect(() => {
     if (editId) return;
@@ -478,15 +479,16 @@ export default function SubmitAffiliationPage() {
 
   useEffect(() => {
     if (editId) return;
-    if (!defaultDepartmentId) return;
+    if (!draftHydrated) return;
     setForm((prev) => {
-      if (prev.department_id) return prev;
+      const nextDepartmentId = defaultDepartmentId || "";
+      if (prev.department_id === nextDepartmentId) return prev;
       return {
         ...prev,
-        department_id: defaultDepartmentId,
+        department_id: nextDepartmentId,
       };
     });
-  }, [defaultDepartmentId, editId]);
+  }, [defaultDepartmentId, draftHydrated, editId, setForm]);
 
   useEffect(() => {
     if (editId) return;
@@ -788,7 +790,9 @@ export default function SubmitAffiliationPage() {
       ? selectedFile.type || ""
       : normalizedOutputLink
         ? ""
-        : String(newOutputDraft.mime_type || existingRow?.mime_type || "").trim();
+        : String(
+            newOutputDraft.mime_type || existingRow?.mime_type || "",
+          ).trim();
     const nextFileSize = selectedFile
       ? selectedFile.size || null
       : normalizedOutputLink
