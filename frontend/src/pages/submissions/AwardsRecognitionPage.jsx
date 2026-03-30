@@ -64,8 +64,7 @@ export default function AwardsRecognitionPage() {
   const canLoadOwnAwards = isAdmin || Boolean(hasOrgId);
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
-  const missingAffiliation =
-    !canLoadOwnAwards && !isCenterChief;
+  const missingAffiliation = !canLoadOwnAwards && !isCenterChief;
   const [rows, setRows] = useState([]);
   const [centerChiefRows, setCenterChiefRows] = useState([]);
   const [centerChiefSearch, setCenterChiefSearch] = useState("");
@@ -203,7 +202,9 @@ export default function AwardsRecognitionPage() {
     [centerChiefRows],
   );
   const baseCenterChiefRows = useMemo(() => {
-    const query = String(centerChiefSearch || "").trim().toLowerCase();
+    const query = String(centerChiefSearch || "")
+      .trim()
+      .toLowerCase();
     return sortedCenterChiefRows.filter((row) => {
       const haystack = [
         row?.work_title,
@@ -221,7 +222,9 @@ export default function AwardsRecognitionPage() {
   }, [centerChiefSearch, sortedCenterChiefRows]);
   const centerChiefFilteredRows = useMemo(() => {
     const isInternational = (level) =>
-      String(level || "").toLowerCase().includes("international");
+      String(level || "")
+        .toLowerCase()
+        .includes("international");
     if (centerChiefQuickFilter === "international") {
       return baseCenterChiefRows.filter((row) => isInternational(row?.level));
     }
@@ -514,8 +517,8 @@ export default function AwardsRecognitionPage() {
         <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
           <CardContent className="space-y-3 p-5">
             <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) in My Profile
-              first before accessing Awards and Recognition.
+              Please set your Organization (Research Center) in My Profile first
+              before accessing Awards and Recognition.
             </p>
             <Button asChild>
               <Link to="/profile">Go to My Profile</Link>
@@ -528,7 +531,7 @@ export default function AwardsRecognitionPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -568,9 +571,9 @@ export default function AwardsRecognitionPage() {
           </div>
         </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total Awards", value: analytics.total, icon: Award },
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Total Awards", value: analytics.total, icon: Award },
             {
               label: "National / Local",
               value: analytics.national,
@@ -732,9 +735,7 @@ export default function AwardsRecognitionPage() {
                     {centerChiefPaginatedRows.map((row, index) => (
                       <TableRow key={row.id || index}>
                         <TableCell>
-                          {(centerChiefPage - 1) * AWARDS_PAGE_SIZE +
-                            index +
-                            1}
+                          {(centerChiefPage - 1) * AWARDS_PAGE_SIZE + index + 1}
                         </TableCell>
                         <TableCell>{row.work_title || "-"}</TableCell>
                         <TableCell>{row.award_recognition || "-"}</TableCell>
