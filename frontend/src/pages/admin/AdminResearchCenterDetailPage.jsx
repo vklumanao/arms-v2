@@ -53,12 +53,18 @@ import {
   Building2,
   ChevronLeft,
   Eye,
+  Facebook,
   FolderKanban,
+  Globe,
+  Instagram,
+  Linkedin,
   Pencil,
   Search,
   Trash2,
+  Twitter,
   Users,
   X,
+  Youtube,
 } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -69,6 +75,29 @@ function normalizeTab(value) {
     .toLowerCase();
   if (["overview", "affiliates", "projects"].includes(tab)) return tab;
   return "overview";
+}
+
+function getSocialMeta(url) {
+  const value = String(url || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return null;
+  if (value.includes("facebook.com") || value.includes("fb.com")) {
+    return { label: "Facebook", icon: Facebook };
+  }
+  if (value.includes("instagram.com")) {
+    return { label: "Instagram", icon: Instagram };
+  }
+  if (value.includes("x.com") || value.includes("twitter.com")) {
+    return { label: "X (Twitter)", icon: Twitter };
+  }
+  if (value.includes("linkedin.com")) {
+    return { label: "LinkedIn", icon: Linkedin };
+  }
+  if (value.includes("youtube.com") || value.includes("youtu.be")) {
+    return { label: "YouTube", icon: Youtube };
+  }
+  return { label: "Website", icon: Globe };
 }
 
 export default function AdminResearchCenterDetailPage() {
@@ -133,6 +162,9 @@ export default function AdminResearchCenterDetailPage() {
     profile?.is_center_chief === true;
   const [showDeletePopover, setShowDeletePopover] = useState(false);
   const deletePopoverRef = useRef(null);
+  const socialLink = String(center?.socialMediaLink || "").trim();
+  const socialMeta = getSocialMeta(socialLink);
+  const SocialIcon = socialMeta?.icon || Globe;
 
   useEffect(() => {
     setAffiliatesPage(1);
@@ -824,6 +856,19 @@ export default function AdminResearchCenterDetailPage() {
                     <Building2 className="h-5 w-5" />
                     {center?.agendaNames?.length || 0} agenda
                   </Badge>
+
+                  {socialLink ? (
+                    <a
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      href={socialLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={socialMeta?.label || "Open link"}
+                      aria-label={socialMeta?.label || "Open link"}
+                    >
+                      <SocialIcon className="h-5 w-5" />
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -853,25 +898,6 @@ export default function AdminResearchCenterDetailPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  Social Media
-                </p>
-                {String(center?.socialMediaLink || "").trim() ? (
-                  <a
-                    className="mt-2 inline-flex items-center text-base font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
-                    href={String(center?.socialMediaLink || "").trim()}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {String(center?.socialMediaLink || "").trim()}
-                  </a>
-                ) : (
-                  <p className="mt-2 text-base text-slate-600">
-                    No social media link yet.
-                  </p>
-                )}
-              </div>
 
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">

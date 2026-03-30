@@ -35,7 +35,19 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatStatusLabel, normalizeStatus } from "@/utils/status";
-import { Building2, ChevronLeft, Eye, FolderKanban, Users } from "lucide-react";
+import {
+  Building2,
+  ChevronLeft,
+  Eye,
+  Facebook,
+  FolderKanban,
+  Globe,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Users,
+  Youtube,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -63,6 +75,29 @@ const statusBadgeClass = (status) => {
   if (key === "proposal") return "border-amber-200 bg-amber-50 text-amber-700";
   if (key === "rejected") return "border-rose-200 bg-rose-50 text-rose-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
+const getSocialMeta = (url) => {
+  const value = String(url || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return null;
+  if (value.includes("facebook.com") || value.includes("fb.com")) {
+    return { label: "Facebook", icon: Facebook };
+  }
+  if (value.includes("instagram.com")) {
+    return { label: "Instagram", icon: Instagram };
+  }
+  if (value.includes("x.com") || value.includes("twitter.com")) {
+    return { label: "X (Twitter)", icon: Twitter };
+  }
+  if (value.includes("linkedin.com")) {
+    return { label: "LinkedIn", icon: Linkedin };
+  }
+  if (value.includes("youtube.com") || value.includes("youtu.be")) {
+    return { label: "YouTube", icon: Youtube };
+  }
+  return { label: "Website", icon: Globe };
 };
 
 function normalizeTab(value) {
@@ -254,6 +289,9 @@ export default function PublicResearchCenterDetailPage() {
     }
     return centerInfo.agendas;
   })();
+  const socialLink = String(center?.social_media_link || "").trim();
+  const socialMeta = getSocialMeta(socialLink);
+  const SocialIcon = socialMeta?.icon || Globe;
 
   const paginatedAffiliates = useMemo(() => {
     const start = (affiliatesPage - 1) * PAGE_SIZE;
@@ -397,6 +435,19 @@ export default function PublicResearchCenterDetailPage() {
                     <Building2 className="h-5 w-5" />
                     {center?.agenda_count || centerInfo.agendas.length} agenda
                   </Badge>
+
+                  {socialLink ? (
+                    <a
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      href={socialLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={socialMeta?.label || "Open link"}
+                      aria-label={socialMeta?.label || "Open link"}
+                    >
+                      <SocialIcon className="h-5 w-5" />
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -424,26 +475,6 @@ export default function PublicResearchCenterDetailPage() {
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
-              </div>
-
-              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  Social Media
-                </p>
-                {String(center?.social_media_link || "").trim() ? (
-                  <a
-                    className="mt-2 inline-flex items-center text-base font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
-                    href={String(center?.social_media_link || "").trim()}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {String(center?.social_media_link || "").trim()}
-                  </a>
-                ) : (
-                  <p className="mt-2 text-base text-slate-600">
-                    No social media link yet.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-3">

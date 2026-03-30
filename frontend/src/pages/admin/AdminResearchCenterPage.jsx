@@ -81,12 +81,37 @@ const INITIAL_PROJECT_FILTERS = {
   status: "all",
   department: "all",
 };
+const SOCIAL_MEDIA_OPTIONS = [
+  {
+    value: "facebook",
+    label: "Facebook",
+    placeholder: "https://facebook.com/your-center",
+  },
+  {
+    value: "instagram",
+    label: "Instagram",
+    placeholder: "https://instagram.com/your-center",
+  },
+  { value: "x", label: "X (Twitter)", placeholder: "https://x.com/your-center" },
+  {
+    value: "linkedin",
+    label: "LinkedIn",
+    placeholder: "https://linkedin.com/company/your-center",
+  },
+  {
+    value: "youtube",
+    label: "YouTube",
+    placeholder: "https://youtube.com/@your-center",
+  },
+  { value: "website", label: "Website", placeholder: "https://your-center.edu" },
+];
 const EMPTY_EDITING = {
   id: null,
   name: "",
   code: "",
   description: "",
   socialMediaLink: "",
+  socialMediaPlatform: "facebook",
   centerChiefId: "",
   agendaInput: "",
   researchAgendas: [],
@@ -124,6 +149,10 @@ export default function AdminResearchCenterPage() {
     newResearchCenterSocialMediaLink,
     setNewResearchCenterSocialMediaLink,
   ] = useState("");
+  const [
+    newResearchCenterSocialMediaPlatform,
+    setNewResearchCenterSocialMediaPlatform,
+  ] = useState("facebook");
   const [newCenterChiefId, setNewCenterChiefId] = useState("");
   const [centerChiefUsers, setCenterChiefUsers] = useState([]);
   const [newAgendaInput, setNewAgendaInput] = useState("");
@@ -159,6 +188,24 @@ export default function AdminResearchCenterPage() {
         : null,
     [isScopedCenterChief, managedCenterId, rows],
   );
+
+  const getSocialPlatformFromLink = (link) => {
+    const value = String(link || "").trim().toLowerCase();
+    if (!value) return "facebook";
+    if (value.includes("facebook.com") || value.includes("fb.com")) {
+      return "facebook";
+    }
+    if (value.includes("instagram.com")) return "instagram";
+    if (value.includes("x.com") || value.includes("twitter.com")) return "x";
+    if (value.includes("linkedin.com")) return "linkedin";
+    if (value.includes("youtube.com") || value.includes("youtu.be")) return "youtube";
+    return "website";
+  };
+
+  const getSocialPlaceholder = (platform) => {
+    const match = SOCIAL_MEDIA_OPTIONS.find((item) => item.value === platform);
+    return match?.placeholder || "https://example.com";
+  };
 
   const loadResearchCenterRows = useCallback(async () => {
     setDataLoading(true);
@@ -723,6 +770,7 @@ export default function AdminResearchCenterPage() {
       code: row.code === "-" ? "" : row.code,
       description: String(row?.description || "").trim(),
       socialMediaLink: String(row?.socialMediaLink || "").trim(),
+      socialMediaPlatform: getSocialPlatformFromLink(row?.socialMediaLink),
       centerChiefId: row.centerChiefId || "",
     });
 
@@ -899,6 +947,7 @@ export default function AdminResearchCenterPage() {
     setnewResearchCenterCode("");
     setNewResearchCenterDescription("");
     setNewResearchCenterSocialMediaLink("");
+    setNewResearchCenterSocialMediaPlatform("facebook");
     setNewCenterChiefId("");
     setNewAgendaInput("");
     setNewResearchAgendas([]);
@@ -2281,18 +2330,44 @@ export default function AdminResearchCenterPage() {
                   {/* Social Media */}
                   <div className="space-y-2 col-span-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Social Media Link
+                      Social Media
                     </label>
-                    <Input
-                      value={editing.socialMediaLink}
-                      placeholder="Optional: https://facebook.com/your-center"
-                      onChange={(event) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          socialMediaLink: event.target.value,
-                        }))
-                      }
-                    />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <Select
+                        value={editing.socialMediaPlatform}
+                        onValueChange={(value) =>
+                          setEditing((prev) => ({
+                            ...prev,
+                            socialMediaPlatform: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select platform" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOCIAL_MEDIA_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="sm:col-span-2">
+                        <Input
+                          value={editing.socialMediaLink}
+                          placeholder={getSocialPlaceholder(
+                            editing.socialMediaPlatform,
+                          )}
+                          onChange={(event) =>
+                            setEditing((prev) => ({
+                              ...prev,
+                              socialMediaLink: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
                     <p className="text-xs text-slate-500">
                       Optional. Displayed on the center detail page.
                     </p>
@@ -2503,15 +2578,36 @@ export default function AdminResearchCenterPage() {
 
               <div className="space-y-2 col-span-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Social Media Link
+                  Social Media
                 </label>
-                <Input
-                  value={newResearchCenterSocialMediaLink}
-                  placeholder="Optional: https://facebook.com/your-center"
-                  onChange={(event) =>
-                    setNewResearchCenterSocialMediaLink(event.target.value)
-                  }
-                />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <Select
+                    value={newResearchCenterSocialMediaPlatform}
+                    onValueChange={setNewResearchCenterSocialMediaPlatform}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOCIAL_MEDIA_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="sm:col-span-2">
+                    <Input
+                      value={newResearchCenterSocialMediaLink}
+                      placeholder={getSocialPlaceholder(
+                        newResearchCenterSocialMediaPlatform,
+                      )}
+                      onChange={(event) =>
+                        setNewResearchCenterSocialMediaLink(event.target.value)
+                      }
+                    />
+                  </div>
+                </div>
                 <p className="text-xs text-slate-500">
                   Optional. You can add this later in Edit Research Center.
                 </p>
