@@ -92,7 +92,11 @@ const SOCIAL_MEDIA_OPTIONS = [
     label: "Instagram",
     placeholder: "https://instagram.com/your-center",
   },
-  { value: "x", label: "X (Twitter)", placeholder: "https://x.com/your-center" },
+  {
+    value: "x",
+    label: "X (Twitter)",
+    placeholder: "https://x.com/your-center",
+  },
   {
     value: "linkedin",
     label: "LinkedIn",
@@ -103,7 +107,11 @@ const SOCIAL_MEDIA_OPTIONS = [
     label: "YouTube",
     placeholder: "https://youtube.com/@your-center",
   },
-  { value: "website", label: "Website", placeholder: "https://your-center.edu" },
+  {
+    value: "website",
+    label: "Website",
+    placeholder: "https://your-center.edu",
+  },
 ];
 const EMPTY_EDITING = {
   id: null,
@@ -190,7 +198,9 @@ export default function AdminResearchCenterPage() {
   );
 
   const getSocialPlatformFromLink = (link) => {
-    const value = String(link || "").trim().toLowerCase();
+    const value = String(link || "")
+      .trim()
+      .toLowerCase();
     if (!value) return "facebook";
     if (value.includes("facebook.com") || value.includes("fb.com")) {
       return "facebook";
@@ -198,7 +208,8 @@ export default function AdminResearchCenterPage() {
     if (value.includes("instagram.com")) return "instagram";
     if (value.includes("x.com") || value.includes("twitter.com")) return "x";
     if (value.includes("linkedin.com")) return "linkedin";
-    if (value.includes("youtube.com") || value.includes("youtu.be")) return "youtube";
+    if (value.includes("youtube.com") || value.includes("youtu.be"))
+      return "youtube";
     return "website";
   };
 
@@ -2243,9 +2254,8 @@ export default function AdminResearchCenterPage() {
               </p>
             ) : (
               <>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  {/* Research Center Name */}
-                  <div className="space-y-2 col-span-2">
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Research Center Name *
                     </label>
@@ -2260,12 +2270,11 @@ export default function AdminResearchCenterPage() {
                         setEditErrors((prev) => ({ ...prev, name: "" }));
                       }}
                     />
-                    {editErrors.name ? (
+                    {editErrors.name && (
                       <p className="field-error">{editErrors.name}</p>
-                    ) : null}
+                    )}
                   </div>
 
-                  {/* Code */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Code *
@@ -2283,12 +2292,11 @@ export default function AdminResearchCenterPage() {
                         setEditErrors((prev) => ({ ...prev, code: "" }));
                       }}
                     />
-                    {editErrors.code ? (
+                    {editErrors.code && (
                       <p className="field-error">{editErrors.code}</p>
-                    ) : null}
+                    )}
                   </div>
 
-                  {/* Center Chief */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Center Chief *
@@ -2322,16 +2330,16 @@ export default function AdminResearchCenterPage() {
                       </SelectContent>
                     </Select>
 
-                    {editErrors.centerChiefId ? (
+                    {editErrors.centerChiefId && (
                       <p className="field-error">{editErrors.centerChiefId}</p>
-                    ) : null}
+                    )}
                   </div>
 
-                  {/* Social Media */}
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Social Media
                     </label>
+
                     <div className="grid gap-2 sm:grid-cols-3">
                       <Select
                         value={editing.socialMediaPlatform}
@@ -2353,6 +2361,7 @@ export default function AdminResearchCenterPage() {
                           ))}
                         </SelectContent>
                       </Select>
+
                       <div className="sm:col-span-2">
                         <Input
                           value={editing.socialMediaLink}
@@ -2368,13 +2377,14 @@ export default function AdminResearchCenterPage() {
                         />
                       </div>
                     </div>
+
                     <p className="text-xs text-slate-500">
                       Optional. Displayed on the center detail page.
                     </p>
                   </div>
 
                   {/* Description */}
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Description
                     </label>
@@ -2395,7 +2405,7 @@ export default function AdminResearchCenterPage() {
                   </div>
 
                   {/* Research Agendum */}
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Research Agendum *
                     </label>
@@ -2448,11 +2458,11 @@ export default function AdminResearchCenterPage() {
                       </p>
                     )}
 
-                    {editErrors.researchAgendas ? (
+                    {editErrors.researchAgendas && (
                       <p className="field-error">
                         {editErrors.researchAgendas}
                       </p>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               </>
@@ -2503,8 +2513,8 @@ export default function AdminResearchCenterPage() {
               </p>
             </DialogHeader>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Research Center Name <span className="text-red-500">*</span>
                 </label>
@@ -2518,9 +2528,9 @@ export default function AdminResearchCenterPage() {
                   }}
                   required
                 />
-                {createErrors.name ? (
+                {createErrors.name && (
                   <p className="field-error">{createErrors.name}</p>
-                ) : null}
+                )}
               </div>
 
               <div className="space-y-2">
@@ -2539,9 +2549,9 @@ export default function AdminResearchCenterPage() {
                   }}
                   required
                 />
-                {createErrors.code ? (
+                {createErrors.code && (
                   <p className="field-error">{createErrors.code}</p>
-                ) : null}
+                )}
               </div>
 
               <div className="space-y-2">
@@ -2569,17 +2579,18 @@ export default function AdminResearchCenterPage() {
                   </SelectContent>
                 </Select>
 
-                {createErrors.centerChiefId ? (
+                {createErrors.centerChiefId && (
                   <p className="field-error">{createErrors.centerChiefId}</p>
-                ) : null}
+                )}
 
                 <p className="text-xs text-slate-500">Select from users.</p>
               </div>
 
-              <div className="space-y-2 col-span-2">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Social Media
                 </label>
+
                 <div className="grid gap-2 sm:grid-cols-3">
                   <Select
                     value={newResearchCenterSocialMediaPlatform}
@@ -2596,6 +2607,7 @@ export default function AdminResearchCenterPage() {
                       ))}
                     </SelectContent>
                   </Select>
+
                   <div className="sm:col-span-2">
                     <Input
                       value={newResearchCenterSocialMediaLink}
@@ -2608,12 +2620,13 @@ export default function AdminResearchCenterPage() {
                     />
                   </div>
                 </div>
+
                 <p className="text-xs text-slate-500">
                   Optional. You can add this later in Edit Research Center.
                 </p>
               </div>
 
-              <div className="space-y-2 col-span-2">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Description <span className="text-red-500">*</span>
                 </label>
@@ -2630,7 +2643,7 @@ export default function AdminResearchCenterPage() {
                 </p>
               </div>
 
-              <div className="space-y-2 col-span-2">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Research Agendum <span className="text-red-500">*</span>
                 </label>
@@ -2678,9 +2691,9 @@ export default function AdminResearchCenterPage() {
                   </p>
                 )}
 
-                {createErrors.researchAgendas ? (
+                {createErrors.researchAgendas && (
                   <p className="field-error">{createErrors.researchAgendas}</p>
-                ) : null}
+                )}
               </div>
             </div>
 
