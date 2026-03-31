@@ -74,8 +74,9 @@ export default function ResearchProjectsPage() {
       .toLowerCase() === "faculty" &&
     profile?.is_center_chief === true &&
     Boolean(profile?.managed_center_id);
-  const missingAffiliation =
-    !isAdmin && !isCenterChief && !String(profile?.ckan_org_id || "").trim();
+  const hasOrgId = String(profile?.ckan_org_id || "").trim();
+  const canSubmit = isAdmin || Boolean(hasOrgId);
+  const needsOrganization = !canSubmit;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
@@ -129,12 +130,6 @@ export default function ResearchProjectsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (missingAffiliation) {
-      setProjects([]);
-      setLinkedProjects([]);
-      setCenterChiefProjects([]);
-      return;
-    }
 
     let isMounted = true;
     fetchUserProjects({ userId: profile?.id })
@@ -197,7 +192,7 @@ export default function ResearchProjectsPage() {
     return () => {
       isMounted = false;
     };
-  }, [isCenterChief, missingAffiliation, profile?.id, user?.id]);
+  }, [isCenterChief, profile?.id, user?.id]);
 
   const centerById = useMemo(
     () =>
@@ -669,34 +664,6 @@ export default function ResearchProjectsPage() {
     }
   };
 
-  if (missingAffiliation) {
-    return (
-      <section className="page-stack-lg">
-        <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Research Projects
-            </p>
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Complete Your Profile First
-            </h1>
-          </div>
-        </div>
-        <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-          <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
-              Please set your Organization (Research Center) in My Profile first
-              before accessing Research Projects.
-            </p>
-            <Button asChild>
-              <Link to="/profile">Go to My Profile</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
-
   return (
     <section className="page-stack-lg">
       <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
@@ -736,11 +703,35 @@ export default function ResearchProjectsPage() {
               </DropdownMenu>
             ) : null}
 
-            <Button asChild>
-              <Link to="/projects/submit">Submit Research Project</Link>
-            </Button>
+            {canSubmit ? (
+              <Button asChild>
+                <Link to="/projects/submit">Submit Research Project</Link>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled
+                title="Set your Organization (Research Center) in My Profile to submit."
+              >
+                Submit Research Project
+              </Button>
+            )}
           </div>
         </div>
+
+        {needsOrganization ? (
+          <div className="mt-4 rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 text-sm text-amber-800">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p>
+                You can browse projects, but submitting requires an Organization
+                (Research Center).
+              </p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/profile">Go to My Profile</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
