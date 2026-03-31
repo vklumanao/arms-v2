@@ -261,9 +261,9 @@ export default function AffiliateProfilePage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="page-stack">
+        <div className="grid gap-6 lg:grid-cols-2 items-stretch">
           <form onSubmit={saveProfile}>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden h-full">
               <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                 <CardTitle className="text-lg font-semibold text-slate-900">
                   Profile Details
@@ -272,6 +272,7 @@ export default function AffiliateProfilePage() {
                   Update your personal information.
                 </CardDescription>
               </CardHeader>
+
               <CardContent className="grid gap-4 p-6">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -279,6 +280,7 @@ export default function AffiliateProfilePage() {
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
                 </div>
+
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
                     <label className="space-y-1 text-sm">
@@ -295,6 +297,7 @@ export default function AffiliateProfilePage() {
                         }
                       />
                     </label>
+
                     <label className="space-y-1 text-sm">
                       <span className="font-semibold text-slate-700">
                         Middle initial
@@ -310,6 +313,7 @@ export default function AffiliateProfilePage() {
                         }
                       />
                     </label>
+
                     <label className="space-y-1 text-sm">
                       <span className="font-semibold text-slate-700">
                         Last name
@@ -325,6 +329,7 @@ export default function AffiliateProfilePage() {
                       />
                     </label>
                   </div>
+
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
                       Department
@@ -377,6 +382,7 @@ export default function AffiliateProfilePage() {
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
                 </div>
+
                 <div className="grid gap-2 sm:grid-cols-2">
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
@@ -404,6 +410,7 @@ export default function AffiliateProfilePage() {
                       </SelectContent>
                     </Select>
                   </label>
+
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
                       Google Scholar Link
@@ -428,6 +435,7 @@ export default function AffiliateProfilePage() {
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
                 </div>
+
                 <div className="grid gap-2 sm:grid-cols-3">
                   <label className="space-y-1 text-sm">
                     <span className="font-semibold text-slate-700">
@@ -453,6 +461,7 @@ export default function AffiliateProfilePage() {
                       </SelectContent>
                     </Select>
                   </label>
+
                   <label className="space-y-1 text-sm sm:col-span-2">
                     <span className="font-semibold text-slate-700">
                       Designation
@@ -501,6 +510,7 @@ export default function AffiliateProfilePage() {
                 </CardTitle>
                 <CardDescription>Update your account password.</CardDescription>
               </CardHeader>
+
               <CardContent className="grid gap-3 p-6 sm:grid-cols-3">
                 <label className="space-y-1 text-sm">
                   <span className="font-semibold text-slate-700">
@@ -522,12 +532,7 @@ export default function AffiliateProfilePage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                      aria-label={
-                        showPassword.current
-                          ? "Hide current password"
-                          : "Show current password"
-                      }
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
                       onClick={() =>
                         setShowPassword((prev) => ({
                           ...prev,
@@ -564,12 +569,7 @@ export default function AffiliateProfilePage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                      aria-label={
-                        showPassword.next
-                          ? "Hide new password"
-                          : "Show new password"
-                      }
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
                       onClick={() =>
                         setShowPassword((prev) => ({
                           ...prev,
@@ -606,12 +606,7 @@ export default function AffiliateProfilePage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                      aria-label={
-                        showPassword.confirm
-                          ? "Hide confirm password"
-                          : "Show confirm password"
-                      }
+                      className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
                       onClick={() =>
                         setShowPassword((prev) => ({
                           ...prev,
@@ -628,7 +623,7 @@ export default function AffiliateProfilePage() {
                   </div>
                 </label>
 
-                <div className="sm:col-span-3 flex items-center justify-between gap-3">
+                <div className="sm:col-span-3 flex items-center justify-between">
                   <p className="text-xs text-slate-500">
                     Password must be at least 8 characters and include
                     uppercase, lowercase, and a number.
@@ -638,11 +633,11 @@ export default function AffiliateProfilePage() {
                   </Button>
                 </div>
 
-                {passwordError ? (
+                {passwordError && (
                   <p className="sm:col-span-3 text-sm text-[var(--danger)]">
                     {passwordError}
                   </p>
-                ) : null}
+                )}
               </CardContent>
             </Card>
           </form>
@@ -661,6 +656,7 @@ export default function AffiliateProfilePage() {
           await saveProfile(null, true);
         }}
       />
+
       <ConfirmActionModal
         open={confirmPasswordChange}
         title="Confirm Password Change"
