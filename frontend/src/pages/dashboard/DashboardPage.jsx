@@ -33,6 +33,10 @@ export default function DashboardPage() {
   const role = safeString(profile?.role).toLowerCase();
   const isAdmin = role === "admin";
   const [chartTheme, setChartTheme] = useState("branded");
+  const displayName = safeString(
+    profile?.full_name || profile?.name || user?.name || user?.email,
+  );
+  const greetingName = displayName || "Faculty";
 
   const {
     projects,
@@ -484,6 +488,7 @@ export default function DashboardPage() {
         activeFilterCount={activeFilterCount}
         lastUpdatedLabel={lastUpdatedLabel}
         dashboardLoading={dashboardLoading}
+        greetingName={greetingName}
         showFilters={showFilters}
         onToggleFilters={handleToggleFilters}
         onUpdateFilters={setFilters}
