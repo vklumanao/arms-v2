@@ -306,6 +306,7 @@ export function DashboardHeader({
   isAdmin,
   title,
   description,
+  greetingName,
   filters,
   visibleCenters,
   visibleDepartments,
@@ -319,35 +320,16 @@ export function DashboardHeader({
   onClearFilters,
   onApplyPreset,
   presetFlags,
-  chartTheme,
-  onChartThemeChange,
 }) {
+  const resolvedTitle =
+    !isAdmin && greetingName ? `Welcome back, ${greetingName}!` : title;
+
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
       <PageHeader
-        title={title}
+        title={resolvedTitle}
         actions={
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <div className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-white/80 p-1">
-              <Button
-                type="button"
-                variant={chartTheme === "default" ? "default" : "outline"}
-                className="h-7 rounded-full px-2 text-[11px]"
-                onClick={() => onChartThemeChange?.("default")}
-                aria-pressed={chartTheme === "default"}
-              >
-                Default charts
-              </Button>
-              <Button
-                type="button"
-                variant={chartTheme === "branded" ? "default" : "outline"}
-                className="h-7 rounded-full px-2 text-[11px]"
-                onClick={() => onChartThemeChange?.("branded")}
-                aria-pressed={chartTheme === "branded"}
-              >
-                Branded charts
-              </Button>
-            </div>
             {activeFilterCount ? (
               <span className="rounded-full border border-slate-200/80 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Filtered view - {activeFilterCount}
