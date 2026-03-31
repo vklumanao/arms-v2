@@ -6,7 +6,6 @@ import AppFooter from "@/components/layout/AppFooter";
 import NotificationPanel from "@/components/navigation/NotificationPanel";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -44,7 +43,6 @@ import {
   Menu,
   Settings,
   User,
-  UserCircle,
   UserRoundSearch,
   Users,
 } from "lucide-react";
@@ -623,36 +621,6 @@ export default function AppShell() {
                 </div>
               ) : null}
             </Link>
-
-            {variant === "desktop" ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={
-                  desktopSidebarCollapsed
-                    ? "Expand sidebar"
-                    : "Collapse sidebar"
-                }
-                title={
-                  desktopSidebarCollapsed
-                    ? "Expand sidebar"
-                    : "Collapse sidebar"
-                }
-                onClick={handleNavToggle}
-                className={cn(
-                  "h-9 w-9 rounded-md",
-                  "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                )}
-              >
-                {desktopSidebarCollapsed ? (
-                  <ChevronsRight className="h-4 w-4" />
-                ) : (
-                  <ChevronsLeft className="h-4 w-4" />
-                )}
-              </Button>
-            ) : null}
           </div>
         </div>
 
