@@ -107,10 +107,10 @@ const getChartColors = (count) =>
   Array.from({ length: count }, (_, index) => getChartColor(index));
 
 const PANEL_CARD_CLASS =
-  "min-h-[420px] flex flex-col border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
+  "min-h-[320px] md:min-h-[420px] min-w-0 flex flex-col border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
 const PANEL_HEADER_CLASS =
-  "bg-gradient-to-r from-slate-50 via-white to-slate-100";
-const PANEL_BODY_CLASS = "p-6 flex-1";
+  "bg-gradient-to-r from-slate-50 via-white to-slate-100 px-4 sm:px-5 py-3 sm:py-4";
+const PANEL_BODY_CLASS = "p-4 sm:p-6 flex-1";
 
 ChartJS.register(
   CategoryScale,
@@ -128,7 +128,7 @@ function SummaryCard({ label, value, hint, Icon = null }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-slate-300/70 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 break-words">
           {label}
         </p>
         {Icon ? (
@@ -225,12 +225,16 @@ function ActivityItem({ colorClass, title, meta, secondary }) {
     <div className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
       <div className="flex items-start gap-3">
         <span className={`mt-1 h-2 w-2 rounded-full ${colorClass}`} />
-        <div>
-          <p className="font-medium text-slate-900">{title}</p>
+        <div className="min-w-0">
+          <p className="font-medium text-slate-900 break-words">{title}</p>
           {secondary ? (
-            <p className="mt-1 text-xs text-slate-600">{secondary}</p>
+            <p className="mt-1 text-xs text-slate-600 break-words">
+              {secondary}
+            </p>
           ) : null}
-          {meta ? <p className="mt-1 text-xs text-slate-500">{meta}</p> : null}
+          {meta ? (
+            <p className="mt-1 text-xs text-slate-500 break-words">{meta}</p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -252,7 +256,7 @@ export function DashboardSection({
       : "bg-white/80";
   if (!framed) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-4 min-w-0">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             {eyebrow ? (
@@ -276,7 +280,7 @@ export function DashboardSection({
     );
   }
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 min-w-0">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           {eyebrow ? (
@@ -294,7 +298,7 @@ export function DashboardSection({
         {action ? <div>{action}</div> : null}
       </div>
       <div
-        className={`rounded-3xl border border-slate-200/70 ${toneClass} p-5 shadow-sm`}
+        className={`rounded-3xl border border-slate-200/70 ${toneClass} p-4 sm:p-5 shadow-sm`}
       >
         {children}
       </div>
@@ -325,7 +329,7 @@ export function DashboardHeader({
     !isAdmin && greetingName ? `Welcome back, ${greetingName}!` : title;
 
   return (
-    <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
+    <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-4 sm:p-6 shadow-sm">
       <PageHeader
         title={resolvedTitle}
         actions={
@@ -753,8 +757,8 @@ export function TopContributorsSection({
           No contributor activity yet for this period.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
-          <Table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+          <Table className="min-w-[520px] w-full text-sm">
             <TableHeader>
               <TableRow className="bg-slate-50/90">
                 <TableHead className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -984,13 +988,13 @@ export function FacultyActivitySection({ loading, activity }) {
       bodyClassName="p-6"
     >
       {loading ? (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
             <SummaryCardSkeleton key={`activity-skeleton-${item.label}`} />
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
             <div
               key={`activity-${item.label}`}
@@ -1093,8 +1097,12 @@ export function FacultyStatusSection({
       ) : total === 0 ? (
         <p className="text-sm text-slate-600">No projects found.</p>
       ) : (
-        <div role="img" aria-label="Bar chart showing project status counts">
-          <ChartFrame height={350}>
+        <div
+          role="img"
+          aria-label="Bar chart showing project status counts"
+          className="w-full min-w-0"
+        >
+          <ChartFrame className="w-full" height="clamp(220px, 55vw, 350px)">
             <Bar
               data={{
                 labels: statusData.map((row) => row.name),
@@ -1112,12 +1120,19 @@ export function FacultyStatusSection({
                 indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { left: 0, right: 4, top: 0, bottom: 0 } },
                 scales: {
                   x: {
                     beginAtZero: true,
                     ticks: {
                       precision: 0,
+                      font: { size: 10 },
                       callback: (value) => formatCount(Number(value) || 0),
+                    },
+                  },
+                  y: {
+                    ticks: {
+                      font: { size: 10 },
                     },
                   },
                 },
@@ -1194,17 +1209,17 @@ export function LinkedProjectsSection({ loading, linkedProjects }) {
                 className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
               >
                 {projectId ? (
-                  <Link
-                    to={`/projects/${encodeURIComponent(projectId)}`}
-                    className="font-medium text-slate-900 hover:underline"
-                  >
-                    {safeString(project?.title) || "Untitled project"}
-                  </Link>
-                ) : (
-                  <span className="font-medium text-slate-900">
-                    {safeString(project?.title) || "Untitled project"}
-                  </span>
-                )}
+              <Link
+                to={`/projects/${encodeURIComponent(projectId)}`}
+                className="font-medium text-slate-900 break-words hover:underline"
+              >
+                {safeString(project?.title) || "Untitled project"}
+              </Link>
+            ) : (
+              <span className="font-medium text-slate-900 break-words">
+                {safeString(project?.title) || "Untitled project"}
+              </span>
+            )}
                 <p className="mt-1 text-xs text-slate-500">
                   {updatedLabel
                     ? `Updated ${formatDateLabel(updatedLabel)}`
@@ -1277,11 +1292,11 @@ export function CenterBreakdownSection({
               Click a column to sort the table.
             </span>
           </div>
-          <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
             <div className="max-h-[420px] overflow-auto">
               <Table
                 aria-label="Research center breakdown table"
-                className="w-full text-sm"
+                className="min-w-[680px] w-full text-sm"
               >
                 <caption className="sr-only">
                   Research center breakdown showing projects, affiliates, and
@@ -1691,7 +1706,7 @@ export function RecentActivitySection({
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <DashboardPanel
           title={`Recently Updated Projects${loading ? " (Loading...)" : ""}`}
           cardClassName={PANEL_CARD_CLASS}

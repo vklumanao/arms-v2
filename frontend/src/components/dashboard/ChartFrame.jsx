@@ -1,6 +1,29 @@
-export default function ChartFrame({ height = 300, children }) {
+function toCssSize(value) {
+  if (value == null) return undefined;
+  return typeof value === "number" ? `${value}px` : value;
+}
+
+export default function ChartFrame({
+  height = 300,
+  minHeight,
+  className = "",
+  style = {},
+  children,
+}) {
+  const cssHeight = toCssSize(height);
+  const cssMinHeight = toCssSize(minHeight ?? height);
+
   return (
-    <div style={{ width: "100%", minWidth: 0, height, minHeight: height }}>
+    <div
+      className={className}
+      style={{
+        width: "100%",
+        minWidth: 0,
+        height: cssHeight,
+        minHeight: cssMinHeight,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
