@@ -303,6 +303,12 @@ export default function ResearchProjectsPage() {
             .toLowerCase() === "draft",
       );
     }
+    if (quickFilter === "public") {
+      return baseFilteredProjects.filter((project) => !project.private);
+    }
+    if (quickFilter === "private") {
+      return baseFilteredProjects.filter((project) => project.private);
+    }
     if (quickFilter !== "all") {
       return baseFilteredProjects.filter(
         (project) => normalizeStatus(project.status) === quickFilter,
@@ -334,13 +340,19 @@ export default function ResearchProjectsPage() {
       linkedProjects.map((project) => ({
         id: project.id,
         title: project.title || "-",
-        submitted_by_name: project.submitted_by_name || "Unknown user",
         lead_researcher: project.lead_researcher || "-",
         research_center: getProjectOrganization(project),
-        expected_outputs: project.expected_outputs || "-",
         linked_resources_count: Array.isArray(project.resources)
           ? project.resources.length
           : 0,
+        private:
+          typeof project?.private === "boolean"
+            ? project.private
+            : project?.project_public_visible === true
+              ? false
+              : project?.project_public_visible === false
+                ? true
+                : false,
         submitted_at: project.submitted_at || null,
         status: normalizeStatus(project.status),
       })),
@@ -348,6 +360,12 @@ export default function ResearchProjectsPage() {
   );
   const linkedProjectFilteredRows = useMemo(() => {
     if (linkedProjectsQuickFilter === "all") return linkedProjectRows;
+    if (linkedProjectsQuickFilter === "public") {
+      return linkedProjectRows.filter((row) => !row.private);
+    }
+    if (linkedProjectsQuickFilter === "private") {
+      return linkedProjectRows.filter((row) => row.private);
+    }
     return linkedProjectRows.filter(
       (row) => normalizeStatus(row.status) === linkedProjectsQuickFilter,
     );
@@ -364,6 +382,14 @@ export default function ResearchProjectsPage() {
           year: project.year || "-",
           status: normalizeStatus(project.status),
           submission_state: project.submission_state || "",
+          private:
+            typeof project?.private === "boolean"
+              ? project.private
+              : project?.project_public_visible === true
+                ? false
+                : project?.project_public_visible === false
+                  ? true
+                  : false,
           submitted_at: project.submitted_at || null,
         }))
         .sort(
@@ -397,6 +423,12 @@ export default function ResearchProjectsPage() {
             .trim()
             .toLowerCase() === "draft",
       );
+    }
+    if (centerChiefQuickFilter === "public") {
+      return baseCenterChiefRows.filter((row) => !row.private);
+    }
+    if (centerChiefQuickFilter === "private") {
+      return baseCenterChiefRows.filter((row) => row.private);
     }
     if (centerChiefQuickFilter !== "all") {
       return baseCenterChiefRows.filter(
@@ -859,6 +891,20 @@ export default function ResearchProjectsPage() {
                         .toLowerCase() === "draft",
                   ).length,
                 },
+                {
+                  key: "public",
+                  label: "Public",
+                  count: baseCenterChiefRows.filter(
+                    (project) => !project.private,
+                  ).length,
+                },
+                {
+                  key: "private",
+                  label: "Private",
+                  count: baseCenterChiefRows.filter(
+                    (project) => project.private,
+                  ).length,
+                },
               ].map((chip) => (
                 <Button
                   key={chip.key}
@@ -918,18 +964,19 @@ export default function ResearchProjectsPage() {
           ) : (
             <CardContent className="p-4">
               <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-                <Table className="min-w-[860px]">
+                <Table className="min-w-[980px]">
                   <TableHeader className="bg-slate-50/80">
                     <TableRow>
                       <TableHead className="w-[40px]">No.</TableHead>
                       <TableHead className="w-[320px]">Title</TableHead>
-                      <TableHead className="w-[160px]">
+                      <TableHead className="w-[180px]">
                         Lead Researcher
                       </TableHead>
-                      <TableHead className="w-[90px]">Status</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
+                      <TableHead className="w-[110px]">Visibility</TableHead>
                       <TableHead className="w-[80px]">Year</TableHead>
-                      <TableHead className="w-[110px]">Submitted</TableHead>
-                      <TableHead className="w-[70px] text-right">
+                      <TableHead className="w-[120px]">Submitted</TableHead>
+                      <TableHead className="w-[80px] text-right">
                         Action
                       </TableHead>
                     </TableRow>
@@ -960,6 +1007,15 @@ export default function ResearchProjectsPage() {
                               className={statusBadgeClass}
                             >
                               {statusLabel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                project.private ? "destructive" : "secondary"
+                              }
+                            >
+                              {project.private ? "Private" : "Public"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-slate-600">
@@ -1118,6 +1174,19 @@ export default function ResearchProjectsPage() {
                       .toLowerCase() === "draft",
                 ).length,
               },
+              {
+                key: "public",
+                label: "Public",
+                count: baseFilteredProjects.filter(
+                  (project) => !project.private,
+                ).length,
+              },
+              {
+                key: "private",
+                label: "Private",
+                count: baseFilteredProjects.filter((project) => project.private)
+                  .length,
+              },
             ].map((chip) => (
               <Button
                 key={chip.key}
@@ -1166,18 +1235,17 @@ export default function ResearchProjectsPage() {
         ) : (
           <CardContent className="p-4">
             <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-              <Table className="w-full">
+              <Table className="min-w-[1120px] w-full table-fixed">
                 <TableHeader className="bg-slate-50/80">
                   <TableRow>
                     <TableHead className="w-[40px]">No.</TableHead>
-                    <TableHead className="w-[320px]">Title</TableHead>
-                    <TableHead className="w-[60px]">Submitted By</TableHead>
-                    <TableHead className="w-[60px]">Project Year</TableHead>
-                    <TableHead className="w-[70px]">Status</TableHead>
-                    <TableHead className="w-[70px]">Visibility</TableHead>
-                    <TableHead className="w-[180px]">Research Center</TableHead>
-                    <TableHead className="w-[70px]">Submitted</TableHead>
-                    <TableHead className="w-[80px]">Action</TableHead>
+                    <TableHead className="w-[500px]">Title</TableHead>
+                    <TableHead>Project Year</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>Research Center</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1213,16 +1281,6 @@ export default function ResearchProjectsPage() {
                         </TableCell>
                         <TableCell className="whitespace-normal break-words font-medium text-slate-900">
                           {project.title || "-"}
-                        </TableCell>
-                        <TableCell className="whitespace-normal break-words text-slate-600">
-                          <p className="font-medium text-slate-900">
-                            {project.submitted_by_name || "Unknown user"}
-                          </p>
-                          <p className="text-xs text-slate-500 break-words">
-                            {project.submitted_by_email ||
-                              project.submitted_by ||
-                              "-"}
-                          </p>
                         </TableCell>
                         <TableCell className="text-slate-600">
                           {project.year || "-"}
@@ -1299,7 +1357,7 @@ export default function ResearchProjectsPage() {
                         <TableCell className="text-slate-600">
                           {formatDate(project.submitted_at)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                           <div className="inline-flex items-center justify-end gap-1">
                             <Button
                               type="button"
@@ -1369,7 +1427,7 @@ export default function ResearchProjectsPage() {
                 {totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={9} className="px-3 py-3">
+                      <TableCell colSpan={8} className="px-3 py-3">
                         <PaginationControls
                           page={currentPage}
                           totalPages={totalPages}
@@ -1436,6 +1494,18 @@ export default function ResearchProjectsPage() {
                   (project) => normalizeStatus(project.status) === "rejected",
                 ).length,
               },
+              {
+                key: "public",
+                label: "Public",
+                count: linkedProjectRows.filter((project) => !project.private)
+                  .length,
+              },
+              {
+                key: "private",
+                label: "Private",
+                count: linkedProjectRows.filter((project) => project.private)
+                  .length,
+              },
             ].map((chip) => (
               <Button
                 key={chip.key}
@@ -1487,16 +1557,16 @@ export default function ResearchProjectsPage() {
               <Table className="min-w-[980px]">
                 <TableHeader className="bg-slate-50/80">
                   <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Submitted By</TableHead>
-                    <TableHead>Lead Researcher</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Expected Outputs</TableHead>
-                    <TableHead>Linked Files</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="w-[50px]">No.</TableHead>
+                    <TableHead className="w-[350px]">Title</TableHead>
+                    <TableHead className="w-[180px]">Lead Researcher</TableHead>
+                    <TableHead className="w-[220px]">Research Center</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[110px]">Visibility</TableHead>
+                    <TableHead className="w-[120px]">Submitted</TableHead>
+                    <TableHead className="w-[80px] text-right">
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1507,21 +1577,10 @@ export default function ResearchProjectsPage() {
                         {project.title}
                       </TableCell>
                       <TableCell className="text-slate-600">
-                        {project.submitted_by_name}
-                      </TableCell>
-                      <TableCell className="text-slate-600">
                         {project.lead_researcher}
                       </TableCell>
                       <TableCell className="text-slate-600">
                         {project.research_center}
-                      </TableCell>
-                      <TableCell className="max-w-xs text-slate-600">
-                        <span className="line-clamp-2">
-                          {project.expected_outputs}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {project.linked_resources_count}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -1529,6 +1588,15 @@ export default function ResearchProjectsPage() {
                           className={getStatusBadgeClass(project.status)}
                         >
                           {formatStatusLabel(project.status) || "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            project.private ? "destructive" : "secondary"
+                          }
+                        >
+                          {project.private ? "Private" : "Public"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-slate-600">
