@@ -1109,7 +1109,7 @@ export default function ResearchOutputsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl p-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
@@ -1142,7 +1142,7 @@ export default function ResearchOutputsPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
           {[
             { label: "Total Outputs", value: analytics.total, icon: FileText },
             { label: "Public Outputs", value: analytics.public, icon: Eye },
@@ -1285,7 +1285,6 @@ export default function ResearchOutputsPage() {
                       <TableHead>Project</TableHead>
                       <TableHead>Research Center</TableHead>
                       <TableHead>Visibility</TableHead>
-                      <TableHead>Updated</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1324,11 +1323,6 @@ export default function ResearchOutputsPage() {
                               <Badge variant="outline">Pending</Badge>
                             ) : null}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {row.metadataModified
-                            ? new Date(row.metadataModified).toLocaleString()
-                            : "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex items-center justify-end gap-1">
@@ -1537,7 +1531,6 @@ export default function ResearchOutputsPage() {
                         <TableHead>Project</TableHead>
                         <TableHead>Research Center</TableHead>
                         <TableHead>Visibility</TableHead>
-                        <TableHead>Updated</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1612,11 +1605,6 @@ export default function ResearchOutputsPage() {
                                 </Button>
                               ) : null}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {row.metadataModified
-                              ? new Date(row.metadataModified).toLocaleString()
-                              : "-"}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="inline-flex items-center justify-end gap-1">
