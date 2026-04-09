@@ -532,7 +532,7 @@ export default function AwardsRecognitionPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl p-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold md:text-3xl">
@@ -569,7 +569,7 @@ export default function AwardsRecognitionPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
           {[
             { label: "Total Awards", value: analytics.total, icon: Award },
             {
