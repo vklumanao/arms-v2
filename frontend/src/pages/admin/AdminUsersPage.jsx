@@ -360,41 +360,41 @@ export default function AdminUsersPage() {
         title="User Management"
         description="Manage account access, role assignment, password reset, and account-level activity."
       />
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
+        <Card className="flex min-h-24 flex-col justify-between">
+          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
             <p className="kpi-label flex items-center gap-1">
               <Users size={14} /> Total Users
             </p>
             <p className="kpi-value">{metrics.total}</p>
           </CardContent>
         </Card>
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+        <Card className="flex min-h-24 flex-col justify-between">
+          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
             <p className="kpi-label flex items-center gap-1">
               <UserCheck size={14} /> Active
             </p>
             <p className="kpi-value">{metrics.active}</p>
           </CardContent>
         </Card>
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+        <Card className="flex min-h-24 flex-col justify-between">
+          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
             <p className="kpi-label flex items-center gap-1">
               <BadgeCheck size={14} /> Inactive
             </p>
             <p className="kpi-value">{metrics.inactive}</p>
           </CardContent>
         </Card>
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+        <Card className="flex min-h-24 flex-col justify-between">
+          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
             <p className="kpi-label flex items-center gap-1">
               <Briefcase size={14} /> Faculty
             </p>
             <p className="kpi-value">{metrics.faculty}</p>
           </CardContent>
         </Card>
-        <Card className="flex min-h-28 flex-col justify-between">
-          <CardContent className="flex min-h-28 flex-col justify-between p-5">
+        <Card className="flex min-h-24 flex-col justify-between">
+          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
             <p className="kpi-label flex items-center gap-1">
               <Users size={14} /> Student
             </p>
