@@ -694,9 +694,6 @@ export default function AdminDepartmentPage() {
       <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              ARMS Departments
-            </p>
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Department Workspace
             </h1>
