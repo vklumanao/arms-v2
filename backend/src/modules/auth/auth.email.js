@@ -27,7 +27,7 @@ export function buildVerificationEmailHtml({ fullName, link }) {
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
                 <tr>
                   <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
-                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">ARMS</div>
+                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">CCIS - ARMS</div>
                     <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Verify your email</div>
                     <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Activate your account in seconds</div>
                   </td>
@@ -36,7 +36,7 @@ export function buildVerificationEmailHtml({ fullName, link }) {
                   <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
                     <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
                     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
-                      Welcome to ARMS. Please confirm your email to activate your account and start managing your research workflows.
+                      Welcome to CCIS - ARMS. Please confirm your email to activate your account and start managing your research workflows.
                     </p>
                     <p style="margin:0 0 20px 0;">
                       <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
