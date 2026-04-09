@@ -698,7 +698,7 @@ export default function ResearchProjectsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl p-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
@@ -762,9 +762,9 @@ export default function ResearchProjectsPage() {
           </div>
         ) : null}
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
               <FileText size={14} />
               Total Projects
             </p>
@@ -773,7 +773,7 @@ export default function ResearchProjectsPage() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
               <FileText size={14} />
               Proposal
             </p>
@@ -782,7 +782,7 @@ export default function ResearchProjectsPage() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
               <Clock3 size={14} />
               Ongoing
             </p>
@@ -791,7 +791,7 @@ export default function ResearchProjectsPage() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
               <CheckCircle2 size={14} />
               Completed
             </p>
@@ -800,7 +800,7 @@ export default function ResearchProjectsPage() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
               <XCircle size={14} />
               Rejected
             </p>
