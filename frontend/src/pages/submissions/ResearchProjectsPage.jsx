@@ -562,14 +562,14 @@ export default function ResearchProjectsPage() {
   const getStatusBadgeClass = (status) => {
     const normalized = normalizeStatus(status);
     if (normalized === "proposal")
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "border-[var(--warning)] bg-[var(--surface-muted)] text-[var(--warning)]";
     if (normalized === "ongoing")
-      return "border-sky-200 bg-sky-50 text-sky-700";
+      return "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]";
     if (normalized === "completed")
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-[var(--success)] bg-[var(--surface-muted)] text-[var(--success)]";
     if (normalized === "rejected")
-      return "border-rose-200 bg-rose-50 text-rose-700";
-    return "border-slate-200 bg-slate-50 text-slate-600";
+      return "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]";
+    return "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-muted)]";
   };
 
   const buildExportRows = () =>
@@ -657,12 +657,20 @@ export default function ResearchProjectsPage() {
           <head>
             <title>research-project-records-filtered</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+              :root {
+                --bg: #e9eff7;
+                --surface: #ffffff;
+                --surface-muted: #f4f7fb;
+                --border: #d2deec;
+                --text: #142338;
+                --text-muted: #546883;
+              }
+              body { font-family: Arial, sans-serif; padding: 24px; color: var(--text); background: var(--bg); }
               h1 { margin: 0 0 6px; font-size: 20px; }
-              p { margin: 0 0 16px; color: #475569; font-size: 12px; }
-              table { width: 100%; border-collapse: collapse; font-size: 12px; }
-              th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
-              th { background: #f8fafc; }
+              p { margin: 0 0 16px; color: var(--text-muted); font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); }
+              th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+              th { background: var(--surface-muted); }
             </style>
           </head>
           <body>
@@ -697,11 +705,11 @@ export default function ResearchProjectsPage() {
   };
 
   return (
-    <section className="page-stack-lg">
-      <div className="rounded-2xl p-3">
+    <section className="page-stack-lg text-[var(--text)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
               Research Projects Workspace
             </h1>
           </div>
@@ -713,6 +721,7 @@ export default function ResearchProjectsPage() {
                   <Button
                     type="button"
                     variant="outline"
+                    className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
                     disabled={
                       !filteredProjects.length || Boolean(exportingType)
                     }
@@ -721,11 +730,20 @@ export default function ResearchProjectsPage() {
                     Export
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={exportAsCsv}>
+                <DropdownMenuContent
+                  align="end"
+                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
+                >
+                  <DropdownMenuItem
+                    onSelect={exportAsCsv}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={exportAsPdf}>
+                  <DropdownMenuItem
+                    onSelect={exportAsPdf}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -733,13 +751,17 @@ export default function ResearchProjectsPage() {
             ) : null}
 
             {canSubmit ? (
-              <Button asChild>
+              <Button
+                asChild
+                className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+              >
                 <Link to="/projects/submit">Submit Research Project</Link>
               </Button>
             ) : (
               <Button
                 type="button"
                 disabled
+                className="bg-[var(--surface-strong)] text-[var(--text-muted)]"
                 title="Set your Organization (Research Center) in My Profile to submit."
               >
                 Submit Research Project
@@ -749,13 +771,18 @@ export default function ResearchProjectsPage() {
         </div>
 
         {needsOrganization ? (
-          <div className="mt-4 rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 text-sm text-amber-800">
+          <div className="mt-4 rounded-2xl border border-[var(--warning)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--warning)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p>
                 You can browse projects, but submitting requires an Organization
                 (Research Center).
               </p>
-              <Button asChild size="sm" variant="outline">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
+              >
                 <Link to="/profile">Go to My Profile</Link>
               </Button>
             </div>
@@ -763,48 +790,48 @@ export default function ResearchProjectsPage() {
         ) : null}
 
         <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
               <FileText size={14} />
               Total Projects
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
               {analytics.total}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
               <FileText size={14} />
               Proposal
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
               {analytics.proposal}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
               <Clock3 size={14} />
               Ongoing
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
               {analytics.ongoing}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
               <CheckCircle2 size={14} />
               Completed
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
               {analytics.completed}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
               <XCircle size={14} />
               Rejected
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
               {analytics.rejected}
             </p>
           </div>
@@ -812,14 +839,14 @@ export default function ResearchProjectsPage() {
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
           <CardHeader className="border-b border-[var(--border)] px-6 py-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-slate-900">
+                <CardTitle className="text-base font-semibold text-[var(--text)]">
                   Managed Center Projects
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[var(--text-muted)]">
                   Showing {centerChiefFilteredRows.length} project(s) linked to
                   your research center.
                 </CardDescription>
@@ -829,17 +856,17 @@ export default function ResearchProjectsPage() {
                   <span className="sr-only">
                     Search managed center projects
                   </span>
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
                   <Input
                     value={centerChiefSearch}
                     onChange={(event) =>
                       setCenterChiefSearch(event.target.value)
                     }
                     placeholder="Search title, lead, status, year, or center"
-                    className="pl-9"
+                    className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                   />
                 </label>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-[var(--text-muted)]">
                   Scope: {profile?.managed_center_name || "My Center"}
                 </span>
               </div>
@@ -912,10 +939,10 @@ export default function ResearchProjectsPage() {
                   size="sm"
                   variant="outline"
                   className={cn(
-                    "rounded-full border-slate-200 px-4 text-xs",
+                    "rounded-full border px-4 text-xs",
                     centerChiefQuickFilter === chip.key
-                      ? "bg-slate-900 text-white hover:bg-slate-900"
-                      : "bg-white text-slate-600 hover:bg-slate-50",
+                      ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                   )}
                   onClick={() => setCenterChiefQuickFilter(chip.key)}
                 >
@@ -924,8 +951,8 @@ export default function ResearchProjectsPage() {
                     className={cn(
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-slate-600",
+                        ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                        : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                     )}
                   >
                     {chip.count}
@@ -936,7 +963,7 @@ export default function ResearchProjectsPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                 onClick={() => setCenterChiefQuickFilter("all")}
               >
                 Clear filters
@@ -945,27 +972,27 @@ export default function ResearchProjectsPage() {
           </CardHeader>
           {centerChiefLoading ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
                 Loading managed center projects...
               </div>
             </CardContent>
           ) : centerChiefRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
                 No projects found for your research center yet.
               </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
                 No managed center projects match your search.
               </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-slate-50/80">
+                  <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                     <TableRow>
                       <TableHead className="w-[40px]">No.</TableHead>
                       <TableHead className="w-[320px]">Title</TableHead>
@@ -995,10 +1022,10 @@ export default function ResearchProjectsPage() {
                               index +
                               1}
                           </TableCell>
-                          <TableCell className="whitespace-normal break-words font-medium text-slate-900">
+                          <TableCell className="whitespace-normal break-words font-medium text-[var(--text)]">
                             {project.title || "-"}
                           </TableCell>
-                          <TableCell className="text-slate-600">
+                          <TableCell className="text-[var(--text-muted)]">
                             {project.lead_researcher || "-"}
                           </TableCell>
                           <TableCell>
@@ -1011,17 +1038,20 @@ export default function ResearchProjectsPage() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={
-                                project.private ? "destructive" : "secondary"
+                              variant="outline"
+                              className={
+                                project.private
+                                  ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
+                                  : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
                               }
                             >
                               {project.private ? "Private" : "Public"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-slate-600">
+                          <TableCell className="text-[var(--text-muted)]">
                             {project.year || "-"}
                           </TableCell>
-                          <TableCell className="text-slate-600">
+                          <TableCell className="text-[var(--text-muted)]">
                             {formatDate(project.submitted_at)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1030,7 +1060,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 onClick={() => goToProjectDetail(project)}
                                 aria-label={`View ${project?.title || "project"}`}
                                 title="View"
@@ -1041,7 +1071,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 onClick={() => openEditModal(project)}
                                 aria-label={`Edit ${project?.title || "project"}`}
                                 title="Edit"
@@ -1052,7 +1082,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                                 onClick={() => handleDeleteProject(project)}
                                 aria-label={`Delete ${project?.title || "project"}`}
                                 title="Delete"
@@ -1086,22 +1116,22 @@ export default function ResearchProjectsPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-[var(--text)]">
                 Research Project Records
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[var(--text-muted)]">
                 Showing {filteredProjects.length} project(s).
               </CardDescription>
             </div>
             <label className="relative w-full md:max-w-md">
               <span className="sr-only">Search projects</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
               <Input
-                className="pl-8"
+                className="pl-8 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                 placeholder="Search title, abstract, lead, status, year, or center"
                 value={filters.search}
                 onChange={(e) => updateFilter("search", e.target.value)}
@@ -1112,18 +1142,34 @@ export default function ResearchProjectsPage() {
                 value={filters.sortBy}
                 onValueChange={(value) => updateFilter("sortBy", value)}
               >
-                <SelectTrigger className="w-full md:w-[16rem]">
+                <SelectTrigger className="w-full border-[var(--border)] bg-[var(--surface)] text-[var(--text)] md:w-[16rem]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="submitted_desc">
+                <SelectContent className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
+                  <SelectItem
+                    value="submitted_desc"
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     Sort: Newest submitted
                   </SelectItem>
-                  <SelectItem value="submitted_asc">
+                  <SelectItem
+                    value="submitted_asc"
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     Sort: Oldest submitted
                   </SelectItem>
-                  <SelectItem value="title_asc">Sort: Title A-Z</SelectItem>
-                  <SelectItem value="title_desc">Sort: Title Z-A</SelectItem>
+                  <SelectItem
+                    value="title_asc"
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
+                    Sort: Title A-Z
+                  </SelectItem>
+                  <SelectItem
+                    value="title_desc"
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
+                    Sort: Title Z-A
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1194,10 +1240,10 @@ export default function ResearchProjectsPage() {
                 size="sm"
                 variant="outline"
                 className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
+                  "rounded-full border px-4 text-xs",
                   quickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
+                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                 )}
                 onClick={() => setQuickFilter(chip.key)}
               >
@@ -1206,8 +1252,8 @@ export default function ResearchProjectsPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
+                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                   )}
                 >
                   {chip.count}
@@ -1218,7 +1264,7 @@ export default function ResearchProjectsPage() {
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
               onClick={() => setQuickFilter("all")}
             >
               Clear filters
@@ -1227,16 +1273,16 @@ export default function ResearchProjectsPage() {
         </CardHeader>
         {filteredProjects.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
               No research projects found. Try a different search term or submit
               a new research project.
             </div>
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table className="min-w-[1120px] w-full table-fixed">
-                <TableHeader className="bg-slate-50/80">
+                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                   <TableRow>
                     <TableHead className="w-[40px]">No.</TableHead>
                     <TableHead className="w-[500px]">Title</TableHead>
@@ -1279,16 +1325,21 @@ export default function ResearchProjectsPage() {
                         <TableCell>
                           {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
                         </TableCell>
-                        <TableCell className="whitespace-normal break-words font-medium text-slate-900">
+                        <TableCell className="whitespace-normal break-words font-medium text-[var(--text)]">
                           {project.title || "-"}
                         </TableCell>
-                        <TableCell className="text-slate-600">
+                        <TableCell className="text-[var(--text-muted)]">
                           {project.year || "-"}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
                             {isDraft ? (
-                              <Badge variant="secondary">Draft</Badge>
+                              <Badge
+                                variant="outline"
+                                className="border-[var(--border)] bg-[var(--surface-strong)] text-[var(--text-muted)]"
+                              >
+                                Draft
+                              </Badge>
                             ) : null}
                             <Badge
                               variant="outline"
@@ -1301,8 +1352,11 @@ export default function ResearchProjectsPage() {
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge
-                              variant={
-                                project.private ? "destructive" : "secondary"
+                              variant="outline"
+                              className={
+                                project.private
+                                  ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
+                                  : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
                               }
                             >
                               {project.private ? "Private" : "Public"}
@@ -1312,7 +1366,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 disabled={Boolean(
                                   visibilitySavingByDataset[
                                     project.ckan_dataset_id
@@ -1351,10 +1405,10 @@ export default function ResearchProjectsPage() {
                             ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="whitespace-normal break-words text-slate-600">
+                        <TableCell className="whitespace-normal break-words text-[var(--text-muted)]">
                           {getProjectOrganization(project)}
                         </TableCell>
-                        <TableCell className="text-slate-600">
+                        <TableCell className="text-[var(--text-muted)]">
                           {formatDate(project.submitted_at)}
                         </TableCell>
                         <TableCell className="text-right">
@@ -1363,7 +1417,7 @@ export default function ResearchProjectsPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                               onClick={() => goToProjectDetail(project)}
                               aria-label={`View ${project?.title || "project"}`}
                               title="View"
@@ -1375,7 +1429,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 onClick={() => openEditModal(project)}
                                 aria-label={`Continue ${project?.title || "draft"}`}
                                 title="Continue"
@@ -1388,7 +1442,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 onClick={() => openEditModal(project)}
                                 aria-label={`Edit ${project?.title || "project"}`}
                                 title="Edit"
@@ -1401,7 +1455,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                                 onClick={() => handleDeleteProject(project)}
                                 disabled={deletingProjectId === project.id}
                                 aria-label={`Delete ${project?.title || "project"}`}
@@ -1444,18 +1498,18 @@ export default function ResearchProjectsPage() {
         )}
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-[var(--text)]">
                 Linked Projects
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[var(--text-muted)]">
                 Linked content summary for your submitted research projects.
               </CardDescription>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--text-muted)]">
               {linkedProjectFilteredRows.length} row(s).
             </p>
           </div>
@@ -1513,10 +1567,10 @@ export default function ResearchProjectsPage() {
                 size="sm"
                 variant="outline"
                 className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
+                  "rounded-full border px-4 text-xs",
                   linkedProjectsQuickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
+                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                 )}
                 onClick={() => setLinkedProjectsQuickFilter(chip.key)}
               >
@@ -1525,8 +1579,8 @@ export default function ResearchProjectsPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     linkedProjectsQuickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
+                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                   )}
                 >
                   {chip.count}
@@ -1537,7 +1591,7 @@ export default function ResearchProjectsPage() {
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
               onClick={() => setLinkedProjectsQuickFilter("all")}
             >
               Clear filters
@@ -1546,16 +1600,16 @@ export default function ResearchProjectsPage() {
         </CardHeader>
         {linkedProjectFilteredRows.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
               This section will display project summaries once you are assigned
               to a research team or have submitted a research project.
             </div>
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-slate-50/80">
+                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                   <TableRow>
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead className="w-[350px]">Title</TableHead>
@@ -1573,13 +1627,13 @@ export default function ResearchProjectsPage() {
                   {linkedProjectFilteredRows.map((project, index) => (
                     <TableRow key={`linked-${project.id}`}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium text-slate-900">
+                      <TableCell className="font-medium text-[var(--text)]">
                         {project.title}
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-[var(--text-muted)]">
                         {project.lead_researcher}
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-[var(--text-muted)]">
                         {project.research_center}
                       </TableCell>
                       <TableCell>
@@ -1592,14 +1646,17 @@ export default function ResearchProjectsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            project.private ? "destructive" : "secondary"
+                          variant="outline"
+                          className={
+                            project.private
+                              ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
+                              : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
                           }
                         >
                           {project.private ? "Private" : "Public"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-[var(--text-muted)]">
                         {formatDate(project.submitted_at)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -1608,7 +1665,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                             onClick={() => goToProjectDetail(project)}
                             aria-label={`View ${project?.title || "project"}`}
                             title="View"
@@ -1619,7 +1676,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                             onClick={() => openEditModal(project)}
                             aria-label={`Edit ${project?.title || "project"}`}
                             title="Edit"
@@ -1630,7 +1687,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                            className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                             onClick={() => handleDeleteProject(project)}
                             aria-label={`Delete ${project?.title || "project"}`}
                             title="Delete"
