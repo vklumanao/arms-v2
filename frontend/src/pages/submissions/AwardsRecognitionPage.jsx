@@ -458,12 +458,20 @@ export default function AwardsRecognitionPage() {
           <head>
             <title>awards-recognition-records-filtered</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+              :root {
+                --bg: #e9eff7;
+                --surface: #ffffff;
+                --surface-muted: #f4f7fb;
+                --border: #d2deec;
+                --text: #142338;
+                --text-muted: #546883;
+              }
+              body { font-family: Arial, sans-serif; padding: 24px; color: var(--text); background: var(--bg); }
               h1 { margin: 0 0 6px; font-size: 20px; }
-              p { margin: 0 0 16px; color: #475569; font-size: 12px; }
-              table { width: 100%; border-collapse: collapse; font-size: 12px; }
-              th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
-              th { background: #f8fafc; }
+              p { margin: 0 0 16px; color: var(--text-muted); font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); }
+              th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+              th { background: var(--surface-muted); }
             </style>
           </head>
           <body>
@@ -500,28 +508,31 @@ export default function AwardsRecognitionPage() {
 
   if (missingAffiliation) {
     return (
-      <section className="page-stack-lg">
-        <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+      <section className="page-stack-lg text-[var(--text)]">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
               Awards and Recognition
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
               Complete Your Profile First
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--text-muted)]">
               Add your organization (research center) before reviewing awards
               and recognition records.
             </p>
           </div>
         </div>
-        <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+        <Card className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-700">
+            <p className="text-sm text-[var(--warning)]">
               Please set your Organization (Research Center) in My Profile first
               before accessing Awards and Recognition.
             </p>
-            <Button asChild>
+            <Button
+              asChild
+              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+            >
               <Link to="/profile">Go to My Profile</Link>
             </Button>
           </CardContent>
@@ -531,11 +542,11 @@ export default function AwardsRecognitionPage() {
   }
 
   return (
-    <section className="page-stack-lg">
-      <div className="rounded-2xl p-3">
+    <section className="page-stack-lg text-[var(--text)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold md:text-3xl">
+            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
               Awards and Recognitions Workspace
             </h1>
           </div>
@@ -546,24 +557,37 @@ export default function AwardsRecognitionPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
+                    className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
                     disabled={!filteredRows.length || Boolean(exportingType)}
                   >
                     <Download className="h-4 w-4" />
                     Export
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={exportAsCsv}>
+                <DropdownMenuContent
+                  align="end"
+                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
+                >
+                  <DropdownMenuItem
+                    onSelect={exportAsCsv}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={exportAsPdf}>
+                  <DropdownMenuItem
+                    onSelect={exportAsPdf}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
 
-            <Button asChild>
+            <Button
+              asChild
+              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+            >
               <Link to="/awards/new">Add Awards/Recognitions</Link>
             </Button>
           </div>
@@ -600,14 +624,14 @@ export default function AwardsRecognitionPage() {
           ].map(({ label, value, icon: Icon }) => (
             <Card
               key={label}
-              className="rounded-xl border border-slate-200/70 bg-white/80 shadow-sm"
+              className="rounded-xl border border-[var(--border)] bg-[var(--surface)]"
             >
               <CardContent className="p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                   <Icon size={14} />
                   {label}
                 </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-[var(--text)]">
                   {value}
                 </p>
               </CardContent>
@@ -617,26 +641,26 @@ export default function AwardsRecognitionPage() {
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
           <CardHeader className="border-b border-[var(--border)] px-6 py-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-slate-900">
+                <CardTitle className="text-base font-semibold text-[var(--text)]">
                   Managed Center Awards and Recognition
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[var(--text-muted)]">
                   Showing {centerChiefFilteredRows.length} record(s) from your
                   managed research center.
                 </CardDescription>
               </div>
               <label className="relative w-full md:max-w-xl">
                 <span className="sr-only">Search managed center awards</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
                 <Input
                   value={centerChiefSearch}
                   onChange={(event) => setCenterChiefSearch(event.target.value)}
                   placeholder="Search title, award, body, recipient, level, or year"
-                  className="pl-9"
+                  className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                 />
               </label>
             </div>
@@ -689,10 +713,10 @@ export default function AwardsRecognitionPage() {
                   size="sm"
                   variant="outline"
                   className={cn(
-                    "rounded-full border-slate-200 px-4 text-xs",
+                    "rounded-full border-[var(--border)] px-4 text-xs",
                     centerChiefQuickFilter === chip.key
-                      ? "bg-slate-900 text-white hover:bg-slate-900"
-                      : "bg-white text-slate-600 hover:bg-slate-50",
+                      ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                      : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                   )}
                   onClick={() => setCenterChiefQuickFilter(chip.key)}
                 >
@@ -701,8 +725,8 @@ export default function AwardsRecognitionPage() {
                     className={cn(
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-slate-600",
+                        ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                        : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                     )}
                   >
                     {chip.count}
@@ -713,7 +737,7 @@ export default function AwardsRecognitionPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                 onClick={() => setCenterChiefQuickFilter("all")}
               >
                 Clear filters
@@ -721,27 +745,27 @@ export default function AwardsRecognitionPage() {
             </div>
           </CardHeader>
           {centerChiefLoading ? (
-            <CardContent className="p-4 text-sm text-slate-600">
+            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
               Loading managed center awards...
             </CardContent>
           ) : centerChiefError ? (
-            <CardContent className="p-4 text-sm text-red-600">
+            <CardContent className="p-4 text-sm text-[var(--danger)]">
               {centerChiefError}
             </CardContent>
           ) : sortedCenterChiefRows.length === 0 ? (
-            <CardContent className="p-4 text-sm text-slate-600">
+            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
               No awards and recognition records found for your managed research
               center.
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
-            <CardContent className="p-4 text-sm text-slate-600">
+            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
               No managed center awards match your search.
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-slate-50/80">
+                  <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Title of Research/Creative Work</TableHead>
@@ -773,7 +797,7 @@ export default function AwardsRecognitionPage() {
                                 href={row.supporting_movs}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex text-sm font-medium text-sky-700 hover:text-sky-900"
+                                className="inline-flex text-sm font-medium text-[var(--accent)] hover:text-[var(--brand-strong)]"
                               >
                                 Link / Reference
                               </a>
@@ -785,7 +809,7 @@ export default function AwardsRecognitionPage() {
                                 )}/download?download=1`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
+                                className="inline-flex text-sm font-medium text-[var(--success)] hover:text-[var(--brand-strong)]"
                               >
                                 {row.supporting_mov_file_name ||
                                   "Download MOV file"}
@@ -803,7 +827,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 asChild
                               >
                                 <Link
@@ -820,7 +844,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                               onClick={() => openEdit(row)}
                               aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Edit"
@@ -830,7 +854,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                              className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                               onClick={() => setDeleteTarget(row)}
                               aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Delete"
@@ -863,26 +887,26 @@ export default function AwardsRecognitionPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-[var(--text)]">
                 Awards and Recognition Records
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-[var(--text-muted)]">
                 Showing {filteredRows.length} record(s).
               </CardDescription>
             </div>
 
             <label className="relative w-full md:max-w-xl">
               <span className="sr-only">Search awards and recognitions</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search title, award, body, recipient, level, or year"
-                className="pl-9"
+                className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </label>
           </div>
@@ -935,10 +959,10 @@ export default function AwardsRecognitionPage() {
                 size="sm"
                 variant="outline"
                 className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
+                  "rounded-full border-[var(--border)] px-4 text-xs",
                   recordsQuickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
+                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                    : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                 )}
                 onClick={() => setRecordsQuickFilter(chip.key)}
               >
@@ -947,8 +971,8 @@ export default function AwardsRecognitionPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     recordsQuickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
+                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                   )}
                 >
                   {chip.count}
@@ -959,7 +983,7 @@ export default function AwardsRecognitionPage() {
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
               onClick={() => setRecordsQuickFilter("all")}
             >
               Clear filters
@@ -968,7 +992,7 @@ export default function AwardsRecognitionPage() {
         </CardHeader>
         {filteredRows.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
               {canLoadOwnAwards && loading
                 ? "Loading award records..."
                 : loadError ||
@@ -977,9 +1001,9 @@ export default function AwardsRecognitionPage() {
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-slate-50/80">
+                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Title of Research/Creative Work</TableHead>
@@ -1011,7 +1035,7 @@ export default function AwardsRecognitionPage() {
                               href={row.supporting_movs}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex text-sm font-medium text-sky-700 hover:text-sky-900"
+                              className="inline-flex text-sm font-medium text-[var(--accent)] hover:text-[var(--brand-strong)]"
                             >
                               Link / Reference
                             </a>
@@ -1023,7 +1047,7 @@ export default function AwardsRecognitionPage() {
                               )}/download?download=1`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
+                              className="inline-flex text-sm font-medium text-[var(--success)] hover:text-[var(--brand-strong)]"
                             >
                               {row.supporting_mov_file_name ||
                                 "Download MOV file"}
@@ -1055,7 +1079,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                     asChild
                                   >
                                     <Link
@@ -1072,7 +1096,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                   onClick={() => openEdit(row)}
                                   aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Edit"
@@ -1082,7 +1106,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                  className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                                   onClick={() => setDeleteTarget(row)}
                                   aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Delete"
