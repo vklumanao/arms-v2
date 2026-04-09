@@ -272,28 +272,31 @@ export default function ResearchOutputsPage() {
   }, [isCenterChief, profile?.id]);
 
   const missingAffiliationContent = (
-    <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+    <section className="page-stack-lg text-[var(--text)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
             Research Outputs
           </p>
-          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+          <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
             Complete Your Profile First
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[var(--text-muted)]">
             Add your organization (research center) before managing research
             outputs.
           </p>
         </div>
       </div>
-      <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+      <Card className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
         <CardContent className="space-y-3 p-5">
-          <p className="text-sm text-amber-700">
+          <p className="text-sm text-[var(--warning)]">
             Please set your Organization (Research Center) in My Profile first
             before accessing Research Outputs.
           </p>
-          <Button asChild>
+          <Button
+            asChild
+            className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+          >
             <Link to="/profile">Go to My Profile</Link>
           </Button>
         </CardContent>
@@ -806,12 +809,20 @@ export default function ResearchOutputsPage() {
           <head>
             <title>research-output-records-filtered</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+              :root {
+                --bg: #e9eff7;
+                --surface: #ffffff;
+                --surface-muted: #f4f7fb;
+                --border: #d2deec;
+                --text: #142338;
+                --text-muted: #546883;
+              }
+              body { font-family: Arial, sans-serif; padding: 24px; color: var(--text); background: var(--bg); }
               h1 { margin: 0 0 6px; font-size: 20px; }
-              p { margin: 0 0 16px; color: #475569; font-size: 12px; }
-              table { width: 100%; border-collapse: collapse; font-size: 12px; }
-              th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
-              th { background: #f8fafc; }
+              p { margin: 0 0 16px; color: var(--text-muted); font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); }
+              th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+              th { background: var(--surface-muted); }
             </style>
           </head>
           <body>
@@ -1108,11 +1119,11 @@ export default function ResearchOutputsPage() {
   }
 
   return (
-    <section className="page-stack-lg">
-      <div className="rounded-2xl p-3">
+    <section className="page-stack-lg text-[var(--text)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
               Research Outputs Workspace
             </h1>
           </div>
@@ -1122,23 +1133,38 @@ export default function ResearchOutputsPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
+                    className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
                     disabled={!filteredRows.length || Boolean(exportingType)}
                   >
                     <Download className="h-4 w-4" />
                     Export
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={exportAsCsv}>
+                <DropdownMenuContent
+                  align="end"
+                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
+                >
+                  <DropdownMenuItem
+                    onSelect={exportAsCsv}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={exportAsPdf}>
+                  <DropdownMenuItem
+                    onSelect={exportAsPdf}
+                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                  >
                     {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            <Button onClick={openAddOutputModal}>Add Output</Button>
+            <Button
+              onClick={openAddOutputModal}
+              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+            >
+              Add Output
+            </Button>
           </div>
         </div>
 
@@ -1159,14 +1185,14 @@ export default function ResearchOutputsPage() {
           ].map(({ label, value, icon: Icon }) => (
             <Card
               key={label}
-              className="rounded-xl border border-slate-200/70 bg-white/80 shadow-sm"
+              className="rounded-xl border border-[var(--border)] bg-[var(--surface)]"
             >
               <CardContent className="p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                   <Icon size={14} />
                   {label}
                 </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-[var(--text)]">
                   {value}
                 </p>
               </CardContent>
@@ -1176,26 +1202,26 @@ export default function ResearchOutputsPage() {
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
           <CardHeader className="border-b border-[var(--border)] px-6 py-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-slate-900">
+                <CardTitle className="text-base font-semibold text-[var(--text)]">
                   Managed Center Research Outputs
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[var(--text-muted)]">
                   Showing {centerChiefFilteredRows.length} output(s) from your
                   managed research center.
                 </CardDescription>
               </div>
               <label className="relative w-full md:max-w-xl">
                 <span className="sr-only">Search managed center outputs</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
                 <Input
                   value={centerChiefSearch}
                   onChange={(event) => setCenterChiefSearch(event.target.value)}
                   placeholder="Search file, dataset, project, center, state, or visibility"
-                  className="pl-9"
+                  className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                 />
               </label>
             </div>
@@ -1226,10 +1252,10 @@ export default function ResearchOutputsPage() {
                   size="sm"
                   variant="outline"
                   className={cn(
-                    "rounded-full border-slate-200 px-4 text-xs",
+                    "rounded-full border-[var(--border)] px-4 text-xs",
                     centerChiefQuickFilter === chip.key
-                      ? "bg-slate-900 text-white hover:bg-slate-900"
-                      : "bg-white text-slate-600 hover:bg-slate-50",
+                      ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                      : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                   )}
                   onClick={() => setCenterChiefQuickFilter(chip.key)}
                 >
@@ -1238,8 +1264,8 @@ export default function ResearchOutputsPage() {
                     className={cn(
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-slate-600",
+                        ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                        : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                     )}
                   >
                     {chip.count}
@@ -1250,7 +1276,7 @@ export default function ResearchOutputsPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                 onClick={() => setCenterChiefQuickFilter("all")}
               >
                 Clear filters
@@ -1258,26 +1284,26 @@ export default function ResearchOutputsPage() {
             </div>
           </CardHeader>
           {centerChiefLoading ? (
-            <CardContent className="p-5 text-sm text-slate-600">
+            <CardContent className="p-5 text-sm text-[var(--text-muted)]">
               Loading managed center outputs...
             </CardContent>
           ) : centerChiefError ? (
-            <CardContent className="p-5 text-sm text-red-600">
+            <CardContent className="p-5 text-sm text-[var(--danger)]">
               {centerChiefError}
             </CardContent>
           ) : centerChiefRows.length === 0 ? (
-            <CardContent className="p-5 text-sm text-slate-600">
+            <CardContent className="p-5 text-sm text-[var(--text-muted)]">
               No research outputs found for your managed research center.
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
-            <CardContent className="p-5 text-sm text-slate-600">
+            <CardContent className="p-5 text-sm text-[var(--text-muted)]">
               No managed center outputs match your search.
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-slate-50/80">
+                  <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Resource/File</TableHead>
@@ -1297,12 +1323,12 @@ export default function ResearchOutputsPage() {
                         <TableCell>
                           <div className="font-medium">{row.title}</div>
                           {row.subtitle ? (
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-[var(--text-muted)]">
                               {row.subtitle}
                             </div>
                           ) : null}
                           {row.isPendingOutput ? (
-                            <div className="space-y-1 text-xs text-amber-700">
+                            <div className="space-y-1 text-xs text-[var(--warning)]">
                               <div>No file attached yet.</div>
                             </div>
                           ) : null}
@@ -1313,14 +1339,22 @@ export default function ResearchOutputsPage() {
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge
-                              variant={
-                                row.private ? "destructive" : "secondary"
+                              variant="outline"
+                              className={
+                                row.private
+                                  ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
+                                  : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
                               }
                             >
                               {row.private ? "Private" : "Public"}
                             </Badge>
                             {row.isPendingOutput ? (
-                              <Badge variant="outline">Pending</Badge>
+                              <Badge
+                                variant="outline"
+                                className="border-[var(--border)] bg-[var(--surface-strong)] text-[var(--text-muted)]"
+                              >
+                                Pending
+                              </Badge>
                             ) : null}
                           </div>
                         </TableCell>
@@ -1329,7 +1363,7 @@ export default function ResearchOutputsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                               onClick={() => goToOutputProject(row)}
                               aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
                               title="Open project"
@@ -1341,7 +1375,7 @@ export default function ResearchOutputsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                   onClick={() => handleOpenEdit(row)}
                                   aria-label={`Edit ${row?.title || "research output"}`}
                                   title="Edit"
@@ -1356,7 +1390,7 @@ export default function ResearchOutputsPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                     aria-label={`Download ${row?.title || "resource"}`}
                                     title="Download"
                                     onClick={() => {
@@ -1376,7 +1410,7 @@ export default function ResearchOutputsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                  className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                                   onClick={() => setDeleteTarget(row)}
                                   aria-label={`Delete ${row?.title || "research output"}`}
                                   title="Delete"
@@ -1412,17 +1446,17 @@ export default function ResearchOutputsPage() {
       ) : null}
 
       {canLoadOwnOutputs && loading ? (
-        <Card>
-          <CardContent className="p-5 text-sm text-slate-600">
+        <Card className="border border-[var(--border)] bg-[var(--surface)]">
+          <CardContent className="p-5 text-sm text-[var(--text-muted)]">
             Loading research outputs...
           </CardContent>
         </Card>
       ) : null}
 
       {canLoadOwnOutputs && !loading && !error && !tableRows.length ? (
-        <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
+        <Card className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <CardContent className="p-6">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
               No research outputs found. No linked expected output resources are
               available yet.
             </div>
@@ -1432,25 +1466,25 @@ export default function ResearchOutputsPage() {
 
       {canLoadOwnOutputs && !loading && !error && tableRows.length ? (
         <div className="page-stack">
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
             <CardHeader className="border-b border-[var(--border)] px-6 py-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-base font-semibold text-slate-900">
+                  <CardTitle className="text-base font-semibold text-[var(--text)]">
                     Research Output Records
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-[var(--text-muted)]">
                     Showing {filteredRows.length} output(s).
                   </CardDescription>
                 </div>
                 <label className="relative block w-full md:max-w-xl">
                   <span className="sr-only">Search outputs</span>
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
                   <Input
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                     placeholder="Search file, dataset, project, center, state, or visibility"
-                    className="pl-9"
+                    className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                   />
                 </label>
               </div>
@@ -1481,10 +1515,10 @@ export default function ResearchOutputsPage() {
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "rounded-full border-slate-200 px-4 text-xs",
+                      "rounded-full border-[var(--border)] px-4 text-xs",
                       recordsQuickFilter === chip.key
-                        ? "bg-slate-900 text-white hover:bg-slate-900"
-                        : "bg-white text-slate-600 hover:bg-slate-50",
+                        ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+                        : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                     )}
                     onClick={() => setRecordsQuickFilter(chip.key)}
                   >
@@ -1493,8 +1527,8 @@ export default function ResearchOutputsPage() {
                       className={cn(
                         "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         recordsQuickFilter === chip.key
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-100 text-slate-600",
+                          ? "bg-[var(--surface)] text-[var(--brand-strong)]"
+                          : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
                       )}
                     >
                       {chip.count}
@@ -1505,7 +1539,7 @@ export default function ResearchOutputsPage() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="rounded-full text-xs text-slate-500 hover:text-slate-700"
+                  className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                   onClick={() => setRecordsQuickFilter("all")}
                 >
                   Clear filters
@@ -1514,16 +1548,16 @@ export default function ResearchOutputsPage() {
             </CardHeader>
             {filteredRows.length === 0 ? (
               <CardContent className="p-4">
-                <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+                <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
                   No research outputs found. Try a different search term or add
                   a new research output.
                 </div>
               </CardContent>
             ) : (
               <CardContent className="p-4">
-                <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                   <Table className="min-w-[980px]">
-                    <TableHeader className="bg-slate-50/80">
+                    <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
@@ -1542,12 +1576,12 @@ export default function ResearchOutputsPage() {
                           <TableCell>
                             <div className="font-medium">{row.title}</div>
                             {row.subtitle ? (
-                              <div className="text-xs text-slate-500">
+                              <div className="text-xs text-[var(--text-muted)]">
                                 {row.subtitle}
                               </div>
                             ) : null}
                             {row.isPlaceholder || row.isPendingOutput ? (
-                              <div className="space-y-1 text-xs text-amber-700">
+                              <div className="space-y-1 text-xs text-[var(--warning)]">
                                 <div>No file attached yet.</div>
                               </div>
                             ) : null}
@@ -1561,7 +1595,7 @@ export default function ResearchOutputsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                   onClick={() =>
                                     openAddOutputForProject(
                                       {
@@ -1585,7 +1619,7 @@ export default function ResearchOutputsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                 onClick={() => goToOutputProject(row)}
                                 aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
                                 title="Open project"
@@ -1599,7 +1633,7 @@ export default function ResearchOutputsPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                     disabled={
                                       Boolean(
                                         deletingByResource[row.resourceId],
@@ -1625,7 +1659,7 @@ export default function ResearchOutputsPage() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8"
+                                        className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
                                         aria-label={`Download ${row?.title || "resource"}`}
                                         title="Download"
                                         onClick={() => {
@@ -1646,7 +1680,7 @@ export default function ResearchOutputsPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                    className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
                                     disabled={
                                       Boolean(
                                         deletingByResource[row.resourceId],
@@ -1701,28 +1735,32 @@ export default function ResearchOutputsPage() {
         open={showAddOutputModal}
         onOpenChange={(open) => !addingOutput && setShowAddOutputModal(open)}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
           <DialogHeader>
             <DialogTitle>Add Output</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-[var(--text-muted)]">
               Add a new output entry to a selected research project.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <label className="space-y-2 text-sm">
-              <span className="font-semibold text-slate-700">Project</span>
+              <span className="font-semibold text-[var(--text)]">Project</span>
               <Select
                 value={addOutputForm.project_id}
                 onValueChange={(value) =>
                   setAddOutputForm((prev) => ({ ...prev, project_id: value }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                   {mergedProjectOptions.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
+                    <SelectItem
+                      key={project.id}
+                      value={project.id}
+                      className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                    >
                       {project.title || project.id}
                     </SelectItem>
                   ))}
@@ -1731,7 +1769,7 @@ export default function ResearchOutputsPage() {
             </label>
 
             <label className="space-y-2 text-sm">
-              <span className="font-semibold text-slate-700">Output Type</span>
+              <span className="font-semibold text-[var(--text)]">Output Type</span>
               <Select
                 value={addOutputForm.output_type}
                 onValueChange={(value) =>
@@ -1743,12 +1781,16 @@ export default function ResearchOutputsPage() {
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                   <SelectValue placeholder="Select output type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                   {EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}
+                      className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                    >
                       {item.label}
                     </SelectItem>
                   ))}
@@ -1758,7 +1800,7 @@ export default function ResearchOutputsPage() {
 
             {addOutputForm.output_type === "product_software" ? (
               <label className="space-y-2 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-[var(--text)]">
                   Specific Output
                 </span>
                 <Select
@@ -1770,12 +1812,16 @@ export default function ResearchOutputsPage() {
                     }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                     <SelectValue placeholder="Select specific output" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
                     {PRODUCT_SOFTWARE_SPECIFIC_OUTPUT_OPTIONS.map((item) => (
-                      <SelectItem key={item} value={item}>
+                      <SelectItem
+                        key={item}
+                        value={item}
+                        className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
+                      >
                         {item}
                       </SelectItem>
                     ))}
@@ -1785,7 +1831,7 @@ export default function ResearchOutputsPage() {
             ) : null}
 
             <label className="space-y-2 text-sm">
-              <span className="font-semibold text-slate-700">Target Count</span>
+              <span className="font-semibold text-[var(--text)]">Target Count</span>
               <Input
                 type="number"
                 min={1}
@@ -1799,13 +1845,14 @@ export default function ResearchOutputsPage() {
                     target_count: sanitizeDigits(event.target.value),
                   }))
                 }
+                className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </label>
 
             <label className="space-y-2 text-sm">
-              <span className="font-semibold text-slate-700">Notes</span>
+              <span className="font-semibold text-[var(--text)]">Notes</span>
               <textarea
-                className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex min-h-[90px] w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
                 value={addOutputForm.notes}
                 onChange={(event) =>
                   setAddOutputForm((prev) => ({
@@ -1817,7 +1864,7 @@ export default function ResearchOutputsPage() {
             </label>
 
             <label className="space-y-2 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-[var(--text)]">
                 Output file (optional)
               </span>
               <Input
@@ -1826,8 +1873,9 @@ export default function ResearchOutputsPage() {
                   const file = event.target.files?.[0] || null;
                   setAddOutputFile(file);
                 }}
+                className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] file:border-0 file:bg-[var(--surface-strong)] file:text-[var(--text)]"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--text-muted)]">
                 {addOutputFile
                   ? `${addOutputFile.name} (${Math.max(
                       1,
@@ -1843,10 +1891,15 @@ export default function ResearchOutputsPage() {
               variant="outline"
               disabled={addingOutput}
               onClick={() => setShowAddOutputModal(false)}
+              className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
             >
               Cancel
             </Button>
-            <Button disabled={addingOutput} onClick={handleCreateOutput}>
+            <Button
+              disabled={addingOutput}
+              onClick={handleCreateOutput}
+              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+            >
               {addingOutput ? "Adding..." : "Add Output"}
             </Button>
           </div>
@@ -1857,17 +1910,17 @@ export default function ResearchOutputsPage() {
         open={Boolean(editingTarget)}
         onOpenChange={(open) => !editSaving && !open && setEditingTarget(null)}
       >
-        <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
           <DialogHeader>
             <DialogTitle>Edit Research Output</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-[var(--text-muted)]">
               Update the selected resource fields.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-3">
             <label className="block space-y-1">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                 File Name
               </span>
               <Input
@@ -1879,11 +1932,12 @@ export default function ResearchOutputsPage() {
                     file_name: event.target.value,
                   }))
                 }
+                className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                 Notes
               </span>
               <textarea
@@ -1894,23 +1948,28 @@ export default function ResearchOutputsPage() {
                     notes: event.target.value,
                   }))
                 }
-                className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex min-h-[90px] w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                 File URL / Path (read-only)
               </span>
-              <Input type="text" value={editForm.file_path} readOnly />
-              <p className="text-xs text-slate-500">
+              <Input
+                type="text"
+                value={editForm.file_path}
+                readOnly
+                className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)]"
+              />
+              <p className="text-xs text-[var(--text-muted)]">
                 To attach a new file, use Add Output.
               </p>
             </label>
 
             <div className="grid gap-3 md:grid-cols-2">
               <label className="block space-y-1">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                   MIME Type
                 </span>
                 <Input
@@ -1922,11 +1981,12 @@ export default function ResearchOutputsPage() {
                       mime_type: event.target.value,
                     }))
                   }
+                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                 />
               </label>
 
               <label className="block space-y-1">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                   File Size (bytes)
                 </span>
                 <Input
@@ -1939,6 +1999,7 @@ export default function ResearchOutputsPage() {
                       file_size: event.target.value,
                     }))
                   }
+                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
                 />
               </label>
             </div>
@@ -1949,10 +2010,15 @@ export default function ResearchOutputsPage() {
               variant="outline"
               disabled={editSaving}
               onClick={() => setEditingTarget(null)}
+              className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
             >
               Cancel
             </Button>
-            <Button disabled={editSaving} onClick={handleSaveEdit}>
+            <Button
+              disabled={editSaving}
+              onClick={handleSaveEdit}
+              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+            >
               {editSaving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
@@ -1967,15 +2033,15 @@ export default function ResearchOutputsPage() {
           setDeleteTarget(null)
         }
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
           <DialogHeader>
             <DialogTitle>Delete Research Output</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-[var(--text-muted)]">
               This will permanently remove the selected resource from the
               system.
             </DialogDescription>
           </DialogHeader>
-          <p className="text-sm font-medium text-slate-800">
+          <p className="text-sm font-medium text-[var(--text)]">
             {deleteTarget?.title || "-"}
           </p>
 
@@ -1984,6 +2050,7 @@ export default function ResearchOutputsPage() {
               variant="outline"
               disabled={Boolean(deletingByResource[deleteTarget?.resourceId])}
               onClick={() => setDeleteTarget(null)}
+              className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
             >
               Cancel
             </Button>
@@ -1991,6 +2058,7 @@ export default function ResearchOutputsPage() {
               variant="destructive"
               disabled={Boolean(deletingByResource[deleteTarget?.resourceId])}
               onClick={() => handleDeleteResource(deleteTarget)}
+              className="bg-[var(--danger)] text-[var(--surface)] hover:bg-[var(--danger)]/90"
             >
               {deletingByResource[deleteTarget?.resourceId]
                 ? "Deleting..."
