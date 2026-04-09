@@ -61,6 +61,17 @@ function getInitials(value) {
 export default function AppShell() {
   const { user, profile, profileLoading, signOut } = useAuth();
   const location = useLocation();
+  const isSubmissionsRoute = useMemo(() => {
+    const path = String(location.pathname || "");
+    return (
+      path === "/projects" ||
+      path.startsWith("/projects/") ||
+      path === "/outputs" ||
+      path.startsWith("/outputs/") ||
+      path === "/awards" ||
+      path.startsWith("/awards/")
+    );
+  }, [location.pathname]);
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
@@ -840,6 +851,7 @@ export default function AppShell() {
           className={cn(
             "page-shell flex-1",
             !shouldShowSidebar && "page-shell-landing",
+            isSubmissionsRoute && "min-h-[calc(100vh-5rem)] bg-[var(--bg)]",
           )}
         >
           <Outlet />
