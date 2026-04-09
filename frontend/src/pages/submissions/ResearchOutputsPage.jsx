@@ -1528,9 +1528,8 @@ export default function ResearchOutputsPage() {
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
                         <TableHead>Output Type</TableHead>
-                        <TableHead>Project</TableHead>
+                        <TableHead>Title</TableHead>
                         <TableHead>Research Center</TableHead>
-                        <TableHead>Visibility</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1556,56 +1555,6 @@ export default function ResearchOutputsPage() {
                           <TableCell>{row.outputType || "-"}</TableCell>
                           <TableCell>{row.datasetName || "-"}</TableCell>
                           <TableCell>{row.organization || "-"}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge
-                                variant={
-                                  row.private ? "destructive" : "secondary"
-                                }
-                              >
-                                {row.private ? "Private" : "Public"}
-                              </Badge>
-                              {row.isPlaceholder || row.isPendingOutput ? (
-                                <Badge variant="outline">Pending</Badge>
-                              ) : null}
-                              {isAdmin ? (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={
-                                    !row.datasetId ||
-                                    Boolean(
-                                      visibilitySavingByDataset[row.datasetId],
-                                    )
-                                  }
-                                  onClick={() => handleToggleVisibility(row)}
-                                  aria-label={
-                                    visibilitySavingByDataset[row.datasetId]
-                                      ? "Saving visibility..."
-                                      : row.private
-                                        ? "Make public"
-                                        : "Make private"
-                                  }
-                                  title={
-                                    visibilitySavingByDataset[row.datasetId]
-                                      ? "Saving..."
-                                      : row.private
-                                        ? "Make Public"
-                                        : "Make Private"
-                                  }
-                                >
-                                  {visibilitySavingByDataset[row.datasetId] ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : row.private ? (
-                                    <Eye className="h-4 w-4" />
-                                  ) : (
-                                    <EyeOff className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              ) : null}
-                            </div>
-                          </TableCell>
                           <TableCell className="text-right">
                             <div className="inline-flex items-center justify-end gap-1">
                               {row.isPlaceholder || row.isPendingOutput ? (
