@@ -422,7 +422,7 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-white via-white to-emerald-50 p-6 shadow-sm">
+      <div className="rounded-2xl p-3">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
