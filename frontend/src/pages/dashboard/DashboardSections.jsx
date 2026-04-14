@@ -326,43 +326,53 @@ export function DashboardHeader({
   presetFlags,
 }) {
   const resolvedTitle =
-    !isAdmin && greetingName ? `Welcome back, ${greetingName}!` : title;
+    !isAdmin && greetingName ? `Good to see you, ${greetingName}` : title;
 
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-4 sm:p-6 shadow-sm">
       <PageHeader
         title={resolvedTitle}
         actions={
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            {activeFilterCount ? (
-              <span className="rounded-full border border-slate-200/80 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
-                Filtered view - {activeFilterCount}
+          <div className="flex flex-col items-start gap-1.5 text-xs text-slate-500 md:items-end">
+            <div className="flex flex-wrap items-center gap-3 text-slate-400">
+              <span>
+                {lastUpdatedLabel
+                  ? `Updated ${lastUpdatedLabel}`
+                  : "Updated --"}
               </span>
-            ) : null}
-            {!isAdmin ? (
-              <span className="rounded-full border border-slate-200/70 bg-white/80 px-2 py-1 font-semibold uppercase tracking-[0.12em] text-slate-500">
-                My scope
-              </span>
-            ) : null}
-            {filters?.range ? (
-              <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                {filters.range === "last12" ? "Last 12 months" : filters.range}
-              </span>
-            ) : null}
-            {filters?.startDate || filters?.endDate ? (
-              <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                {`From ${
-                  filters?.startDate ? formatDateLabel(filters.startDate) : "--"
-                } to ${
-                  filters?.endDate ? formatDateLabel(filters.endDate) : "--"
-                }`}
-              </span>
-            ) : null}
-            <span className="rounded-full border border-slate-200/70 bg-white/70 px-2 py-1">
-              {lastUpdatedLabel
-                ? `Last updated ${lastUpdatedLabel}`
-                : "Last updated --"}
-            </span>
+
+              {!isAdmin && (
+                <span className="font-medium text-slate-500">My scope</span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 text-slate-500">
+              {activeFilterCount > 0 && (
+                <span className="font-medium text-slate-700">
+                  {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
+                </span>
+              )}
+
+              {filters?.range && (
+                <span>
+                  {filters.range === "last12"
+                    ? "Last 12 months"
+                    : filters.range}
+                </span>
+              )}
+
+              {(filters?.startDate || filters?.endDate) && (
+                <span>
+                  {`${
+                    filters?.startDate
+                      ? formatDateLabel(filters.startDate)
+                      : "--"
+                  } — ${
+                    filters?.endDate ? formatDateLabel(filters.endDate) : "--"
+                  }`}
+                </span>
+              )}
+            </div>
           </div>
         }
       />
@@ -1209,17 +1219,17 @@ export function LinkedProjectsSection({ loading, linkedProjects }) {
                 className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
               >
                 {projectId ? (
-              <Link
-                to={`/projects/${encodeURIComponent(projectId)}`}
-                className="font-medium text-slate-900 break-words hover:underline"
-              >
-                {safeString(project?.title) || "Untitled project"}
-              </Link>
-            ) : (
-              <span className="font-medium text-slate-900 break-words">
-                {safeString(project?.title) || "Untitled project"}
-              </span>
-            )}
+                  <Link
+                    to={`/projects/${encodeURIComponent(projectId)}`}
+                    className="font-medium text-slate-900 break-words hover:underline"
+                  >
+                    {safeString(project?.title) || "Untitled project"}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-slate-900 break-words">
+                    {safeString(project?.title) || "Untitled project"}
+                  </span>
+                )}
                 <p className="mt-1 text-xs text-slate-500">
                   {updatedLabel
                     ? `Updated ${formatDateLabel(updatedLabel)}`
