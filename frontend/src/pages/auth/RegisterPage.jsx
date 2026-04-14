@@ -209,26 +209,26 @@ export default function RegisterPage() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-10">
-      <Card className="shadow-lg border border-slate-200 rounded-2xl">
+      <Card className="border border-zinc-200 bg-white shadow-sm rounded-2xl">
         <CardHeader className="space-y-2 text-center pb-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900">
             Create your account
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-zinc-500">
             Join as a student or faculty to manage research projects
           </p>
         </CardHeader>
 
-        <CardContent className="pt-4">
+        <CardContent className="pt-6">
           <form onSubmit={onSubmit} className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
+                  <label className="text-xs font-medium text-zinc-500">
                     First name
                   </label>
                   <Input
-                    className="rounded-lg"
+                    className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                     placeholder="Juan"
                     required
                     value={form.first_name}
@@ -239,11 +239,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
+                  <label className="text-xs font-medium text-zinc-500">
                     M.I.
                   </label>
                   <Input
-                    className="rounded-lg"
+                    className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                     placeholder="M"
                     maxLength={2}
                     value={form.middle_initial}
@@ -257,11 +257,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
+                  <label className="text-xs font-medium text-zinc-500">
                     Last name
                   </label>
                   <Input
-                    className="rounded-lg"
+                    className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                     placeholder="Dela Cruz"
                     required
                     value={form.last_name}
@@ -273,11 +273,11 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">
+                <label className="text-xs font-medium text-zinc-500">
                   Email address
                 </label>
                 <Input
-                  className="rounded-lg"
+                  className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                   placeholder="you@example.com"
                   type="email"
                   required
@@ -289,13 +289,13 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-500">
+                <label className="text-xs font-medium text-zinc-500">
                   Password
                 </label>
 
                 <div className="relative">
                   <Input
-                    className="pr-10 rounded-lg"
+                    className="pr-10 rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                     placeholder="Create a secure password"
                     type={showPassword ? "text" : "password"}
                     required
@@ -309,7 +309,7 @@ export default function RegisterPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900"
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -317,39 +317,39 @@ export default function RegisterPage() {
                 </div>
 
                 {passwordValue ? (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600">
                     <div className="flex items-center gap-1">
                       {passwordChecks.length ? (
-                        <Check className="text-emerald-500 w-3 h-3" />
+                        <Check className="text-zinc-900 w-3 h-3" />
                       ) : (
-                        <X className="text-slate-300 w-3 h-3" />
+                        <X className="text-zinc-300 w-3 h-3" />
                       )}
                       <span>8+ chars</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {passwordChecks.uppercase ? (
-                        <Check className="text-emerald-500 w-3 h-3" />
+                        <Check className="text-zinc-900 w-3 h-3" />
                       ) : (
-                        <X className="text-slate-300 w-3 h-3" />
+                        <X className="text-zinc-300 w-3 h-3" />
                       )}
                       <span>Uppercase</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {passwordChecks.lowercase ? (
-                        <Check className="text-emerald-500 w-3 h-3" />
+                        <Check className="text-zinc-900 w-3 h-3" />
                       ) : (
-                        <X className="text-slate-300 w-3 h-3" />
+                        <X className="text-zinc-300 w-3 h-3" />
                       )}
                       <span>Lowercase</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {passwordChecks.number ? (
-                        <Check className="text-emerald-500 w-3 h-3" />
+                        <Check className="text-zinc-900 w-3 h-3" />
                       ) : (
-                        <X className="text-slate-300 w-3 h-3" />
+                        <X className="text-zinc-300 w-3 h-3" />
                       )}
                       <span>Number</span>
                     </div>
@@ -358,13 +358,13 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">
+                <label className="text-xs font-medium text-zinc-500">
                   Confirm password
                 </label>
 
                 <div className="relative">
                   <Input
-                    className="pr-10 rounded-lg"
+                    className="pr-10 rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                     placeholder="Re-enter password"
                     type={showConfirmPassword ? "text" : "password"}
                     required
@@ -381,7 +381,7 @@ export default function RegisterPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-900"
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
                   >
                     {showConfirmPassword ? (
@@ -397,7 +397,7 @@ export default function RegisterPage() {
             <div className="space-y-5">
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
+                  <label className="text-xs font-medium text-zinc-500">
                     Role
                   </label>
 
@@ -407,7 +407,7 @@ export default function RegisterPage() {
                       setForm((p) => ({ ...p, role: value }))
                     }
                   >
-                    <SelectTrigger className="rounded-lg">
+                    <SelectTrigger className="rounded-lg border-zinc-200 focus:ring-zinc-400">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
 
@@ -419,7 +419,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
+                  <label className="text-xs font-medium text-zinc-500">
                     Research Center (optional)
                   </label>
 
@@ -433,7 +433,7 @@ export default function RegisterPage() {
                     }
                     disabled={ckanLoading}
                   >
-                    <SelectTrigger className="rounded-lg">
+                    <SelectTrigger className="rounded-lg border-zinc-200 focus:ring-zinc-400">
                       <SelectValue
                         placeholder={
                           ckanLoading
@@ -457,7 +457,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">
+                <label className="text-xs font-medium text-zinc-500">
                   Department (optional)
                 </label>
 
@@ -471,7 +471,7 @@ export default function RegisterPage() {
                   }
                   disabled={ckanGroupsLoading}
                 >
-                  <SelectTrigger className="rounded-lg">
+                  <SelectTrigger className="rounded-lg border-zinc-200 focus:ring-zinc-400">
                     <SelectValue
                       placeholder={
                         ckanGroupsLoading
@@ -493,18 +493,18 @@ export default function RegisterPage() {
                 </Select>
 
                 {ckanGroupsError && (
-                  <p className="text-xs text-red-500">{ckanGroupsError}</p>
+                  <p className="text-xs text-zinc-500">{ckanGroupsError}</p>
                 )}
               </div>
 
-              <div className="space-y-1 text-sm">
-                {error && <p className="text-red-500">{error}</p>}
-                {message && <p className="text-emerald-600">{message}</p>}
+              <div className="space-y-1 text-sm text-zinc-600">
+                {error && <p className="text-zinc-900">{error}</p>}
+                {message && <p className="text-zinc-900">{message}</p>}
               </div>
 
               <Button
                 disabled={loading || cooldownSeconds > 0}
-                className="w-full rounded-lg h-11 text-sm font-medium"
+                className="w-full rounded-lg h-11 text-sm font-medium bg-zinc-900 hover:bg-zinc-800 text-white"
               >
                 {loading
                   ? "Creating account..."
@@ -516,10 +516,10 @@ export default function RegisterPage() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-center text-sm text-slate-500">
+        <CardFooter className="flex justify-center text-sm text-zinc-500">
           Already have an account?
           <Link
-            className="ml-1 font-medium text-blue-600 hover:underline"
+            className="ml-1 font-medium text-zinc-900 hover:underline"
             to="/login"
           >
             Sign in
