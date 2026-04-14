@@ -112,84 +112,89 @@ export default function LoginPage() {
 
   return (
     <section className="mx-auto max-w-md">
-      <Card>
-        <CardHeader>
-          <h1 className="text-3xl font-bold text-center">Login</h1>
-          <p className="mt-1 text-sm text-slate-600 text-center">
-            Access your workspace and continue your proposal workflow.
+      <Card className="border border-slate-200 shadow-sm">
+        <CardHeader className="space-y-1 text-center">
+          <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
+          <p className="text-sm text-slate-500">
+            Access your workspace to continue your workflow.
           </p>
         </CardHeader>
+
         <CardContent>
-          <form className="space-y-3" onSubmit={onSubmit}>
-            <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Email</span>
+          <form className="space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
+              <label className="text-sm text-slate-600">Email</label>
               <Input
-                placeholder="Enter your institutional email"
                 type="email"
                 required
                 value={form.email}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, email: e.target.value }))
                 }
+                className="h-10"
+                placeholder="name@institution.edu"
               />
-            </label>
-            <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Password</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm text-slate-600">Password</label>
               <div className="relative">
                 <Input
-                  className="pr-10"
-                  placeholder="Enter your password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={form.password}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, password: e.target.value }))
                   }
+                  className="h-10 pr-10"
+                  placeholder="Enter password"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-600 hover:text-slate-900"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </Button>
               </div>
-            </label>
-            {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+            </div>
+
+            {/* Error */}
+            {error && <p className="text-sm text-slate-600">{error}</p>}
+
             {showVerifyHint && (
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-slate-500">
                 Need a new verification link?{" "}
-                <Link className="text-[var(--brand)]" to="/verify-email">
-                  Verify your email
+                <Link
+                  to="/verify-email"
+                  className="underline hover:text-slate-700"
+                >
+                  Verify email
                 </Link>
-                .
               </p>
             )}
+
             <Button
               disabled={loading || cooldownSeconds > 0}
-              className="w-full"
+              className="w-full h-10"
             >
               {loading
-                ? "Logging in..."
+                ? "Signing in..."
                 : cooldownSeconds > 0
                   ? `Retry in ${cooldownSeconds}s`
-                  : "Login"}
+                  : "Sign in"}
             </Button>
           </form>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between text-sm">
-          <Link to="/register" className="font-semibold text-[var(--brand)]">
+        <CardFooter className="flex justify-between text-sm text-slate-500">
+          <Link to="/register" className="hover:text-slate-700">
             Create account
           </Link>
-          <Link
-            to="/forgot-password"
-            className="font-semibold text-[var(--brand)]"
-          >
-            Forgot password?
+          <Link to="/forgot-password" className="hover:text-slate-700">
+            Forgot password
           </Link>
         </CardFooter>
       </Card>
