@@ -64,56 +64,70 @@ export default function VerifyEmailPage() {
 
   return (
     <section className="mx-auto max-w-md px-4 py-12">
-      <Card className="shadow-lg border border-slate-200 rounded-2xl">
+      <Card className="border border-zinc-200 bg-white shadow-sm rounded-2xl">
         <CardHeader className="space-y-2 text-center pb-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             Verify your email
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-zinc-500">
             Confirming your email activates your ARMS account.
           </p>
         </CardHeader>
+
         <CardContent className="space-y-4">
           {status === "loading" && (
-            <p className="text-sm text-slate-600">Verifying your email...</p>
+            <p className="text-sm text-zinc-600">Verifying your email...</p>
           )}
+
           {status === "success" && (
-            <div className="space-y-2">
-              <p className="text-emerald-600">
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-900 font-medium">
                 Your email has been verified. You can now sign in.
               </p>
-              <Button asChild className="w-full rounded-lg h-11 text-sm">
+
+              <Button
+                asChild
+                className="w-full h-11 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white"
+              >
                 <Link to="/login">Go to login</Link>
               </Button>
             </div>
           )}
+
           {status === "error" && (
-            <p className="text-red-500 text-sm">{error}</p>
+            <p className="text-sm text-zinc-900 font-medium">{error}</p>
           )}
 
           {status !== "success" && (
-            <form className="space-y-3" onSubmit={onResend}>
+            <form className="space-y-4" onSubmit={onResend}>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">
+                <label className="text-xs font-medium text-zinc-500">
                   Resend verification email
                 </label>
+
                 <Input
+                  className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
                   placeholder="you@example.com"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+
               {resendMessage && (
-                <p className="text-emerald-600 text-sm">{resendMessage}</p>
+                <p className="text-sm text-zinc-900 font-medium">
+                  {resendMessage}
+                </p>
               )}
+
               {error && status !== "error" && (
-                <p className="text-red-500 text-sm">{error}</p>
+                <p className="text-sm text-zinc-900 font-medium">{error}</p>
               )}
+
               <Button
                 type="submit"
                 disabled={resendLoading}
-                className="w-full rounded-lg h-11 text-sm font-medium"
+                className="w-full h-11 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-medium"
               >
                 {resendLoading ? "Sending..." : "Resend email"}
               </Button>
