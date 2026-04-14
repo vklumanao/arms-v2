@@ -21,31 +21,30 @@ export default function PublicLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
         <div className="public-layout-inner flex items-center justify-between gap-4">
-          <Link
-            to="/home"
-            className="shrink-0 text-lg font-bold text-black-600"
-          >
-            CCIS - ARMS
+          <Link to="/home">
+            <img
+              src="/full-logo.svg"
+              alt="CenterPulse"
+              className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+              draggable="false"
+            />
           </Link>
           <nav className="hidden items-center gap-2 sm:flex">
             {landingLinks.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   isActive(item.to)
-                    ? "bg-[var(--brand-soft)] text-[var(--brand)]"
-                    : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 {item.label}
               </NavLink>
             ))}
           </nav>
-          <Button
-            asChild
-            className="bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)] shadow-sm"
-          >
+          <Button asChild>
             <Link to="/login" className="px-4 py-2 font-semibold">
               Login
             </Link>
@@ -56,10 +55,10 @@ export default function PublicLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 isActive(item.to)
-                  ? "bg-[var(--brand-soft)] text-[var(--brand)]"
-                  : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               {item.label}
