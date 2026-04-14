@@ -57,40 +57,55 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md">
-      <Card>
-      <CardHeader>
-        <img
-          src="/arms-logo-v2.svg"
-          alt="ARMS Logo"
-          className="mb-3 h-12 w-auto"
-        />
-        <h1 className="text-2xl font-bold">Reset Password</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Set a new password for your account.
-        </p>
-      </CardHeader>
-      <CardContent>
-      <form className="space-y-3" onSubmit={submit}>
-        <Input
-          placeholder="Enter your new password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <Input
-          placeholder="Confirm your new password"
-          type="password"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        {message && <p className="text-sm text-[var(--success)]">{message}</p>}
-        <Button className="w-full">Update password</Button>
-      </form>
-      </CardContent>
+    <section className="mx-auto max-w-md px-4 py-10">
+      <Card className="border border-zinc-200 bg-white shadow-sm rounded-2xl">
+        <CardHeader className="text-center space-y-3 pb-2">
+          <img
+            src="/arms-logo-v2.svg"
+            alt="ARMS Logo"
+            className="mx-auto h-10 w-auto opacity-90"
+          />
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Reset Password
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Set a new password for your account.
+          </p>
+        </CardHeader>
+
+        <CardContent>
+          <form className="space-y-4" onSubmit={submit}>
+            <Input
+              className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
+              placeholder="Enter your new password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <Input
+              className="rounded-lg border-zinc-200 focus-visible:ring-zinc-400"
+              placeholder="Confirm your new password"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+
+            {error && (
+              <p className="text-sm text-zinc-900 font-medium">{error}</p>
+            )}
+
+            {message && (
+              <p className="text-sm text-zinc-900 font-medium">{message}</p>
+            )}
+
+            <Button className="w-full h-11 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-medium">
+              Update password
+            </Button>
+          </form>
+        </CardContent>
       </Card>
 
       <ConfirmActionModal
@@ -105,4 +120,3 @@ export default function ResetPasswordPage() {
     </section>
   );
 }
-
