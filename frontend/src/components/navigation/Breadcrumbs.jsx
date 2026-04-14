@@ -33,7 +33,9 @@ function toLabel(segment, prevSegment) {
       segment,
     );
   const looksLikeId =
-    isUuid || /^\d+$/.test(segment) || (segment.includes("-") && segment.length > 12);
+    isUuid ||
+    /^\d+$/.test(segment) ||
+    (segment.includes("-") && segment.length > 12);
 
   if (looksLikeId) {
     const parent = String(prevSegment || "").toLowerCase();
@@ -102,4 +104,3 @@ export default function Breadcrumbs() {
     </nav>
   );
 }
-
