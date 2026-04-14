@@ -737,10 +737,11 @@ export default function AdminResearchCenterDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {!isCenterChief ? (
           <Button
             variant="outline"
+            className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
             onClick={() => {
               clearProjectFilters();
               navigate("/admin/research-center");
@@ -751,77 +752,73 @@ export default function AdminResearchCenterDetailPage() {
           </Button>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={loading || !center}
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          {deleteGuard.blocked ? (
-            <div className="relative" ref={deletePopoverRef}>
-              <Button
-                variant="destructive"
-                type="button"
-                onClick={() => setShowDeletePopover((prev) => !prev)}
-                aria-expanded={showDeletePopover}
-                aria-haspopup="dialog"
-                title="Remove linked projects/affiliates first"
-                className="opacity-70 hover:opacity-100"
-              >
-                Delete
-              </Button>
-              {showDeletePopover ? (
-                <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
-                  <p className="font-semibold text-slate-900">
-                    Deletion is blocked
-                  </p>
-                  <p className="mt-1 text-slate-600">
-                    This center cannot be deleted while it has{" "}
-                    {deleteGuard.reasons.projectCount
-                      ? `${deleteGuard.reasons.projectCount} linked project(s)`
-                      : null}
-                    {deleteGuard.reasons.projectCount &&
-                    deleteGuard.reasons.nonAdminAffiliates
-                      ? " and "
-                      : null}
-                    {deleteGuard.reasons.nonAdminAffiliates
-                      ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
-                      : null}
-                    .
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          ) : (
+        <Button
+          variant="outline"
+          className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+          disabled={loading || !center}
+          onClick={() => setEditOpen(true)}
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </Button>
+
+        {deleteGuard.blocked ? (
+          <div className="relative" ref={deletePopoverRef}>
             <Button
-              variant="destructive"
-              disabled={deleting || loading}
-              onClick={handleDelete}
-              title="Delete research center"
+              variant="mono"
+              type="button"
+              onClick={() => setShowDeletePopover((prev) => !prev)}
+              className="bg-black text-white hover:bg-gray-800 active:bg-gray-900 opacity-70 hover:opacity-100"
             >
               Delete
             </Button>
-          )}
-        </div>
+
+            {showDeletePopover ? (
+              <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-md border border-gray-300 bg-white p-3 text-xs text-gray-600 shadow-md">
+                <p className="font-semibold text-black">Deletion is blocked</p>
+                <p className="mt-1">
+                  This center cannot be deleted while it has{" "}
+                  {deleteGuard.reasons.projectCount
+                    ? `${deleteGuard.reasons.projectCount} linked project(s)`
+                    : null}
+                  {deleteGuard.reasons.projectCount &&
+                  deleteGuard.reasons.nonAdminAffiliates
+                    ? " and "
+                    : null}
+                  {deleteGuard.reasons.nonAdminAffiliates
+                    ? `${deleteGuard.reasons.nonAdminAffiliates} linked affiliate(s)`
+                    : null}
+                  .
+                </p>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <Button
+            variant="mono"
+            className="bg-black text-white hover:bg-gray-800 active:bg-gray-900"
+            disabled={deleting || loading}
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+        )}
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-5 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-5">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-xl font-bold uppercase text-white shadow-sm">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
                 {initials}
               </div>
 
               <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-slate-900">
+                <CardTitle className="text-xl font-bold text-slate-900">
                   {center?.name || "Research Center"}
                 </CardTitle>
 
-                <CardDescription className="text-base text-slate-600">
+                <CardDescription className="text-sm text-slate-600">
                   Code:{" "}
                   <span className="font-mono font-semibold text-slate-800">
                     {center?.code || "-"}
@@ -876,9 +873,7 @@ export default function AdminResearchCenterDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-base text-slate-600">
-              Loading research center...
-            </p>
+            <p className="text-sm text-slate-600">Loading research center...</p>
           ) : error ? (
             <EmptyState title="Unable to load" description={error} />
           ) : !center ? (
@@ -892,12 +887,11 @@ export default function AdminResearchCenterDetailPage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-base text-slate-700">
+                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
-
 
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -909,7 +903,7 @@ export default function AdminResearchCenterDetailPage() {
                       <button
                         key={agenda}
                         type="button"
-                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-slate-700 hover:bg-muted"
+                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-muted"
                         onClick={() => applyAgendaFilter(agenda)}
                         title="Filter linked projects by this agenda"
                       >
@@ -918,19 +912,19 @@ export default function AdminResearchCenterDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-base text-slate-600">No agenda linked.</p>
+                  <p className="text-sm text-slate-600">No agenda linked.</p>
                 )}
               </div>
 
               <Tabs value={activeTab} onValueChange={setTab}>
-                <TabsList className="text-base">
-                  <TabsTrigger value="overview" className="text-base">
+                <TabsList className="text-sm">
+                  <TabsTrigger value="overview" className="text-sm">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="affiliates" className="text-base">
+                  <TabsTrigger value="affiliates" className="text-sm">
                     Affiliates
                   </TabsTrigger>
-                  <TabsTrigger value="projects" className="text-base">
+                  <TabsTrigger value="projects" className="text-sm">
                     Projects
                   </TabsTrigger>
                 </TabsList>
@@ -942,7 +936,7 @@ export default function AdminResearchCenterDetailPage() {
                         <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Members
                         </p>
-                        <p className="mt-1 text-3xl font-bold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-slate-900">
                           {usage.profileCount}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
@@ -957,7 +951,7 @@ export default function AdminResearchCenterDetailPage() {
                         <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Projects
                         </p>
-                        <p className="mt-1 text-3xl font-bold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-slate-900">
                           {usage.projectCount}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
@@ -970,7 +964,7 @@ export default function AdminResearchCenterDetailPage() {
                         <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
                           Agenda
                         </p>
-                        <p className="mt-1 text-3xl font-bold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-slate-900">
                           {center.agendaNames.length}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
@@ -986,10 +980,10 @@ export default function AdminResearchCenterDetailPage() {
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-lg font-bold text-slate-900">
+                          <CardTitle className="text-base font-bold text-slate-900">
                             Linked Affiliates
                           </CardTitle>
-                          <CardDescription className="text-base">
+                          <CardDescription className="text-sm">
                             Showing {links.profiles.length} affiliate(s).
                           </CardDescription>
                         </div>
@@ -1007,7 +1001,7 @@ export default function AdminResearchCenterDetailPage() {
                       <>
                         <CardContent className="p-0">
                           <div className="overflow-x-auto">
-                            <Table className="min-w-[980px] text-base">
+                            <Table className="min-w-[980px]">
                               <TableHeader>
                                 <TableRow>
                                   <TableHead className="text-sm">No.</TableHead>
@@ -1107,7 +1101,7 @@ export default function AdminResearchCenterDetailPage() {
                             <CardTitle className="text-base font-bold text-slate-900">
                               Linked Projects
                             </CardTitle>
-                            <CardDescription className="text-base">
+                            <CardDescription className="text-sm">
                               Showing {filteredProjects.length} project(s).
                             </CardDescription>
                             {agendaFilter ? (
@@ -1288,7 +1282,7 @@ export default function AdminResearchCenterDetailPage() {
         onOpenChange={(open) => !editSaving && setEditOpen(open)}
       >
         <DialogContent
-          className="max-w-2xl"
+          className="mx-auto w-full max-w-5xl"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
@@ -1298,147 +1292,161 @@ export default function AdminResearchCenterDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">Name</span>
-              <Input
-                value={editForm.name}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    name: event.target.value,
-                  }))
-                }
-              />
-              {editErrors.name ? (
-                <p className="field-error">{editErrors.name}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Code</span>
-              <Input
-                value={editForm.code}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    code: event.target.value,
-                  }))
-                }
-              />
-              {editErrors.code ? (
-                <p className="field-error">{editErrors.code}</p>
-              ) : null}
-            </label>
-
-            <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">Description</span>
-              <Textarea
-                value={editForm.description}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-                rows={4}
-                placeholder="Optional short description about the research center..."
-              />
-            </label>
-
-            <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">
-                Social Media Link
-              </span>
-              <Input
-                value={editForm.socialMediaLink}
-                onChange={(event) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socialMediaLink: event.target.value,
-                  }))
-                }
-                placeholder="Optional: https://facebook.com/your-center"
-              />
-              <p className="text-xs text-slate-500">
-                Optional. Shown in the center overview.
-              </p>
-            </label>
-
-            <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Center Chief</span>
-              <Select
-                value={String(editForm.centerChiefId || "")}
-                onValueChange={(value) =>
-                  setEditForm((prev) => ({ ...prev, centerChiefId: value }))
-                }
-              >
-                <SelectTrigger
-                  className={editErrors.centerChiefId ? "input-error" : ""}
-                >
-                  <SelectValue placeholder="Select center chief" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chiefUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {editErrors.centerChiefId ? (
-                <p className="field-error">{editErrors.centerChiefId}</p>
-              ) : null}
-            </label>
-
-            <div className="space-y-2 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">
-                Research Agendas
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {editForm.researchAgendas.map((agenda) => (
-                  <button
-                    key={agenda}
-                    type="button"
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-muted"
-                    onClick={() => removeEditAgenda(agenda)}
-                    title="Remove"
-                  >
-                    <span className="truncate">{agenda}</span>
-                    <X className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                ))}
-                {editForm.researchAgendas.length === 0 ? (
-                  <p className="text-xs text-slate-500">No agendas yet.</p>
-                ) : null}
-              </div>
-              {editErrors.researchAgendas ? (
-                <p className="field-error">{editErrors.researchAgendas}</p>
-              ) : null}
-              <div className="flex gap-2">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="space-y-4">
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">Name</span>
                 <Input
-                  placeholder="Add research agendum"
-                  value={editForm.agendaInput}
+                  value={editForm.name}
                   onChange={(event) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      agendaInput: event.target.value,
+                      name: event.target.value,
                     }))
                   }
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter") return;
-                    event.preventDefault();
-                    addEditAgenda();
-                  }}
                 />
-                <Button type="button" variant="outline" onClick={addEditAgenda}>
-                  Add
-                </Button>
+                {editErrors.name && (
+                  <p className="field-error">{editErrors.name}</p>
+                )}
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">Code</span>
+                <Input
+                  value={editForm.code}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      code: event.target.value,
+                    }))
+                  }
+                />
+                {editErrors.code && (
+                  <p className="field-error">{editErrors.code}</p>
+                )}
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Center Chief
+                </span>
+                <Select
+                  value={String(editForm.centerChiefId || "")}
+                  onValueChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, centerChiefId: value }))
+                  }
+                >
+                  <SelectTrigger
+                    className={editErrors.centerChiefId ? "input-error" : ""}
+                  >
+                    <SelectValue placeholder="Select center chief" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chiefUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editErrors.centerChiefId && (
+                  <p className="field-error">{editErrors.centerChiefId}</p>
+                )}
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Description
+                </span>
+                <Textarea
+                  value={editForm.description}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      description: event.target.value,
+                    }))
+                  }
+                  rows={4}
+                  placeholder="Optional short description..."
+                />
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Social Media Link
+                </span>
+                <Input
+                  value={editForm.socialMediaLink}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      socialMediaLink: event.target.value,
+                    }))
+                  }
+                  placeholder="https://facebook.com/your-center"
+                />
+                <p className="text-xs text-slate-500">
+                  Optional. Shown in the center overview.
+                </p>
+              </label>
+
+              <div className="space-y-2 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Research Agendas
+                </span>
+
+                <div className="flex flex-wrap gap-2">
+                  {editForm.researchAgendas.map((agenda) => (
+                    <button
+                      key={agenda}
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-muted"
+                      onClick={() => removeEditAgenda(agenda)}
+                    >
+                      <span className="truncate">{agenda}</span>
+                      <X className="h-3.5 w-3.5 text-slate-500" />
+                    </button>
+                  ))}
+                  {editForm.researchAgendas.length === 0 && (
+                    <p className="text-xs text-slate-500">No agendas yet.</p>
+                  )}
+                </div>
+
+                {editErrors.researchAgendas && (
+                  <p className="field-error">{editErrors.researchAgendas}</p>
+                )}
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add research agendum"
+                    value={editForm.agendaInput}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        agendaInput: event.target.value,
+                      }))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      addEditAgenda();
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addEditAgenda}
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="mt-2">
+          <DialogFooter className="mt-4">
             <Button
               type="button"
               variant="outline"

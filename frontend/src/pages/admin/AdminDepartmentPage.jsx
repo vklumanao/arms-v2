@@ -4,6 +4,7 @@ import {
   Eye,
   FolderKanban,
   LayoutGrid,
+  Link2,
   List,
   Pencil,
   Search,
@@ -13,13 +14,7 @@ import {
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +100,7 @@ export default function AdminDepartmentPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const PAGE_SIZE = 10;
+  const DIRECTORY_SKELETON_COUNT = 6;
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
@@ -323,6 +319,35 @@ export default function AdminDepartmentPage() {
       return true;
     });
   }, [rows, filters, quickFilter]);
+
+  const quickFilterChips = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Departments",
+        count: rows.length,
+      },
+      {
+        key: "with_projects",
+        label: "With Projects",
+        count: rows.filter((row) => Number(row?.projectCount || 0) > 0).length,
+      },
+      {
+        key: "with_affiliates",
+        label: "With Affiliates",
+        count: rows.filter((row) => Number(row?.profileCount || 0) > 0).length,
+      },
+      {
+        key: "with_links",
+        label: "With Links",
+        count: rows.filter((row) => Number(row?.totalLinks || 0) > 0).length,
+      },
+    ],
+    [rows],
+  );
+
+  const hasActiveDirectoryFilters =
+    quickFilter !== "all" || filters.search.trim().length > 0;
 
   const sortedFilteredRows = useMemo(() => {
     const source = [...filteredRows];
@@ -691,139 +716,147 @@ export default function AdminDepartmentPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl p-3">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Department Workspace
-            </h1>
-          </div>
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                Admin Workspace
+              </p>
+              <h1 className="text-2xl font-bold text-black md:text-3xl">
+                Department Workspace
+              </h1>
+              <p className="max-w-2xl text-sm text-black">
+                Manage department records, monitor affiliations, and track
+                project coverage from one control panel.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  disabled={exporting || filteredRows.length === 0}
+            <div className="flex flex-wrap items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={exporting || filteredRows.length === 0}
+                    className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-white border border-gray-300 shadow-md"
                 >
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() =>
-                    exportRowsAsCsv(sortedFilteredRows, "filtered")
-                  }
-                >
-                  Export CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() =>
-                    exportRowsAsPdf(sortedFilteredRows, "filtered")
-                  }
-                >
-                  Export PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    onSelect={() =>
+                      exportRowsAsCsv(sortedFilteredRows, "filtered")
+                    }
+                  >
+                    Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    onSelect={() =>
+                      exportRowsAsPdf(sortedFilteredRows, "filtered")
+                    }
+                  >
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            <Button
-              onClick={() => {
-                setCreateErrors({});
-                setCreateModalOpen(true);
-              }}
-            >
-              Create Department
-            </Button>
+              <Button
+                variant="mono"
+                onClick={() => {
+                  setCreateErrors({});
+                  setCreateModalOpen(true);
+                }}
+              >
+                Create Department
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
-                Department Directory
-              </CardTitle>
-              <CardDescription>
-                Showing {filteredRows.length} record(s).
-              </CardDescription>
-            </div>
-            <label className="relative w-full md:max-w-md">
-              <span className="sr-only">Search departments</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-8"
-                placeholder="Search name, code, chairperson, or id"
-                value={filters.search}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 md:w-auto">
-              <Button
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                type="button"
-              >
-                <LayoutGrid size={14} />
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                type="button"
-              >
-                <List size={14} />
-                List
-              </Button>
-            </div>
+      <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-black">
+              Department Directory
+            </h2>
+            <p className="text-sm text-black">
+              Showing {filteredRows.length} filtered department record(s).
+            </p>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {[
-              {
-                key: "all",
-                label: "All Departments",
-                count: filteredRows.length,
-              },
-              {
-                key: "with_projects",
-                label: "With Projects",
-                count: rows.filter((row) => Number(row?.projectCount || 0) > 0)
-                  .length,
-              },
-              {
-                key: "with_affiliates",
-                label: "With Affiliates",
-                count: rows.filter((row) => Number(row?.profileCount || 0) > 0)
-                  .length,
-              },
-              {
-                key: "with_links",
-                label: "With Links",
-                count: rows.filter((row) => Number(row?.totalLinks || 0) > 0)
-                  .length,
-              },
-            ].map((chip) => (
+
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-slate-50 p-1 lg:w-auto">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              type="button"
+              className={cn(
+                "rounded-full",
+                viewMode === "grid"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-black",
+              )}
+            >
+              <LayoutGrid size={14} />
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              type="button"
+              className={cn(
+                "rounded-full",
+                viewMode === "list"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-black",
+              )}
+            >
+              <List size={14} />
+              List
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <label className="relative w-full xl:max-w-lg">
+            <span className="sr-only">Search departments</span>
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+            <Input
+              className="border-black/20 bg-white pl-8"
+              placeholder="Search name, code, chairperson, or id"
+              value={filters.search}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  search: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {quickFilterChips.map((chip) => (
               <Button
                 key={chip.key}
                 type="button"
                 size="sm"
                 variant="outline"
                 className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
+                  "rounded-full border-black/20 px-4 text-xs",
                   quickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
+                    ? "bg-zinc-200 text-black hover:bg-zinc-200"
+                    : "bg-white text-black hover:bg-slate-50",
                 )}
                 onClick={() => setQuickFilter(chip.key)}
               >
@@ -832,8 +865,8 @@ export default function AdminDepartmentPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
+                      ? "bg-black/10 text-black"
+                      : "bg-slate-100 text-black",
                   )}
                 >
                   {chip.count}
@@ -844,60 +877,160 @@ export default function AdminDepartmentPage() {
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-slate-500 hover:text-slate-700"
-              onClick={() => setQuickFilter("all")}
+              className="rounded-full text-xs text-black hover:text-black"
+              onClick={() => {
+                setQuickFilter("all");
+                setFilters(INITIAL_FILTERS);
+              }}
             >
-              Clear filters
+              Reset all
             </Button>
           </div>
-        </CardHeader>
+        </div>
+
+        {hasActiveDirectoryFilters ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+              Active Filters
+            </span>
+            {filters.search.trim() ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: "",
+                  }))
+                }
+              >
+                Search: "{filters.search.trim()}" x
+              </button>
+            ) : null}
+            {quickFilter !== "all" ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() => setQuickFilter("all")}
+              >
+                {quickFilterChips.find((chip) => chip.key === quickFilter)
+                  ?.label || "Quick filter"}{" "}
+                x
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <Card className="overflow-hidden border-black/20 shadow-sm">
         <CardContent className="p-4">
+          {dataLoading ? (
+            viewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                  (_, index) => (
+                    <Card
+                      key={`department-skeleton-grid-${index}`}
+                      className="rounded-2xl border border-black/20 bg-white/80 p-5 shadow-sm"
+                    >
+                      <div className="animate-pulse space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="w-full space-y-2">
+                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                          </div>
+                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-6 w-20 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                        </div>
+                      </div>
+                    </Card>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-black/20 bg-white shadow-sm p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                    (_, index) => (
+                      <div
+                        key={`department-skeleton-list-${index}`}
+                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )
+          ) : null}
+
           {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
               No department records found.
             </div>
           ) : null}
-          {viewMode === "grid" ? (
+
+          {!dataLoading && viewMode === "grid" ? (
             <>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {paginatedRows.map((row, index) => (
                   <Card
                     key={`${row.tag}-${row.id}`}
-                    className="group rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-shadow hover:shadow-md"
+                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50"
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-black">
                             #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
                             {row.type}
                           </p>
-                          <h3 className="mt-1 truncate text-base font-bold text-slate-900">
+                          <h3 className="mt-1 truncate text-base font-bold text-black">
                             {row.name}
                           </h3>
-                          <p className="mt-1 truncate text-sm text-slate-600">
+                          <p className="mt-1 truncate text-sm text-black">
                             Chairperson:{" "}
-                            <span className="font-semibold text-slate-800">
+                            <span className="font-semibold text-black">
                               {row.chairpersonName || "-"}
                             </span>
                           </p>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 border-slate-200 font-mono text-slate-700"
-                        >
+
+                        <Badge variant="outline" className="shrink-0 font-mono">
                           {row.code}
                         </Badge>
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge variant="secondary">
+                        <Badge
+                          variant="secondary"
+                          className="bg-zinc-100 text-black"
+                        >
                           Links: {row.totalLinks || 0}
                         </Badge>
-                        <Badge variant="secondary">
+                        <Badge
+                          variant="secondary"
+                          className="bg-zinc-100 text-black"
+                        >
                           Affiliates: {row.profileCount || 0}
                         </Badge>
-                        <Badge variant="secondary">
+                        <Badge
+                          variant="outline"
+                          className="border-black/20 text-black"
+                        >
                           Projects: {row.projectCount || 0}
                         </Badge>
                       </div>
@@ -906,23 +1039,23 @@ export default function AdminDepartmentPage() {
                         <button
                           type="button"
                           className={cn(
-                            "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
-                            "hover:bg-muted/50",
+                            "rounded-lg border border-black/20 bg-zinc-100/70 p-3 text-left transition-colors",
+                            "hover:bg-zinc-100",
                           )}
                           onClick={() =>
                             goToDepartmentDetail(row, "affiliates")
                           }
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
                               Affiliates
                             </p>
-                            <Users className="h-4 w-4 text-slate-400" />
+                            <Users className="h-4 w-4 text-black" />
                           </div>
-                          <p className="mt-2 text-2xl font-bold text-slate-900">
+                          <p className="mt-2 text-2xl font-bold text-black">
                             {row.profileCount}
                           </p>
-                          <p className="mt-1 text-xs text-slate-600">
+                          <p className="mt-1 text-xs text-black">
                             Admin {row.memberBreakdown?.adminCount || 0} ·
                             Editor {row.memberBreakdown?.editorCount || 0} ·
                             Member {row.memberBreakdown?.memberCount || 0}
@@ -932,21 +1065,21 @@ export default function AdminDepartmentPage() {
                         <button
                           type="button"
                           className={cn(
-                            "rounded-lg border border-border bg-muted/30 p-3 text-left transition-colors",
-                            "hover:bg-muted/50",
+                            "rounded-lg border border-black/20 bg-zinc-100/70 p-3 text-left transition-colors",
+                            "hover:bg-zinc-100",
                           )}
                           onClick={() => goToDepartmentDetail(row, "projects")}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
                               Projects
                             </p>
-                            <FolderKanban className="h-4 w-4 text-slate-400" />
+                            <FolderKanban className="h-4 w-4 text-black" />
                           </div>
-                          <p className="mt-2 text-2xl font-bold text-slate-900">
+                          <p className="mt-2 text-2xl font-bold text-black">
                             {row.projectCount}
                           </p>
-                          <p className="mt-1 text-xs text-slate-600">
+                          <p className="mt-1 text-xs text-black">
                             Linked research projects.
                           </p>
                         </button>
@@ -958,8 +1091,6 @@ export default function AdminDepartmentPage() {
                           size="icon"
                           className="h-9 w-9"
                           onClick={() => goToDepartmentDetail(row)}
-                          aria-label={`View ${row?.name || "department"}`}
-                          title="View"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -968,18 +1099,14 @@ export default function AdminDepartmentPage() {
                           size="icon"
                           className="h-9 w-9"
                           onClick={() => startEdit(row)}
-                          aria-label={`Edit ${row?.name || "department"}`}
-                          title="Edit"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-9 text-[var(--danger)] hover:bg-red-50"
+                          className="h-9 w-9 text-black hover:bg-zinc-100"
                           onClick={() => setDeletingRow(row)}
-                          aria-label={`Delete ${row?.name || "department"}`}
-                          title="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -988,6 +1115,7 @@ export default function AdminDepartmentPage() {
                   </Card>
                 ))}
               </div>
+
               {totalPages > 1 ? (
                 <div className="mt-3">
                   <PaginationControls
@@ -999,10 +1127,10 @@ export default function AdminDepartmentPage() {
                 </div>
               ) : null}
             </>
-          ) : (
-            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          ) : !dataLoading ? (
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-slate-50/80">
+                <TableHeader className="bg-gray-50">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>
@@ -1010,19 +1138,9 @@ export default function AdminDepartmentPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "code" ? "text-slate-900" : "text-muted-foreground"}`}
                         onClick={() => toggleSort("code")}
                       >
-                        Code{" "}
-                        <span
-                          className={
-                            sortConfig.key === "code"
-                              ? "text-[var(--brand)]"
-                              : "text-slate-400"
-                          }
-                        >
-                          {getSortIndicator("code")}
-                        </span>
+                        Code {getSortIndicator("code")}
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1030,19 +1148,9 @@ export default function AdminDepartmentPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "name" ? "text-slate-900" : "text-muted-foreground"}`}
                         onClick={() => toggleSort("name")}
                       >
-                        Department{" "}
-                        <span
-                          className={
-                            sortConfig.key === "name"
-                              ? "text-[var(--brand)]"
-                              : "text-slate-400"
-                          }
-                        >
-                          {getSortIndicator("name")}
-                        </span>
+                        Department {getSortIndicator("name")}
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1050,19 +1158,9 @@ export default function AdminDepartmentPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "chairpersonName" ? "text-slate-900" : "text-muted-foreground"}`}
                         onClick={() => toggleSort("chairpersonName")}
                       >
-                        Chairperson{" "}
-                        <span
-                          className={
-                            sortConfig.key === "chairpersonName"
-                              ? "text-[var(--brand)]"
-                              : "text-slate-400"
-                          }
-                        >
-                          {getSortIndicator("chairpersonName")}
-                        </span>
+                        Chairperson {getSortIndicator("chairpersonName")}
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1070,19 +1168,9 @@ export default function AdminDepartmentPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "profileCount" ? "text-slate-900" : "text-muted-foreground"}`}
                         onClick={() => toggleSort("profileCount")}
                       >
-                        Affiliates{" "}
-                        <span
-                          className={
-                            sortConfig.key === "profileCount"
-                              ? "text-[var(--brand)]"
-                              : "text-slate-400"
-                          }
-                        >
-                          {getSortIndicator("profileCount")}
-                        </span>
+                        Affiliates {getSortIndicator("profileCount")}
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -1090,24 +1178,15 @@ export default function AdminDepartmentPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-0 font-medium hover:bg-transparent ${sortConfig.key === "projectCount" ? "text-slate-900" : "text-muted-foreground"}`}
                         onClick={() => toggleSort("projectCount")}
                       >
-                        Projects{" "}
-                        <span
-                          className={
-                            sortConfig.key === "projectCount"
-                              ? "text-[var(--brand)]"
-                              : "text-slate-400"
-                          }
-                        >
-                          {getSortIndicator("projectCount")}
-                        </span>
+                        Projects {getSortIndicator("projectCount")}
                       </Button>
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {paginatedRows.map((row, index) => (
                     <TableRow key={`${row.tag}-${row.id}`}>
@@ -1124,7 +1203,6 @@ export default function AdminDepartmentPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
                           onClick={() =>
                             goToDepartmentDetail(row, "affiliates")
                           }
@@ -1137,7 +1215,6 @@ export default function AdminDepartmentPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
                           onClick={() => goToDepartmentDetail(row, "projects")}
                         >
                           {row.projectCount}
@@ -1148,30 +1225,21 @@ export default function AdminDepartmentPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
                             onClick={() => goToDepartmentDetail(row)}
-                            aria-label={`View ${row?.name || "department"}`}
-                            title="View"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
                             onClick={() => startEdit(row)}
-                            aria-label={`Edit ${row?.name || "department"}`}
-                            title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
                             onClick={() => setDeletingRow(row)}
-                            aria-label={`Delete ${row?.name || "department"}`}
-                            title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1180,6 +1248,7 @@ export default function AdminDepartmentPage() {
                     </TableRow>
                   ))}
                 </TableBody>
+
                 {totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
@@ -1196,7 +1265,7 @@ export default function AdminDepartmentPage() {
                 ) : null}
               </Table>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -1220,7 +1289,7 @@ export default function AdminDepartmentPage() {
         >
           <DialogContent
             className="max-w-2xl"
-            onOpenAutoFocus={(event) => event.preventDefault()}
+            onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <DialogHeader>
               <DialogTitle>Edit Department</DialogTitle>
@@ -1230,132 +1299,95 @@ export default function AdminDepartmentPage() {
             </DialogHeader>
 
             {editLoading ? (
-              <p className="mt-4 text-sm text-slate-600">
+              <p className="mt-4 text-sm text-gray-600">
                 Loading department details...
               </p>
             ) : (
-              <>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Department Name *
-                    </label>
-                    <Input
-                      className={editErrors.name ? "input-error" : ""}
-                      value={editing.name}
-                      onChange={(event) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          name: event.target.value,
-                        }));
-                        setEditErrors((prev) => ({ ...prev, name: "" }));
-                      }}
-                    />
-                    {editErrors.name ? (
-                      <p className="field-error">{editErrors.name}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Code *
-                    </label>
-                    <Input
-                      className={editErrors.code ? "input-error" : ""}
-                      value={editing.code}
-                      onChange={(event) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          code: event.target.value
-                            .toUpperCase()
-                            .replace(/\s+/g, "_"),
-                        }));
-                        setEditErrors((prev) => ({ ...prev, code: "" }));
-                      }}
-                    />
-                    {editErrors.code ? (
-                      <p className="field-error">{editErrors.code}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Description
-                    </label>
-                    <Textarea
-                      value={editing.description}
-                      placeholder="Optional short description about the department..."
-                      onChange={(event) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          description: event.target.value,
-                        }))
-                      }
-                      rows={4}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Social Media Link
-                    </label>
-                    <Input
-                      value={editing.socialMediaLink}
-                      placeholder="Optional: https://facebook.com/your-department"
-                      onChange={(event) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          socialMediaLink: event.target.value,
-                        }))
-                      }
-                    />
-                    <p className="text-xs text-slate-500">
-                      Optional. Displayed on the department detail page.
-                    </p>
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Chairperson *
-                    </label>
-                    <Select
-                      value={editing.chairpersonId}
-                      onValueChange={(value) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          chairpersonId: value,
-                        }));
-                        setEditErrors((prev) => ({
-                          ...prev,
-                          chairpersonId: "",
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        className={
-                          editErrors.chairpersonId ? "input-error" : ""
-                        }
-                      >
-                        <SelectValue placeholder="Select Chairperson" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {chairpersonUsers.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {editErrors.chairpersonId ? (
-                      <p className="field-error">{editErrors.chairpersonId}</p>
-                    ) : null}
-                  </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    Department Name *
+                  </label>
+                  <Input
+                    value={editing.name}
+                    onChange={(e) => {
+                      setEditing((p) => ({ ...p, name: e.target.value }));
+                      setEditErrors((p) => ({ ...p, name: "" }));
+                    }}
+                  />
                 </div>
-              </>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    Code *
+                  </label>
+                  <Input
+                    value={editing.code}
+                    onChange={(e) => {
+                      setEditing((p) => ({
+                        ...p,
+                        code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                      }));
+                      setEditErrors((p) => ({ ...p, code: "" }));
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    Description
+                  </label>
+                  <Textarea
+                    value={editing.description}
+                    onChange={(e) =>
+                      setEditing((p) => ({ ...p, description: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    Social Media Link
+                  </label>
+                  <Input
+                    value={editing.socialMediaLink}
+                    onChange={(e) =>
+                      setEditing((p) => ({
+                        ...p,
+                        socialMediaLink: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    Chairperson *
+                  </label>
+                  <Select
+                    value={editing.chairpersonId}
+                    onValueChange={(v) => {
+                      setEditing((p) => ({ ...p, chairpersonId: v }));
+                      setEditErrors((p) => ({ ...p, chairpersonId: "" }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Chairperson" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {chairpersonUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             )}
 
-            <div className="modal-actions mt-6 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={cancelEdit}
-                disabled={actionLoading}
-              >
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" onClick={cancelEdit}>
                 Cancel
               </Button>
               <Button
@@ -1372,137 +1404,100 @@ export default function AdminDepartmentPage() {
       {createModalOpen ? (
         <Dialog
           open={createModalOpen}
-          onOpenChange={(open) => {
-            if (!open && !createLoading) {
-              setCreateModalOpen(false);
-              setCreateErrors({});
-            }
-          }}
+          onOpenChange={(open) => !open && setCreateModalOpen(false)}
         >
-          <DialogContent
-            className="max-w-2xl mx-auto"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-          >
+          <DialogContent className="w-full max-w-4xl">
             <DialogHeader>
               <DialogTitle>Create Department</DialogTitle>
               <DialogDescription>
-                Add a new department to the department registry.
+                Add a new department to the registry.
               </DialogDescription>
-              <p className="text-xs text-slate-500">
-                Fields marked with <span className="text-red-500">*</span> are
-                required.
-              </p>
             </DialogHeader>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Department Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                className={createErrors.name ? "input-error" : ""}
-                placeholder="e.g. Bachelor of Science in Information System"
-                value={newDepartmentName}
-                onChange={(event) => {
-                  setNewDepartmentName(event.target.value);
-                  setCreateErrors((prev) => ({ ...prev, name: "" }));
-                }}
-                required
-              />
-              {createErrors.name ? (
-                <p className="field-error">{createErrors.name}</p>
-              ) : null}
+
+            <div className="mx-auto w-full max-w-3xl">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                      Department Name *
+                    </label>
+                    <Input
+                      className="w-full"
+                      placeholder="e.g. Bachelor of Science in Information System"
+                      value={newDepartmentName}
+                      onChange={(e) => setNewDepartmentName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                      Code *
+                    </label>
+                    <Input
+                      className="w-full"
+                      placeholder="e.g. BSIS"
+                      value={newDepartmentCode}
+                      onChange={(e) =>
+                        setNewDepartmentCode(
+                          e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                        )
+                      }
+                    />
+                    <p className="text-xs text-gray-400">
+                      Use uppercase abbreviation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                      Description *
+                    </label>
+                    <Textarea
+                      className="w-full"
+                      placeholder="Short description about the department..."
+                      value={newDepartmentDescription}
+                      onChange={(e) =>
+                        setNewDepartmentDescription(e.target.value)
+                      }
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                      Chairperson *
+                    </label>
+                    <Select
+                      value={newChairpersonId}
+                      onValueChange={setNewChairpersonId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select chairperson" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {chairpersonUsers.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Code <span className="text-red-500">*</span>
-              </label>
-              <Input
-                className={createErrors.code ? "input-error" : ""}
-                placeholder="e.g. BSIS"
-                value={newDepartmentCode}
-                onChange={(event) => {
-                  setNewDepartmentCode(
-                    event.target.value.toUpperCase().replace(/\s+/g, "_"),
-                  );
-                  setCreateErrors((prev) => ({ ...prev, code: "" }));
-                }}
-                required
-              />
-              {createErrors.code ? (
-                <p className="field-error">{createErrors.code}</p>
-              ) : null}
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <Textarea
-                value={newDepartmentDescription}
-                placeholder="Optional short description about the department..."
-                onChange={(event) =>
-                  setNewDepartmentDescription(event.target.value)
-                }
-                rows={4}
-              />
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Social Media Link
-              </label>
-              <Input
-                value={newDepartmentSocialMediaLink}
-                placeholder="Optional: https://facebook.com/your-department"
-                onChange={(event) =>
-                  setNewDepartmentSocialMediaLink(event.target.value)
-                }
-              />
-              <p className="text-xs text-slate-500">
-                Optional. You can add this later in Edit Department.
-              </p>
-            </div>
-            <div className="mt-3 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Chairperson <span className="text-red-500">*</span>
-              </label>
-              <Select
-                value={newChairpersonId}
-                onValueChange={(value) => {
-                  setNewChairpersonId(value);
-                  setCreateErrors((prev) => ({ ...prev, chairpersonId: "" }));
-                }}
-              >
-                <SelectTrigger
-                  className={createErrors.chairpersonId ? "input-error" : ""}
-                >
-                  <SelectValue placeholder="Select Chairperson" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chairpersonUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {createErrors.chairpersonId ? (
-                <p className="field-error">{createErrors.chairpersonId}</p>
-              ) : null}
-            </div>
-            <div className="modal-actions mt-5 flex justify-end gap-2">
+
+            <div className="mx-auto mt-6 flex w-full max-w-3xl justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setCreateModalOpen(false);
-                  setCreateErrors({});
-                }}
-                disabled={createLoading}
+                onClick={() => setCreateModalOpen(false)}
               >
                 Cancel
               </Button>
-              <Button
-                onClick={createDepartment}
-                disabled={createLoading || !isCreateFormValid}
-              >
-                {createLoading ? "Creating..." : "Create"}
+              <Button onClick={createDepartment} disabled={!isCreateFormValid}>
+                Create
               </Button>
             </div>
           </DialogContent>

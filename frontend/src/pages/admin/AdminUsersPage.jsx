@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { isValidEmail } from "@/utils/validation";
-import PageHeader from "@/components/layout/PageHeader";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { Button } from "@/components/ui/button";
@@ -53,6 +52,7 @@ import {
   Eye,
   Loader2,
   Mail,
+  Search,
   ShieldCheck,
   UserCheck,
   UserX,
@@ -88,6 +88,10 @@ export default function AdminUsersPage() {
   const [createResult, setCreateResult] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const toast = useToast();
+  const hasActiveDirectoryFilters = useMemo(
+    () => String(userSearch || "").trim().length > 0,
+    [userSearch],
+  );
 
   useEffect(() => {
     if (error) toast.error("User action failed", error);
@@ -356,85 +360,120 @@ export default function AdminUsersPage() {
 
   return (
     <section className="page-stack-lg">
-      <PageHeader
-        title="User Management"
-        description="Manage account access, role assignment, password reset, and account-level activity."
-      />
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
-        <Card className="flex min-h-24 flex-col justify-between">
-          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
-            <p className="kpi-label flex items-center gap-1">
-              <Users size={14} /> Total Users
-            </p>
-            <p className="kpi-value">{metrics.total}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex min-h-24 flex-col justify-between">
-          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
-            <p className="kpi-label flex items-center gap-1">
-              <UserCheck size={14} /> Active
-            </p>
-            <p className="kpi-value">{metrics.active}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex min-h-24 flex-col justify-between">
-          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
-            <p className="kpi-label flex items-center gap-1">
-              <BadgeCheck size={14} /> Inactive
-            </p>
-            <p className="kpi-value">{metrics.inactive}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex min-h-24 flex-col justify-between">
-          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
-            <p className="kpi-label flex items-center gap-1">
-              <Briefcase size={14} /> Faculty
-            </p>
-            <p className="kpi-value">{metrics.faculty}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex min-h-24 flex-col justify-between">
-          <CardContent className="flex min-h-24 flex-col justify-between p-3 md:p-4">
-            <p className="kpi-label flex items-center gap-1">
-              <Users size={14} /> Student
-            </p>
-            <p className="kpi-value">{metrics.students}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-4 py-3 space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-900">
-                Accounts Directory ({filteredUsers.length})
-              </CardTitle>
-              <label className="relative min-w-[16rem] flex-1 md:max-w-[24rem]">
-                <Input
-                  className="pl-8"
-                  placeholder="Search user by name, email, or role"
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                />
-              </label>
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                Admin Workspace
+              </p>
+              <h1 className="text-2xl font-bold text-black md:text-3xl">
+                User Management
+              </h1>
+              <p className="max-w-2xl text-sm text-black">
+                Manage account access, role assignment, password reset, and
+                account-level activity.
+              </p>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={openCreateModal}>Create User</Button>
+              <Button variant="mono" onClick={openCreateModal}>
+                Create User
+              </Button>
             </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-slate-600">
-              Showing{" "}
-              <span className="font-semibold">{filteredUsers.length}</span>{" "}
-              account(s).
+
+          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+            {[
+              { label: "Total Users", value: metrics.total, icon: Users },
+              { label: "Active", value: metrics.active, icon: UserCheck },
+              { label: "Inactive", value: metrics.inactive, icon: BadgeCheck },
+              { label: "Faculty", value: metrics.faculty, icon: Briefcase },
+              { label: "Students", value: metrics.students, icon: Users },
+            ].map(({ label, value, icon: Icon }) => (
+              <div
+                key={label}
+                className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                    {label}
+                  </p>
+                  <Icon className="h-4 w-4 text-black" />
+                </div>
+                <p className="mt-2 text-2xl font-bold text-black">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-200 px-6 py-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base font-semibold text-black">
+                Accounts Directory
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Showing {filteredUsers.length} account(s).
+              </CardDescription>
+            </div>
+            <p className="text-sm text-gray-600">
+              {filteredUsers.length} row(s).
             </p>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3 p-0">
-          <div className="overflow-x-auto">
+
+        <CardContent className="p-4">
+          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <label className="relative block w-full md:max-w-xl">
+              <span className="sr-only">Search users</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+              <Input
+                className="pl-9"
+                placeholder="Search user by name, email, or role"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+            </label>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-black hover:text-black"
+                onClick={() => setUserSearch("")}
+                disabled={!hasActiveDirectoryFilters}
+              >
+                Reset all
+              </Button>
+            </div>
+
+            {hasActiveDirectoryFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Active Filters
+                </span>
+                <button
+                  type="button"
+                  className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                  onClick={() => setUserSearch("")}
+                >
+                  Search: "{String(userSearch || "").trim()}" x
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+
+        <CardContent className="p-4 pt-0">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
             <Table className="min-w-[980px]">
-              <TableHeader>
+              <TableHeader className="bg-gray-50/80 text-gray-600">
                 <TableRow>
                   <TableHead>No.</TableHead>
                   <TableHead>Name</TableHead>
@@ -448,7 +487,12 @@ export default function AdminUsersPage() {
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8}>No users found.</TableCell>
+                    <TableCell
+                      colSpan={8}
+                      className="py-10 text-center text-sm text-gray-600"
+                    >
+                      No users found.
+                    </TableCell>
                   </TableRow>
                 ) : (
                   pagination.items.map((user, index) => (
@@ -518,7 +562,7 @@ export default function AdminUsersPage() {
                             size="icon"
                             className={
                               user.is_active
-                                ? "h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                ? "h-8 w-8 text-red-700 hover:bg-red-50"
                                 : "h-8 w-8 text-emerald-700 hover:bg-emerald-50"
                             }
                             disabled={Boolean(savingUserById[user.id])}

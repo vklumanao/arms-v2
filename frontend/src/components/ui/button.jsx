@@ -4,20 +4,26 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background",
   {
     variants: {
       variant: {
         default:
           "bg-primary text-primary-foreground hover:opacity-95 shadow-sm",
+
+        mono: "bg-black text-white hover:bg-gray-800 active:bg-gray-900 shadow-sm",
+
         destructive:
-          "bg-destructive text-destructive-foreground hover:opacity-95 shadow-sm",
+          "bg-black text-white hover:bg-gray-800 active:bg-gray-900 shadow-sm",
+
         outline:
-          "border border-border bg-background hover:bg-muted hover:text-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-muted",
-        ghost: "hover:bg-muted hover:text-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200",
+
+        secondary: "bg-gray-100 text-black hover:bg-gray-200",
+
+        ghost: "text-black hover:bg-gray-100",
+
+        link: "text-black underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -27,7 +33,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "mono",
       size: "default",
     },
   },

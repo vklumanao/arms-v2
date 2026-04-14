@@ -348,18 +348,24 @@ export default function ResearchProjectDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Research Project Detail
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+              Submissions Workspace
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1 className="text-2xl font-bold text-black md:text-3xl">
               {project?.title || "Research Project"}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline">
+            <Button
+              asChild
+              variant="outline"
+              className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+            >
               <Link to="/projects">
                 <ChevronLeft className="h-4 w-4" />
                 Back to Projects
@@ -368,6 +374,7 @@ export default function ResearchProjectDetailPage() {
             {canEdit ? (
               <Button
                 variant="outline"
+                className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
                 onClick={() =>
                   navigate(
                     `/projects/submit?edit=${encodeURIComponent(
@@ -394,15 +401,15 @@ export default function ResearchProjectDetailPage() {
             {project?.status || "Published"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
+          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
             {project?.project_public_visible ? "Public" : "Private"}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
+          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
             {formatProjectDuration(project?.start_date, project?.end_date)}
           </span>
 
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
+          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
             {project?.research_center_id
               ? centerById[project.research_center_id] || "-"
               : project?.project_ckan_org_id
@@ -414,11 +421,11 @@ export default function ResearchProjectDetailPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-200 px-6 py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-black">
                 Project Details
               </CardTitle>
             </div>
@@ -427,23 +434,23 @@ export default function ResearchProjectDetailPage() {
 
         <CardContent className="space-y-5 p-5">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-base text-gray-600">
               Loading project...
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
+            <div className="rounded-xl border border-dashed border-red-200 bg-red-50 p-8 text-center text-base text-red-800">
               Unable to load. {error}
             </div>
           ) : !project ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-slate-600">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-base text-gray-600">
               Project not found. This project is not available in your scope.
             </div>
           ) : (
             <>
               <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         Overview
                       </CardTitle>
@@ -513,8 +520,8 @@ export default function ResearchProjectDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         Classification
                       </CardTitle>
@@ -551,8 +558,8 @@ export default function ResearchProjectDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         People
                       </CardTitle>
@@ -587,8 +594,8 @@ export default function ResearchProjectDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         Summary
                       </CardTitle>
@@ -600,8 +607,8 @@ export default function ResearchProjectDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         Funding
                       </CardTitle>
@@ -642,8 +649,8 @@ export default function ResearchProjectDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-slate-200/70 shadow-sm">
-                    <CardHeader className="border-b border-[var(--border)] px-5 py-3">
+                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
+                    <CardHeader className="border-b border-gray-200 px-5 py-3">
                       <CardTitle className="text-base font-semibold text-slate-900">
                         Timeline & MOA
                       </CardTitle>
@@ -730,11 +737,11 @@ export default function ResearchProjectDetailPage() {
                 </div>
               </div>
 
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+              <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+                <CardHeader className="border-b border-gray-200 px-6 py-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-black">
                         Outputs
                       </CardTitle>
                     </div>
@@ -754,7 +761,7 @@ export default function ResearchProjectDetailPage() {
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
+                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-base text-gray-600">
                       No linked resources found for this project.
                     </div>
                   ) : (
@@ -926,19 +933,19 @@ export default function ResearchProjectDetailPage() {
                   )}
                 </CardContent>
               </Card>
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+              <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+                <CardHeader className="border-b border-gray-200 px-6 py-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-semibold text-slate-900">
+                      <CardTitle className="text-base font-semibold text-black">
                         Awards &amp; Recognition
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-gray-600">
                         Awards linked to this project.
                       </CardDescription>
                     </div>
                     {resourceDatasetId ? (
-                      <Button asChild variant="outline" size="sm">
+                      <Button asChild variant="outline" size="sm" className="border-gray-300 bg-white text-black hover:bg-gray-100">
                         <Link
                           to={`/awards/new?project_id=${encodeURIComponent(
                             resourceDatasetId,
@@ -961,7 +968,7 @@ export default function ResearchProjectDetailPage() {
                       {awardsPanel.error}
                     </p>
                   ) : awardsPanel.rows.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-slate-600">
+                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-base text-gray-600">
                       No awards linked to this project yet.
                     </div>
                   ) : (
@@ -973,7 +980,7 @@ export default function ResearchProjectDetailPage() {
                             row.ckan_dataset_id ||
                             row.award_recognition
                           }
-                          className="rounded-2xl border border-slate-200/70 bg-white shadow-sm"
+                          className="rounded-2xl border border-black/20 bg-white shadow-sm"
                         >
                           <CardContent className="p-4">
                             <div className="flex flex-wrap items-start justify-between gap-3">

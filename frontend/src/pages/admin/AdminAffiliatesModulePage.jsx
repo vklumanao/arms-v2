@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Download, Eye, Pencil, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Download,
+  Eye,
+  LayoutGrid,
+  List,
+  Pencil,
+  Search,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +64,7 @@ import {
 export default function AdminAffiliatesModulePage() {
   const navigate = useNavigate();
   const PAGE_SIZE = 10;
+  const DIRECTORY_SKELETON_COUNT = 6;
   const sanitizeDigits = (value, maxLength = null) => {
     const digitsOnly = String(value || "").replace(/\D+/g, "");
     if (maxLength == null) return digitsOnly;
@@ -73,6 +76,8 @@ export default function AdminAffiliatesModulePage() {
   const [centers, setCenters] = useState([]);
   const [filters, setFilters] = useState(createAffiliateModuleFilters());
   const [quickFilter, setQuickFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("list");
+  const [dataLoading, setDataLoading] = useState(true);
   const [exportingType, setExportingType] = useState("");
   const [editingAffiliate, setEditingAffiliate] = useState(null);
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
@@ -97,12 +102,15 @@ export default function AdminAffiliatesModulePage() {
   const loadData = useCallback(async () => {
     setError("");
     setMessage("");
+    setDataLoading(true);
     try {
       const payload = await fetchAffiliateRegistry();
       setRows(payload?.rows || []);
       setCenters(payload?.centers || []);
     } catch (loadError) {
       setError(loadError.message || "Unable to load affiliate data.");
+    } finally {
+      setDataLoading(false);
     }
   }, []);
 
@@ -130,6 +138,49 @@ export default function AdminAffiliatesModulePage() {
       gsFaculty,
     };
   }, [rows]);
+
+  const quickFilterChips = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Affiliates",
+        count: rows.length,
+      },
+      {
+        key: "faculty",
+        label: "Faculty",
+        count: rows.filter(
+          (row) =>
+            String(row.role || "")
+              .trim()
+              .toLowerCase() === "faculty",
+        ).length,
+      },
+      {
+        key: "student",
+        label: "Student",
+        count: rows.filter(
+          (row) =>
+            String(row.role || "")
+              .trim()
+              .toLowerCase() === "student",
+        ).length,
+      },
+      {
+        key: "gs",
+        label: "GS Faculty",
+        count: rows.filter((row) => row.is_gs_faculty).length,
+      },
+    ],
+    [rows],
+  );
+
+  const hasActiveDirectoryFilters =
+    quickFilter !== "all" ||
+    filters.search.trim().length > 0 ||
+    String(filters.sortBy || "").trim() !== "name_asc" ||
+    String(filters.centerId || "").trim() !== "all" ||
+    String(filters.department || "").trim() !== "all";
   const departmentOptions = useMemo(() => {
     const seen = new Set();
     const options = [];
@@ -422,259 +473,527 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-2xl p-3">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Affiliate Workspace
-            </h1>
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                Admin Workspace
+              </p>
+              <h1 className="text-2xl font-bold text-black md:text-3xl">
+                Affiliate Workspace
+              </h1>
+              <p className="max-w-2xl text-sm text-black">
+                Manage affiliate records, review membership status, and export
+                directory reports from one panel.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                    className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-white border border-gray-300 shadow-md"
+                >
+                  <DropdownMenuItem
+                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    onSelect={exportAsCsv}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    onSelect={exportAsPdf}
+                    disabled={!filteredRows.length || Boolean(exportingType)}
+                  >
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={exportAsCsv}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={exportAsPdf}
-                  disabled={!filteredRows.length || Boolean(exportingType)}
-                >
-                  {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Affiliates
+                </p>
+                <Users className="h-4 w-4 text-black" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {affiliateMetrics.total}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Active
+                </p>
+                <Users className="h-4 w-4 text-black" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {affiliateMetrics.active}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  GS Faculty
+                </p>
+                <Users className="h-4 w-4 text-black" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {affiliateMetrics.gsFaculty}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900">
-                Affiliate Directory
-              </CardTitle>
-              <CardDescription>
-                Showing {filteredRows.length} record(s).
-              </CardDescription>
-            </div>
-            <label className="relative w-full md:max-w-md">
-              <span className="sr-only">Search affiliates</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-8"
-                placeholder="Search name, email, role, department, or id"
-                value={filters.search}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-              <Select
-                value={filters.sortBy}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    sortBy: value,
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full md:w-[14rem]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
-                  <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
-                  <SelectItem value="recent_desc">
-                    Sort: Recently updated
-                  </SelectItem>
-                  <SelectItem value="recent_asc">
-                    Sort: Least recently updated
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-black">
+              Affiliate Directory
+            </h2>
+            <p className="text-sm text-black">
+              Showing {filteredRows.length} filtered affiliate record(s).
+            </p>
           </div>
-          <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-x-auto">
-            {[
-              {
-                key: "all",
-                label: "All Affiliates",
-                count: filteredRows.length,
-              },
-            ].map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
+
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-slate-50 p-1 lg:w-auto">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              type="button"
+              className={cn(
+                "rounded-full",
+                viewMode === "grid"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-black",
+              )}
+            >
+              <LayoutGrid size={14} />
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              type="button"
+              className={cn(
+                "rounded-full",
+                viewMode === "list"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-black",
+              )}
+            >
+              <List size={14} />
+              List
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_14rem] xl:items-center xl:justify-between">
+          <label className="relative w-full">
+            <span className="sr-only">Search affiliates</span>
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+            <Input
+              className="border-black/20 bg-white pl-8"
+              placeholder="Search name, email, role, department, or id"
+              value={filters.search}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  search: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <Select
+            value={filters.sortBy}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                sortBy: value,
+              }))
+            }
+          >
+            <SelectTrigger className="border-black/20 bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
+              <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
+              <SelectItem value="recent_desc">
+                Sort: Recently updated
+              </SelectItem>
+              <SelectItem value="recent_asc">
+                Sort: Least recently updated
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {quickFilterChips.map((chip) => (
+            <Button
+              key={chip.key}
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                "rounded-full border-black/20 px-4 text-xs",
+                quickFilter === chip.key
+                  ? "bg-zinc-200 text-black hover:bg-zinc-200"
+                  : "bg-white text-black hover:bg-slate-50",
+              )}
+              onClick={() => setQuickFilter(chip.key)}
+            >
+              {chip.label}
+              <span
                 className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
+                  "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                   quickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
+                    ? "bg-black/10 text-black"
+                    : "bg-slate-100 text-black",
                 )}
-                onClick={() => setQuickFilter(chip.key)}
               >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-            {isAdmin ? (
-              <Select
-                value={filters.centerId}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    centerId: value,
-                  }))
-                }
-              >
-                <SelectTrigger
-                  className={cn(
-                    "h-8 w-[140px] rounded-full border-slate-200 px-4 text-xs shrink-0",
-                    filters.centerId !== "all"
-                      ? "bg-slate-900 text-white hover:bg-slate-900"
-                      : "bg-white text-slate-600 hover:bg-slate-50",
-                  )}
-                >
-                  <SelectValue placeholder="Research Center" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Research Center</SelectItem>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
+                {chip.count}
+              </span>
+            </Button>
+          ))}
+
+          {isAdmin ? (
             <Select
-              value={filters.department}
+              value={filters.centerId}
               onValueChange={(value) =>
                 setFilters((prev) => ({
                   ...prev,
-                  department: value,
+                  centerId: value,
                 }))
               }
             >
-              <SelectTrigger
-                className={cn(
-                  "h-8 w-[140px] rounded-full border-slate-200 px-4 text-xs shrink-0",
-                  filters.department !== "all"
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
-                )}
-              >
-                <SelectValue placeholder="Department" />
+              <SelectTrigger className="h-8 w-[160px] rounded-full border-black/20 bg-white px-4 text-xs">
+                <SelectValue placeholder="Research Center" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Department</SelectItem>
-                {departmentOptions.map((department) => (
-                  <SelectItem
-                    key={department.id}
-                    value={String(department.name || "").trim()}
-                  >
-                    {department.name}
+                <SelectItem value="all">Research Center</SelectItem>
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {[
-              {
-                key: "faculty",
-                label: "Faculty",
-                count: rows.filter(
-                  (row) =>
-                    String(row.role || "")
-                      .trim()
-                      .toLowerCase() === "faculty",
-                ).length,
-              },
-              {
-                key: "student",
-                label: "Student",
-                count: rows.filter(
-                  (row) =>
-                    String(row.role || "")
-                      .trim()
-                      .toLowerCase() === "student",
-                ).length,
-              },
-              {
-                key: "gs",
-                label: "GS Faculty",
-                count: rows.filter((row) => row.is_gs_faculty).length,
-              },
-            ].map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
-                  quickFilter === chip.key
-                    ? "bg-slate-900 text-white hover:bg-slate-900"
-                    : "bg-white text-slate-600 hover:bg-slate-50",
-                )}
-                onClick={() => setQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 text-slate-600",
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </CardHeader>
+          ) : null}
 
-        {filteredRows.length === 0 ? (
-          <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-slate-600">
+          <Select
+            value={filters.department}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                department: value,
+              }))
+            }
+          >
+            <SelectTrigger className="h-8 w-[160px] rounded-full border-black/20 bg-white px-4 text-xs">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Department</SelectItem>
+              {departmentOptions.map((department) => (
+                <SelectItem
+                  key={department.id}
+                  value={String(department.name || "").trim()}
+                >
+                  {department.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="rounded-full text-xs text-black hover:text-black"
+            onClick={() => {
+              setQuickFilter("all");
+              setFilters(createAffiliateModuleFilters());
+            }}
+          >
+            Reset all
+          </Button>
+        </div>
+
+        {hasActiveDirectoryFilters ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+              Active Filters
+            </span>
+            {filters.search.trim() ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: "",
+                  }))
+                }
+              >
+                Search: "{filters.search.trim()}" x
+              </button>
+            ) : null}
+            {quickFilter !== "all" ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() => setQuickFilter("all")}
+              >
+                {quickFilterChips.find((chip) => chip.key === quickFilter)
+                  ?.label || "Quick filter"}{" "}
+                x
+              </button>
+            ) : null}
+            {String(filters.centerId || "").trim() !== "all" ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    centerId: "all",
+                  }))
+                }
+              >
+                Center x
+              </button>
+            ) : null}
+            {String(filters.department || "").trim() !== "all" ? (
+              <button
+                type="button"
+                className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    department: "all",
+                  }))
+                }
+              >
+                Department x
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <Card className="overflow-hidden border-black/20 shadow-sm">
+        <CardContent className="p-4">
+          {dataLoading ? (
+            viewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                  (_, index) => (
+                    <Card
+                      key={`affiliate-skeleton-grid-${index}`}
+                      className="rounded-2xl border border-black/20 bg-white/80 p-5 shadow-sm"
+                    >
+                      <div className="animate-pulse space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="w-full space-y-2">
+                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                          </div>
+                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-6 w-20 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                        </div>
+                      </div>
+                    </Card>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-black/20 bg-white shadow-sm p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                    (_, index) => (
+                      <div
+                        key={`affiliate-skeleton-list-${index}`}
+                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )
+          ) : null}
+
+          {!dataLoading && filteredRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
               No affiliate records found.
             </div>
-          </CardContent>
-        ) : (
-          <CardContent className="space-y-3 p-4">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          ) : null}
+
+          {!dataLoading && viewMode === "grid" && filteredRows.length > 0 ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {pagination.items.map((row, index) => (
+                  <Card
+                    key={row.id || `${row.email}-${index}`}
+                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-black">
+                            #{pagination.start + index + 1} ·{" "}
+                            {String(row.role || "affiliate")}
+                          </p>
+                          <h3 className="mt-1 truncate text-base font-bold text-black">
+                            {row.full_name || "-"}
+                          </h3>
+                          <p className="mt-1 truncate text-sm text-black">
+                            {row.email || "-"}
+                          </p>
+                        </div>
+
+                        <Badge variant="outline" className="shrink-0 font-mono">
+                          {row.id || "-"}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Badge
+                          variant="secondary"
+                          className="bg-zinc-100 text-black"
+                        >
+                          Dept: {row.department || "-"}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="border-black/20 text-black"
+                        >
+                          Center:{" "}
+                          {row.ckan_org_id
+                            ? centerNameById[row.ckan_org_id] || "-"
+                            : "-"}
+                        </Badge>
+                        <Badge
+                          variant="secondary"
+                          className="bg-zinc-100 text-black"
+                        >
+                          GS: {row.is_gs_faculty ? "Yes" : "No"}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-black/20 bg-zinc-100/70 p-3 text-left">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
+                            Projects
+                          </p>
+                          <p className="mt-2 text-2xl font-bold text-black">
+                            {Number(row.research_project_count || 0)}
+                          </p>
+                          <p className="mt-1 text-xs text-black">
+                            Publications {Number(row.publication_count || 0)}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg border border-black/20 bg-zinc-100/70 p-3 text-left">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
+                            Outputs
+                          </p>
+                          <p className="mt-2 text-2xl font-bold text-black">
+                            {Number(row.awards_count || 0)}
+                          </p>
+                          <p className="mt-1 text-xs text-black">
+                            IPs {Number(row.ip_count || 0)} · Works{" "}
+                            {Number(row.creative_work_count || 0)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => goToAffiliateDetail(row)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          disabled={row.source === "ckan_only"}
+                          onClick={() => openEditModal(row)}
+                          title={
+                            row.source === "ckan_only"
+                              ? "Edit disabled (CKAN only)"
+                              : "Edit"
+                          }
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {pagination.totalPages > 1 ? (
+                <div className="mt-3">
+                  <PaginationControls
+                    page={currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={setCurrentPage}
+                    className="border-0 rounded-none shadow-none bg-transparent"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {!dataLoading && viewMode === "list" && filteredRows.length > 0 ? (
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table>
-                <TableHeader className="bg-slate-50/80">
+                <TableHeader className="bg-gray-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Name</TableHead>
@@ -693,54 +1012,54 @@ export default function AdminAffiliatesModulePage() {
                 <TableBody>
                   {pagination.items.map((row, index) => (
                     <TableRow key={row.id}>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="text-gray-600">
                         {pagination.start + index + 1}
                       </TableCell>
 
                       <TableCell>
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-black">
                           {row.full_name || "-"}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-gray-500">
                           {row.email || "-"}
                         </p>
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {row.department || "-"}
                       </TableCell>
 
-                      <TableCell className="capitalize text-slate-700">
+                      <TableCell className="capitalize text-gray-700">
                         {row.role || "-"}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {Number(row.research_project_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {Number(row.awards_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {Number(row.publication_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {Number(row.ip_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-slate-700">
+                      <TableCell className="text-gray-700">
                         {Number(row.creative_work_count || 0)}
                       </TableCell>
 
@@ -795,8 +1114,8 @@ export default function AdminAffiliatesModulePage() {
                 ) : null}
               </Table>
             </div>
-          </CardContent>
-        )}
+          ) : null}
+        </CardContent>
       </Card>
 
       {editingAffiliate ? (

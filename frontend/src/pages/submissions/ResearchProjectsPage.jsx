@@ -54,6 +54,8 @@ import {
   Eye,
   EyeOff,
   FileText,
+  LayoutGrid,
+  List,
   Loader2,
   Pencil,
   Search,
@@ -89,11 +91,15 @@ export default function ResearchProjectsPage() {
   const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
   const [linkedProjectsQuickFilter, setLinkedProjectsQuickFilter] =
     useState("all");
+  const [linkedViewMode, setLinkedViewMode] = useState("list");
   const [filters, setFilters] = useState({
     search: "",
     sortBy: "submitted_desc",
   });
   const [quickFilter, setQuickFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("list");
+  const [dataLoading, setDataLoading] = useState(true);
+  const DIRECTORY_SKELETON_COUNT = 6;
   const [deletingProjectId, setDeletingProjectId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [exportingType, setExportingType] = useState("");
@@ -104,6 +110,43 @@ export default function ResearchProjectsPage() {
     {},
   );
   const toast = useToast();
+
+  const hasActiveDirectoryFilters = useMemo(() => {
+    const searchActive = String(filters.search || "").trim().length > 0;
+    const quickActive = quickFilter !== "all";
+    const sortActive = String(filters.sortBy || "") !== "submitted_desc";
+    return searchActive || quickActive || sortActive;
+  }, [filters.search, filters.sortBy, quickFilter]);
+
+  const resetDirectoryFilters = useCallback(() => {
+    setQuickFilter("all");
+    setFilters({
+      search: "",
+      sortBy: "submitted_desc",
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const hasActiveCenterChiefFilters = useMemo(() => {
+    const searchActive = String(centerChiefSearch || "").trim().length > 0;
+    const quickActive = centerChiefQuickFilter !== "all";
+    return searchActive || quickActive;
+  }, [centerChiefQuickFilter, centerChiefSearch]);
+
+  const resetCenterChiefFilters = useCallback(() => {
+    setCenterChiefQuickFilter("all");
+    setCenterChiefSearch("");
+    setCenterChiefPage(1);
+  }, []);
+
+  const hasActiveLinkedFilters = useMemo(
+    () => linkedProjectsQuickFilter !== "all",
+    [linkedProjectsQuickFilter],
+  );
+
+  const resetLinkedFilters = useCallback(() => {
+    setLinkedProjectsQuickFilter("all");
+  }, []);
 
   useEffect(() => {
     if (error) toast.error("Action failed", error);
@@ -132,33 +175,43 @@ export default function ResearchProjectsPage() {
     if (!user?.id) return;
 
     let isMounted = true;
-    fetchUserProjects({ userId: profile?.id })
-      .then(({ data, error: loadError }) => {
-        if (!isMounted) return;
-        if (loadError) {
-          setError(loadError.message || "Unable to load your projects.");
-          return;
-        }
-        setProjects(Array.isArray(data) ? data : []);
-      })
-      .catch((queryError) => {
-        if (!isMounted) return;
-        setError(queryError.message || "Unable to load your projects.");
-      });
+    setDataLoading(true);
 
-    fetchLinkedProjects()
-      .then(({ data, error: loadError }) => {
-        if (!isMounted) return;
-        if (loadError) {
-          setError(loadError.message || "Unable to load linked projects.");
-          return;
-        }
-        setLinkedProjects(Array.isArray(data) ? data : []);
-      })
-      .catch((queryError) => {
-        if (!isMounted) return;
-        setError(queryError.message || "Unable to load linked projects.");
-      });
+    Promise.all([
+      fetchUserProjects({ userId: profile?.id })
+        .then(({ data, error: loadError }) => {
+          if (!isMounted) return;
+          if (loadError) {
+            setError(loadError.message || "Unable to load your projects.");
+            setProjects([]);
+            return;
+          }
+          setProjects(Array.isArray(data) ? data : []);
+        })
+        .catch((queryError) => {
+          if (!isMounted) return;
+          setError(queryError.message || "Unable to load your projects.");
+          setProjects([]);
+        }),
+      fetchLinkedProjects()
+        .then(({ data, error: loadError }) => {
+          if (!isMounted) return;
+          if (loadError) {
+            setError(loadError.message || "Unable to load linked projects.");
+            setLinkedProjects([]);
+            return;
+          }
+          setLinkedProjects(Array.isArray(data) ? data : []);
+        })
+        .catch((queryError) => {
+          if (!isMounted) return;
+          setError(queryError.message || "Unable to load linked projects.");
+          setLinkedProjects([]);
+        }),
+    ]).finally(() => {
+      if (!isMounted) return;
+      setDataLoading(false);
+    });
 
     if (isCenterChief) {
       setCenterChiefLoading(true);
@@ -562,15 +615,20 @@ export default function ResearchProjectsPage() {
   const getStatusBadgeClass = (status) => {
     const normalized = normalizeStatus(status);
     if (normalized === "proposal")
-      return "border-[var(--warning)] bg-[var(--surface-muted)] text-[var(--warning)]";
+      return "border-amber-200 bg-amber-50 text-amber-800";
     if (normalized === "ongoing")
-      return "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]";
+      return "border-sky-200 bg-sky-50 text-sky-800";
     if (normalized === "completed")
-      return "border-[var(--success)] bg-[var(--surface-muted)] text-[var(--success)]";
+      return "border-emerald-200 bg-emerald-50 text-emerald-800";
     if (normalized === "rejected")
-      return "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]";
-    return "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-muted)]";
+      return "border-red-200 bg-red-50 text-red-800";
+    return "border-gray-200 bg-gray-50 text-gray-700";
   };
+
+  const getVisibilityBadgeClass = (isPrivate) =>
+    isPrivate
+      ? "border-red-200 bg-red-50 text-red-800"
+      : "border-sky-200 bg-sky-50 text-sky-800";
 
   const buildExportRows = () =>
     filteredProjects.map((project, index) => ({
@@ -705,294 +763,388 @@ export default function ResearchProjectsPage() {
   };
 
   return (
-    <section className="page-stack-lg text-[var(--text)]">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
-              Research Projects Workspace
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {isAdmin ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
-                    disabled={
-                      !filteredProjects.length || Boolean(exportingType)
-                    }
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
-                >
-                  <DropdownMenuItem
-                    onSelect={exportAsCsv}
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={exportAsPdf}
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-
-            {canSubmit ? (
-              <Button
-                asChild
-                className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-              >
-                <Link to="/projects/submit">Submit Research Project</Link>
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                disabled
-                className="bg-[var(--surface-strong)] text-[var(--text-muted)]"
-                title="Set your Organization (Research Center) in My Profile to submit."
-              >
-                Submit Research Project
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {needsOrganization ? (
-          <div className="mt-4 rounded-2xl border border-[var(--warning)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--warning)]">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p>
-                You can browse projects, but submitting requires an Organization
-                (Research Center).
+    <section className="page-stack-lg">
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                Submissions Workspace
               </p>
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
-              >
-                <Link to="/profile">Go to My Profile</Link>
-              </Button>
+              <h1 className="text-2xl font-bold text-black md:text-3xl">
+                Research Projects
+              </h1>
+              <p className="max-w-2xl text-sm text-black">
+                Browse projects, manage visibility, and submit new research
+                projects from one place.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                      disabled={
+                        !filteredProjects.length || Boolean(exportingType)
+                      }
+                    >
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="bg-white border border-gray-300 shadow-md"
+                  >
+                    <DropdownMenuItem
+                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                      onSelect={exportAsCsv}
+                    >
+                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                      onSelect={exportAsPdf}
+                    >
+                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+
+              {canSubmit ? (
+                <Button asChild variant="mono">
+                  <Link to="/projects/submit">Submit Research Project</Link>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled
+                  className="bg-white text-gray-500 border border-gray-300"
+                  title="Set your Organization (Research Center) in My Profile to submit."
+                >
+                  Submit Research Project
+                </Button>
+              )}
             </div>
           </div>
-        ) : null}
 
-        <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              <FileText size={14} />
-              Total Projects
-            </p>
-            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-              {analytics.total}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              <FileText size={14} />
-              Proposal
-            </p>
-            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-              {analytics.proposal}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              <Clock3 size={14} />
-              Ongoing
-            </p>
-            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-              {analytics.ongoing}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              <CheckCircle2 size={14} />
-              Completed
-            </p>
-            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-              {analytics.completed}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              <XCircle size={14} />
-              Rejected
-            </p>
-            <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-              {analytics.rejected}
-            </p>
+          {needsOrganization ? (
+            <div className="mt-4 rounded-2xl border border-amber-300 bg-white/80 p-4 text-sm text-amber-900">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p>
+                  You can browse projects, but submitting requires an
+                  Organization (Research Center).
+                </p>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/profile">Go to My Profile</Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <FileText size={14} />
+                Total Projects
+              </p>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {analytics.total}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <FileText size={14} />
+                Proposal
+              </p>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {analytics.proposal}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <Clock3 size={14} />
+                Ongoing
+              </p>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {analytics.ongoing}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <CheckCircle2 size={14} />
+                Completed
+              </p>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {analytics.completed}
+              </p>
+            </div>
+            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <XCircle size={14} />
+                Rejected
+              </p>
+              <p className="mt-2 text-2xl font-bold text-black">
+                {analytics.rejected}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
-          <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+          <CardHeader className="border-b border-gray-200 px-6 py-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-[var(--text)]">
+                <CardTitle className="text-base font-semibold text-black">
                   Managed Center Projects
                 </CardTitle>
-                <CardDescription className="text-[var(--text-muted)]">
+                <CardDescription className="text-gray-600">
                   Showing {centerChiefFilteredRows.length} project(s) linked to
                   your research center.
                 </CardDescription>
               </div>
-              <div className="flex w-full flex-col gap-2 md:max-w-xl md:items-end">
-                <label className="relative w-full">
+              <p className="text-sm text-gray-600">
+                {centerChiefFilteredRows.length} row(s).
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <label className="relative w-full md:max-w-xl">
                   <span className="sr-only">
                     Search managed center projects
                   </span>
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
                   <Input
                     value={centerChiefSearch}
                     onChange={(event) =>
                       setCenterChiefSearch(event.target.value)
                     }
                     placeholder="Search title, lead, status, year, or center"
-                    className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
+                    className="pl-9"
                   />
                 </label>
-                <span className="text-xs text-[var(--text-muted)]">
+                <span className="text-xs text-gray-600">
                   Scope: {profile?.managed_center_name || "My Center"}
                 </span>
               </div>
-            </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {[
-                {
-                  key: "all",
-                  label: "All Projects",
-                  count: baseCenterChiefRows.length,
-                },
-                {
-                  key: "proposal",
-                  label: "Proposal",
-                  count: baseCenterChiefRows.filter(
-                    (project) => normalizeStatus(project.status) === "proposal",
-                  ).length,
-                },
-                {
-                  key: "ongoing",
-                  label: "Ongoing",
-                  count: baseCenterChiefRows.filter(
-                    (project) => normalizeStatus(project.status) === "ongoing",
-                  ).length,
-                },
-                {
-                  key: "completed",
-                  label: "Completed",
-                  count: baseCenterChiefRows.filter(
-                    (project) =>
-                      normalizeStatus(project.status) === "completed",
-                  ).length,
-                },
-                {
-                  key: "rejected",
-                  label: "Rejected",
-                  count: baseCenterChiefRows.filter(
-                    (project) => normalizeStatus(project.status) === "rejected",
-                  ).length,
-                },
-                {
-                  key: "draft",
-                  label: "Drafts",
-                  count: baseCenterChiefRows.filter(
-                    (project) =>
-                      String(project?.submission_state || "")
-                        .trim()
-                        .toLowerCase() === "draft",
-                  ).length,
-                },
-                {
-                  key: "public",
-                  label: "Public",
-                  count: baseCenterChiefRows.filter(
-                    (project) => !project.private,
-                  ).length,
-                },
-                {
-                  key: "private",
-                  label: "Private",
-                  count: baseCenterChiefRows.filter(
-                    (project) => project.private,
-                  ).length,
-                },
-              ].map((chip) => (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {[
+                  {
+                    key: "all",
+                    label: "All Projects",
+                    count: baseCenterChiefRows.length,
+                  },
+                  {
+                    key: "proposal",
+                    label: "Proposal",
+                    count: baseCenterChiefRows.filter(
+                      (project) =>
+                        normalizeStatus(project.status) === "proposal",
+                    ).length,
+                  },
+                  {
+                    key: "ongoing",
+                    label: "Ongoing",
+                    count: baseCenterChiefRows.filter(
+                      (project) =>
+                        normalizeStatus(project.status) === "ongoing",
+                    ).length,
+                  },
+                  {
+                    key: "completed",
+                    label: "Completed",
+                    count: baseCenterChiefRows.filter(
+                      (project) =>
+                        normalizeStatus(project.status) === "completed",
+                    ).length,
+                  },
+                  {
+                    key: "rejected",
+                    label: "Rejected",
+                    count: baseCenterChiefRows.filter(
+                      (project) =>
+                        normalizeStatus(project.status) === "rejected",
+                    ).length,
+                  },
+                  {
+                    key: "draft",
+                    label: "Drafts",
+                    count: baseCenterChiefRows.filter(
+                      (project) =>
+                        String(project?.submission_state || "")
+                          .trim()
+                          .toLowerCase() === "draft",
+                    ).length,
+                  },
+                  {
+                    key: "public",
+                    label: "Public",
+                    count: baseCenterChiefRows.filter(
+                      (project) => !project.private,
+                    ).length,
+                  },
+                  {
+                    key: "private",
+                    label: "Private",
+                    count: baseCenterChiefRows.filter(
+                      (project) => project.private,
+                    ).length,
+                  },
+                ].map((chip) => (
+                  <Button
+                    key={chip.key}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn(
+                      "rounded-full border-black/20 px-4 text-xs",
+                      centerChiefQuickFilter === chip.key
+                        ? "bg-black text-white hover:bg-black"
+                        : "bg-white text-black hover:bg-gray-100",
+                    )}
+                    onClick={() => setCenterChiefQuickFilter(chip.key)}
+                  >
+                    {chip.label}
+                    <span
+                      className={cn(
+                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        centerChiefQuickFilter === chip.key
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 text-black",
+                      )}
+                    >
+                      {chip.count}
+                    </span>
+                  </Button>
+                ))}
                 <Button
-                  key={chip.key}
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className={cn(
-                    "rounded-full border px-4 text-xs",
-                    centerChiefQuickFilter === chip.key
-                      ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
-                  )}
-                  onClick={() => setCenterChiefQuickFilter(chip.key)}
+                  variant="ghost"
+                  className="rounded-full text-xs text-black hover:text-black"
+                  onClick={resetCenterChiefFilters}
                 >
-                  {chip.label}
-                  <span
-                    className={cn(
-                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                      centerChiefQuickFilter === chip.key
-                        ? "bg-[var(--surface)] text-[var(--brand-strong)]"
-                        : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
-                    )}
-                  >
-                    {chip.count}
-                  </span>
+                  Reset all
                 </Button>
-              ))}
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                onClick={() => setCenterChiefQuickFilter("all")}
-              >
-                Clear filters
-              </Button>
+              </div>
+
+              {hasActiveCenterChiefFilters ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                    Active Filters
+                  </span>
+                  {String(centerChiefSearch || "").trim() ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      onClick={() => setCenterChiefSearch("")}
+                    >
+                      Search: "{String(centerChiefSearch || "").trim()}" x
+                    </button>
+                  ) : null}
+                  {centerChiefQuickFilter !== "all" ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      onClick={() => setCenterChiefQuickFilter("all")}
+                    >
+                      {centerChiefQuickFilter} x
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          </CardHeader>
+          </CardContent>
+
+          {dataLoading ? (
+            <CardContent className="p-4">
+              {viewMode === "grid" ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                    (_, index) => (
+                      <Card
+                        key={`projects-skeleton-grid-${index}`}
+                        className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+                      >
+                        <div className="animate-pulse space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="w-full space-y-2">
+                              <div className="h-3 w-24 rounded-full bg-slate-200/80" />
+                              <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
+                              <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                            </div>
+                            <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                            <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="h-24 rounded-lg bg-slate-200/60" />
+                            <div className="h-24 rounded-lg bg-slate-200/60" />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                            <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                            <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          </div>
+                        </div>
+                      </Card>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="animate-pulse space-y-3">
+                    <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                    {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                      (_, index) => (
+                        <div
+                          key={`projects-skeleton-list-${index}`}
+                          className="h-12 w-full rounded-lg bg-slate-200/60"
+                        />
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          ) : null}
           {centerChiefLoading ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
                 Loading managed center projects...
               </div>
             </CardContent>
           ) : centerChiefRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
                 No projects found for your research center yet.
               </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--text-muted)]">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
                 No managed center projects match your search.
               </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                  <TableHeader className="bg-gray-50/80 text-gray-600">
                     <TableRow>
                       <TableHead className="w-[40px]">No.</TableHead>
                       <TableHead className="w-[320px]">Title</TableHead>
@@ -1022,10 +1174,10 @@ export default function ResearchProjectsPage() {
                               index +
                               1}
                           </TableCell>
-                          <TableCell className="whitespace-normal break-words font-medium text-[var(--text)]">
+                          <TableCell className="whitespace-normal break-words font-medium text-black">
                             {project.title || "-"}
                           </TableCell>
-                          <TableCell className="text-[var(--text-muted)]">
+                          <TableCell className="text-gray-700">
                             {project.lead_researcher || "-"}
                           </TableCell>
                           <TableCell>
@@ -1039,19 +1191,17 @@ export default function ResearchProjectsPage() {
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className={
-                                project.private
-                                  ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
-                                  : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
-                              }
+                              className={getVisibilityBadgeClass(
+                                project.private,
+                              )}
                             >
                               {project.private ? "Private" : "Public"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-[var(--text-muted)]">
+                          <TableCell className="text-gray-700">
                             {project.year || "-"}
                           </TableCell>
-                          <TableCell className="text-[var(--text-muted)]">
+                          <TableCell className="text-gray-700">
                             {formatDate(project.submitted_at)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1060,7 +1210,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                                className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                                 onClick={() => goToProjectDetail(project)}
                                 aria-label={`View ${project?.title || "project"}`}
                                 title="View"
@@ -1071,7 +1221,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                                className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                                 onClick={() => openEditModal(project)}
                                 aria-label={`Edit ${project?.title || "project"}`}
                                 title="Edit"
@@ -1082,7 +1232,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
+                                className="h-8 w-8 text-red-700 hover:bg-red-50"
                                 onClick={() => handleDeleteProject(project)}
                                 aria-label={`Delete ${project?.title || "project"}`}
                                 title="Delete"
@@ -1116,500 +1266,948 @@ export default function ResearchProjectsPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-200 px-6 py-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-[var(--text)]">
+              <CardTitle className="text-base font-semibold text-black">
                 Research Project Records
               </CardTitle>
-              <CardDescription className="text-[var(--text-muted)]">
+              <CardDescription className="text-gray-600">
                 Showing {filteredProjects.length} project(s).
               </CardDescription>
             </div>
-            <label className="relative w-full md:max-w-md">
-              <span className="sr-only">Search projects</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-              <Input
-                className="pl-8 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
-                placeholder="Search title, abstract, lead, status, year, or center"
-                value={filters.search}
-                onChange={(e) => updateFilter("search", e.target.value)}
-              />
-            </label>
-            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-              <Select
-                value={filters.sortBy}
-                onValueChange={(value) => updateFilter("sortBy", value)}
-              >
-                <SelectTrigger className="w-full border-[var(--border)] bg-[var(--surface)] text-[var(--text)] md:w-[16rem]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]">
-                  <SelectItem
-                    value="submitted_desc"
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    Sort: Newest submitted
-                  </SelectItem>
-                  <SelectItem
-                    value="submitted_asc"
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    Sort: Oldest submitted
-                  </SelectItem>
-                  <SelectItem
-                    value="title_asc"
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    Sort: Title A-Z
-                  </SelectItem>
-                  <SelectItem
-                    value="title_desc"
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    Sort: Title Z-A
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {[
-              {
-                key: "all",
-                label: "All Projects",
-                count: baseFilteredProjects.length,
-              },
-              {
-                key: "proposal",
-                label: "Proposal",
-                count: baseFilteredProjects.filter(
-                  (project) => normalizeStatus(project.status) === "proposal",
-                ).length,
-              },
-              {
-                key: "ongoing",
-                label: "Ongoing",
-                count: baseFilteredProjects.filter(
-                  (project) => normalizeStatus(project.status) === "ongoing",
-                ).length,
-              },
-              {
-                key: "completed",
-                label: "Completed",
-                count: baseFilteredProjects.filter(
-                  (project) => normalizeStatus(project.status) === "completed",
-                ).length,
-              },
-              {
-                key: "rejected",
-                label: "Rejected",
-                count: baseFilteredProjects.filter(
-                  (project) => normalizeStatus(project.status) === "rejected",
-                ).length,
-              },
-              {
-                key: "draft",
-                label: "Drafts",
-                count: baseFilteredProjects.filter(
-                  (project) =>
-                    String(project?.submission_state || "")
-                      .trim()
-                      .toLowerCase() === "draft",
-                ).length,
-              },
-              {
-                key: "public",
-                label: "Public",
-                count: baseFilteredProjects.filter(
-                  (project) => !project.private,
-                ).length,
-              },
-              {
-                key: "private",
-                label: "Private",
-                count: baseFilteredProjects.filter((project) => project.private)
-                  .length,
-              },
-            ].map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border px-4 text-xs",
-                  quickFilter === chip.key
-                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
-                )}
-                onClick={() => setQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
-                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-              onClick={() => setQuickFilter("all")}
-            >
-              Clear filters
-            </Button>
+            <p className="text-sm text-gray-600">
+              {filteredProjects.length} row(s).
+            </p>
           </div>
         </CardHeader>
-        {filteredProjects.length === 0 ? (
+
+        <CardContent className="p-4">
+          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <label className="relative w-full sm:max-w-md">
+                    <span className="sr-only">Search projects</span>
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search title, abstract, lead, status, year, or center"
+                      value={filters.search}
+                      onChange={(e) => updateFilter("search", e.target.value)}
+                    />
+                  </label>
+
+                  <Select
+                    value={filters.sortBy}
+                    onValueChange={(value) => updateFilter("sortBy", value)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[16rem]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-300 shadow-md">
+                      <SelectItem value="submitted_desc">
+                        Sort: Newest submitted
+                      </SelectItem>
+                      <SelectItem value="submitted_asc">
+                        Sort: Oldest submitted
+                      </SelectItem>
+                      <SelectItem value="title_asc">Sort: Title A-Z</SelectItem>
+                      <SelectItem value="title_desc">
+                        Sort: Title Z-A
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-gray-200 bg-white p-1 sm:w-auto">
+                    <Button
+                      variant={viewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                      type="button"
+                      className="rounded-full"
+                    >
+                      <LayoutGrid size={14} />
+                      Grid
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      type="button"
+                      className="rounded-full"
+                    >
+                      <List size={14} />
+                      List
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    {
+                      key: "all",
+                      label: "All Projects",
+                      count: baseFilteredProjects.length,
+                    },
+                    {
+                      key: "proposal",
+                      label: "Proposal",
+                      count: baseFilteredProjects.filter(
+                        (project) =>
+                          normalizeStatus(project.status) === "proposal",
+                      ).length,
+                    },
+                    {
+                      key: "ongoing",
+                      label: "Ongoing",
+                      count: baseFilteredProjects.filter(
+                        (project) =>
+                          normalizeStatus(project.status) === "ongoing",
+                      ).length,
+                    },
+                    {
+                      key: "completed",
+                      label: "Completed",
+                      count: baseFilteredProjects.filter(
+                        (project) =>
+                          normalizeStatus(project.status) === "completed",
+                      ).length,
+                    },
+                    {
+                      key: "rejected",
+                      label: "Rejected",
+                      count: baseFilteredProjects.filter(
+                        (project) =>
+                          normalizeStatus(project.status) === "rejected",
+                      ).length,
+                    },
+                    {
+                      key: "draft",
+                      label: "Drafts",
+                      count: baseFilteredProjects.filter(
+                        (project) =>
+                          String(project?.submission_state || "")
+                            .trim()
+                            .toLowerCase() === "draft",
+                      ).length,
+                    },
+                    {
+                      key: "public",
+                      label: "Public",
+                      count: baseFilteredProjects.filter(
+                        (project) => !project.private,
+                      ).length,
+                    },
+                    {
+                      key: "private",
+                      label: "Private",
+                      count: baseFilteredProjects.filter(
+                        (project) => project.private,
+                      ).length,
+                    },
+                  ].map((chip) => (
+                    <Button
+                      key={chip.key}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className={cn(
+                        "rounded-full border-black/20 px-4 text-xs",
+                        quickFilter === chip.key
+                          ? "bg-black text-white hover:bg-black"
+                          : "bg-white text-black hover:bg-gray-100",
+                      )}
+                      onClick={() => setQuickFilter(chip.key)}
+                    >
+                      {chip.label}
+                      <span
+                        className={cn(
+                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          quickFilter === chip.key
+                            ? "bg-white/20 text-white"
+                            : "bg-slate-100 text-black",
+                        )}
+                      >
+                        {chip.count}
+                      </span>
+                    </Button>
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-xs text-black hover:text-black"
+                    onClick={resetDirectoryFilters}
+                  >
+                    Reset all
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {hasActiveDirectoryFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Active Filters
+                </span>
+                {String(filters.search || "").trim() ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    onClick={() => updateFilter("search", "")}
+                  >
+                    Search: "{String(filters.search || "").trim()}" x
+                  </button>
+                ) : null}
+                {quickFilter !== "all" ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    onClick={() => setQuickFilter("all")}
+                  >
+                    {quickFilter} x
+                  </button>
+                ) : null}
+                {String(filters.sortBy || "") !== "submitted_desc" ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    onClick={() => updateFilter("sortBy", "submitted_desc")}
+                  >
+                    Sort: {filters.sortBy} x
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+        {!dataLoading && filteredProjects.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
               No research projects found. Try a different search term or submit
               a new research project.
             </div>
           </CardContent>
-        ) : (
+        ) : !dataLoading ? (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-              <Table className="min-w-[1120px] w-full table-fixed">
-                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
-                  <TableRow>
-                    <TableHead className="w-[40px]">No.</TableHead>
-                    <TableHead className="w-[500px]">Title</TableHead>
-                    <TableHead>Project Year</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedProjects.map((project, index) => {
-                    const isDraft =
-                      String(project?.submission_state || "")
-                        .trim()
-                        .toLowerCase() === "draft";
-                    const status = normalizeStatus(project.status);
-                    const statusLabel = formatStatusLabel(status) || "-";
-                    const statusBadgeClass = getStatusBadgeClass(status);
-                    const ownerKey = String(project?.submitted_by || "").trim();
-                    const currentUserKey = String(
-                      profile?.id || user?.id || "",
-                    ).trim();
-                    const isOwner =
-                      ownerKey && currentUserKey && ownerKey === currentUserKey;
-                    const canContinueDraft =
-                      isDraft &&
-                      ownerKey &&
-                      currentUserKey &&
-                      ownerKey === currentUserKey &&
-                      Boolean(project?.ckan_dataset_id || project?.id);
-                    const canToggleVisibility =
-                      isAdmin && Boolean(project?.ckan_dataset_id);
-                    const canEdit =
-                      (isAdmin || isOwner) &&
-                      Boolean(project?.ckan_dataset_id || project?.id);
-                    return (
-                      <TableRow key={project.id} className="align-top">
-                        <TableCell>
-                          {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
-                        </TableCell>
-                        <TableCell className="whitespace-normal break-words font-medium text-[var(--text)]">
-                          {project.title || "-"}
-                        </TableCell>
-                        <TableCell className="text-[var(--text-muted)]">
-                          {project.year || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {isDraft ? (
-                              <Badge
-                                variant="outline"
-                                className="border-[var(--border)] bg-[var(--surface-strong)] text-[var(--text-muted)]"
-                              >
-                                Draft
-                              </Badge>
-                            ) : null}
+            {viewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {paginatedProjects.map((project, index) => {
+                  const isDraft =
+                    String(project?.submission_state || "")
+                      .trim()
+                      .toLowerCase() === "draft";
+                  const status = normalizeStatus(project.status);
+                  const statusLabel = formatStatusLabel(status) || "-";
+                  const statusBadgeClass = getStatusBadgeClass(status);
+                  const ownerKey = String(project?.submitted_by || "").trim();
+                  const currentUserKey = String(
+                    profile?.id || user?.id || "",
+                  ).trim();
+                  const isOwner =
+                    ownerKey && currentUserKey && ownerKey === currentUserKey;
+                  const canContinueDraft =
+                    isDraft &&
+                    ownerKey &&
+                    currentUserKey &&
+                    ownerKey === currentUserKey &&
+                    Boolean(project?.ckan_dataset_id || project?.id);
+                  const canToggleVisibility =
+                    isAdmin && Boolean(project?.ckan_dataset_id);
+                  const canEdit =
+                    (isAdmin || isOwner) &&
+                    Boolean(project?.ckan_dataset_id || project?.id);
+
+                  return (
+                    <Card
+                      key={project.id}
+                      className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                              #
+                              {(currentPage - 1) * PROJECTS_PAGE_SIZE +
+                                index +
+                                1}{" "}
+                              · {statusLabel}
+                            </p>
+                            <h3 className="mt-1 line-clamp-2 text-base font-bold text-black">
+                              {project.title || "-"}
+                            </h3>
+                            <p className="mt-1 truncate text-sm text-gray-600">
+                              {project.research_center || "-"}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "shrink-0",
+                              getVisibilityBadgeClass(project.private),
+                            )}
+                          >
+                            {project.private ? "Private" : "Public"}
+                          </Badge>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {isDraft ? (
                             <Badge
                               variant="outline"
-                              className={statusBadgeClass}
+                              className="border-gray-200 bg-gray-100 text-gray-700"
                             >
-                              {statusLabel}
+                              Draft
                             </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className={
-                                project.private
-                                  ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
-                                  : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
-                              }
-                            >
-                              {project.private ? "Private" : "Public"}
-                            </Badge>
-                            {canToggleVisibility ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                                disabled={Boolean(
-                                  visibilitySavingByDataset[
-                                    project.ckan_dataset_id
-                                  ],
-                                )}
-                                onClick={() => handleToggleVisibility(project)}
-                                aria-label={
-                                  visibilitySavingByDataset[
-                                    project.ckan_dataset_id
-                                  ]
-                                    ? "Saving visibility..."
-                                    : project.private
-                                      ? "Make public"
-                                      : "Make private"
-                                }
-                                title={
-                                  visibilitySavingByDataset[
-                                    project.ckan_dataset_id
-                                  ]
-                                    ? "Saving..."
-                                    : project.private
-                                      ? "Make Public"
-                                      : "Make Private"
-                                }
-                              >
-                                {visibilitySavingByDataset[
-                                  project.ckan_dataset_id
-                                ] ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : project.private ? (
-                                  <Eye className="h-4 w-4" />
-                                ) : (
-                                  <EyeOff className="h-4 w-4" />
-                                )}
-                              </Button>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-normal break-words text-[var(--text-muted)]">
-                          {getProjectOrganization(project)}
-                        </TableCell>
-                        <TableCell className="text-[var(--text-muted)]">
-                          {formatDate(project.submitted_at)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex items-center justify-end gap-1">
+                          ) : null}
+                          <Badge variant="outline" className={statusBadgeClass}>
+                            {statusLabel}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-gray-200 bg-gray-50 text-gray-800"
+                          >
+                            Year: {project.year || "-"}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-gray-200 bg-gray-50 text-gray-800"
+                          >
+                            Submitted: {formatDate(project.submitted_at)}
+                          </Badge>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9"
+                            onClick={() => goToProjectDetail(project)}
+                            aria-label={`View ${project?.title || "project"}`}
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          {canToggleVisibility ? (
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
-                              className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                              onClick={() => goToProjectDetail(project)}
-                              aria-label={`View ${project?.title || "project"}`}
-                              title="View"
+                              className="h-9 w-9"
+                              disabled={Boolean(
+                                visibilitySavingByDataset[
+                                  project.ckan_dataset_id
+                                ],
+                              )}
+                              onClick={() => handleToggleVisibility(project)}
+                              aria-label={
+                                project.private ? "Make public" : "Make private"
+                              }
+                              title={
+                                project.private ? "Make public" : "Make private"
+                              }
                             >
-                              <Eye className="h-4 w-4" />
+                              {visibilitySavingByDataset[
+                                project.ckan_dataset_id
+                              ] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : project.private ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
                             </Button>
-                            {canContinueDraft ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                                onClick={() => openEditModal(project)}
-                                aria-label={`Continue ${project?.title || "draft"}`}
-                                title="Continue"
+                          ) : null}
+
+                          {canContinueDraft ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9"
+                              onClick={() => openEditModal(project)}
+                              aria-label={`Continue ${project?.title || "draft"}`}
+                              title="Continue"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+
+                          {canEdit ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9"
+                              onClick={() => openEditModal(project)}
+                              aria-label={`Edit ${project?.title || "project"}`}
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+
+                          {canEdit ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9 text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteProject(project)}
+                              disabled={deletingProjectId === project.id}
+                              aria-label={`Delete ${project?.title || "project"}`}
+                              title={
+                                deletingProjectId === project.id
+                                  ? "Deleting..."
+                                  : "Delete"
+                              }
+                            >
+                              {deletingProjectId === project.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <Table className="min-w-[1120px] w-full table-fixed">
+                  <TableHeader className="bg-gray-50/80 text-gray-600">
+                    <TableRow>
+                      <TableHead className="w-[40px]">No.</TableHead>
+                      <TableHead className="w-[500px]">Title</TableHead>
+                      <TableHead>Project Year</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Visibility</TableHead>
+                      <TableHead>Research Center</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedProjects.map((project, index) => {
+                      const isDraft =
+                        String(project?.submission_state || "")
+                          .trim()
+                          .toLowerCase() === "draft";
+                      const status = normalizeStatus(project.status);
+                      const statusLabel = formatStatusLabel(status) || "-";
+                      const statusBadgeClass = getStatusBadgeClass(status);
+                      const ownerKey = String(
+                        project?.submitted_by || "",
+                      ).trim();
+                      const currentUserKey = String(
+                        profile?.id || user?.id || "",
+                      ).trim();
+                      const isOwner =
+                        ownerKey &&
+                        currentUserKey &&
+                        ownerKey === currentUserKey;
+                      const canContinueDraft =
+                        isDraft &&
+                        ownerKey &&
+                        currentUserKey &&
+                        ownerKey === currentUserKey &&
+                        Boolean(project?.ckan_dataset_id || project?.id);
+                      const canToggleVisibility =
+                        isAdmin && Boolean(project?.ckan_dataset_id);
+                      const canEdit =
+                        (isAdmin || isOwner) &&
+                        Boolean(project?.ckan_dataset_id || project?.id);
+                      return (
+                        <TableRow key={project.id} className="align-top">
+                          <TableCell>
+                            {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
+                          </TableCell>
+                          <TableCell className="whitespace-normal break-words font-medium text-black">
+                            {project.title || "-"}
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {project.year || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {isDraft ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-gray-200 bg-gray-100 text-gray-700"
+                                >
+                                  Draft
+                                </Badge>
+                              ) : null}
+                              <Badge
+                                variant="outline"
+                                className={statusBadgeClass}
                               >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            ) : null}
-                            {canEdit ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                                onClick={() => openEditModal(project)}
-                                aria-label={`Edit ${project?.title || "project"}`}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            ) : null}
-                            {canEdit ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
-                                onClick={() => handleDeleteProject(project)}
-                                disabled={deletingProjectId === project.id}
-                                aria-label={`Delete ${project?.title || "project"}`}
-                                title={
-                                  deletingProjectId === project.id
-                                    ? "Deleting..."
-                                    : "Delete"
-                                }
-                              >
-                                {deletingProjectId === project.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
+                                {statusLabel}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={getVisibilityBadgeClass(
+                                  project.private,
                                 )}
+                              >
+                                {project.private ? "Private" : "Public"}
+                              </Badge>
+                              {canToggleVisibility ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                  disabled={Boolean(
+                                    visibilitySavingByDataset[
+                                      project.ckan_dataset_id
+                                    ],
+                                  )}
+                                  onClick={() =>
+                                    handleToggleVisibility(project)
+                                  }
+                                  aria-label={
+                                    visibilitySavingByDataset[
+                                      project.ckan_dataset_id
+                                    ]
+                                      ? "Saving visibility..."
+                                      : project.private
+                                        ? "Make public"
+                                        : "Make private"
+                                  }
+                                  title={
+                                    visibilitySavingByDataset[
+                                      project.ckan_dataset_id
+                                    ]
+                                      ? "Saving..."
+                                      : project.private
+                                        ? "Make Public"
+                                        : "Make Private"
+                                  }
+                                >
+                                  {visibilitySavingByDataset[
+                                    project.ckan_dataset_id
+                                  ] ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : project.private ? (
+                                    <Eye className="h-4 w-4" />
+                                  ) : (
+                                    <EyeOff className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-normal break-words text-gray-700">
+                            {getProjectOrganization(project)}
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {formatDate(project.submitted_at)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                onClick={() => goToProjectDetail(project)}
+                                aria-label={`View ${project?.title || "project"}`}
+                                title="View"
+                              >
+                                <Eye className="h-4 w-4" />
                               </Button>
-                            ) : null}
-                          </div>
+                              {canContinueDraft ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                  onClick={() => openEditModal(project)}
+                                  aria-label={`Continue ${project?.title || "draft"}`}
+                                  title="Continue"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                              {canEdit ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                  onClick={() => openEditModal(project)}
+                                  aria-label={`Edit ${project?.title || "project"}`}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                              {canEdit ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteProject(project)}
+                                  disabled={deletingProjectId === project.id}
+                                  aria-label={`Delete ${project?.title || "project"}`}
+                                  title={
+                                    deletingProjectId === project.id
+                                      ? "Deleting..."
+                                      : "Delete"
+                                  }
+                                >
+                                  {deletingProjectId === project.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                  {totalPages > 1 ? (
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={8} className="px-3 py-3">
+                          <PaginationControls
+                            page={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            className="border-0 rounded-none shadow-none bg-transparent"
+                          />
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-                {totalPages > 1 ? (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={8} className="px-3 py-3">
-                        <PaginationControls
-                          page={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                          className="border-0 rounded-none shadow-none bg-transparent"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                ) : null}
-              </Table>
-            </div>
+                    </TableFooter>
+                  ) : null}
+                </Table>
+              </div>
+            )}
           </CardContent>
-        )}
+        ) : null}
       </Card>
 
-      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
+      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-200 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-[var(--text)]">
+              <CardTitle className="text-base font-semibold text-black">
                 Linked Projects
               </CardTitle>
-              <CardDescription className="text-[var(--text-muted)]">
+              <CardDescription className="text-gray-600">
                 Linked content summary for your submitted research projects.
               </CardDescription>
             </div>
-            <p className="text-sm text-[var(--text-muted)]">
-              {linkedProjectFilteredRows.length} row(s).
-            </p>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {[
-              {
-                key: "all",
-                label: "All Projects",
-                count: linkedProjectRows.length,
-              },
-              {
-                key: "proposal",
-                label: "Proposal",
-                count: linkedProjectRows.filter(
-                  (project) => normalizeStatus(project.status) === "proposal",
-                ).length,
-              },
-              {
-                key: "ongoing",
-                label: "Ongoing",
-                count: linkedProjectRows.filter(
-                  (project) => normalizeStatus(project.status) === "ongoing",
-                ).length,
-              },
-              {
-                key: "completed",
-                label: "Completed",
-                count: linkedProjectRows.filter(
-                  (project) => normalizeStatus(project.status) === "completed",
-                ).length,
-              },
-              {
-                key: "rejected",
-                label: "Rejected",
-                count: linkedProjectRows.filter(
-                  (project) => normalizeStatus(project.status) === "rejected",
-                ).length,
-              },
-              {
-                key: "public",
-                label: "Public",
-                count: linkedProjectRows.filter((project) => !project.private)
-                  .length,
-              },
-              {
-                key: "private",
-                label: "Private",
-                count: linkedProjectRows.filter((project) => project.private)
-                  .length,
-              },
-            ].map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border px-4 text-xs",
-                  linkedProjectsQuickFilter === chip.key
-                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
-                )}
-                onClick={() => setLinkedProjectsQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    linkedProjectsQuickFilter === chip.key
-                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
-                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
-                  )}
+            <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+              <p className="text-sm text-gray-600">
+                {linkedProjectFilteredRows.length} row(s).
+              </p>
+
+              <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-gray-200 bg-white p-1 md:w-auto">
+                <Button
+                  variant={linkedViewMode === "grid" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setLinkedViewMode("grid")}
+                  type="button"
+                  className="rounded-full"
                 >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-              onClick={() => setLinkedProjectsQuickFilter("all")}
-            >
-              Clear filters
-            </Button>
+                  <LayoutGrid size={14} />
+                  Grid
+                </Button>
+                <Button
+                  variant={linkedViewMode === "list" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setLinkedViewMode("list")}
+                  type="button"
+                  className="rounded-full"
+                >
+                  <List size={14} />
+                  List
+                </Button>
+              </div>
+            </div>
           </div>
         </CardHeader>
-        {linkedProjectFilteredRows.length === 0 ? (
-          <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
+        <CardContent className="p-4">
+          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                {
+                  key: "all",
+                  label: "All Projects",
+                  count: linkedProjectRows.length,
+                },
+                {
+                  key: "proposal",
+                  label: "Proposal",
+                  count: linkedProjectRows.filter(
+                    (project) => normalizeStatus(project.status) === "proposal",
+                  ).length,
+                },
+                {
+                  key: "ongoing",
+                  label: "Ongoing",
+                  count: linkedProjectRows.filter(
+                    (project) => normalizeStatus(project.status) === "ongoing",
+                  ).length,
+                },
+                {
+                  key: "completed",
+                  label: "Completed",
+                  count: linkedProjectRows.filter(
+                    (project) =>
+                      normalizeStatus(project.status) === "completed",
+                  ).length,
+                },
+                {
+                  key: "rejected",
+                  label: "Rejected",
+                  count: linkedProjectRows.filter(
+                    (project) => normalizeStatus(project.status) === "rejected",
+                  ).length,
+                },
+                {
+                  key: "public",
+                  label: "Public",
+                  count: linkedProjectRows.filter((project) => !project.private)
+                    .length,
+                },
+                {
+                  key: "private",
+                  label: "Private",
+                  count: linkedProjectRows.filter((project) => project.private)
+                    .length,
+                },
+              ].map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-black/20 px-4 text-xs",
+                    linkedProjectsQuickFilter === chip.key
+                      ? "bg-black text-white hover:bg-black"
+                      : "bg-white text-black hover:bg-gray-100",
+                  )}
+                  onClick={() => setLinkedProjectsQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      linkedProjectsQuickFilter === chip.key
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-black",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-black hover:text-black"
+                onClick={resetLinkedFilters}
+              >
+                Reset all
+              </Button>
+            </div>
+
+            {hasActiveLinkedFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Active Filters
+                </span>
+                <button
+                  type="button"
+                  className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                  onClick={() => setLinkedProjectsQuickFilter("all")}
+                >
+                  {linkedProjectsQuickFilter} x
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {dataLoading ? (
+            linkedViewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                  (_, index) => (
+                    <Card
+                      key={`linked-skeleton-grid-${index}`}
+                      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+                    >
+                      <div className="animate-pulse space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="w-full space-y-2">
+                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                          </div>
+                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                        </div>
+                      </div>
+                    </Card>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
+                    (_, index) => (
+                      <div
+                        key={`linked-skeleton-list-${index}`}
+                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )
+          ) : null}
+
+          {!dataLoading && linkedProjectFilteredRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
               This section will display project summaries once you are assigned
               to a research team or have submitted a research project.
             </div>
-          </CardContent>
-        ) : (
-          <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          ) : null}
+
+          {!dataLoading &&
+          linkedViewMode === "grid" &&
+          linkedProjectFilteredRows.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {linkedProjectFilteredRows.map((project, index) => (
+                <Card
+                  key={`linked-card-${project.id}-${index}`}
+                  className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                          #{index + 1} ·{" "}
+                          {formatStatusLabel(project.status) || "-"}
+                        </p>
+                        <h3 className="mt-1 line-clamp-2 text-base font-bold text-black">
+                          {project.title || "-"}
+                        </h3>
+                        <p className="mt-1 truncate text-sm text-gray-600">
+                          {project.research_center || "-"}
+                        </p>
+                        <p className="mt-1 truncate text-sm text-gray-600">
+                          Lead:{" "}
+                          <span className="font-semibold text-black">
+                            {project.lead_researcher || "-"}
+                          </span>
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0",
+                          getVisibilityBadgeClass(project.private),
+                        )}
+                      >
+                        {project.private ? "Private" : "Public"}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge
+                        variant="outline"
+                        className={getStatusBadgeClass(project.status)}
+                      >
+                        {formatStatusLabel(project.status) || "-"}
+                      </Badge>
+                      <Badge variant="secondary">
+                        Submitted: {formatDate(project.submitted_at)}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => goToProjectDetail(project)}
+                        aria-label={`View ${project?.title || "project"}`}
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => openEditModal(project)}
+                        aria-label={`Edit ${project?.title || "project"}`}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 text-red-700 hover:bg-red-50"
+                        onClick={() => handleDeleteProject(project)}
+                        aria-label={`Delete ${project?.title || "project"}`}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : null}
+
+          {!dataLoading &&
+          linkedViewMode === "list" &&
+          linkedProjectFilteredRows.length > 0 ? (
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                <TableHeader className="bg-gray-50/80">
                   <TableRow>
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead className="w-[350px]">Title</TableHead>
@@ -1627,13 +2225,13 @@ export default function ResearchProjectsPage() {
                   {linkedProjectFilteredRows.map((project, index) => (
                     <TableRow key={`linked-${project.id}`}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium text-[var(--text)]">
+                      <TableCell className="font-medium text-black">
                         {project.title}
                       </TableCell>
-                      <TableCell className="text-[var(--text-muted)]">
+                      <TableCell className="text-gray-700">
                         {project.lead_researcher}
                       </TableCell>
-                      <TableCell className="text-[var(--text-muted)]">
+                      <TableCell className="text-gray-700">
                         {project.research_center}
                       </TableCell>
                       <TableCell>
@@ -1647,16 +2245,12 @@ export default function ResearchProjectsPage() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={
-                            project.private
-                              ? "border-[var(--danger)] bg-[var(--surface-muted)] text-[var(--danger)]"
-                              : "border-[var(--accent)] bg-[var(--surface-muted)] text-[var(--accent)]"
-                          }
+                          className={getVisibilityBadgeClass(project.private)}
                         >
                           {project.private ? "Private" : "Public"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[var(--text-muted)]">
+                      <TableCell className="text-gray-700">
                         {formatDate(project.submitted_at)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -1665,7 +2259,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                            className="h-8 w-8"
                             onClick={() => goToProjectDetail(project)}
                             aria-label={`View ${project?.title || "project"}`}
                             title="View"
@@ -1676,7 +2270,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                            className="h-8 w-8"
                             onClick={() => openEditModal(project)}
                             aria-label={`Edit ${project?.title || "project"}`}
                             title="Edit"
@@ -1687,7 +2281,7 @@ export default function ResearchProjectsPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
+                            className="h-8 w-8 text-red-700 hover:bg-red-50"
                             onClick={() => handleDeleteProject(project)}
                             aria-label={`Delete ${project?.title || "project"}`}
                             title="Delete"
@@ -1701,8 +2295,8 @@ export default function ResearchProjectsPage() {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        )}
+          ) : null}
+        </CardContent>
       </Card>
 
       <ConfirmActionModal

@@ -140,8 +140,8 @@ export default function AppShell() {
       (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
     return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
       isActive
-        ? "bg-[var(--brand-soft)] text-[var(--brand)]"
-        : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]"
+        ? "bg-black text-white"
+        : "text-gray-700 hover:bg-gray-100 hover:text-black"
     }`;
   };
 
@@ -500,7 +500,7 @@ export default function AppShell() {
               )}
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                <AvatarFallback className="bg-zinc-100 text-black">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -517,7 +517,7 @@ export default function AppShell() {
             >
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                  <AvatarFallback className="bg-zinc-100 text-black">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -542,7 +542,7 @@ export default function AppShell() {
           <DropdownMenuLabel className="px-2 py-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-[var(--brand-soft)] text-[var(--brand)]">
+                <AvatarFallback className="bg-zinc-100 text-black">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -625,12 +625,22 @@ export default function AppShell() {
               onClick={onNavigate}
             >
               {!collapsed ? (
-                <div className="min-w-0 leading-tight">
-                  <div className="truncate text-base font-extrabold tracking-tight text-slate-900">
-                    CCIS - ARMS
-                  </div>
+                <div className="min-w-0 flex justify-center">
+                  <img
+                    src="/full-logo.svg"
+                    alt="CenterPulse"
+                    className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                    draggable="false"
+                  />
                 </div>
-              ) : null}
+              ) : (
+                <img
+                  src="/icon.svg"
+                  alt="CenterPulse"
+                  className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                  draggable="false"
+                />
+              )}
             </Link>
           </div>
         </div>
@@ -699,7 +709,7 @@ export default function AppShell() {
                 to="/home"
                 className="shrink-0 text-lg font-bold text-blue-600"
               >
-                CCIS - ARMS
+                CenterPulse
               </Link>
             </div>
             <div className="flex items-center gap-2">
@@ -800,7 +810,7 @@ export default function AppShell() {
                 to="/home"
                 className="shrink-0 text-lg font-bold text-blue-600"
               >
-                CCIS - ARMS
+                CenterPulse
               </Link>
             ) : null}
 

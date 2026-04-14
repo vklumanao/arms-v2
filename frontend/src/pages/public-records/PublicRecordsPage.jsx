@@ -389,7 +389,7 @@ export default function PublicRecordsPage() {
         }
       }}
     >
-      <Card className="h-full flex flex-col border border-slate-200 bg-white transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+      <Card className="h-full flex flex-col border border-slate-200 bg-white transition-all">
         <CardHeader className="pb-2 min-h-[70px] flex justify-between">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">

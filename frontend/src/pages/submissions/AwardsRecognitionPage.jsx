@@ -45,7 +45,6 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { Colors } from "chart.js";
 
 const AWARDS_PAGE_SIZE = 10;
 
@@ -83,7 +82,7 @@ export default function AwardsRecognitionPage() {
   const [projectOptions, setProjectOptions] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
-  const getLevelCategory = (level) => {
+  const getLevelCategory = useCallback((level) => {
     const value = String(level || "")
       .trim()
       .toLowerCase();
@@ -94,7 +93,31 @@ export default function AwardsRecognitionPage() {
     if (value.includes("local")) return "local";
     if (value.includes("institutional")) return "institutional";
     return "";
-  };
+  }, []);
+
+  const hasActiveRecordsFilters = useMemo(() => {
+    const searchActive = String(searchTerm || "").trim().length > 0;
+    const quickActive = recordsQuickFilter !== "all";
+    return searchActive || quickActive;
+  }, [recordsQuickFilter, searchTerm]);
+
+  const resetRecordsFilters = useCallback(() => {
+    setRecordsQuickFilter("all");
+    setSearchTerm("");
+    setCurrentPage(1);
+  }, []);
+
+  const hasActiveCenterChiefFilters = useMemo(() => {
+    const searchActive = String(centerChiefSearch || "").trim().length > 0;
+    const quickActive = centerChiefQuickFilter !== "all";
+    return searchActive || quickActive;
+  }, [centerChiefQuickFilter, centerChiefSearch]);
+
+  const resetCenterChiefFilters = useCallback(() => {
+    setCenterChiefQuickFilter("all");
+    setCenterChiefSearch("");
+    setCenterChiefPage(1);
+  }, []);
 
   const loadAwards = useCallback(() => {
     if (!canLoadOwnAwards) {
@@ -508,30 +531,34 @@ export default function AwardsRecognitionPage() {
 
   if (missingAffiliation) {
     return (
-      <section className="page-stack-lg text-[var(--text)]">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
+      <section className="page-stack-lg">
+        <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+          <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+          <div className="relative space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
               Awards and Recognition
             </p>
-            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
+            <h1 className="text-2xl font-bold text-black md:text-3xl">
               Complete Your Profile First
             </h1>
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="max-w-2xl text-sm text-black">
               Add your organization (research center) before reviewing awards
               and recognition records.
             </p>
           </div>
         </div>
-        <Card className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+
+        <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
           <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-[var(--warning)]">
+            <p className="text-sm text-amber-900">
               Please set your Organization (Research Center) in My Profile first
               before accessing Awards and Recognition.
             </p>
             <Button
               asChild
-              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
+              variant="outline"
+              className="border-gray-300 bg-white text-black hover:bg-gray-100"
             >
               <Link to="/profile">Go to My Profile</Link>
             </Button>
@@ -542,230 +569,267 @@ export default function AwardsRecognitionPage() {
   }
 
   return (
-    <section className="page-stack-lg text-[var(--text)]">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-[var(--text)] md:text-3xl">
-              Awards and Recognitions Workspace
-            </h1>
+    <section className="page-stack-lg">
+      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                Submissions Workspace
+              </p>
+              <h1 className="text-2xl font-bold text-black md:text-3xl">
+                Awards and Recognition
+              </h1>
+              <p className="max-w-2xl text-sm text-black">
+                Track awards, recognitions, and related references linked to
+                your research projects.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                      disabled={!filteredRows.length || Boolean(exportingType)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="bg-white border border-gray-300 shadow-md"
+                  >
+                    <DropdownMenuItem
+                      onSelect={exportAsCsv}
+                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    >
+                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={exportAsPdf}
+                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    >
+                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+
+              <Button asChild variant="mono">
+                <Link to="/awards/new">Add Awards/Recognitions</Link>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {isAdmin ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
-                    disabled={!filteredRows.length || Boolean(exportingType)}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
-                >
-                  <DropdownMenuItem
-                    onSelect={exportAsCsv}
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={exportAsPdf}
-                    className="focus:bg-[var(--surface-muted)] focus:text-[var(--text)]"
-                  >
-                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-
-            <Button
-              asChild
-              className="bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-            >
-              <Link to="/awards/new">Add Awards/Recognitions</Link>
-            </Button>
+          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+            {[
+              { label: "Total Awards", value: analytics.total, icon: Award },
+              {
+                label: "Institutional",
+                value: analytics.institutional,
+                icon: Building2,
+              },
+              { label: "Local", value: analytics.local, icon: Building2 },
+              { label: "Regional", value: analytics.regional, icon: Building2 },
+              { label: "National", value: analytics.national, icon: Building2 },
+              {
+                label: "International",
+                value: analytics.international,
+                icon: Award,
+              },
+            ].map(({ label, value, icon: Icon }) => (
+              <div
+                key={label}
+                className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                    {label}
+                  </p>
+                  <Icon className="h-4 w-4 text-black" />
+                </div>
+                <p className="mt-2 text-2xl font-bold text-black">{value}</p>
+              </div>
+            ))}
           </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-8">
-          {[
-            { label: "Total Awards", value: analytics.total, icon: Award },
-            {
-              label: "Institutional",
-              value: analytics.institutional,
-              icon: Building2,
-            },
-            {
-              label: "Local",
-              value: analytics.local,
-              icon: Building2,
-            },
-            {
-              label: "Regional",
-              value: analytics.regional,
-              icon: Building2,
-            },
-            {
-              label: "National",
-              value: analytics.national,
-              icon: Building2,
-            },
-            {
-              label: "International",
-              value: analytics.international,
-              icon: Award,
-            },
-          ].map(({ label, value, icon: Icon }) => (
-            <Card
-              key={label}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface)]"
-            >
-              <CardContent className="p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  <Icon size={14} />
-                  {label}
-                </p>
-                <p className="mt-2 text-2xl font-bold text-[var(--text)]">
-                  {value}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
-          <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+          <CardHeader className="border-b border-gray-200 px-6 py-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-[var(--text)]">
+                <CardTitle className="text-base font-semibold text-black">
                   Managed Center Awards and Recognition
                 </CardTitle>
-                <CardDescription className="text-[var(--text-muted)]">
+                <CardDescription className="text-gray-600">
                   Showing {centerChiefFilteredRows.length} record(s) from your
                   managed research center.
                 </CardDescription>
               </div>
-              <label className="relative w-full md:max-w-xl">
+              <p className="text-sm text-gray-600">
+                {centerChiefFilteredRows.length} row(s).
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+              <label className="relative block w-full md:max-w-xl">
                 <span className="sr-only">Search managed center awards</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
                 <Input
                   value={centerChiefSearch}
                   onChange={(event) => setCenterChiefSearch(event.target.value)}
                   placeholder="Search title, award, body, recipient, level, or year"
-                  className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
+                  className="pl-9"
                 />
               </label>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {[
-                {
-                  key: "all",
-                  label: "All Awards",
-                  count: baseCenterChiefRows.length,
-                },
-                {
-                  key: "institutional",
-                  label: "Institutional",
-                  count: baseCenterChiefRows.filter(
-                    (row) => getLevelCategory(row?.level) === "institutional",
-                  ).length,
-                },
-                {
-                  key: "local",
-                  label: "Local",
-                  count: baseCenterChiefRows.filter(
-                    (row) => getLevelCategory(row?.level) === "local",
-                  ).length,
-                },
-                {
-                  key: "regional",
-                  label: "Regional",
-                  count: baseCenterChiefRows.filter(
-                    (row) => getLevelCategory(row?.level) === "regional",
-                  ).length,
-                },
-                {
-                  key: "national",
-                  label: "National",
-                  count: baseCenterChiefRows.filter(
-                    (row) => getLevelCategory(row?.level) === "national",
-                  ).length,
-                },
-                {
-                  key: "international",
-                  label: "International",
-                  count: baseCenterChiefRows.filter(
-                    (row) => getLevelCategory(row?.level) === "international",
-                  ).length,
-                },
-              ].map((chip) => (
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {[
+                  {
+                    key: "all",
+                    label: "All Awards",
+                    count: baseCenterChiefRows.length,
+                  },
+                  {
+                    key: "institutional",
+                    label: "Institutional",
+                    count: baseCenterChiefRows.filter(
+                      (row) => getLevelCategory(row?.level) === "institutional",
+                    ).length,
+                  },
+                  {
+                    key: "local",
+                    label: "Local",
+                    count: baseCenterChiefRows.filter(
+                      (row) => getLevelCategory(row?.level) === "local",
+                    ).length,
+                  },
+                  {
+                    key: "regional",
+                    label: "Regional",
+                    count: baseCenterChiefRows.filter(
+                      (row) => getLevelCategory(row?.level) === "regional",
+                    ).length,
+                  },
+                  {
+                    key: "national",
+                    label: "National",
+                    count: baseCenterChiefRows.filter(
+                      (row) => getLevelCategory(row?.level) === "national",
+                    ).length,
+                  },
+                  {
+                    key: "international",
+                    label: "International",
+                    count: baseCenterChiefRows.filter(
+                      (row) => getLevelCategory(row?.level) === "international",
+                    ).length,
+                  },
+                ].map((chip) => (
+                  <Button
+                    key={chip.key}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn(
+                      "rounded-full border-black/20 px-4 text-xs",
+                      centerChiefQuickFilter === chip.key
+                        ? "bg-black text-white hover:bg-black"
+                        : "bg-white text-black hover:bg-gray-100",
+                    )}
+                    onClick={() => setCenterChiefQuickFilter(chip.key)}
+                  >
+                    {chip.label}
+                    <span
+                      className={cn(
+                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        centerChiefQuickFilter === chip.key
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 text-black",
+                      )}
+                    >
+                      {chip.count}
+                    </span>
+                  </Button>
+                ))}
                 <Button
-                  key={chip.key}
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className={cn(
-                    "rounded-full border-[var(--border)] px-4 text-xs",
-                    centerChiefQuickFilter === chip.key
-                      ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-                      : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
-                  )}
-                  onClick={() => setCenterChiefQuickFilter(chip.key)}
+                  variant="ghost"
+                  className="rounded-full text-xs text-black hover:text-black"
+                  onClick={resetCenterChiefFilters}
                 >
-                  {chip.label}
-                  <span
-                    className={cn(
-                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                      centerChiefQuickFilter === chip.key
-                        ? "bg-[var(--surface)] text-[var(--brand-strong)]"
-                        : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
-                    )}
-                  >
-                    {chip.count}
-                  </span>
+                  Reset all
                 </Button>
-              ))}
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-                onClick={() => setCenterChiefQuickFilter("all")}
-              >
-                Clear filters
-              </Button>
+              </div>
+
+              {hasActiveCenterChiefFilters ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                    Active Filters
+                  </span>
+                  {String(centerChiefSearch || "").trim() ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      onClick={() => setCenterChiefSearch("")}
+                    >
+                      Search: "{String(centerChiefSearch || "").trim()}" x
+                    </button>
+                  ) : null}
+                  {centerChiefQuickFilter !== "all" ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      onClick={() => setCenterChiefQuickFilter("all")}
+                    >
+                      {centerChiefQuickFilter} x
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          </CardHeader>
+          </CardContent>
           {centerChiefLoading ? (
-            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
-              Loading managed center awards...
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+                Loading managed center awards...
+              </div>
             </CardContent>
           ) : centerChiefError ? (
-            <CardContent className="p-4 text-sm text-[var(--danger)]">
-              {centerChiefError}
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-red-200 bg-red-50 p-6 text-center text-sm text-red-800">
+                {centerChiefError}
+              </div>
             </CardContent>
           ) : sortedCenterChiefRows.length === 0 ? (
-            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
-              No awards and recognition records found for your managed research
-              center.
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+                No awards and recognition records found for your managed
+                research center.
+              </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
-            <CardContent className="p-4 text-sm text-[var(--text-muted)]">
-              No managed center awards match your search.
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+                No managed center awards match your search.
+              </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                  <TableHeader className="bg-gray-50/80 text-gray-600">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Title of Research/Creative Work</TableHead>
@@ -791,15 +855,16 @@ export default function AwardsRecognitionPage() {
                         <TableCell>{row.level || "-"}</TableCell>
                         <TableCell>{row.recipients || "-"}</TableCell>
                         <TableCell>
-                          <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
                             {row.supporting_movs ? (
                               <a
                                 href={row.supporting_movs}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex text-sm font-medium text-[var(--accent)] hover:text-[var(--brand-strong)]"
+                                className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-200"
                               >
-                                Link / Reference
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                View Reference
                               </a>
                             ) : null}
                             {row.supporting_mov_resource_id ? (
@@ -809,16 +874,22 @@ export default function AwardsRecognitionPage() {
                                 )}/download?download=1`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex text-sm font-medium text-[var(--success)] hover:text-[var(--brand-strong)]"
+                                title={
+                                  row.supporting_mov_file_name ||
+                                  "Download MOV file"
+                                }
+                                className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-gray-100"
                               >
-                                {row.supporting_mov_file_name ||
-                                  "Download MOV file"}
+                                <Download className="h-3.5 w-3.5" />
+                                Download MOV
                               </a>
                             ) : null}
                             {!row.supporting_movs &&
-                            !row.supporting_mov_resource_id
-                              ? "-"
-                              : null}
+                            !row.supporting_mov_resource_id ? (
+                              <span className="text-xs text-gray-600">
+                                No attachment
+                              </span>
+                            ) : null}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -827,7 +898,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                                className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                                 asChild
                               >
                                 <Link
@@ -844,7 +915,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                              className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                               onClick={() => openEdit(row)}
                               aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Edit"
@@ -854,7 +925,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
+                              className="h-8 w-8 text-red-700 hover:bg-red-50"
                               onClick={() => setDeleteTarget(row)}
                               aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Delete"
@@ -887,112 +958,146 @@ export default function AwardsRecognitionPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-200 px-6 py-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-[var(--text)]">
+              <CardTitle className="text-base font-semibold text-black">
                 Awards and Recognition Records
               </CardTitle>
-              <CardDescription className="text-[var(--text-muted)]">
+              <CardDescription className="text-gray-600">
                 Showing {filteredRows.length} record(s).
               </CardDescription>
             </div>
+            <p className="text-sm text-gray-600">
+              {filteredRows.length} row(s).
+            </p>
+          </div>
+        </CardHeader>
 
-            <label className="relative w-full md:max-w-xl">
+        <CardContent className="p-4">
+          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <label className="relative block w-full md:max-w-xl">
               <span className="sr-only">Search awards and recognitions</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search title, award, body, recipient, level, or year"
-                className="pl-9 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--brand)]"
+                className="pl-9"
               />
             </label>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {[
-              {
-                key: "all",
-                label: "All Awards",
-                count: baseSearchRows.length,
-              },
-              {
-                key: "institutional",
-                label: "Institutional",
-                count: baseSearchRows.filter(
-                  (row) => getLevelCategory(row?.level) === "institutional",
-                ).length,
-              },
-              {
-                key: "local",
-                label: "Local",
-                count: baseSearchRows.filter(
-                  (row) => getLevelCategory(row?.level) === "local",
-                ).length,
-              },
-              {
-                key: "regional",
-                label: "Regional",
-                count: baseSearchRows.filter(
-                  (row) => getLevelCategory(row?.level) === "regional",
-                ).length,
-              },
-              {
-                key: "national",
-                label: "National",
-                count: baseSearchRows.filter(
-                  (row) => getLevelCategory(row?.level) === "national",
-                ).length,
-              },
-              {
-                key: "international",
-                label: "International",
-                count: baseSearchRows.filter(
-                  (row) => getLevelCategory(row?.level) === "international",
-                ).length,
-              },
-            ].map((chip) => (
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {[
+                {
+                  key: "all",
+                  label: "All Awards",
+                  count: baseSearchRows.length,
+                },
+                {
+                  key: "institutional",
+                  label: "Institutional",
+                  count: baseSearchRows.filter(
+                    (row) => getLevelCategory(row?.level) === "institutional",
+                  ).length,
+                },
+                {
+                  key: "local",
+                  label: "Local",
+                  count: baseSearchRows.filter(
+                    (row) => getLevelCategory(row?.level) === "local",
+                  ).length,
+                },
+                {
+                  key: "regional",
+                  label: "Regional",
+                  count: baseSearchRows.filter(
+                    (row) => getLevelCategory(row?.level) === "regional",
+                  ).length,
+                },
+                {
+                  key: "national",
+                  label: "National",
+                  count: baseSearchRows.filter(
+                    (row) => getLevelCategory(row?.level) === "national",
+                  ).length,
+                },
+                {
+                  key: "international",
+                  label: "International",
+                  count: baseSearchRows.filter(
+                    (row) => getLevelCategory(row?.level) === "international",
+                  ).length,
+                },
+              ].map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-black/20 px-4 text-xs",
+                    recordsQuickFilter === chip.key
+                      ? "bg-black text-white hover:bg-black"
+                      : "bg-white text-black hover:bg-gray-100",
+                  )}
+                  onClick={() => setRecordsQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      recordsQuickFilter === chip.key
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-black",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
               <Button
-                key={chip.key}
                 type="button"
                 size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border-[var(--border)] px-4 text-xs",
-                  recordsQuickFilter === chip.key
-                    ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--surface)] hover:bg-[var(--brand-strong)]"
-                    : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
-                )}
-                onClick={() => setRecordsQuickFilter(chip.key)}
+                variant="ghost"
+                className="rounded-full text-xs text-black hover:text-black"
+                onClick={resetRecordsFilters}
               >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    recordsQuickFilter === chip.key
-                      ? "bg-[var(--surface)] text-[var(--brand-strong)]"
-                      : "bg-[var(--surface-strong)] text-[var(--text-muted)]",
-                  )}
-                >
-                  {chip.count}
-                </span>
+                Reset all
               </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-              onClick={() => setRecordsQuickFilter("all")}
-            >
-              Clear filters
-            </Button>
+            </div>
+
+            {hasActiveRecordsFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  Active Filters
+                </span>
+                {String(searchTerm || "").trim() ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    Search: "{String(searchTerm || "").trim()}" x
+                  </button>
+                ) : null}
+                {recordsQuickFilter !== "all" ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    onClick={() => setRecordsQuickFilter("all")}
+                  >
+                    {recordsQuickFilter} x
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        </CardHeader>
+        </CardContent>
         {filteredRows.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[var(--text-muted)]">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
               {canLoadOwnAwards && loading
                 ? "Loading award records..."
                 : loadError ||
@@ -1001,9 +1106,9 @@ export default function AwardsRecognitionPage() {
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                <TableHeader className="bg-gray-50/80 text-gray-600">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Title of Research/Creative Work</TableHead>
@@ -1029,15 +1134,16 @@ export default function AwardsRecognitionPage() {
                       <TableCell>{row.level || "-"}</TableCell>
                       <TableCell>{row.recipients || "-"}</TableCell>
                       <TableCell>
-                        <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           {row.supporting_movs ? (
                             <a
                               href={row.supporting_movs}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex text-sm font-medium text-[var(--accent)] hover:text-[var(--brand-strong)]"
+                              className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-200"
                             >
-                              Link / Reference
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Open Link
                             </a>
                           ) : null}
                           {row.supporting_mov_resource_id ? (
@@ -1047,16 +1153,22 @@ export default function AwardsRecognitionPage() {
                               )}/download?download=1`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex text-sm font-medium text-[var(--success)] hover:text-[var(--brand-strong)]"
+                              title={
+                                row.supporting_mov_file_name ||
+                                "Download MOV file"
+                              }
+                              className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-gray-100"
                             >
-                              {row.supporting_mov_file_name ||
-                                "Download MOV file"}
+                              <Download className="h-3.5 w-3.5" />
+                              Download MOV
                             </a>
                           ) : null}
                           {!row.supporting_movs &&
-                          !row.supporting_mov_resource_id
-                            ? "-"
-                            : null}
+                          !row.supporting_mov_resource_id ? (
+                            <span className="text-xs text-gray-600">
+                              No attachment
+                            </span>
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -1079,7 +1191,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                                    className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                                     asChild
                                   >
                                     <Link
@@ -1096,7 +1208,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                                  className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
                                   onClick={() => openEdit(row)}
                                   aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Edit"
@@ -1106,7 +1218,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-[var(--danger)] hover:bg-[var(--surface-strong)]"
+                                  className="h-8 w-8 text-red-700 hover:bg-red-50"
                                   onClick={() => setDeleteTarget(row)}
                                   aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Delete"
