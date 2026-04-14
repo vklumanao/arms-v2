@@ -621,13 +621,16 @@ export function OverviewSection({
   asPanel = true,
 }) {
   const content = loading ? (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: isAdmin ? 6 : 4 }).map((_, index) => (
-        <SummaryCardSkeleton key={`summary-skeleton-${index}`} />
+        <SummaryCardSkeleton
+          key={`summary-skeleton-${index}`}
+          className="rounded-xl border border-slate-200 bg-white"
+        />
       ))}
     </div>
   ) : (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
       {isAdmin ? (
         <>
           <SummaryCard
@@ -635,24 +638,28 @@ export function OverviewSection({
             value={formatCount(summaryCounts.centers)}
             hint="All centers"
             Icon={Building2}
+            className="rounded-xl border border-slate-200 bg-white"
           />
           <SummaryCard
             label="Departments"
             value={formatCount(summaryCounts.departments)}
             hint="All departments"
             Icon={BookOpen}
+            className="rounded-xl border border-slate-200 bg-white"
           />
           <SummaryCard
             label="Affiliates"
             value={formatCount(summaryCounts.affiliates)}
             hint="Active faculty + students"
             Icon={Users}
+            className="rounded-xl border border-slate-200 bg-white"
           />
           <SummaryCard
             label="Research Projects"
             value={formatCount(summaryCounts.projects)}
             hint="Filtered projects"
             Icon={FolderKanban}
+            className="rounded-xl border border-slate-200 bg-white"
           />
         </>
       ) : (
@@ -662,6 +669,7 @@ export function OverviewSection({
             value={formatCount(summaryCounts.projects)}
             hint="Projects I submitted"
             Icon={FolderKanban}
+            className="rounded-xl border border-slate-200 bg-white"
           />
         </>
       )}
@@ -671,7 +679,7 @@ export function OverviewSection({
         value={formatCount(summaryCounts.outputs)}
         hint={
           summaryCounts.outputsSubmitted && summaryCounts.outputsExpected
-            ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} - Expected: ${formatCount(
+            ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} · Expected: ${formatCount(
                 summaryCounts.outputsExpected,
               )}`
             : summaryCounts.outputsSubmitted
@@ -681,7 +689,9 @@ export function OverviewSection({
                 : "No outputs"
         }
         Icon={FileText}
+        className="rounded-xl border border-slate-200 bg-white"
       />
+
       <SummaryCard
         label={isAdmin ? "Awards & Recognitions" : "My Awards"}
         value={formatCount(summaryCounts.awards)}
@@ -693,13 +703,16 @@ export function OverviewSection({
               : "No awards"
         }
         Icon={Award}
+        className="rounded-xl border border-slate-200 bg-white"
       />
+
       {!isAdmin ? (
         <SummaryCard
           label="Team Projects"
           value={formatCount(summaryCounts.linkedProjects)}
           hint="Projects where I'm listed"
           Icon={Users}
+          className="rounded-xl border border-slate-200 bg-white"
         />
       ) : null}
     </div>
@@ -710,7 +723,7 @@ export function OverviewSection({
   return (
     <DashboardPanel
       title="Overview"
-      cardClassName="border-slate-200/70 bg-white/90 shadow-sm"
+      cardClassName="border border-slate-200 bg-white/95 rounded-2xl"
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName="p-6"
     >
@@ -718,6 +731,7 @@ export function OverviewSection({
     </DashboardPanel>
   );
 }
+
 export function TopContributorsSection({
   loading,
   contributors,
