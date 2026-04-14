@@ -888,10 +888,6 @@ export default function AdminAffiliatesModulePage() {
                             {row.email || "-"}
                           </p>
                         </div>
-
-                        <Badge variant="outline" className="shrink-0 font-mono">
-                          {row.id || "-"}
-                        </Badge>
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
