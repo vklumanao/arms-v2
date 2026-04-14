@@ -663,30 +663,17 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-              <div className={cn("space-y-5", collapsed && "space-y-3")}>
-                {visibleGroups.map((group) => (
-                  <div key={group.key}>
-                    {!collapsed ? (
-                      <div className="flex items-center gap-2 px-1">
-                        <h3 className="sidebar-section-title">{group.title}</h3>
-                        <div
-                          className="h-px flex-1 bg-border/60"
-                          aria-hidden="true"
-                        />
-                      </div>
-                    ) : null}
-                    <div className={cn("space-y-1", !collapsed && "mt-2")}>
-                      {group.items.map((item) => (
-                        <NavItem
-                          key={item.to}
-                          item={item}
-                          collapsed={collapsed}
-                          onNavigate={onNavigate}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className={cn("space-y-2", collapsed && "space-y-1")}>
+                {visibleGroups
+                  .flatMap((group) => group.items)
+                  .map((item) => (
+                    <NavItem
+                      key={item.to}
+                      item={item}
+                      collapsed={collapsed}
+                      onNavigate={onNavigate}
+                    />
+                  ))}
               </div>
             )}
           </div>
