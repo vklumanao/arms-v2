@@ -40,7 +40,7 @@ import {
 import {
   AdminAffiliateDetailPage,
   AdminAffiliatesModulePage,
-  AdminControlsPage,
+  AdminAccessControlPage,
   AdminDepartmentDetailPage,
   AdminDepartmentPage,
   AdminResearchCenterDetailPage,
@@ -224,21 +224,22 @@ export default function AppRoutes() {
               path="/admin/departments/:id"
               element={withBoundary(<AdminDepartmentDetailPage />)}
             />
-            <Route
-              path="/admin/controls"
-              element={withPermission(
-                PERMISSIONS.ADMIN_CONTROLS_MANAGE,
-                <AdminControlsPage />,
-              )}
-            />
-            <Route
-              path="/admin/users"
-              element={withPermission(
-                PERMISSIONS.ADMIN_USERS_MANAGE,
-                <AdminUsersPage />,
-              )}
-            />
           </Route>
+
+          <Route
+            path="/admin/users"
+            element={withPermission(
+              PERMISSIONS.ADMIN_USERS_MANAGE,
+              <AdminUsersPage />,
+            )}
+          />
+          <Route
+            path="/admin/access-control"
+            element={withPermission(
+              PERMISSIONS.ADMIN_RBAC_MANAGE,
+              <AdminAccessControlPage />,
+            )}
+          />
 
           <Route element={<AdminOrCenterChiefRoute />}>
             <Route
