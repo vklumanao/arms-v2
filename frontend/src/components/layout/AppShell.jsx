@@ -162,10 +162,10 @@ export default function AppShell() {
         permission: PERMISSIONS.ADMIN_USERS_MANAGE,
       },
       {
-        to: "/admin/controls",
-        label: "Admin Controls",
+        to: "/admin/access-control",
+        label: "Access Control",
         icon: Settings,
-        permission: PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+        permission: PERMISSIONS.ADMIN_RBAC_MANAGE,
       },
     ],
     [],
@@ -286,7 +286,16 @@ export default function AppShell() {
       });
     }
 
-    if (profile.role === "admin") {
+    if (
+      hasPermission(
+        profile?.roles?.map((entry) => entry?.key) || profile?.role,
+        PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+      ) ||
+      hasPermission(
+        profile?.roles?.map((entry) => entry?.key) || profile?.role,
+        PERMISSIONS.ADMIN_RBAC_MANAGE,
+      )
+    ) {
       groups.push({
         key: "admin",
         title: "Admin Governance",
@@ -311,11 +320,14 @@ export default function AppShell() {
         .map((group) => ({
           ...group,
           items: group.links.filter((item) =>
-            hasPermission(profile?.role, item.permission),
+            hasPermission(
+              profile?.roles?.map((entry) => entry?.key) || profile?.role,
+              item.permission,
+            ),
           ),
         }))
         .filter((group) => group.items.length > 0),
-    [navGroups, profile?.role],
+    [navGroups, profile?.role, profile?.roles],
   );
 
   useEffect(() => {
