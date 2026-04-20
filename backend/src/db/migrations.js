@@ -206,6 +206,82 @@ export async function runMigrations() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  // RBAC core tables for role/permission management.
+  await query(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      key TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      description TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_system BOOLEAN NOT NULL DEFAULT FALSE,
+      is_critical BOOLEAN NOT NULL DEFAULT FALSE,
+      legacy_role TEXT,
+      parent_role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS permissions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      key TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      module TEXT NOT NULL DEFAULT 'General',
+      action TEXT NOT NULL DEFAULT 'manage',
+      description TEXT,
+      is_system BOOLEAN NOT NULL DEFAULT FALSE,
+      is_critical BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await query(
+    `ALTER TABLE permissions ADD COLUMN IF NOT EXISTS action TEXT NOT NULL DEFAULT 'manage'`,
+  );
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+      assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (role_id, permission_id)
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_roles (
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, role_id)
+    )
+  `);
+
+  await query(`CREATE INDEX IF NOT EXISTS idx_roles_key ON roles (key)`);
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_permissions_key ON permissions (key)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_permissions_module ON permissions (module)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_permissions_module_action ON permissions (module, action)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions (role_id)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_role_permissions_permission_id ON role_permissions (permission_id)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles (user_id)`,
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles (role_id)`,
+  );
 }
 
 /**
