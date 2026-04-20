@@ -29,7 +29,7 @@ export default function StepClassification({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-4">
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-zinc-700">
               Project Classification
             </span>
             <Select
@@ -53,7 +53,7 @@ export default function StepClassification({
           </label>
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-zinc-700">
               Research Agenda
             </span>
             <Select
@@ -82,7 +82,7 @@ export default function StepClassification({
             </Select>
 
             {effectiveAgendas.length === 0 && (
-              <p className="text-xs text-amber-700">
+              <p className="text-xs text-zinc-700">
                 No research agenda found in your organization custom fields.
               </p>
             )}
@@ -95,7 +95,7 @@ export default function StepClassification({
 
         <div className="space-y-4">
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Status</span>
+            <span className="font-semibold text-zinc-700">Status</span>
             <Select
               value={form.status || "proposal"}
               onValueChange={(value) => setField("status", value)}
@@ -115,7 +115,7 @@ export default function StepClassification({
 
           {departmentName && departmentName !== "-" ? (
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Department</span>
+              <span className="font-semibold text-zinc-700">Department</span>
               <Input
                 value={departmentName}
                 readOnly
