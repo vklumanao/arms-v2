@@ -14,14 +14,14 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
  * Dependency pattern:
  * - Route logic is composed with injected helpers and CKAN client calls.
  */
-  export function registerSubmissionsRoutes(app, deps) {
-    const {
-      authMiddleware,
-      badRequest,
-      parseOrThrow,
-      projectSubmissionPublishSchema,
-      projectSubmissionDraftSchema,
-      config,
+export function registerSubmissionsRoutes(app, deps) {
+  const {
+    authMiddleware,
+    badRequest,
+    parseOrThrow,
+    projectSubmissionPublishSchema,
+    projectSubmissionDraftSchema,
+    config,
     asTrimmedString,
     asNumber,
     listDatasets,
@@ -37,149 +37,171 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     updateDatasetResource,
     deleteDatasetResource,
     getExtraByKey,
-    } = deps;
+    userHasPermission,
+  } = deps;
+
+  function requirePermission(req, res, permission) {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return false;
+    }
+    if (!userHasPermission(req.user, permission)) {
+      res.status(403).json({ error: "Forbidden" });
+      return false;
+    }
+    return true;
+  }
+
+  function requireAnyPermission(req, res, permissions) {
+    const list = Array.isArray(permissions) ? permissions : [permissions];
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return false;
+    }
+    const allowed = list.some((permission) =>
+      userHasPermission(req.user, permission),
+    );
+    if (!allowed) {
+      res.status(403).json({ error: "Forbidden" });
+      return false;
+    }
+    return true;
+  }
 
   function resolveCkanResourceUrl(resourceUrl) {
-      const raw = asTrimmedString(resourceUrl);
-      if (!raw) return "";
-      if (raw.startsWith("http://") || raw.startsWith("https://")) {
-        try {
-          const parsed = new URL(raw);
-          const ckanBase = new URL(`${config.ckanBaseUrl}/`);
-          const isLocalHost =
-            parsed.hostname === "localhost" ||
-            parsed.hostname === "127.0.0.1" ||
-            parsed.hostname === "ckan";
-          if (isLocalHost) {
-            return new URL(
-              `${parsed.pathname}${parsed.search}`,
-              `${ckanBase.origin}/`,
-            ).toString();
-          }
-        } catch {
-          return raw;
+    const raw = asTrimmedString(resourceUrl);
+    if (!raw) return "";
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      try {
+        const parsed = new URL(raw);
+        const ckanBase = new URL(`${config.ckanBaseUrl}/`);
+        const isLocalHost =
+          parsed.hostname === "localhost" ||
+          parsed.hostname === "127.0.0.1" ||
+          parsed.hostname === "ckan";
+        if (isLocalHost) {
+          return new URL(
+            `${parsed.pathname}${parsed.search}`,
+            `${ckanBase.origin}/`,
+          ).toString();
         }
+      } catch {
         return raw;
       }
-      if (raw.startsWith("/")) {
-        return new URL(raw, `${config.ckanBaseUrl}/`).toString();
-      }
+      return raw;
+    }
+    if (raw.startsWith("/")) {
       return new URL(raw, `${config.ckanBaseUrl}/`).toString();
     }
+    return new URL(raw, `${config.ckanBaseUrl}/`).toString();
+  }
 
-    function isPlaceholderResourceUrl(url) {
-      const raw = asTrimmedString(url);
-      if (!raw) return false;
-      if (raw.includes("/resource/")) return false;
-      return raw.includes("/dataset");
+  function isPlaceholderResourceUrl(url) {
+    const raw = asTrimmedString(url);
+    if (!raw) return false;
+    if (raw.includes("/resource/")) return false;
+    return raw.includes("/dataset");
+  }
+
+  function buildDownloadFilename(resource = {}, fallbackUrl = "") {
+    const name = asTrimmedString(resource?.name);
+    if (name) return name.replace(/["\\]/g, "_");
+    try {
+      const url = new URL(fallbackUrl);
+      const basename = path.basename(url.pathname || "");
+      return basename || "resource.bin";
+    } catch {
+      return "resource.bin";
     }
+  }
 
-    function buildDownloadFilename(resource = {}, fallbackUrl = "") {
-      const name = asTrimmedString(resource?.name);
-      if (name) return name.replace(/["\\]/g, "_");
-      try {
-        const url = new URL(fallbackUrl);
-        const basename = path.basename(url.pathname || "");
-        return basename || "resource.bin";
-      } catch {
-        return "resource.bin";
-      }
-    }
+  function proxyDownload({ sourceUrl, res, inline, filename, mimeType }) {
+    const maxRedirects = 5;
+    const requestUrl = (url, redirectsLeft) =>
+      new Promise((resolve, reject) => {
+        const parsed = new URL(url);
+        const transport = parsed.protocol === "https:" ? https : http;
+        const options = {
+          protocol: parsed.protocol,
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+          path: `${parsed.pathname}${parsed.search}`,
+          method: "GET",
+          headers: {
+            Accept: "*/*",
+            Authorization: config.ckanApiKey,
+            "X-CKAN-API-Key": config.ckanApiKey,
+          },
+        };
 
-    function proxyDownload({ sourceUrl, res, inline, filename, mimeType }) {
-      const maxRedirects = 5;
-      const requestUrl = (url, redirectsLeft) =>
-        new Promise((resolve, reject) => {
-          const parsed = new URL(url);
-          const transport = parsed.protocol === "https:" ? https : http;
-          const options = {
-            protocol: parsed.protocol,
-            hostname: parsed.hostname,
-            port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
-            path: `${parsed.pathname}${parsed.search}`,
-            method: "GET",
-            headers: {
-              Accept: "*/*",
-              Authorization: config.ckanApiKey,
-              "X-CKAN-API-Key": config.ckanApiKey,
-            },
-          };
+        if (parsed.protocol === "https:") {
+          options.rejectUnauthorized = config.ckanVerifyTls;
+        }
 
-          if (parsed.protocol === "https:") {
-            options.rejectUnauthorized = config.ckanVerifyTls;
+        const req = transport.request(options, (upstream) => {
+          const status = upstream.statusCode || 0;
+          const location = upstream.headers?.location;
+          if (status >= 300 && status < 400 && location && redirectsLeft > 0) {
+            upstream.resume();
+            const nextUrl = new URL(location, url).toString();
+            resolve(requestUrl(nextUrl, redirectsLeft - 1));
+            return;
           }
 
-          const req = transport.request(options, (upstream) => {
-            const status = upstream.statusCode || 0;
-            const location = upstream.headers?.location;
-            if (
-              status >= 300 &&
-              status < 400 &&
-              location &&
-              redirectsLeft > 0
-            ) {
-              upstream.resume();
-              const nextUrl = new URL(location, url).toString();
-              resolve(requestUrl(nextUrl, redirectsLeft - 1));
-              return;
-            }
-
-            if (status >= 400) {
-              const chunks = [];
-              upstream.on("data", (chunk) => chunks.push(chunk));
-              upstream.on("end", () => {
-                const message =
-                  Buffer.concat(chunks).toString("utf8") ||
-                  `Upstream download failed with status ${status}`;
-                if (!res.headersSent) {
-                  res
-                    .status(status)
-                    .json({ error: message.slice(0, 300) });
-                }
-                resolve();
-              });
-              upstream.on("error", reject);
-              return;
-            }
-
-            if (!res.headersSent) {
-              const dispositionType = inline ? "inline" : "attachment";
-              const safeName = filename || "resource.bin";
-              res.setHeader(
-                "Content-Disposition",
-                `${dispositionType}; filename="${safeName}"`,
-              );
-              if (mimeType) {
-                res.setHeader("Content-Type", mimeType);
-              } else if (upstream.headers?.["content-type"]) {
-                res.setHeader("Content-Type", upstream.headers["content-type"]);
+          if (status >= 400) {
+            const chunks = [];
+            upstream.on("data", (chunk) => chunks.push(chunk));
+            upstream.on("end", () => {
+              const message =
+                Buffer.concat(chunks).toString("utf8") ||
+                `Upstream download failed with status ${status}`;
+              if (!res.headersSent) {
+                res.status(status).json({ error: message.slice(0, 300) });
               }
-              if (upstream.headers?.["content-length"]) {
-                res.setHeader(
-                  "Content-Length",
-                  upstream.headers["content-length"],
-                );
-              }
-              if (upstream.headers?.etag) {
-                res.setHeader("ETag", upstream.headers.etag);
-              }
-              if (upstream.headers?.["last-modified"]) {
-                res.setHeader("Last-Modified", upstream.headers["last-modified"]);
-              }
-            }
-
-            res.status(status || 200);
-            upstream.pipe(res);
-            upstream.on("end", resolve);
+              resolve();
+            });
             upstream.on("error", reject);
-          });
+            return;
+          }
 
-          req.on("error", reject);
-          req.end();
+          if (!res.headersSent) {
+            const dispositionType = inline ? "inline" : "attachment";
+            const safeName = filename || "resource.bin";
+            res.setHeader(
+              "Content-Disposition",
+              `${dispositionType}; filename="${safeName}"`,
+            );
+            if (mimeType) {
+              res.setHeader("Content-Type", mimeType);
+            } else if (upstream.headers?.["content-type"]) {
+              res.setHeader("Content-Type", upstream.headers["content-type"]);
+            }
+            if (upstream.headers?.["content-length"]) {
+              res.setHeader(
+                "Content-Length",
+                upstream.headers["content-length"],
+              );
+            }
+            if (upstream.headers?.etag) {
+              res.setHeader("ETag", upstream.headers.etag);
+            }
+            if (upstream.headers?.["last-modified"]) {
+              res.setHeader("Last-Modified", upstream.headers["last-modified"]);
+            }
+          }
+
+          res.status(status || 200);
+          upstream.pipe(res);
+          upstream.on("end", resolve);
+          upstream.on("error", reject);
         });
 
-      return requestUrl(sourceUrl, maxRedirects);
-    }
+        req.on("error", reject);
+        req.end();
+      });
+
+    return requestUrl(sourceUrl, maxRedirects);
+  }
 
   const ALLOWED_OUTPUT_TYPES = new Set([
     "publication",
@@ -198,7 +220,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     const raw = asTrimmedString(getExtraByKey(extras, "submission_state"))
       .trim()
       .toLowerCase();
-    return raw === SUBMISSION_STATE_DRAFT ? SUBMISSION_STATE_DRAFT : SUBMISSION_STATE_SUBMITTED;
+    return raw === SUBMISSION_STATE_DRAFT
+      ? SUBMISSION_STATE_DRAFT
+      : SUBMISSION_STATE_SUBMITTED;
   }
 
   function isCkanResourceUrl(resourceUrl) {
@@ -250,7 +274,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             `draft-output-${index + 1}`,
           output_type: outputType,
           target_count: targetCount,
-          specific_output: asTrimmedString(row?.specific_output || row?.specificOutput),
+          specific_output: asTrimmedString(
+            row?.specific_output || row?.specificOutput,
+          ),
           notes: asTrimmedString(row?.notes),
           file_path: asTrimmedString(row?.file_path || row?.filePath),
           file_name: asTrimmedString(row?.file_name || row?.fileName),
@@ -386,44 +412,45 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
    * Edge case:
    * - Generates timestamp-based fallback when slug would be empty.
    */
-    function toCkanName(value) {
-      const base = asTrimmedString(value)
-        .toLowerCase()
-        .replace(/[^a-z0-9_\-]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 80);
-      if (base) return base;
-      return `dataset-${Date.now()}`;
-    }
+  function toCkanName(value) {
+    const base = asTrimmedString(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9_\-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+    if (base) return base;
+    return `dataset-${Date.now()}`;
+  }
 
-    function buildUniqueCkanName(baseName) {
-      const safeBase = asTrimmedString(baseName) || "dataset";
-      const suffix = crypto.randomUUID().slice(0, 8);
-      const maxBaseLength = Math.max(1, 80 - suffix.length - 1);
-      const trimmedBase = safeBase.slice(0, maxBaseLength);
-      return `${trimmedBase}-${suffix}`;
-    }
+  function buildUniqueCkanName(baseName) {
+    const safeBase = asTrimmedString(baseName) || "dataset";
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const maxBaseLength = Math.max(1, 80 - suffix.length - 1);
+    const trimmedBase = safeBase.slice(0, maxBaseLength);
+    return `${trimmedBase}-${suffix}`;
+  }
 
-    async function createDatasetWithUniqueName(payload) {
-      const baseName = asTrimmedString(payload?.name) || toCkanName(payload?.title);
-      let attemptName = baseName;
-      let lastError = null;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          return await createDataset({ ...payload, name: attemptName });
-        } catch (error) {
-          lastError = error;
-          const message = String(error?.message || "").toLowerCase();
-          const urlConflict =
-            message.includes("already in use") ||
-            message.includes("validation error") ||
-            message.includes("url");
-          if (!urlConflict) throw error;
-          attemptName = buildUniqueCkanName(baseName);
-        }
+  async function createDatasetWithUniqueName(payload) {
+    const baseName =
+      asTrimmedString(payload?.name) || toCkanName(payload?.title);
+    let attemptName = baseName;
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await createDataset({ ...payload, name: attemptName });
+      } catch (error) {
+        lastError = error;
+        const message = String(error?.message || "").toLowerCase();
+        const urlConflict =
+          message.includes("already in use") ||
+          message.includes("validation error") ||
+          message.includes("url");
+        if (!urlConflict) throw error;
+        attemptName = buildUniqueCkanName(baseName);
       }
-      throw lastError || new Error("Unable to create dataset.");
     }
+    throw lastError || new Error("Unable to create dataset.");
+  }
 
   /**
    * Builds a display name for each expected output resource.
@@ -477,9 +504,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     const line = text
       .split(/\r?\n/)
       .map((entry) => entry.trim())
-      .find((entry) =>
-        entry.toLowerCase().startsWith("authors/proponents:"),
-      );
+      .find((entry) => entry.toLowerCase().startsWith("authors/proponents:"));
     if (!line) return "";
     return line
       .split("authors/proponents:")
@@ -663,9 +688,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   }
 
   function isCenterChiefUser(user) {
-    const role = asTrimmedString(user?.role).toLowerCase();
     return (
-      role === "faculty" &&
       user?.is_center_chief === true &&
       Boolean(asTrimmedString(user?.managed_center_id))
     );
@@ -753,7 +776,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     return {
       id: dataset?.id || dataset?.name || null,
       submission_state,
-      draft_step: submission_state === SUBMISSION_STATE_DRAFT ? draftStep : null,
+      draft_step:
+        submission_state === SUBMISSION_STATE_DRAFT ? draftStep : null,
       title: asTrimmedString(dataset?.title || dataset?.name),
       lead_researcher: asTrimmedString(
         getExtraByKey(extras, "lead_researcher"),
@@ -929,10 +953,10 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       status:
         asTrimmedString(getExtraByKey(extras, "project_status")) ||
         asTrimmedString(getExtraByKey(extras, "status")) ||
-        (tagNames.find((tag) =>
+        tagNames.find((tag) =>
           ["proposal", "ongoing", "completed", "rejected"].includes(tag),
         ) ||
-          "ongoing"),
+        "ongoing",
       classification:
         asTrimmedString(getExtraByKey(extras, "classification")) ||
         (tagNames.includes("industry") ? "industry" : "academic"),
@@ -1108,7 +1132,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
                 resourceNameBase ||
                 "resource",
             );
-            const resolvedOutputType = outputTypeFromMeta || normalizedOutputType;
+            const resolvedOutputType =
+              outputTypeFromMeta || normalizedOutputType;
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
               output_type: resolvedOutputType || "resource",
@@ -1168,12 +1193,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
-        const role = String(req.user?.role || "").trim().toLowerCase();
         const managedCenterId = asTrimmedString(req.user?.managed_center_id);
         const isCenterChief =
-          role === "faculty" &&
-          req.user?.is_center_chief === true &&
-          Boolean(managedCenterId);
+          req.user?.is_center_chief === true && Boolean(managedCenterId);
 
         if (!isCenterChief) {
           return res.status(403).json({
@@ -1227,7 +1249,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
                 resourceNameBase ||
                 "resource",
             );
-            const resolvedOutputType = outputTypeFromMeta || normalizedOutputType;
+            const resolvedOutputType =
+              outputTypeFromMeta || normalizedOutputType;
             rows.push({
               id: resource?.id || `${dataset?.id || dataset?.name}-resource`,
               output_type: resolvedOutputType || "resource",
@@ -1277,8 +1300,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       } catch (error) {
         return res.status(500).json({
           error: String(
-            error?.message ||
-              "Failed to load center chief research outputs.",
+            error?.message || "Failed to load center chief research outputs.",
           ),
         });
       }
@@ -1304,11 +1326,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             : [];
           if (!datasets.length) break;
 
-        for (const dataset of datasets) {
-          if (isAwardDataset(dataset)) continue;
-          if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
-          rows.push(mapDatasetToProjectListRecord(dataset));
-        }
+          for (const dataset of datasets) {
+            if (isAwardDataset(dataset)) continue;
+            if (!isAdmin && !isDatasetOwnedByUser(dataset, req.user)) continue;
+            rows.push(mapDatasetToProjectListRecord(dataset));
+          }
 
           const total = Number(result?.count || 0);
           if (datasets.length < limit || (total > 0 && page * limit >= total)) {
@@ -1331,12 +1353,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
-        const role = String(req.user?.role || "").trim().toLowerCase();
         const managedCenterId = asTrimmedString(req.user?.managed_center_id);
         const isCenterChief =
-          role === "faculty" &&
-          req.user?.is_center_chief === true &&
-          Boolean(managedCenterId);
+          req.user?.is_center_chief === true && Boolean(managedCenterId);
 
         if (!isCenterChief) {
           return res.status(403).json({
@@ -1401,12 +1420,12 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
             : [];
           if (!datasets.length) break;
 
-        for (const dataset of datasets) {
-          if (isAwardDataset(dataset)) continue;
-          if (isDatasetOwnedByUser(dataset, req.user)) continue;
-          if (!isDatasetLinkedToUser(dataset, req.user)) {
-            continue;
-          }
+          for (const dataset of datasets) {
+            if (isAwardDataset(dataset)) continue;
+            if (isDatasetOwnedByUser(dataset, req.user)) continue;
+            if (!isDatasetLinkedToUser(dataset, req.user)) {
+              continue;
+            }
             rows.push(mapDatasetToProjectListRecord(dataset));
           }
 
@@ -1461,11 +1480,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     },
   );
 
-    app.get(
-      "/api/submissions/:projectId/expected-outputs",
-      authMiddleware,
-      async (req, res) => {
-        try {
+  app.get(
+    "/api/submissions/:projectId/expected-outputs",
+    authMiddleware,
+    async (req, res) => {
+      try {
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) return badRequest(res, "Project id is required.");
 
@@ -1497,27 +1516,27 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           }
         }
 
-          return res.json({ data: mapResourcesToExpectedOutputs(dataset) });
-        } catch (error) {
-          return res.status(500).json({
-            error: String(error?.message || "Failed to load expected outputs."),
-          });
+        return res.json({ data: mapResourcesToExpectedOutputs(dataset) });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load expected outputs."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/submissions/:projectId/resources",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const projectId = asTrimmedString(req.params?.projectId);
+        if (!projectId) return badRequest(res, "Project id is required.");
+
+        const dataset = await getDataset(projectId);
+        if (!dataset) {
+          return res.status(404).json({ error: "Project dataset not found." });
         }
-      },
-    );
-
-    app.get(
-      "/api/submissions/:projectId/resources",
-      authMiddleware,
-      async (req, res) => {
-        try {
-          const projectId = asTrimmedString(req.params?.projectId);
-          if (!projectId) return badRequest(res, "Project id is required.");
-
-          const dataset = await getDataset(projectId);
-          if (!dataset) {
-            return res.status(404).json({ error: "Project dataset not found." });
-          }
 
         const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
         const isCenterChief =
@@ -1554,13 +1573,13 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           const publicationAuthorsFromMeta = asTrimmedString(
             metaRow?.publication_authors,
           );
-          const publicationAuthorsFromDescription = extractAuthorsFromDescription(
-            resource?.description,
-          );
+          const publicationAuthorsFromDescription =
+            extractAuthorsFromDescription(resource?.description);
           return {
             ...resource,
             output_type: outputTypeFromMeta || null,
-            output_link: outputLinkFromMeta || outputLinkFromDescription || null,
+            output_link:
+              outputLinkFromMeta || outputLinkFromDescription || null,
             publication_authors:
               publicationAuthorsFromMeta ||
               publicationAuthorsFromDescription ||
@@ -1574,92 +1593,94 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           },
           syncEnabled: true,
         });
-        } catch (error) {
-          return res.status(500).json({
-            error: String(error?.message || "Failed to load project resources."),
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load project resources."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/submissions/resources/:resourceId/download",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const resourceId = asTrimmedString(req.params?.resourceId);
+        if (!resourceId) return badRequest(res, "Resource id is required.");
+
+        const located = await findDatasetByResourceId(resourceId, req.user);
+        if (!located?.dataset || !located?.resource) {
+          return res.status(404).json({ error: "Resource not found." });
+        }
+        const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+        const isCenterChief =
+          isDatasetInManagedCenter(located.dataset, req.user) ||
+          (await isCenterChiefForDataset(located.dataset, req.user));
+        if (
+          !isAdmin &&
+          !isCenterChief &&
+          !isDatasetOwnedByUser(located.dataset, req.user) &&
+          !isDatasetLinkedToUser(located.dataset, req.user)
+        ) {
+          return res.status(403).json({
+            error: "You are not allowed to download this resource.",
           });
         }
-      },
-    );
 
-    app.get(
-      "/api/submissions/resources/:resourceId/download",
-      authMiddleware,
-      async (req, res) => {
-        try {
-          const resourceId = asTrimmedString(req.params?.resourceId);
-          if (!resourceId) return badRequest(res, "Resource id is required.");
-
-          const located = await findDatasetByResourceId(resourceId, req.user);
-          if (!located?.dataset || !located?.resource) {
-            return res.status(404).json({ error: "Resource not found." });
-          }
-          const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
-          const isCenterChief =
-            isDatasetInManagedCenter(located.dataset, req.user) ||
-            (await isCenterChiefForDataset(located.dataset, req.user));
-          if (
-            !isAdmin &&
-            !isCenterChief &&
-            !isDatasetOwnedByUser(located.dataset, req.user) &&
-            !isDatasetLinkedToUser(located.dataset, req.user)
-          ) {
-            return res.status(403).json({
-              error: "You are not allowed to download this resource.",
-            });
-          }
-
-          const ckanResource = await ckanAction("resource_show", {
-            id: resourceId,
-          });
-          const datasetId =
-            asTrimmedString(ckanResource?.package_id) ||
-            asTrimmedString(located.dataset?.id) ||
-            asTrimmedString(located.dataset?.name) ||
-            "";
-          const resourceUrlRaw = resolveCkanResourceUrl(ckanResource?.url);
-          const resourceName = buildDownloadFilename(
-            ckanResource,
-            resourceUrlRaw,
-          );
-          const resourceMimeType = asTrimmedString(ckanResource?.mimetype);
-          const hasDownloadUrl = /\/resource\/.+\/download\//i.test(
-            String(resourceUrlRaw || ""),
-          );
-          const resourceUrl =
-            hasDownloadUrl && resourceUrlRaw
-              ? resourceUrlRaw
-              : datasetId && resourceId
-                ? `${config.ckanBaseUrl}/dataset/${datasetId}/resource/${resourceId}/download/${encodeURIComponent(
-                    resourceName,
-                  )}`
-                : resourceUrlRaw;
-          if (!resourceUrl) {
-            return res.status(404).json({ error: "Resource URL is missing." });
-          }
-
-          const isDownload =
-            String(req.query?.download || "").toLowerCase() === "1" ||
-            String(req.query?.download || "").toLowerCase() === "true";
-          const filename = resourceName;
-
-          await proxyDownload({
-            sourceUrl: resourceUrl,
-            res,
-            inline: !isDownload,
-            filename,
-            mimeType: resourceMimeType || null,
-          });
-        } catch (error) {
-          if (res.headersSent) return;
-          return res.status(500).json({
-            error: String(error?.message || "Failed to download resource."),
-          });
+        const ckanResource = await ckanAction("resource_show", {
+          id: resourceId,
+        });
+        const datasetId =
+          asTrimmedString(ckanResource?.package_id) ||
+          asTrimmedString(located.dataset?.id) ||
+          asTrimmedString(located.dataset?.name) ||
+          "";
+        const resourceUrlRaw = resolveCkanResourceUrl(ckanResource?.url);
+        const resourceName = buildDownloadFilename(
+          ckanResource,
+          resourceUrlRaw,
+        );
+        const resourceMimeType = asTrimmedString(ckanResource?.mimetype);
+        const hasDownloadUrl = /\/resource\/.+\/download\//i.test(
+          String(resourceUrlRaw || ""),
+        );
+        const resourceUrl =
+          hasDownloadUrl && resourceUrlRaw
+            ? resourceUrlRaw
+            : datasetId && resourceId
+              ? `${config.ckanBaseUrl}/dataset/${datasetId}/resource/${resourceId}/download/${encodeURIComponent(
+                  resourceName,
+                )}`
+              : resourceUrlRaw;
+        if (!resourceUrl) {
+          return res.status(404).json({ error: "Resource URL is missing." });
         }
-      },
-    );
+
+        const isDownload =
+          String(req.query?.download || "").toLowerCase() === "1" ||
+          String(req.query?.download || "").toLowerCase() === "true";
+        const filename = resourceName;
+
+        await proxyDownload({
+          sourceUrl: resourceUrl,
+          res,
+          inline: !isDownload,
+          filename,
+          mimeType: resourceMimeType || null,
+        });
+      } catch (error) {
+        if (res.headersSent) return;
+        return res.status(500).json({
+          error: String(error?.message || "Failed to download resource."),
+        });
+      }
+    },
+  );
 
   app.post("/api/submissions/draft", authMiddleware, async (req, res) => {
+    if (!requireAnyPermission(req, res, ["projects.create", "projects.edit"]))
+      return;
     let parsedRequest;
     try {
       parsedRequest = parseOrThrow(
@@ -1702,7 +1723,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         const existingState = getSubmissionStateFromExtras(extrasRows);
         if (existingState !== SUBMISSION_STATE_DRAFT) {
           return res.status(409).json({
-            error: "This project is already submitted and cannot be saved as a draft.",
+            error:
+              "This project is already submitted and cannot be saved as a draft.",
           });
         }
 
@@ -1803,9 +1825,9 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         extras,
       };
 
-        const dataset = datasetId
-          ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
-          : await createDatasetWithUniqueName(baseDatasetPayload);
+      const dataset = datasetId
+        ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
+        : await createDatasetWithUniqueName(baseDatasetPayload);
 
       return res.status(datasetId ? 200 : 201).json({
         data: {
@@ -1825,6 +1847,8 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   });
 
   app.post("/api/submissions/publish", authMiddleware, async (req, res) => {
+    if (!requireAnyPermission(req, res, ["projects.create", "projects.edit"]))
+      return;
     // Accepts both create and update flow depending on `dataset_id`.
     let parsedRequest;
     try {
@@ -1866,17 +1890,17 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
       supportingMovLink || `${config.ckanBaseUrl}/dataset`;
 
     let dataset = null;
-      const createdNow = !datasetId;
-      try {
-        const existingDataset = datasetId ? await getDataset(datasetId) : null;
-        if (datasetId && !existingDataset) {
-          return res.status(404).json({ error: "Dataset not found." });
-        }
-        if (datasetId) {
-          const existingCount = Array.isArray(existingDataset?.resources)
-            ? existingDataset.resources.length
-            : 0;
-        }
+    const createdNow = !datasetId;
+    try {
+      const existingDataset = datasetId ? await getDataset(datasetId) : null;
+      if (datasetId && !existingDataset) {
+        return res.status(404).json({ error: "Dataset not found." });
+      }
+      if (datasetId) {
+        const existingCount = Array.isArray(existingDataset?.resources)
+          ? existingDataset.resources.length
+          : 0;
+      }
 
       const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
       if (
@@ -1919,7 +1943,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           if (value) extras = upsertExtra(extras, key, value);
         }
       }
-      extras = upsertExtra(extras, "submission_state", SUBMISSION_STATE_SUBMITTED);
+      extras = upsertExtra(
+        extras,
+        "submission_state",
+        SUBMISSION_STATE_SUBMITTED,
+      );
 
       const baseDatasetPayload = {
         name: asTrimmedString(existingDataset?.name) || toCkanName(title),
@@ -1962,174 +1990,171 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
         extras,
       };
 
-        // Update existing dataset when dataset id is supplied, otherwise create new one.
-        dataset = datasetId
-          ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
-          : await createDatasetWithUniqueName(baseDatasetPayload);
-        if (datasetId) {
-          const updated = await getDataset(
-            dataset?.id || dataset?.name || datasetId,
+      // Update existing dataset when dataset id is supplied, otherwise create new one.
+      dataset = datasetId
+        ? await patchDataset({ ...baseDatasetPayload, id: datasetId })
+        : await createDatasetWithUniqueName(baseDatasetPayload);
+      if (datasetId) {
+        const updated = await getDataset(
+          dataset?.id || dataset?.name || datasetId,
+        );
+        const updatedCount = Array.isArray(updated?.resources)
+          ? updated.resources.length
+          : 0;
+      }
+
+      const createdResources = [];
+      if (!datasetId) {
+        for (let i = 0; i < mergedExpectedOutputs.length; i += 1) {
+          const row = mergedExpectedOutputs[i] || {};
+          const name = formatOutputResourceName(row, i);
+          const description = formatOutputDescription(
+            row.output_type,
+            row.notes,
+            row.output_link || row.outputLink,
+            row.publication_authors || row.publicationAuthors,
           );
-          const updatedCount = Array.isArray(updated?.resources)
-            ? updated.resources.length
-            : 0;
-        }
+          const fileName =
+            asTrimmedString(row.file_name) ||
+            asTrimmedString(row.fileName) ||
+            "";
+          const mimeType =
+            asTrimmedString(row.mime_type) ||
+            asTrimmedString(row.mimeType) ||
+            "";
+          const fileSize = Number(row.file_size || row.fileSize || 0);
+          const filePath =
+            asTrimmedString(row.file_path) ||
+            asTrimmedString(row.filePath) ||
+            "";
+          const fileBase64 =
+            asTrimmedString(row.file_base64) ||
+            asTrimmedString(row.fileBase64) ||
+            "";
+          const hasRemoteFile =
+            /^https?:\/\//i.test(filePath) ||
+            String(filePath).startsWith("blob:");
+          const url = hasRemoteFile
+            ? filePath
+            : `${fallbackResourceUrl}?expected_output=${i + 1}&dataset=${
+                dataset.id || dataset.name || "unknown"
+              }`;
+          // Infer format from filename extension when explicit format is missing.
+          const format = fileName.includes(".")
+            ? fileName.split(".").pop()?.toUpperCase() || ""
+            : "";
 
-        const createdResources = [];
-        if (!datasetId) {
-          for (let i = 0; i < mergedExpectedOutputs.length; i += 1) {
-            const row = mergedExpectedOutputs[i] || {};
-            const name = formatOutputResourceName(row, i);
-            const description = formatOutputDescription(
-              row.output_type,
-              row.notes,
-              row.output_link || row.outputLink,
-              row.publication_authors || row.publicationAuthors,
-            );
-            const fileName =
-              asTrimmedString(row.file_name) ||
-              asTrimmedString(row.fileName) ||
-              "";
-            const mimeType =
-              asTrimmedString(row.mime_type) ||
-              asTrimmedString(row.mimeType) ||
-              "";
-            const fileSize = Number(row.file_size || row.fileSize || 0);
-            const filePath =
-              asTrimmedString(row.file_path) ||
-              asTrimmedString(row.filePath) ||
-              "";
-            const fileBase64 =
-              asTrimmedString(row.file_base64) ||
-              asTrimmedString(row.fileBase64) ||
-              "";
-            const hasRemoteFile =
-              /^https?:\/\//i.test(filePath) ||
-              String(filePath).startsWith("blob:");
-            const url =
-              hasRemoteFile
-                ? filePath
-                : `${fallbackResourceUrl}?expected_output=${i + 1}&dataset=${
-                    dataset.id || dataset.name || "unknown"
-                  }`;
-            // Infer format from filename extension when explicit format is missing.
-            const format = fileName.includes(".")
-              ? fileName.split(".").pop()?.toUpperCase() || ""
-              : "";
-
-            let resource;
-            if (fileBase64) {
-              const { buffer, mimeType: mimeTypeFromData } =
-                decodeBase64File(fileBase64);
-              if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
-                const resolvedMimeType =
-                  mimeType || mimeTypeFromData || "application/octet-stream";
-                const uploadName = fileName || name;
-                resource = await createDatasetResourceUpload({
-                  fields: {
-                    package_id: dataset.id || dataset.name,
-                    name: uploadName,
-                    description: description || null,
-                    format: format || null,
-                    mimetype: resolvedMimeType,
-                    size: String(buffer.length),
-                  },
-                  fileBuffer: buffer,
-                  fileName: uploadName || "research-output.bin",
-                  mimeType: resolvedMimeType,
-                });
-              }
-            }
-
-            if (!resource) {
-              resource = await createDatasetResource({
-                package_id: dataset.id || dataset.name,
-                name,
-                description: description || null,
-                url,
-                format: format || null,
-                mimetype: mimeType || null,
-                size:
-                  Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+          let resource;
+          if (fileBase64) {
+            const { buffer, mimeType: mimeTypeFromData } =
+              decodeBase64File(fileBase64);
+            if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
+              const resolvedMimeType =
+                mimeType || mimeTypeFromData || "application/octet-stream";
+              const uploadName = fileName || name;
+              resource = await createDatasetResourceUpload({
+                fields: {
+                  package_id: dataset.id || dataset.name,
+                  name: uploadName,
+                  description: description || null,
+                  format: format || null,
+                  mimetype: resolvedMimeType,
+                  size: String(buffer.length),
+                },
+                fileBuffer: buffer,
+                fileName: uploadName || "research-output.bin",
+                mimeType: resolvedMimeType,
               });
             }
-            createdResources.push(resource);
           }
-        } else {
-          // Revision: add-only. Never overwrite existing resources.
-          for (let i = 0; i < mergedExpectedOutputs.length; i += 1) {
-            const row = mergedExpectedOutputs[i] || {};
-            const filePath =
-              asTrimmedString(row.file_path) ||
-              asTrimmedString(row.filePath) ||
-              "";
-            const fileBase64 =
-              asTrimmedString(row.file_base64) ||
-              asTrimmedString(row.fileBase64) ||
-              "";
-            const hasRemoteFile = /^https?:\/\//i.test(filePath);
-            const isCkanUrl = isCkanResourceUrl(filePath);
-            if (!fileBase64 && (!hasRemoteFile || isCkanUrl)) continue;
 
-            const name = formatOutputResourceName(row, i);
-            const description = formatOutputDescription(
-              row.output_type,
-              row.notes,
-              row.output_link || row.outputLink,
-              row.publication_authors || row.publicationAuthors,
-            );
-            const fileName =
-              asTrimmedString(row.file_name) ||
-              asTrimmedString(row.fileName) ||
-              "";
-            const mimeType =
-              asTrimmedString(row.mime_type) ||
-              asTrimmedString(row.mimeType) ||
-              "";
-            const fileSize = Number(row.file_size || row.fileSize || 0);
-            const displayName = fileName || name;
-            const format = displayName.includes(".")
-              ? displayName.split(".").pop()?.toUpperCase() || ""
-              : "";
+          if (!resource) {
+            resource = await createDatasetResource({
+              package_id: dataset.id || dataset.name,
+              name,
+              description: description || null,
+              url,
+              format: format || null,
+              mimetype: mimeType || null,
+              size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+            });
+          }
+          createdResources.push(resource);
+        }
+      } else {
+        // Revision: add-only. Never overwrite existing resources.
+        for (let i = 0; i < mergedExpectedOutputs.length; i += 1) {
+          const row = mergedExpectedOutputs[i] || {};
+          const filePath =
+            asTrimmedString(row.file_path) ||
+            asTrimmedString(row.filePath) ||
+            "";
+          const fileBase64 =
+            asTrimmedString(row.file_base64) ||
+            asTrimmedString(row.fileBase64) ||
+            "";
+          const hasRemoteFile = /^https?:\/\//i.test(filePath);
+          const isCkanUrl = isCkanResourceUrl(filePath);
+          if (!fileBase64 && (!hasRemoteFile || isCkanUrl)) continue;
 
-            let resource;
-            if (fileBase64) {
-              const { buffer, mimeType: mimeTypeFromData } =
-                decodeBase64File(fileBase64);
-              if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
-                const resolvedMimeType =
-                  mimeType || mimeTypeFromData || "application/octet-stream";
-                const uploadName = displayName || name;
-                resource = await createDatasetResourceUpload({
-                  fields: {
-                    package_id: dataset.id || dataset.name,
-                    name: uploadName,
-                    description: description || null,
-                    format: format || null,
-                    mimetype: resolvedMimeType,
-                    size: String(buffer.length),
-                  },
-                  fileBuffer: buffer,
-                  fileName: uploadName || "research-output.bin",
-                  mimeType: resolvedMimeType,
-                });
-              }
-            } else if (hasRemoteFile) {
-              resource = await createDatasetResource({
-                package_id: dataset.id || dataset.name,
-                name: displayName,
-                description: description || null,
-                url: filePath,
-                format: format || null,
-                mimetype: mimeType || null,
-                size:
-                  Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+          const name = formatOutputResourceName(row, i);
+          const description = formatOutputDescription(
+            row.output_type,
+            row.notes,
+            row.output_link || row.outputLink,
+            row.publication_authors || row.publicationAuthors,
+          );
+          const fileName =
+            asTrimmedString(row.file_name) ||
+            asTrimmedString(row.fileName) ||
+            "";
+          const mimeType =
+            asTrimmedString(row.mime_type) ||
+            asTrimmedString(row.mimeType) ||
+            "";
+          const fileSize = Number(row.file_size || row.fileSize || 0);
+          const displayName = fileName || name;
+          const format = displayName.includes(".")
+            ? displayName.split(".").pop()?.toUpperCase() || ""
+            : "";
+
+          let resource;
+          if (fileBase64) {
+            const { buffer, mimeType: mimeTypeFromData } =
+              decodeBase64File(fileBase64);
+            if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
+              const resolvedMimeType =
+                mimeType || mimeTypeFromData || "application/octet-stream";
+              const uploadName = displayName || name;
+              resource = await createDatasetResourceUpload({
+                fields: {
+                  package_id: dataset.id || dataset.name,
+                  name: uploadName,
+                  description: description || null,
+                  format: format || null,
+                  mimetype: resolvedMimeType,
+                  size: String(buffer.length),
+                },
+                fileBuffer: buffer,
+                fileName: uploadName || "research-output.bin",
+                mimeType: resolvedMimeType,
               });
             }
-
-            if (resource) createdResources.push(resource);
+          } else if (hasRemoteFile) {
+            resource = await createDatasetResource({
+              package_id: dataset.id || dataset.name,
+              name: displayName,
+              description: description || null,
+              url: filePath,
+              format: format || null,
+              mimetype: mimeType || null,
+              size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+            });
           }
+
+          if (resource) createdResources.push(resource);
         }
+      }
 
       return res.status(createdNow ? 201 : 200).json({
         data: {
@@ -2160,6 +2185,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "projects.edit")) return;
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) {
           return badRequest(res, "Project id is required.");
@@ -2283,6 +2309,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "projects.delete")) return;
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) {
           return badRequest(res, "Project id is required.");
@@ -2324,6 +2351,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "projects.edit")) return;
         const datasetId = asTrimmedString(req.params?.datasetId);
         if (!datasetId) {
           return badRequest(res, "Dataset id is required.");
@@ -2372,6 +2400,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "outputs.edit")) return;
         const resourceId = asTrimmedString(req.params?.resourceId);
         if (!resourceId) {
           return badRequest(res, "Resource id is required.");
@@ -2476,6 +2505,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "outputs.create")) return;
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) return badRequest(res, "Project id is required.");
 
@@ -2491,11 +2521,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           });
         }
 
-          const outputType = normalizeOutputType(req.body?.output_type);
-          const targetCount = Math.max(
-            1,
-            Number(req.body?.target_count || 1) || 1,
-          );
+        const outputType = normalizeOutputType(req.body?.output_type);
+        const targetCount = Math.max(
+          1,
+          Number(req.body?.target_count || 1) || 1,
+        );
         const notes = asTrimmedString(req.body?.notes);
         const outputLink = asTrimmedString(req.body?.output_link);
         const filePath = asTrimmedString(req.body?.file_path);
@@ -2510,47 +2540,48 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
           asTrimmedString(
             getExtraByKey(dataset?.extras, "supporting_mov_link"),
           ) || `${config.ckanBaseUrl}/dataset`;
-          const url =
-            /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
-              ? filePath
-              : `${fallbackResourceUrl}?output_type=${encodeURIComponent(
-                  outputType || "resource",
-                )}&ts=${Date.now()}`;
-          const targetName = formatOutputResourceName(
-            { output_type: outputType, target_count: targetCount },
-            0,
+        const url =
+          /^https?:\/\//i.test(filePath) || String(filePath).startsWith("blob:")
+            ? filePath
+            : `${fallbackResourceUrl}?output_type=${encodeURIComponent(
+                outputType || "resource",
+              )}&ts=${Date.now()}`;
+        const targetName = formatOutputResourceName(
+          { output_type: outputType, target_count: targetCount },
+          0,
+        );
+        const existingResources = Array.isArray(dataset?.resources)
+          ? dataset.resources
+          : [];
+        const placeholderResource = existingResources.find((resource) => {
+          if (!resource) return false;
+          const name = asTrimmedString(resource?.name);
+          const normalized = normalizeOutputType(
+            asTrimmedString(resource?.format) || name,
           );
-          const existingResources = Array.isArray(dataset?.resources)
-            ? dataset.resources
-            : [];
-          const placeholderResource = existingResources.find((resource) => {
-            if (!resource) return false;
-            const name = asTrimmedString(resource?.name);
-            const normalized = normalizeOutputType(
-              asTrimmedString(resource?.format) || name,
-            );
-            if (name && name === targetName) return isPlaceholderResourceUrl(resource?.url);
-            return (
-              normalized === outputType && isPlaceholderResourceUrl(resource?.url)
-            );
-          });
-          if (placeholderResource?.id) {
-            await deleteDatasetResource(placeholderResource.id);
-          }
+          if (name && name === targetName)
+            return isPlaceholderResourceUrl(resource?.url);
+          return (
+            normalized === outputType && isPlaceholderResourceUrl(resource?.url)
+          );
+        });
+        if (placeholderResource?.id) {
+          await deleteDatasetResource(placeholderResource.id);
+        }
 
-          const resource = await createDatasetResource({
-            package_id: dataset?.id || projectId,
-            name: targetName,
-            description: formatOutputDescription(
-                outputType,
-                notes,
-                outputLink,
-                req.body?.publication_authors,
-              ),
-            url,
-            format: outputType,
-            mimetype: mimeType || null,
-            size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+        const resource = await createDatasetResource({
+          package_id: dataset?.id || projectId,
+          name: targetName,
+          description: formatOutputDescription(
+            outputType,
+            notes,
+            outputLink,
+            req.body?.publication_authors,
+          ),
+          url,
+          format: outputType,
+          mimetype: mimeType || null,
+          size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
         });
 
         return res.status(201).json({
@@ -2579,10 +2610,11 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
   );
 
   app.post(
-      "/api/submissions/:projectId/resources/upload",
-      authMiddleware,
-      async (req, res) => {
-        try {
+    "/api/submissions/:projectId/resources/upload",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        if (!requirePermission(req, res, "outputs.create")) return;
         const projectId = asTrimmedString(req.params?.projectId);
         if (!projectId) return badRequest(res, "Project id is required.");
 
@@ -2624,47 +2656,48 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
 
         const mimeType =
           mimeTypeFromBody || mimeTypeFromData || "application/octet-stream";
-          const targetName = formatOutputResourceName(
-            { output_type: outputType, target_count: targetCount },
-            0,
+        const targetName = formatOutputResourceName(
+          { output_type: outputType, target_count: targetCount },
+          0,
+        );
+        const existingResources = Array.isArray(dataset?.resources)
+          ? dataset.resources
+          : [];
+        const placeholderResource = existingResources.find((resource) => {
+          if (!resource) return false;
+          const name = asTrimmedString(resource?.name);
+          const normalized = normalizeOutputType(
+            asTrimmedString(resource?.format) || name,
           );
-          const existingResources = Array.isArray(dataset?.resources)
-            ? dataset.resources
-            : [];
-          const placeholderResource = existingResources.find((resource) => {
-            if (!resource) return false;
-            const name = asTrimmedString(resource?.name);
-            const normalized = normalizeOutputType(
-              asTrimmedString(resource?.format) || name,
-            );
-            if (name && name === targetName) return isPlaceholderResourceUrl(resource?.url);
-            return (
-              normalized === outputType && isPlaceholderResourceUrl(resource?.url)
-            );
-          });
-          if (placeholderResource?.id) {
-            await deleteDatasetResource(placeholderResource.id);
-          }
+          if (name && name === targetName)
+            return isPlaceholderResourceUrl(resource?.url);
+          return (
+            normalized === outputType && isPlaceholderResourceUrl(resource?.url)
+          );
+        });
+        if (placeholderResource?.id) {
+          await deleteDatasetResource(placeholderResource.id);
+        }
 
-          const uploadName = fileName || targetName;
-          const resource = await createDatasetResourceUpload({
-            fields: {
-              package_id: dataset?.id || projectId,
-              name: targetName,
-              description: formatOutputDescription(
-                outputType,
-                notes,
-                outputLink,
-                req.body?.publication_authors,
-              ),
-              format: outputType,
-              mimetype: mimeType,
-              size: String(buffer.length),
-            },
-            fileBuffer: buffer,
-            fileName: uploadName || "research-output.bin",
-            mimeType,
-          });
+        const uploadName = fileName || targetName;
+        const resource = await createDatasetResourceUpload({
+          fields: {
+            package_id: dataset?.id || projectId,
+            name: targetName,
+            description: formatOutputDescription(
+              outputType,
+              notes,
+              outputLink,
+              req.body?.publication_authors,
+            ),
+            format: outputType,
+            mimetype: mimeType,
+            size: String(buffer.length),
+          },
+          fileBuffer: buffer,
+          fileName: uploadName || "research-output.bin",
+          mimeType,
+        });
 
         return res.status(201).json({
           data: {
@@ -2696,6 +2729,7 @@ import { ckanAction } from "../../integrations/ckan/http/ckanAction.js";
     authMiddleware,
     async (req, res) => {
       try {
+        if (!requirePermission(req, res, "outputs.delete")) return;
         const resourceId = asTrimmedString(req.params?.resourceId);
         if (!resourceId) {
           return badRequest(res, "Resource id is required.");
