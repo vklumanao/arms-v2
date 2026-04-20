@@ -63,7 +63,7 @@ export function highlightText(text, terms) {
 
   return segments.map((segment, idx) =>
     idx % 2 === 1 ? (
-      <mark key={`${segment}-${idx}`} className="rounded bg-amber-100 px-0.5">
+      <mark key={`${segment}-${idx}`} className="rounded bg-zinc-100 px-0.5">
         {segment}
       </mark>
     ) : (
