@@ -17,7 +17,7 @@ export default function DashboardPanel({
           className={cn("border-b px-5 py-4", headerClassName)}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-500">
               {title}
             </CardTitle>
             {action ? <div className="text-sm">{action}</div> : null}
