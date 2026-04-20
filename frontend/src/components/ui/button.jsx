@@ -4,26 +4,25 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground hover:opacity-95 shadow-sm",
+        default: "bg-primary text-primary-foreground hover:bg-[#1E40AF] shadow-sm",
 
-        mono: "bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 shadow-sm",
+        mono: "bg-primary text-white hover:bg-[#1D4ED8] active:bg-[#1E3A8A] shadow-sm",
 
         destructive:
-          "bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 shadow-sm",
+          "bg-[#EF4444] text-white hover:bg-[#DC2626] active:bg-[#B91C1C] shadow-sm",
 
         outline:
-          "border border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200",
+          "border border-[#93C5FD] bg-white text-[#1E3A8A] hover:bg-[#EFF6FF] hover:border-[#60A5FA] active:bg-[#DBEAFE]",
 
-        secondary: "bg-zinc-100 text-black hover:bg-zinc-200",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-[#2563EB]",
 
-        ghost: "text-black hover:bg-zinc-100",
+        ghost: "text-[#1E3A8A] hover:bg-[#EFF6FF]",
 
-        link: "text-black underline-offset-4 hover:underline",
+        link: "text-[#1D4ED8] underline-offset-4 hover:text-[#1E3A8A] hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
