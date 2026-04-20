@@ -8,7 +8,10 @@ import {
 /**
  * Checks whether user role includes required permission.
  */
-function hasPermission(user, permission, ROLE_PERMISSIONS) {
+function hasPermission(user, permission, userHasPermission, ROLE_PERMISSIONS) {
+  if (typeof userHasPermission === "function") {
+    return userHasPermission(user, permission);
+  }
   const directPermissions = Array.isArray(user?.permissions)
     ? user.permissions
     : [];
@@ -60,6 +63,7 @@ export function registerAdminUserRoutes(app, deps) {
     listRoles,
     setUserRoles,
     logAuditEvent,
+    userHasPermission,
   } = deps;
 
   const formatFullName = ({ first_name, middle_initial, last_name }) => {
@@ -82,7 +86,14 @@ export function registerAdminUserRoutes(app, deps) {
    */
   function requireAdminUsersManage(req, res, next) {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    if (!hasPermission(req.user, "admin.users.manage", ROLE_PERMISSIONS)) {
+    if (
+      !hasPermission(
+        req.user,
+        "admin.users.manage",
+        userHasPermission,
+        ROLE_PERMISSIONS,
+      )
+    ) {
       return res.status(403).json({ error: "Forbidden" });
     }
     return next();
@@ -238,7 +249,13 @@ export function registerAdminUserRoutes(app, deps) {
         const roles = await listRoles({
           search: req.query?.search || "",
         });
-        return res.json({ data: roles || [] });
+        const assignable = (roles || []).filter(
+          (role) =>
+            String(role?.key || "")
+              .trim()
+              .toLowerCase() !== "center_chief",
+        );
+        return res.json({ data: assignable });
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to load role options."),
@@ -276,11 +293,19 @@ export function registerAdminUserRoutes(app, deps) {
     async (req, res) => {
       try {
         const targetUserId = String(req.params?.userId || "").trim();
-        if (!targetUserId) return res.status(400).json({ error: "User id is required." });
+        if (!targetUserId)
+          return res.status(400).json({ error: "User id is required." });
         const roleKey = String(req.body?.role || "")
           .trim()
           .toLowerCase();
-        if (!roleKey) return res.status(400).json({ error: "Role is required." });
+        if (!roleKey)
+          return res.status(400).json({ error: "Role is required." });
+        if (roleKey === "center_chief") {
+          return res.status(400).json({
+            error:
+              "Center Chief is assigned through Research Center management, not User Management.",
+          });
+        }
 
         const result = await setUserRoles({
           userId: targetUserId,
@@ -299,7 +324,8 @@ export function registerAdminUserRoutes(app, deps) {
           details: {
             target_user_id: targetUserId,
             new_role_key: roleKey,
-            resolved_legacy_role: result?.data?.role || null,
+            resolved_legacy_role:
+              result?.data?.legacy_role || result?.data?.role || null,
           },
         });
 
