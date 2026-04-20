@@ -498,7 +498,7 @@ export default function AdminAffiliatesModulePage() {
                     type="button"
                     variant="outline"
                     disabled={!filteredRows.length || Boolean(exportingType)}
-                    className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                    className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -506,17 +506,17 @@ export default function AdminAffiliatesModulePage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="bg-white border border-gray-300 shadow-md"
+                  className="bg-white border border-zinc-300 shadow-md"
                 >
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     onSelect={exportAsCsv}
                     disabled={!filteredRows.length || Boolean(exportingType)}
                   >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     onSelect={exportAsPdf}
                     disabled={!filteredRows.length || Boolean(exportingType)}
                   >
@@ -576,7 +576,7 @@ export default function AdminAffiliatesModulePage() {
             </p>
           </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-slate-50 p-1 lg:w-auto">
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-zinc-50 p-1 lg:w-auto">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="sm"
@@ -663,7 +663,7 @@ export default function AdminAffiliatesModulePage() {
                 "rounded-full border-black/20 px-4 text-xs",
                 quickFilter === chip.key
                   ? "bg-zinc-200 text-black hover:bg-zinc-200"
-                  : "bg-white text-black hover:bg-slate-50",
+                  : "bg-white text-black hover:bg-zinc-50",
               )}
               onClick={() => setQuickFilter(chip.key)}
             >
@@ -673,7 +673,7 @@ export default function AdminAffiliatesModulePage() {
                   "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                   quickFilter === chip.key
                     ? "bg-black/10 text-black"
-                    : "bg-slate-100 text-black",
+                    : "bg-zinc-100 text-black",
                 )}
               >
                 {chip.count}
@@ -820,23 +820,23 @@ export default function AdminAffiliatesModulePage() {
                       <div className="animate-pulse space-y-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
-                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-zinc-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-zinc-200/60" />
                           </div>
-                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-16 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-slate-200/70" />
-                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-20 rounded-full bg-zinc-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
                         </div>
                       </div>
                     </Card>
@@ -846,12 +846,12 @@ export default function AdminAffiliatesModulePage() {
             ) : (
               <div className="rounded-2xl border border-black/20 bg-white shadow-sm p-4">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  <div className="h-8 w-full rounded-lg bg-zinc-200/60" />
                   {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                     (_, index) => (
                       <div
                         key={`affiliate-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                        className="h-12 w-full rounded-lg bg-zinc-200/60"
                       />
                     ),
                   )}
@@ -861,7 +861,7 @@ export default function AdminAffiliatesModulePage() {
           ) : null}
 
           {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
+            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
               No affiliate records found.
             </div>
           ) : null}
@@ -872,7 +872,7 @@ export default function AdminAffiliatesModulePage() {
                 {pagination.items.map((row, index) => (
                   <Card
                     key={row.id || `${row.email}-${index}`}
-                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-zinc-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -987,9 +987,9 @@ export default function AdminAffiliatesModulePage() {
           ) : null}
 
           {!dataLoading && viewMode === "list" && filteredRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <Table>
-                <TableHeader className="bg-gray-50/80">
+                <TableHeader className="bg-zinc-50/80">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Name</TableHead>
@@ -1008,7 +1008,7 @@ export default function AdminAffiliatesModulePage() {
                 <TableBody>
                   {pagination.items.map((row, index) => (
                     <TableRow key={row.id}>
-                      <TableCell className="text-gray-600">
+                      <TableCell className="text-zinc-600">
                         {pagination.start + index + 1}
                       </TableCell>
 
@@ -1016,46 +1016,46 @@ export default function AdminAffiliatesModulePage() {
                         <p className="font-semibold text-black">
                           {row.full_name || "-"}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-zinc-500">
                           {row.email || "-"}
                         </p>
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {row.department || "-"}
                       </TableCell>
 
-                      <TableCell className="capitalize text-gray-700">
+                      <TableCell className="capitalize text-zinc-700">
                         {row.role || "-"}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {row.is_gs_faculty ? "Yes" : "No"}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {Number(row.research_project_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {Number(row.awards_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {Number(row.publication_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {Number(row.ip_count || 0)}
                       </TableCell>
 
-                      <TableCell className="text-gray-700">
+                      <TableCell className="text-zinc-700">
                         {Number(row.creative_work_count || 0)}
                       </TableCell>
 
@@ -1131,7 +1131,7 @@ export default function AdminAffiliatesModulePage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     First name
                   </span>
                   <Input
@@ -1145,7 +1145,7 @@ export default function AdminAffiliatesModulePage() {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     Middle initial
                   </span>
                   <Input
@@ -1160,7 +1160,7 @@ export default function AdminAffiliatesModulePage() {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     Last name
                   </span>
                   <Input
@@ -1175,7 +1175,7 @@ export default function AdminAffiliatesModulePage() {
                 </label>
               </div>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Department</span>
+                <span className="font-semibold text-zinc-700">Department</span>
                 <Select
                   value={editForm.ckan_group_id}
                   onValueChange={(value) => {
@@ -1204,7 +1204,7 @@ export default function AdminAffiliatesModulePage() {
                 </Select>
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Research Center
                 </span>
                 <Select
@@ -1230,7 +1230,7 @@ export default function AdminAffiliatesModulePage() {
                 </Select>
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Designation
                 </span>
                 <Input
@@ -1245,7 +1245,7 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Employment Status
                 </span>
                 <Select
@@ -1268,7 +1268,7 @@ export default function AdminAffiliatesModulePage() {
                 </Select>
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Google Scholar Link
                 </span>
                 <Input
@@ -1297,7 +1297,7 @@ export default function AdminAffiliatesModulePage() {
                 GS faculty
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Publications
                 </span>
                 <Input
@@ -1314,7 +1314,7 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Projects</span>
+                <span className="font-semibold text-zinc-700">Projects</span>
                 <Input
                   type="number"
                   min="0"
@@ -1332,7 +1332,7 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Creative Works
                 </span>
                 <Input
@@ -1352,7 +1352,7 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Awards</span>
+                <span className="font-semibold text-zinc-700">Awards</span>
                 <Input
                   type="number"
                   min="0"
@@ -1367,7 +1367,7 @@ export default function AdminAffiliatesModulePage() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">IPs</span>
+                <span className="font-semibold text-zinc-700">IPs</span>
                 <Input
                   type="number"
                   min="0"
