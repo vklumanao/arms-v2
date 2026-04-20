@@ -741,7 +741,7 @@ export default function AdminResearchCenterDetailPage() {
         {!isCenterChief ? (
           <Button
             variant="outline"
-            className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+            className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
             onClick={() => {
               clearProjectFilters();
               navigate("/admin/research-center");
@@ -754,7 +754,7 @@ export default function AdminResearchCenterDetailPage() {
 
         <Button
           variant="outline"
-          className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+          className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
           disabled={loading || !center}
           onClick={() => setEditOpen(true)}
         >
@@ -768,13 +768,13 @@ export default function AdminResearchCenterDetailPage() {
               variant="mono"
               type="button"
               onClick={() => setShowDeletePopover((prev) => !prev)}
-              className="bg-black text-white hover:bg-gray-800 active:bg-gray-900 opacity-70 hover:opacity-100"
+              className="bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 opacity-70 hover:opacity-100"
             >
               Delete
             </Button>
 
             {showDeletePopover ? (
-              <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-md border border-gray-300 bg-white p-3 text-xs text-gray-600 shadow-md">
+              <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-md border border-zinc-300 bg-white p-3 text-xs text-zinc-600 shadow-md">
                 <p className="font-semibold text-black">Deletion is blocked</p>
                 <p className="mt-1">
                   This center cannot be deleted while it has{" "}
@@ -796,7 +796,7 @@ export default function AdminResearchCenterDetailPage() {
         ) : (
           <Button
             variant="mono"
-            className="bg-black text-white hover:bg-gray-800 active:bg-gray-900"
+            className="bg-black text-white hover:bg-zinc-800 active:bg-zinc-900"
             disabled={deleting || loading}
             onClick={handleDelete}
           >
@@ -806,8 +806,8 @@ export default function AdminResearchCenterDetailPage() {
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="border-b border-gray-200 px-6 py-5">
-          <div className="flex flex-col gap-5 rounded-[var(--radius-lg)] border border-gray-200 bg-white p-6 md:flex-row md:items-center md:justify-between">
+        <CardHeader className="border-b border-zinc-200 px-6 py-5">
+          <div className="flex flex-col gap-5 rounded-[var(--radius-lg)] border border-zinc-200 bg-white p-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-5">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-lg font-bold uppercase text-white">
                 {initials}
@@ -818,36 +818,36 @@ export default function AdminResearchCenterDetailPage() {
                   {center?.name || "Research Center"}
                 </CardTitle>
 
-                <CardDescription className="text-sm text-gray-600">
+                <CardDescription className="text-sm text-zinc-600">
                   Code:{" "}
-                  <span className="font-mono font-semibold text-gray-800">
+                  <span className="font-mono font-semibold text-zinc-800">
                     {center?.code || "-"}
                   </span>{" "}
                   · Center Chief:{" "}
-                  <span className="font-semibold text-gray-800">
+                  <span className="font-semibold text-zinc-800">
                     {center?.centerChiefName || "-"}
                   </span>
                 </CardDescription>
 
                 <div className="flex flex-wrap gap-3">
-                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-gray-100 text-gray-800 border border-gray-200">
+                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-zinc-100 text-zinc-800 border border-zinc-200">
                     <Users className="h-5 w-5" />
                     {usage.profileCount} affiliates
                   </Badge>
 
-                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-gray-100 text-gray-800 border border-gray-200">
+                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-zinc-100 text-zinc-800 border border-zinc-200">
                     <FolderKanban className="h-5 w-5" />
                     {usage.projectCount} projects
                   </Badge>
 
-                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-white text-gray-800 border border-gray-300">
+                  <Badge className="gap-2 text-sm px-3 py-1.5 bg-white text-zinc-800 border border-zinc-300">
                     <Building2 className="h-5 w-5" />
                     {center?.agendaNames?.length || 0} agenda
                   </Badge>
 
                   {socialLink ? (
                     <a
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-100 hover:text-black"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:bg-zinc-100 hover:text-black"
                       href={socialLink}
                       target="_blank"
                       rel="noreferrer"
@@ -864,7 +864,7 @@ export default function AdminResearchCenterDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading research center...</p>
+            <p className="text-sm text-zinc-600">Loading research center...</p>
           ) : error ? (
             <EmptyState title="Unable to load" description={error} />
           ) : !center ? (
@@ -874,19 +874,19 @@ export default function AdminResearchCenterDetailPage() {
             />
           ) : (
             <>
-              <div className="rounded-lg border border-gray-200 bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500">
+              <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
                   Description
                 </p>
 
-                <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
                   Research Agenda
                 </p>
 
@@ -896,7 +896,7 @@ export default function AdminResearchCenterDetailPage() {
                       <button
                         key={agenda}
                         type="button"
-                        className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
+                        className="inline-flex items-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
                         onClick={() => applyAgendaFilter(agenda)}
                         title="Filter linked projects by this agenda"
                       >
@@ -905,27 +905,27 @@ export default function AdminResearchCenterDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-600">No agenda linked.</p>
+                  <p className="text-sm text-zinc-600">No agenda linked.</p>
                 )}
               </div>
 
               <Tabs value={activeTab} onValueChange={setTab}>
-                <TabsList className="text-sm border border-gray-200 bg-white">
+                <TabsList className="text-sm border border-zinc-200 bg-white">
                   <TabsTrigger
                     value="overview"
-                    className="text-sm data-[state=active]:bg-gray-100"
+                    className="text-sm data-[state=active]:bg-zinc-100"
                   >
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
                     value="affiliates"
-                    className="text-sm data-[state=active]:bg-gray-100"
+                    className="text-sm data-[state=active]:bg-zinc-100"
                   >
                     Affiliates
                   </TabsTrigger>
                   <TabsTrigger
                     value="projects"
-                    className="text-sm data-[state=active]:bg-gray-100"
+                    className="text-sm data-[state=active]:bg-zinc-100"
                   >
                     Projects
                   </TabsTrigger>
@@ -952,16 +952,16 @@ export default function AdminResearchCenterDetailPage() {
                     ].map((item) => (
                       <Card
                         key={item.label}
-                        className="border border-gray-200 bg-white"
+                        className="border border-zinc-200 bg-white"
                       >
                         <CardContent className="p-5">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500">
+                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
                             {item.label}
                           </p>
                           <p className="mt-1 text-2xl font-bold text-black">
                             {item.value}
                           </p>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p className="mt-1 text-sm text-zinc-600">
                             {item.sub}
                           </p>
                         </CardContent>
@@ -971,12 +971,12 @@ export default function AdminResearchCenterDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="affiliates" className="mt-4 space-y-3">
-                  <Card className="overflow-hidden border border-gray-200 bg-white">
-                    <CardHeader className="border-b border-gray-200 px-6 py-5">
+                  <Card className="overflow-hidden border border-zinc-200 bg-white">
+                    <CardHeader className="border-b border-zinc-200 px-6 py-5">
                       <CardTitle className="text-base font-bold text-black">
                         Linked Affiliates
                       </CardTitle>
-                      <CardDescription className="text-sm text-gray-600">
+                      <CardDescription className="text-sm text-zinc-600">
                         Showing {links.profiles.length} affiliate(s).
                       </CardDescription>
                     </CardHeader>
@@ -994,7 +994,7 @@ export default function AdminResearchCenterDetailPage() {
                           <div className="overflow-x-auto">
                             <Table className="min-w-[980px]">
                               <TableHeader>
-                                <TableRow className="bg-gray-50">
+                                <TableRow className="bg-zinc-50">
                                   <TableHead>No.</TableHead>
                                   <TableHead>Full Name</TableHead>
                                   <TableHead>Email</TableHead>
@@ -1020,7 +1020,7 @@ export default function AdminResearchCenterDetailPage() {
                                   return (
                                     <TableRow
                                       key={row?.id || `${idx}`}
-                                      className="hover:bg-gray-50"
+                                      className="hover:bg-zinc-50"
                                     >
                                       <TableCell>
                                         {(affiliatesPage - 1) * PAGE_SIZE +
@@ -1030,13 +1030,13 @@ export default function AdminResearchCenterDetailPage() {
                                       <TableCell className="font-medium text-black">
                                         {row?.full_name || row?.name || "-"}
                                       </TableCell>
-                                      <TableCell className="text-gray-700">
+                                      <TableCell className="text-zinc-700">
                                         {row?.email || "-"}
                                       </TableCell>
-                                      <TableCell className="capitalize text-gray-700">
+                                      <TableCell className="capitalize text-zinc-700">
                                         {row?.role || "-"}
                                       </TableCell>
-                                      <TableCell className="text-gray-700">
+                                      <TableCell className="text-zinc-700">
                                         {row?.department || "-"}
                                       </TableCell>
                                       <TableCell className="text-right">
@@ -1044,7 +1044,7 @@ export default function AdminResearchCenterDetailPage() {
                                           type="button"
                                           variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8 text-gray-600 hover:bg-gray-100"
+                                          className="h-8 w-8 text-zinc-600 hover:bg-zinc-100"
                                           disabled={isChief}
                                           onClick={() => setUnlinkTarget(row)}
                                         >
@@ -1063,7 +1063,7 @@ export default function AdminResearchCenterDetailPage() {
                           page={affiliatesPage}
                           totalPages={affiliatesTotalPages}
                           onPageChange={setAffiliatesPage}
-                          className="border-t border-gray-200"
+                          className="border-t border-zinc-200"
                         />
                       </>
                     )}
@@ -1077,23 +1077,23 @@ export default function AdminResearchCenterDetailPage() {
                       description="No linked projects found for this research center."
                     />
                   ) : (
-                    <Card className="overflow-hidden border border-gray-200 bg-white">
-                      <CardHeader className="border-b border-gray-200 px-6 py-5">
+                    <Card className="overflow-hidden border border-zinc-200 bg-white">
+                      <CardHeader className="border-b border-zinc-200 px-6 py-5">
                         <CardTitle className="text-base font-bold text-black">
                           Linked Projects
                         </CardTitle>
 
-                        <CardDescription className="text-sm text-gray-600">
+                        <CardDescription className="text-sm text-zinc-600">
                           Showing {filteredProjects.length} project(s).
                         </CardDescription>
 
                         {agendaFilter && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                            <span className="rounded-full border border-gray-300 bg-white px-2.5 py-1 font-semibold text-gray-800">
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+                            <span className="rounded-full border border-zinc-300 bg-white px-2.5 py-1 font-semibold text-zinc-800">
                               Agenda: {agendaFilter}
                             </span>
                             <button
-                              className="text-xs font-semibold text-gray-500 hover:text-black"
+                              className="text-xs font-semibold text-zinc-500 hover:text-black"
                               onClick={() => setAgendaFilter("")}
                             >
                               Clear agenda
@@ -1103,7 +1103,7 @@ export default function AdminResearchCenterDetailPage() {
 
                         <div className="flex flex-wrap items-center gap-2 mt-4">
                           <Input
-                            className="w-[180px] h-7 px-2 text-xs border-gray-300 focus:border-gray-400 focus:ring-0"
+                            className="w-[180px] h-7 px-2 text-xs border-zinc-300 focus:border-zinc-400 focus:ring-0"
                             placeholder="Search projects"
                             value={projectSearch}
                             onChange={(e) => setProjectSearch(e.target.value)}
@@ -1113,7 +1113,7 @@ export default function AdminResearchCenterDetailPage() {
                             value={projectStatus}
                             onValueChange={setProjectStatus}
                           >
-                            <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-gray-300 focus:border-gray-400 focus:ring-0">
+                            <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-zinc-300 focus:border-zinc-400 focus:ring-0">
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1129,7 +1129,7 @@ export default function AdminResearchCenterDetailPage() {
                             value={projectYear}
                             onValueChange={setProjectYear}
                           >
-                            <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-gray-300 focus:border-gray-400 focus:ring-0">
+                            <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-zinc-300 focus:border-zinc-400 focus:ring-0">
                               <SelectValue placeholder="Year" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1143,7 +1143,7 @@ export default function AdminResearchCenterDetailPage() {
 
                           <Button
                             variant="outline"
-                            className="h-7 px-2.5 text-xs border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-black transition"
+                            className="h-7 px-2.5 text-xs border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:text-black transition"
                             onClick={() => {
                               setProjectSearch("");
                               setProjectStatus("all");
@@ -1160,7 +1160,7 @@ export default function AdminResearchCenterDetailPage() {
                         <div className="overflow-x-auto">
                           <Table className="min-w-[980px]">
                             <TableHeader>
-                              <TableRow className="bg-gray-50">
+                              <TableRow className="bg-zinc-50">
                                 <TableHead>No.</TableHead>
                                 <TableHead>Project Title</TableHead>
                                 <TableHead>Status</TableHead>
@@ -1178,7 +1178,7 @@ export default function AdminResearchCenterDetailPage() {
                               {paginatedProjects.map((row, idx) => (
                                 <TableRow
                                   key={row?.id || `${idx}`}
-                                  className="hover:bg-gray-50"
+                                  className="hover:bg-zinc-50"
                                 >
                                   <TableCell>
                                     {(projectsPage - 1) * PAGE_SIZE + idx + 1}
@@ -1186,26 +1186,26 @@ export default function AdminResearchCenterDetailPage() {
                                   <TableCell className="font-medium text-black">
                                     {row?.title || "-"}
                                   </TableCell>
-                                  <TableCell className="capitalize text-gray-700">
+                                  <TableCell className="capitalize text-zinc-700">
                                     {row?.status || "-"}
                                   </TableCell>
-                                  <TableCell className="text-gray-700">
+                                  <TableCell className="text-zinc-700">
                                     {row?.year || "-"}
                                   </TableCell>
-                                  <TableCell className="text-gray-700">
+                                  <TableCell className="text-zinc-700">
                                     {row?.lead_researcher || "-"}
                                   </TableCell>
-                                  <TableCell className="text-gray-700">
+                                  <TableCell className="text-zinc-700">
                                     {row?.department_name || "-"}
                                   </TableCell>
-                                  <TableCell className="text-gray-700">
+                                  <TableCell className="text-zinc-700">
                                     {row?.agenda_name || "-"}
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-gray-600 hover:bg-gray-100"
+                                      className="h-8 w-8 text-zinc-600 hover:bg-zinc-100"
                                       onClick={() => goToProject(row)}
                                     >
                                       <Eye className="h-4 w-4" />
@@ -1222,7 +1222,7 @@ export default function AdminResearchCenterDetailPage() {
                         page={projectsPage}
                         totalPages={projectsTotalPages}
                         onPageChange={setProjectsPage}
-                        className="border-t border-gray-200"
+                        className="border-t border-zinc-200"
                       />
                     </Card>
                   )}
@@ -1251,7 +1251,7 @@ export default function AdminResearchCenterDetailPage() {
           <div className="grid gap-8 md:grid-cols-2">
             <div className="space-y-4">
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Name</span>
+                <span className="font-semibold text-zinc-700">Name</span>
                 <Input
                   value={editForm.name}
                   onChange={(event) =>
@@ -1267,7 +1267,7 @@ export default function AdminResearchCenterDetailPage() {
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Code</span>
+                <span className="font-semibold text-zinc-700">Code</span>
                 <Input
                   value={editForm.code}
                   onChange={(event) =>
@@ -1283,7 +1283,7 @@ export default function AdminResearchCenterDetailPage() {
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Center Chief
                 </span>
                 <Select
@@ -1313,7 +1313,7 @@ export default function AdminResearchCenterDetailPage() {
 
             <div className="space-y-4">
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Description
                 </span>
                 <Textarea
@@ -1330,7 +1330,7 @@ export default function AdminResearchCenterDetailPage() {
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Social Media Link
                 </span>
                 <Input
@@ -1343,13 +1343,13 @@ export default function AdminResearchCenterDetailPage() {
                   }
                   placeholder="https://facebook.com/your-center"
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-zinc-500">
                   Optional. Shown in the center overview.
                 </p>
               </label>
 
               <div className="space-y-2 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Research Agendas
                 </span>
 
@@ -1358,15 +1358,15 @@ export default function AdminResearchCenterDetailPage() {
                     <button
                       key={agenda}
                       type="button"
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-muted"
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-muted"
                       onClick={() => removeEditAgenda(agenda)}
                     >
                       <span className="truncate">{agenda}</span>
-                      <X className="h-3.5 w-3.5 text-slate-500" />
+                      <X className="h-3.5 w-3.5 text-zinc-500" />
                     </button>
                   ))}
                   {editForm.researchAgendas.length === 0 && (
-                    <p className="text-xs text-slate-500">No agendas yet.</p>
+                    <p className="text-xs text-zinc-500">No agendas yet.</p>
                   )}
                 </div>
 
