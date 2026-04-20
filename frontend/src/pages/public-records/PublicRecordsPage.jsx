@@ -51,18 +51,18 @@ const normalizeLabel = (value) => {
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
   if (key === "completed") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
   if (key === "ongoing") {
-    return "border-blue-200 bg-blue-50 text-blue-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
   if (key === "proposal") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
   if (key === "rejected") {
-    return "border-rose-200 bg-rose-50 text-rose-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  return "border-zinc-200 bg-zinc-50 text-zinc-700";
 };
 
 const classificationBadgeClass = (classification) => {
@@ -70,12 +70,12 @@ const classificationBadgeClass = (classification) => {
     .trim()
     .toLowerCase();
   if (key === "academic") {
-    return "border-indigo-200 bg-indigo-50 text-indigo-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
   if (key === "industry") {
-    return "border-purple-200 bg-purple-50 text-purple-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
   }
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  return "border-zinc-200 bg-zinc-50 text-zinc-700";
 };
 
 export default function PublicRecordsPage() {
@@ -389,10 +389,10 @@ export default function PublicRecordsPage() {
         }
       }}
     >
-      <Card className="h-full flex flex-col border border-slate-200 bg-white transition-all">
+      <Card className="h-full flex flex-col border border-zinc-200 bg-white transition-all">
         <CardHeader className="pb-2 min-h-[70px] flex justify-between">
           <div className="flex items-start justify-between gap-3">
-            <CardTitle className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">
+            <CardTitle className="text-base font-semibold text-zinc-900 leading-snug line-clamp-2">
               {center.name}
             </CardTitle>
 
@@ -400,7 +400,7 @@ export default function PublicRecordsPage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 shrink-0 text-slate-400 group-hover:text-slate-900"
+              className="h-8 w-8 shrink-0 text-zinc-400 group-hover:text-zinc-900"
               onClick={(event) => {
                 event.stopPropagation();
                 openCenterDetails(center.id);
@@ -415,38 +415,38 @@ export default function PublicRecordsPage() {
           <div className="flex-1" />
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="rounded-xl border border-zinc-200 bg-white p-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                   Projects
                 </span>
-                <FolderKanban className="h-4 w-4 text-slate-700" />
+                <FolderKanban className="h-4 w-4 text-zinc-700" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">
+              <p className="mt-2 text-xl font-bold text-zinc-900">
                 {center.count}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="rounded-xl border border-zinc-200 bg-white p-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                   Affiliates
                 </span>
-                <Users className="h-4 w-4 text-slate-700" />
+                <Users className="h-4 w-4 text-zinc-700" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">
+              <p className="mt-2 text-xl font-bold text-zinc-900">
                 {center.researcherCount}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="rounded-xl border border-zinc-200 bg-white p-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                   Publications
                 </span>
-                <FileText className="h-4 w-4 text-slate-700" />
+                <FileText className="h-4 w-4 text-zinc-700" />
               </div>
-              <p className="mt-2 text-xl font-bold text-slate-900">
+              <p className="mt-2 text-xl font-bold text-zinc-900">
                 {center.publicationCount}
               </p>
             </div>
@@ -466,7 +466,7 @@ export default function PublicRecordsPage() {
       <section>
         {centerCards.length === 0 ? (
           <Card className="h-full">
-            <CardContent className="p-5 text-sm text-slate-600">
+            <CardContent className="p-5 text-sm text-zinc-600">
               No public records have been assigned to research centers yet.
             </CardContent>
           </Card>
@@ -502,7 +502,7 @@ export default function PublicRecordsPage() {
         <aside className="public-records-filter h-fit">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-500">
                 Refine Search
               </CardTitle>
             </CardHeader>
@@ -624,7 +624,7 @@ export default function PublicRecordsPage() {
               </Button>
 
               <div className="space-y-2 pt-2">
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">
                   Presets
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -636,7 +636,7 @@ export default function PublicRecordsPage() {
                       size="sm"
                       className={
                         activePreset === preset.id
-                          ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
+                          ? "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-700"
                           : ""
                       }
                       onClick={() => applyPreset(preset.id)}
@@ -654,10 +654,10 @@ export default function PublicRecordsPage() {
           <Card>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">
                   Scholarly Catalog
                 </p>
-                <p className="text-xl font-semibold text-slate-900">
+                <p className="text-xl font-semibold text-zinc-900">
                   {loading
                     ? "Loading records..."
                     : `${filtered.rows.length} Research Records`}
@@ -693,13 +693,13 @@ export default function PublicRecordsPage() {
 
           {loading ? (
             <Card>
-              <CardContent className="p-5 text-sm text-slate-600">
+              <CardContent className="p-5 text-sm text-zinc-600">
                 Loading records...
               </CardContent>
             </Card>
           ) : filtered.rows.length === 0 ? (
             <Card>
-              <CardContent className="p-5 text-sm text-slate-600">
+              <CardContent className="p-5 text-sm text-zinc-600">
                 No public records match the current filters.
               </CardContent>
             </Card>
@@ -714,7 +714,7 @@ export default function PublicRecordsPage() {
                 return (
                   <Card
                     key={record.id}
-                    className="group cursor-pointer border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300"
+                    className="group cursor-pointer border border-zinc-200/80 bg-white shadow-sm transition hover:border-zinc-300"
                     role="button"
                     tabIndex={0}
                     onClick={() => openDetails(record.id)}
@@ -728,25 +728,25 @@ export default function PublicRecordsPage() {
                     <CardContent className="p-5">
                       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                            <span className="font-semibold uppercase tracking-[0.12em] text-slate-400">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                            <span className="font-semibold uppercase tracking-[0.12em] text-zinc-400">
                               {record.year || "-"}
                             </span>
-                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span className="h-1 w-1 rounded-full bg-zinc-300" />
                             <span>
                               {centerById[record.research_center_id] ||
                                 "Unknown Center"}
                             </span>
-                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span className="h-1 w-1 rounded-full bg-zinc-300" />
                             <span>
                               {departmentById[record.department_id] ||
                                 "Unknown Department"}
                             </span>
                           </div>
-                          <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                          <h3 className="mt-2 text-lg font-semibold text-zinc-900">
                             {highlightText(record.title, filtered.terms)}
                           </h3>
-                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-700">
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-700">
                             {record.abstract
                               ? highlightText(record.abstract, filtered.terms)
                               : "No abstract available for this record."}
