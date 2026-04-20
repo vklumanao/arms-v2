@@ -60,13 +60,13 @@ export default function StepOutputs({
 
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Expected research outputs
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-              <span className="font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+              <span className="font-semibold uppercase tracking-[0.08em] text-zinc-500">
                 Quick add:
               </span>
 
@@ -93,7 +93,7 @@ export default function StepOutputs({
               </div>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-zinc-500">
               Rows are finalized in database when you submit/save revision.
             </p>
 
@@ -115,7 +115,7 @@ export default function StepOutputs({
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="px-3 py-4 text-center text-xs text-slate-500"
+                        className="px-3 py-4 text-center text-xs text-zinc-500"
                       >
                         No expected outputs added yet.
                       </TableCell>
@@ -145,7 +145,7 @@ export default function StepOutputs({
                           }}
                           className="cursor-move"
                         >
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-zinc-400">
                             <GripVertical className="h-4 w-4" />
                           </TableCell>
 
@@ -157,29 +157,29 @@ export default function StepOutputs({
                               "-"}
 
                             {row.specific_output && (
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-zinc-500">
                                 Specific: {row.specific_output}
                               </p>
                             )}
 
                             {row.publication_authors && (
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-zinc-500">
                                 Proponents: {row.publication_authors}
                               </p>
                             )}
                           </TableCell>
 
-                          <TableCell className="text-slate-600">
+                          <TableCell className="text-zinc-600">
                             {row.notes || "-"}
                           </TableCell>
 
-                          <TableCell className="break-all text-slate-600">
+                          <TableCell className="break-all text-zinc-600">
                             {row.output_link ? (
                               <a
                                 href={row.output_link}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-blue-600 hover:underline"
+                                className="text-zinc-600 hover:underline"
                               >
                                 {row.output_link}
                               </a>
@@ -188,7 +188,7 @@ export default function StepOutputs({
                             )}
                           </TableCell>
 
-                          <TableCell className="break-all text-slate-600">
+                          <TableCell className="break-all text-zinc-600">
                             {row.file_name || row.file?.name || "-"}
                           </TableCell>
 
@@ -241,7 +241,7 @@ export default function StepOutputs({
 
       <div className="lg:col-span-2 lg:max-w-2xl">
         <label className="block space-y-1 text-sm">
-          <span className="font-semibold text-slate-700">
+          <span className="font-semibold text-zinc-700">
             Other Documents (optional)
           </span>
           <Input
