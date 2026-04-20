@@ -1,4 +1,4 @@
-﻿import { apiFetch } from "@/services/httpClient";
+import { apiFetch } from "@/services/httpClient";
 
 export const PERMISSIONS = {
   DASHBOARD_VIEW: "dashboard.view",
@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   ADMIN_CONTROLS_MANAGE: "admin.controls.manage",
   ADMIN_USERS_MANAGE: "admin.users.manage",
   ADMIN_AFFILIATES_MANAGE: "admin.affiliates.manage",
+  ADMIN_RBAC_MANAGE: "admin.rbac.manage",
 };
 
 export const PERMISSION_LABELS = {
@@ -20,6 +21,7 @@ export const PERMISSION_LABELS = {
   [PERMISSIONS.ADMIN_CONTROLS_MANAGE]: "Admin Controls: Manage",
   [PERMISSIONS.ADMIN_USERS_MANAGE]: "Admin Users: Manage",
   [PERMISSIONS.ADMIN_AFFILIATES_MANAGE]: "Admin Affiliates: Manage",
+  [PERMISSIONS.ADMIN_RBAC_MANAGE]: "Access Control (RBAC): Manage",
 };
 
 export const ROLE_LABELS = {
@@ -39,10 +41,13 @@ const STUDENT_PERMISSIONS = [
 const FACULTY_PERMISSIONS = [...STUDENT_PERMISSIONS];
 
 const ADMIN_PERMISSIONS = [
-  ...STUDENT_PERMISSIONS,
-  PERMISSIONS.ADMIN_CONTROLS_MANAGE,
-  PERMISSIONS.ADMIN_USERS_MANAGE,
-  PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+  ...new Set([
+    ...STUDENT_PERMISSIONS,
+    PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+    PERMISSIONS.ADMIN_USERS_MANAGE,
+    PERMISSIONS.ADMIN_AFFILIATES_MANAGE,
+    PERMISSIONS.ADMIN_RBAC_MANAGE,
+  ]),
 ];
 
 export const ROLE_PERMISSIONS = {
@@ -58,29 +63,47 @@ function isBrowser() {
 }
 
 function cloneRoleMap(roleMap) {
-  return Object.keys(ROLE_PERMISSIONS).reduce((acc, role) => {
-    acc[role] = [...(roleMap[role] || [])];
+  const source = roleMap && typeof roleMap === "object" ? roleMap : {};
+  return Object.keys(source).reduce((acc, role) => {
+    acc[role] = [...(source[role] || [])];
     return acc;
   }, {});
 }
 
 function normalizePermissionList(list) {
-  const validPermissions = new Set(Object.values(PERMISSIONS));
   return [
     ...new Set(
-      (list || []).filter(
-        (permission) =>
-          typeof permission === "string" && validPermissions.has(permission),
-      ),
+      (Array.isArray(list) ? list : [])
+        .map((permission) => String(permission || "").trim())
+        .filter(Boolean),
     ),
   ];
 }
 
 function normalizeRolePermissionMap(raw) {
+  const input = raw && typeof raw === "object" ? raw : {};
+  const roles = [
+    ...new Set([...Object.keys(ROLE_PERMISSIONS), ...Object.keys(input)]),
+  ];
   const next = {};
-  Object.keys(ROLE_PERMISSIONS).forEach((role) => {
-    next[role] = normalizePermissionList(raw?.[role] || []);
+
+  roles.forEach((role) => {
+    const key = String(role || "")
+      .trim()
+      .toLowerCase();
+    if (!key) return;
+    const fallback = ROLE_PERMISSIONS[key] || [];
+    next[key] = normalizePermissionList(input?.[key] || fallback);
   });
+
+  if (!Array.isArray(next.admin)) next.admin = [];
+  if (!next.admin.includes(PERMISSIONS.ADMIN_CONTROLS_MANAGE)) {
+    next.admin.push(PERMISSIONS.ADMIN_CONTROLS_MANAGE);
+  }
+  if (!next.admin.includes(PERMISSIONS.ADMIN_RBAC_MANAGE)) {
+    next.admin.push(PERMISSIONS.ADMIN_RBAC_MANAGE);
+  }
+
   return next;
 }
 
@@ -102,9 +125,19 @@ export function getPermissionsForRole(role) {
   return rolePermissionCache[normalizedRole] || [];
 }
 
-export function hasPermission(role, permission) {
+export function getPermissionsForRoles(roles) {
+  const values = Array.isArray(roles) ? roles : [roles];
+  const set = new Set();
+  values.forEach((role) => {
+    getPermissionsForRole(role).forEach((permission) => set.add(permission));
+  });
+  return Array.from(set);
+}
+
+export function hasPermission(roleOrRoles, permission) {
   if (!permission) return true;
-  return getPermissionsForRole(role).includes(permission);
+  const permissions = getPermissionsForRoles(roleOrRoles);
+  return permissions.includes(permission);
 }
 
 export function getRolePermissionMap() {
@@ -120,10 +153,9 @@ export async function syncRolePermissionMapFromServer() {
       allowUnauthorized: true,
     });
     const nextMap = normalizeRolePermissionMap(payload?.map || {});
-    const hasAny =
-      nextMap.student.length > 0 ||
-      nextMap.faculty.length > 0 ||
-      nextMap.admin.length > 0;
+    const hasAny = Object.values(nextMap).some(
+      (permissions) => Array.isArray(permissions) && permissions.length > 0,
+    );
     setRolePermissionCache(hasAny ? nextMap : ROLE_PERMISSIONS);
     return getRolePermissionMap();
   })();
@@ -137,20 +169,20 @@ export async function syncRolePermissionMapFromServer() {
 
 export async function saveRolePermissionMap(nextMap) {
   const normalized = normalizeRolePermissionMap(nextMap);
-  await apiFetch("/permissions/role-map", {
+  const payload = await apiFetch("/permissions/role-map", {
     method: "PUT",
     body: JSON.stringify({
       map: normalized,
     }),
   });
-  setRolePermissionCache(normalized);
+  setRolePermissionCache(payload?.map || normalized);
   return getRolePermissionMap();
 }
 
 export async function resetRolePermissionMapToDefaults() {
-  await apiFetch("/permissions/role-map/reset", {
+  const payload = await apiFetch("/permissions/role-map/reset", {
     method: "POST",
   });
-  setRolePermissionCache(ROLE_PERMISSIONS);
+  setRolePermissionCache(payload?.map || ROLE_PERMISSIONS);
   return getRolePermissionMap();
 }
