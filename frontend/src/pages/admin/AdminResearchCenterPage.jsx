@@ -1217,9 +1217,9 @@ export default function AdminResearchCenterPage() {
           <Card>
             <CardContent className="p-6">
               <div className="animate-pulse space-y-3">
-                <div className="h-4 w-44 rounded-full bg-slate-200/70" />
-                <div className="h-3 w-72 rounded-full bg-slate-200/60" />
-                <div className="h-36 w-full rounded-2xl bg-slate-200/50" />
+                <div className="h-4 w-44 rounded-full bg-zinc-200/70" />
+                <div className="h-3 w-72 rounded-full bg-zinc-200/60" />
+                <div className="h-36 w-full rounded-2xl bg-zinc-200/50" />
               </div>
             </CardContent>
           </Card>
@@ -1339,11 +1339,11 @@ export default function AdminResearchCenterPage() {
                   {scopedLinksLoading ? (
                     <div className="p-4">
                       <div className="animate-pulse space-y-3">
-                        <div className="h-4 w-40 rounded-full bg-slate-200/70" />
+                        <div className="h-4 w-40 rounded-full bg-zinc-200/70" />
                         {Array.from({ length: 6 }).map((_, index) => (
                           <div
                             key={`scoped-member-skeleton-${index}`}
-                            className="h-10 w-full rounded-lg bg-slate-200/60"
+                            className="h-10 w-full rounded-lg bg-zinc-200/60"
                           />
                         ))}
                       </div>
@@ -1509,11 +1509,11 @@ export default function AdminResearchCenterPage() {
                   {scopedLinksLoading ? (
                     <div className="p-4">
                       <div className="animate-pulse space-y-3">
-                        <div className="h-4 w-44 rounded-full bg-slate-200/70" />
+                        <div className="h-4 w-44 rounded-full bg-zinc-200/70" />
                         {Array.from({ length: 5 }).map((_, index) => (
                           <div
                             key={`scoped-project-skeleton-${index}`}
-                            className="h-10 w-full rounded-lg bg-slate-200/60"
+                            className="h-10 w-full rounded-lg bg-zinc-200/60"
                           />
                         ))}
                       </div>
@@ -1637,7 +1637,7 @@ export default function AdminResearchCenterPage() {
                   <Button
                     variant="outline"
                     disabled={exporting || filteredRows.length === 0}
-                    className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                    className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -1646,10 +1646,10 @@ export default function AdminResearchCenterPage() {
 
                 <DropdownMenuContent
                   align="end"
-                  className="bg-white border border-gray-300 shadow-md"
+                  className="bg-white border border-zinc-300 shadow-md"
                 >
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-500"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-500"
                     onSelect={() =>
                       exportRowsAsCsv(sortedFilteredRows, "filtered")
                     }
@@ -1658,7 +1658,7 @@ export default function AdminResearchCenterPage() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     onSelect={() =>
                       exportRowsAsPdf(sortedFilteredRows, "filtered")
                     }
@@ -1695,7 +1695,7 @@ export default function AdminResearchCenterPage() {
             </p>
           </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-slate-50 p-1 lg:w-auto">
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-zinc-50 p-1 lg:w-auto">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="sm"
@@ -1757,7 +1757,7 @@ export default function AdminResearchCenterPage() {
                   "rounded-full border-black/20 px-4 text-xs",
                   quickFilter === chip.key
                     ? "bg-zinc-200 text-black hover:bg-zinc-200"
-                    : "bg-white text-black hover:bg-slate-50",
+                    : "bg-white text-black hover:bg-zinc-50",
                 )}
                 onClick={() => setQuickFilter(chip.key)}
               >
@@ -1767,7 +1767,7 @@ export default function AdminResearchCenterPage() {
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
                       ? "bg-black/10 text-black"
-                      : "bg-slate-100 text-black",
+                      : "bg-zinc-100 text-black",
                   )}
                 >
                   {chip.count}
@@ -1837,24 +1837,24 @@ export default function AdminResearchCenterPage() {
                       <div className="animate-pulse space-y-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
-                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-zinc-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-zinc-200/60" />
                           </div>
-                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-16 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-slate-200/70" />
-                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-20 rounded-full bg-zinc-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
                         </div>
                       </div>
                     </Card>
@@ -1864,12 +1864,12 @@ export default function AdminResearchCenterPage() {
             ) : (
               <div className="rounded-2xl border border-black/20 bg-white shadow-sm p-4">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  <div className="h-8 w-full rounded-lg bg-zinc-200/60" />
                   {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                     (_, index) => (
                       <div
                         key={`center-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                        className="h-12 w-full rounded-lg bg-zinc-200/60"
                       />
                     ),
                   )}
@@ -1888,7 +1888,7 @@ export default function AdminResearchCenterPage() {
                 {paginatedRows.map((row, index) => (
                   <Card
                     key={`${row.tag}-${row.id}`}
-                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50"
+                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-zinc-50/50"
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -1900,7 +1900,7 @@ export default function AdminResearchCenterPage() {
                           <h3 className="mt-1 truncate text-base font-bold text-black">
                             {row.name}
                           </h3>
-                          <p className="mt-1 truncate text-sm text-gray-600">
+                          <p className="mt-1 truncate text-sm text-zinc-600">
                             Center Chief:{" "}
                             <span className="font-semibold text-black">
                               {row.centerChiefName || "-"}
@@ -2031,7 +2031,7 @@ export default function AdminResearchCenterPage() {
               <div className="rounded-2xl border border-black/20 bg-white shadow-sm motion-safe:transition-all motion-safe:duration-300">
                 <div className="max-h-[78vh] overflow-auto">
                   <Table className="min-w-[980px]">
-                    <TableHeader className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
+                    <TableHeader className="sticky top-0 z-10 bg-zinc-50/95 backdrop-blur">
                       <TableRow>
                         <TableHead>No.</TableHead>
                         <TableHead>
@@ -2277,18 +2277,18 @@ export default function AdminResearchCenterPage() {
                   <div className="animate-pulse border-b border-black/20 px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="w-full space-y-2">
-                        <div className="h-3 w-24 rounded-full bg-slate-200/80" />
-                        <div className="h-5 w-2/3 rounded-full bg-slate-200/70" />
-                        <div className="h-3 w-28 rounded-full bg-slate-200/60" />
+                        <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
+                        <div className="h-5 w-2/3 rounded-full bg-zinc-200/70" />
+                        <div className="h-3 w-28 rounded-full bg-zinc-200/60" />
                       </div>
-                      <div className="h-8 w-10 rounded-md bg-slate-200/70" />
+                      <div className="h-8 w-10 rounded-md bg-zinc-200/70" />
                     </div>
                   </div>
                   <CardContent className="p-5">
                     <div className="animate-pulse space-y-2">
-                      <div className="h-8 rounded-md bg-slate-200/60" />
-                      <div className="h-8 rounded-md bg-slate-200/60" />
-                      <div className="h-8 rounded-md bg-slate-200/60" />
+                      <div className="h-8 rounded-md bg-zinc-200/60" />
+                      <div className="h-8 rounded-md bg-zinc-200/60" />
+                      <div className="h-8 rounded-md bg-zinc-200/60" />
                     </div>
                   </CardContent>
                 </Card>
@@ -2352,7 +2352,7 @@ export default function AdminResearchCenterPage() {
                             className={cn(
                               "flex items-center justify-between rounded-md border border-black/20 px-3 py-2 text-xs font-medium text-black",
                               agendaName === "No agendum linked"
-                                ? "bg-slate-50 text-black"
+                                ? "bg-zinc-50 text-black"
                                 : "bg-white",
                             )}
                             title={agendaName}
@@ -2364,7 +2364,7 @@ export default function AdminResearchCenterPage() {
                               className={cn(
                                 "h-2 w-2 rounded-full",
                                 agendaName === "No agendum linked"
-                                  ? "bg-slate-300"
+                                  ? "bg-zinc-300"
                                   : "bg-black",
                               )}
                             />
@@ -2413,7 +2413,7 @@ export default function AdminResearchCenterPage() {
           </span>
         }
         message={
-          <p className="text-sm leading-relaxed text-gray-600">
+          <p className="text-sm leading-relaxed text-zinc-600">
             {deleteGuard.message}
           </p>
         }
@@ -2424,9 +2424,9 @@ export default function AdminResearchCenterPage() {
         onConfirm={
           deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete
         }
-        className="bg-white text-black border border-gray-300 shadow-md"
-        cancelButtonClassName="border border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
-        confirmButtonClassName="bg-black text-white hover:bg-gray-800 active:bg-gray-900 disabled:bg-gray-300 disabled:text-gray-500"
+        className="bg-white text-black border border-zinc-300 shadow-md"
+        cancelButtonClassName="border border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
+        confirmButtonClassName="bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 disabled:bg-zinc-300 disabled:text-zinc-500"
       />
 
       {editModalOpen ? (
@@ -2435,32 +2435,32 @@ export default function AdminResearchCenterPage() {
           onOpenChange={(open) => !open && cancelEdit()}
         >
           <DialogContent
-            className="max-w-3xl bg-white text-black border border-gray-300 shadow-lg"
+            className="max-w-3xl bg-white text-black border border-zinc-300 shadow-lg"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
               <DialogTitle className="text-lg font-semibold">
                 Edit Research Center
               </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600">
+              <DialogDescription className="text-sm text-zinc-600">
                 Update all research center information.
               </DialogDescription>
             </DialogHeader>
 
             {editLoading ? (
-              <p className="mt-4 text-sm text-gray-600">
+              <p className="mt-4 text-sm text-zinc-600">
                 Loading center details...
               </p>
             ) : (
               <>
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Research Center Name *
                     </label>
                     <Input
                       className={`bg-white border ${
-                        editErrors.name ? "border-gray-900" : "border-gray-300"
+                        editErrors.name ? "border-zinc-900" : "border-zinc-300"
                       } focus:border-black`}
                       value={editing.name}
                       onChange={(event) => {
@@ -2472,17 +2472,17 @@ export default function AdminResearchCenterPage() {
                       }}
                     />
                     {editErrors.name && (
-                      <p className="text-xs text-gray-800">{editErrors.name}</p>
+                      <p className="text-xs text-zinc-800">{editErrors.name}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Code *
                     </label>
                     <Input
                       className={`bg-white border ${
-                        editErrors.code ? "border-gray-900" : "border-gray-300"
+                        editErrors.code ? "border-zinc-900" : "border-zinc-300"
                       } focus:border-black`}
                       value={editing.code}
                       onChange={(event) => {
@@ -2496,12 +2496,12 @@ export default function AdminResearchCenterPage() {
                       }}
                     />
                     {editErrors.code && (
-                      <p className="text-xs text-gray-800">{editErrors.code}</p>
+                      <p className="text-xs text-zinc-800">{editErrors.code}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Center Chief *
                     </label>
                     <Select
@@ -2520,13 +2520,13 @@ export default function AdminResearchCenterPage() {
                       <SelectTrigger
                         className={`bg-white border ${
                           editErrors.centerChiefId
-                            ? "border-gray-900"
-                            : "border-gray-300"
+                            ? "border-zinc-900"
+                            : "border-zinc-300"
                         } focus:border-black`}
                       >
                         <SelectValue placeholder="Select Center Chief" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-300">
+                      <SelectContent className="bg-white border border-zinc-300">
                         {centerChiefUsers.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name}
@@ -2536,14 +2536,14 @@ export default function AdminResearchCenterPage() {
                     </Select>
 
                     {editErrors.centerChiefId && (
-                      <p className="text-xs text-gray-800">
+                      <p className="text-xs text-zinc-800">
                         {editErrors.centerChiefId}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Social Media
                     </label>
 
@@ -2557,10 +2557,10 @@ export default function AdminResearchCenterPage() {
                           }))
                         }
                       >
-                        <SelectTrigger className="bg-white border border-gray-300 focus:border-black">
+                        <SelectTrigger className="bg-white border border-zinc-300 focus:border-black">
                           <SelectValue placeholder="Select platform" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white border border-gray-300">
+                        <SelectContent className="bg-white border border-zinc-300">
                           {SOCIAL_MEDIA_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -2571,7 +2571,7 @@ export default function AdminResearchCenterPage() {
 
                       <div className="sm:col-span-2">
                         <Input
-                          className="bg-white border border-gray-300 focus:border-black"
+                          className="bg-white border border-zinc-300 focus:border-black"
                           value={editing.socialMediaLink}
                           placeholder={getSocialPlaceholder(
                             editing.socialMediaPlatform,
@@ -2586,18 +2586,18 @@ export default function AdminResearchCenterPage() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-zinc-500">
                       Optional. Displayed on the center detail page.
                     </p>
                   </div>
 
                   {/* Description */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Description
                     </label>
                     <Textarea
-                      className="bg-white border border-gray-300 focus:border-black"
+                      className="bg-white border border-zinc-300 focus:border-black"
                       value={editing.description}
                       placeholder="Optional short description..."
                       onChange={(event) =>
@@ -2608,13 +2608,13 @@ export default function AdminResearchCenterPage() {
                       }
                       rows={4}
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-zinc-500">
                       Shown on the research center detail page.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                       Research Agendum *
                     </label>
 
@@ -2622,8 +2622,8 @@ export default function AdminResearchCenterPage() {
                       <Input
                         className={`bg-white border ${
                           editErrors.researchAgendas
-                            ? "border-gray-900"
-                            : "border-gray-300"
+                            ? "border-zinc-900"
+                            : "border-zinc-300"
                         } focus:border-black`}
                         placeholder="Add research agendum"
                         value={editing.agendaInput}
@@ -2642,7 +2642,7 @@ export default function AdminResearchCenterPage() {
                       />
                       <Button
                         variant="outline"
-                        className="border-gray-300 text-black hover:bg-gray-100"
+                        className="border-zinc-300 text-black hover:bg-zinc-100"
                         type="button"
                         onClick={addEditAgenda}
                       >
@@ -2656,7 +2656,7 @@ export default function AdminResearchCenterPage() {
                           <button
                             key={agenda}
                             type="button"
-                            className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs hover:bg-gray-200"
+                            className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs hover:bg-zinc-200"
                             onClick={() => removeEditAgenda(agenda)}
                           >
                             {agenda} ×
@@ -2664,13 +2664,13 @@ export default function AdminResearchCenterPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-zinc-500">
                         Required. Add at least one research agendum.
                       </p>
                     )}
 
                     {editErrors.researchAgendas && (
-                      <p className="text-xs text-gray-800">
+                      <p className="text-xs text-zinc-800">
                         {editErrors.researchAgendas}
                       </p>
                     )}
@@ -2682,7 +2682,7 @@ export default function AdminResearchCenterPage() {
             <div className="mt-6 flex justify-end gap-2">
               <Button
                 variant="outline"
-                className="border-gray-300 text-black hover:bg-gray-100"
+                className="border-zinc-300 text-black hover:bg-zinc-100"
                 onClick={cancelEdit}
                 disabled={actionLoading}
               >
@@ -2690,7 +2690,7 @@ export default function AdminResearchCenterPage() {
               </Button>
 
               <Button
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-black text-white hover:bg-zinc-800"
                 onClick={saveEdit}
                 disabled={actionLoading || editLoading || !isEditFormValid}
               >
@@ -2712,17 +2712,17 @@ export default function AdminResearchCenterPage() {
           }}
         >
           <DialogContent
-            className="max-w-3xl mx-auto bg-white text-black border border-gray-300 shadow-lg"
+            className="max-w-3xl mx-auto bg-white text-black border border-zinc-300 shadow-lg"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
               <DialogTitle className="text-lg font-semibold text-black">
                 Create Research Center
               </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600">
+              <DialogDescription className="text-sm text-zinc-600">
                 Add a new research center to the research center registry.
               </DialogDescription>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="text-xs text-zinc-500 mb-3">
                 Fields marked with <span className="text-black">*</span> are
                 required.
               </p>
@@ -2730,12 +2730,12 @@ export default function AdminResearchCenterPage() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Research Center Name <span>*</span>
                 </label>
                 <Input
                   className={`bg-white border ${
-                    createErrors.name ? "border-gray-900" : "border-gray-300"
+                    createErrors.name ? "border-zinc-900" : "border-zinc-300"
                   } focus:ring-0 focus:border-black`}
                   placeholder="e.g. Center for Human-Computer Interaction"
                   value={newResearchCenterName}
@@ -2746,17 +2746,17 @@ export default function AdminResearchCenterPage() {
                   required
                 />
                 {createErrors.name && (
-                  <p className="text-xs text-gray-800">{createErrors.name}</p>
+                  <p className="text-xs text-zinc-800">{createErrors.name}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Code <span>*</span>
                 </label>
                 <Input
                   className={`bg-white border ${
-                    createErrors.code ? "border-gray-900" : "border-gray-300"
+                    createErrors.code ? "border-zinc-900" : "border-zinc-300"
                   } focus:border-black`}
                   placeholder="e.g. CHCI"
                   value={newResearchCenterCode}
@@ -2769,12 +2769,12 @@ export default function AdminResearchCenterPage() {
                   required
                 />
                 {createErrors.code && (
-                  <p className="text-xs text-gray-800">{createErrors.code}</p>
+                  <p className="text-xs text-zinc-800">{createErrors.code}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Center Chief <span>*</span>
                 </label>
                 <Select
@@ -2790,13 +2790,13 @@ export default function AdminResearchCenterPage() {
                   <SelectTrigger
                     className={`bg-white border ${
                       createErrors.centerChiefId
-                        ? "border-gray-900"
-                        : "border-gray-300"
+                        ? "border-zinc-900"
+                        : "border-zinc-300"
                     } focus:border-black`}
                   >
                     <SelectValue placeholder="Select Center Chief" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-300">
+                  <SelectContent className="bg-white border border-zinc-300">
                     {centerChiefUsers.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.name}
@@ -2806,16 +2806,16 @@ export default function AdminResearchCenterPage() {
                 </Select>
 
                 {createErrors.centerChiefId && (
-                  <p className="text-xs text-gray-800">
+                  <p className="text-xs text-zinc-800">
                     {createErrors.centerChiefId}
                   </p>
                 )}
 
-                <p className="text-xs text-gray-500">Select from users.</p>
+                <p className="text-xs text-zinc-500">Select from users.</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Social Media
                 </label>
 
@@ -2824,10 +2824,10 @@ export default function AdminResearchCenterPage() {
                     value={newResearchCenterSocialMediaPlatform}
                     onValueChange={setNewResearchCenterSocialMediaPlatform}
                   >
-                    <SelectTrigger className="bg-white border border-gray-300 focus:border-black">
+                    <SelectTrigger className="bg-white border border-zinc-300 focus:border-black">
                       <SelectValue placeholder="Select platform" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-300">
+                    <SelectContent className="bg-white border border-zinc-300">
                       {SOCIAL_MEDIA_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -2838,7 +2838,7 @@ export default function AdminResearchCenterPage() {
 
                   <div className="sm:col-span-2">
                     <Input
-                      className="bg-white border border-gray-300 focus:border-black"
+                      className="bg-white border border-zinc-300 focus:border-black"
                       value={newResearchCenterSocialMediaLink}
                       placeholder={getSocialPlaceholder(
                         newResearchCenterSocialMediaPlatform,
@@ -2850,17 +2850,17 @@ export default function AdminResearchCenterPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-zinc-500">
                   Optional. You can add this later in Edit Research Center.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Description <span>*</span>
                 </label>
                 <Textarea
-                  className="bg-white border border-gray-300 focus:border-black"
+                  className="bg-white border border-zinc-300 focus:border-black"
                   value={newResearchCenterDescription}
                   placeholder="Optional short description..."
                   onChange={(event) =>
@@ -2868,13 +2868,13 @@ export default function AdminResearchCenterPage() {
                   }
                   rows={4}
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-zinc-500">
                   This will appear on the research center detail page.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   Research Agendum <span>*</span>
                 </label>
 
@@ -2882,8 +2882,8 @@ export default function AdminResearchCenterPage() {
                   <Input
                     className={`bg-white border ${
                       createErrors.researchAgendas
-                        ? "border-gray-900"
-                        : "border-gray-300"
+                        ? "border-zinc-900"
+                        : "border-zinc-300"
                     } focus:border-black`}
                     placeholder="Add research agendum"
                     value={newAgendaInput}
@@ -2897,7 +2897,7 @@ export default function AdminResearchCenterPage() {
                   />
                   <Button
                     variant="outline"
-                    className="border-gray-300 text-black hover:bg-gray-100"
+                    className="border-zinc-300 text-black hover:bg-zinc-100"
                     type="button"
                     onClick={addResearchAgenda}
                   >
@@ -2911,7 +2911,7 @@ export default function AdminResearchCenterPage() {
                       <button
                         key={agenda}
                         type="button"
-                        className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs hover:bg-gray-200"
+                        className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs hover:bg-zinc-200"
                         onClick={() => removeResearchAgenda(agenda)}
                       >
                         {agenda} ×
@@ -2919,13 +2919,13 @@ export default function AdminResearchCenterPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-zinc-500">
                     Required. Add at least one research agendum.
                   </p>
                 )}
 
                 {createErrors.researchAgendas && (
-                  <p className="text-xs text-gray-800">
+                  <p className="text-xs text-zinc-800">
                     {createErrors.researchAgendas}
                   </p>
                 )}
@@ -2935,7 +2935,7 @@ export default function AdminResearchCenterPage() {
             <div className="mt-6 flex justify-end gap-2">
               <Button
                 variant="outline"
-                className="border-gray-300 text-black hover:bg-gray-100"
+                className="border-zinc-300 text-black hover:bg-zinc-100"
                 onClick={() => {
                   setCreateModalOpen(false);
                   setCreateErrors({});
@@ -2946,7 +2946,7 @@ export default function AdminResearchCenterPage() {
               </Button>
 
               <Button
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-black text-white hover:bg-zinc-800"
                 onClick={createResearchCenter}
                 disabled={createLoading || !isCreateFormValid}
               >
