@@ -54,10 +54,12 @@ export default function PermissionRoute({ permission, children }) {
   if (profileLoading) return <AppLoading label="Loading permissions..." />;
   if (permissionsLoading) return <AppLoading label="Loading permissions..." />;
   if (!profile) return <Navigate to="/unauthorized" replace />;
-  if (!hasPermission(profile.role, permission)) {
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role;
+  if (!hasPermission(roleKeys, permission)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
   return children || <Outlet />;
 }
-
