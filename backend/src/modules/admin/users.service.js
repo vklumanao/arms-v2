@@ -131,6 +131,12 @@ async function findUserByIdRaw(userId) {
  * - Exposes only fields required by admin UI.
  */
 function toAdminUserRow(row) {
+  const roles =
+    Array.isArray(row?.roles)
+      ? row.roles
+      : typeof row?.roles === "string"
+        ? JSON.parse(row.roles || "[]")
+        : [];
   return {
     id: row.id,
     full_name: row.full_name || null,
@@ -146,6 +152,7 @@ function toAdminUserRow(row) {
     updated_at: row.updated_at || null,
     last_sign_in_at: null,
     email_confirmed_at: null,
+    roles,
   };
 }
 
@@ -159,21 +166,37 @@ export async function listAdminUsers() {
   const result = await query(
     `
     SELECT
-      id,
-      full_name,
-      email,
-      role,
-      department,
-      ckan_org_id,
-      ckan_group_id,
-      ckan_username,
-      ckan_user_id,
-      is_active,
-      created_at,
-      updated_at
-    FROM users
-    WHERE role IN ('faculty', 'student')
-    ORDER BY created_at DESC, email ASC
+      u.id,
+      u.full_name,
+      u.email,
+      u.role,
+      u.department,
+      u.ckan_org_id,
+      u.ckan_group_id,
+      u.ckan_username,
+      u.ckan_user_id,
+      u.is_active,
+      u.created_at,
+      u.updated_at,
+      COALESCE(
+        JSON_AGG(
+          DISTINCT JSONB_BUILD_OBJECT(
+            'id', r.id,
+            'key', r.key,
+            'name', r.name,
+            'is_system', r.is_system,
+            'is_critical', r.is_critical,
+            'sort_order', r.sort_order
+          )
+        ) FILTER (WHERE r.id IS NOT NULL),
+        '[]'::json
+      ) AS roles
+    FROM users u
+    LEFT JOIN user_roles ur ON ur.user_id = u.id
+    LEFT JOIN roles r ON r.id = ur.role_id
+    WHERE u.role IN ('faculty', 'student')
+    GROUP BY u.id
+    ORDER BY u.created_at DESC, u.email ASC
     `,
   );
   return (result.rows || []).map(toAdminUserRow);
