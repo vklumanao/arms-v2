@@ -551,14 +551,14 @@ export default function AwardsRecognitionPage() {
 
         <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
           <CardContent className="space-y-3 p-5">
-            <p className="text-sm text-amber-900">
+            <p className="text-sm text-zinc-900">
               Please set your Organization (Research Center) in My Profile first
               before accessing Awards and Recognition.
             </p>
             <Button
               asChild
               variant="outline"
-              className="border-gray-300 bg-white text-black hover:bg-gray-100"
+              className="border-zinc-300 bg-white text-black hover:bg-zinc-100"
             >
               <Link to="/profile">Go to My Profile</Link>
             </Button>
@@ -595,7 +595,7 @@ export default function AwardsRecognitionPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                      className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
                       disabled={!filteredRows.length || Boolean(exportingType)}
                     >
                       <Download className="h-4 w-4" />
@@ -604,17 +604,17 @@ export default function AwardsRecognitionPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="bg-white border border-gray-300 shadow-md"
+                    className="bg-white border border-zinc-300 shadow-md"
                   >
                     <DropdownMenuItem
                       onSelect={exportAsCsv}
-                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                      className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     >
                       {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={exportAsPdf}
-                      className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                      className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     >
                       {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                     </DropdownMenuItem>
@@ -664,18 +664,18 @@ export default function AwardsRecognitionPage() {
 
       {isCenterChief ? (
         <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-          <CardHeader className="border-b border-gray-200 px-6 py-5">
+          <CardHeader className="border-b border-zinc-200 px-6 py-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
                 <CardTitle className="text-base font-semibold text-black">
                   Managed Center Awards and Recognition
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-zinc-600">
                   Showing {centerChiefFilteredRows.length} record(s) from your
                   managed research center.
                 </CardDescription>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-zinc-600">
                 {centerChiefFilteredRows.length} row(s).
               </p>
             </div>
@@ -745,7 +745,7 @@ export default function AwardsRecognitionPage() {
                       "rounded-full border-black/20 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
                         ? "bg-black text-white hover:bg-black"
-                        : "bg-white text-black hover:bg-gray-100",
+                        : "bg-white text-black hover:bg-zinc-100",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
                   >
@@ -755,7 +755,7 @@ export default function AwardsRecognitionPage() {
                         "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         centerChiefQuickFilter === chip.key
                           ? "bg-white/20 text-white"
-                          : "bg-slate-100 text-black",
+                          : "bg-zinc-100 text-black",
                       )}
                     >
                       {chip.count}
@@ -802,34 +802,34 @@ export default function AwardsRecognitionPage() {
           </CardContent>
           {centerChiefLoading ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
                 Loading managed center awards...
               </div>
             </CardContent>
           ) : centerChiefError ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-red-200 bg-red-50 p-6 text-center text-sm text-red-800">
+              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-800">
                 {centerChiefError}
               </div>
             </CardContent>
           ) : sortedCenterChiefRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
                 No awards and recognition records found for your managed
                 research center.
               </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
                 No managed center awards match your search.
               </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-gray-50/80 text-gray-600">
+                  <TableHeader className="bg-zinc-50/80 text-zinc-600">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Title of Research/Creative Work</TableHead>
@@ -878,7 +878,7 @@ export default function AwardsRecognitionPage() {
                                   row.supporting_mov_file_name ||
                                   "Download MOV file"
                                 }
-                                className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-gray-100"
+                                className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-100"
                               >
                                 <Download className="h-3.5 w-3.5" />
                                 Download MOV
@@ -886,7 +886,7 @@ export default function AwardsRecognitionPage() {
                             ) : null}
                             {!row.supporting_movs &&
                             !row.supporting_mov_resource_id ? (
-                              <span className="text-xs text-gray-600">
+                              <span className="text-xs text-zinc-600">
                                 No attachment
                               </span>
                             ) : null}
@@ -898,7 +898,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
                                 asChild
                               >
                                 <Link
@@ -915,7 +915,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                              className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
                               onClick={() => openEdit(row)}
                               aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Edit"
@@ -925,7 +925,7 @@ export default function AwardsRecognitionPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 text-zinc-700 hover:bg-zinc-50"
                               onClick={() => setDeleteTarget(row)}
                               aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                               title="Delete"
@@ -959,17 +959,17 @@ export default function AwardsRecognitionPage() {
       ) : null}
 
       <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-        <CardHeader className="border-b border-gray-200 px-6 py-5">
+        <CardHeader className="border-b border-zinc-200 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
               <CardTitle className="text-base font-semibold text-black">
                 Awards and Recognition Records
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-zinc-600">
                 Showing {filteredRows.length} record(s).
               </CardDescription>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-zinc-600">
               {filteredRows.length} row(s).
             </p>
           </div>
@@ -1040,7 +1040,7 @@ export default function AwardsRecognitionPage() {
                     "rounded-full border-black/20 px-4 text-xs",
                     recordsQuickFilter === chip.key
                       ? "bg-black text-white hover:bg-black"
-                      : "bg-white text-black hover:bg-gray-100",
+                      : "bg-white text-black hover:bg-zinc-100",
                   )}
                   onClick={() => setRecordsQuickFilter(chip.key)}
                 >
@@ -1050,7 +1050,7 @@ export default function AwardsRecognitionPage() {
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       recordsQuickFilter === chip.key
                         ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-black",
+                        : "bg-zinc-100 text-black",
                     )}
                   >
                     {chip.count}
@@ -1097,7 +1097,7 @@ export default function AwardsRecognitionPage() {
         </CardContent>
         {filteredRows.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
+            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
               {canLoadOwnAwards && loading
                 ? "Loading award records..."
                 : loadError ||
@@ -1106,9 +1106,9 @@ export default function AwardsRecognitionPage() {
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-gray-50/80 text-gray-600">
+                <TableHeader className="bg-zinc-50/80 text-zinc-600">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Title of Research/Creative Work</TableHead>
@@ -1157,7 +1157,7 @@ export default function AwardsRecognitionPage() {
                                 row.supporting_mov_file_name ||
                                 "Download MOV file"
                               }
-                              className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-gray-100"
+                              className="inline-flex items-center gap-1 rounded-full border border-black/20 bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-100"
                             >
                               <Download className="h-3.5 w-3.5" />
                               Download MOV
@@ -1165,7 +1165,7 @@ export default function AwardsRecognitionPage() {
                           ) : null}
                           {!row.supporting_movs &&
                           !row.supporting_mov_resource_id ? (
-                            <span className="text-xs text-gray-600">
+                            <span className="text-xs text-zinc-600">
                               No attachment
                             </span>
                           ) : null}
@@ -1191,7 +1191,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                    className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
                                     asChild
                                   >
                                     <Link
@@ -1208,7 +1208,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                  className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
                                   onClick={() => openEdit(row)}
                                   aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Edit"
@@ -1218,7 +1218,7 @@ export default function AwardsRecognitionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-red-700 hover:bg-red-50"
+                                  className="h-8 w-8 text-zinc-700 hover:bg-zinc-50"
                                   onClick={() => setDeleteTarget(row)}
                                   aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                                   title="Delete"
