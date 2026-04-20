@@ -222,6 +222,11 @@ function clearSessionCookie(res) {
   res.setHeader("Set-Cookie", buildSessionCookie("", 0));
 }
 
+const CENTER_CHIEF_PERMISSION_EXTRAS = [
+  "affiliates.view",
+  "affiliates.edit",
+];
+
 async function resolveCenterChiefContext(user) {
   const base = {
     ...(user || {}),
@@ -229,14 +234,7 @@ async function resolveCenterChiefContext(user) {
     managed_center_id: null,
     managed_center_name: null,
   };
-  if (
-    !user ||
-    String(user?.role || "")
-      .trim()
-      .toLowerCase() !== "faculty"
-  ) {
-    return base;
-  }
+  if (!user) return base;
 
   const candidateIds = new Set(
     [user?.ckan_user_id, user?.id]
@@ -278,7 +276,17 @@ async function buildAuthenticatedUser(user) {
     roles: context.roles || [],
     permissions: context.permissions || [],
   };
-  return resolveCenterChiefContext(withRbac);
+  const enriched = await resolveCenterChiefContext(withRbac);
+  if (!enriched?.is_center_chief) return enriched;
+  return {
+    ...enriched,
+    permissions: Array.from(
+      new Set([
+        ...(Array.isArray(enriched.permissions) ? enriched.permissions : []),
+        ...CENTER_CHIEF_PERMISSION_EXTRAS,
+      ]),
+    ),
+  };
 }
 
 /**
@@ -748,6 +756,7 @@ registerSubmissionsRoutes(app, {
   updateDatasetResource,
   deleteDatasetResource,
   getExtraByKey,
+  userHasPermission,
 });
 
 registerAwardsRoutes(app, {
@@ -770,6 +779,7 @@ registerAwardsRoutes(app, {
   listUsers,
   listOrganizationMembers,
   findUserByEmail,
+  userHasPermission,
 });
 
 registerAdminRoutes(app, {
@@ -807,6 +817,7 @@ registerAdminRoutes(app, {
   findUserByEmail,
   findUserById,
   updateUser,
+  userHasPermission,
 });
 
 registerAdminUserRoutes(app, {
@@ -827,6 +838,7 @@ registerAdminUserRoutes(app, {
   listRoles,
   setUserRoles,
   logAuditEvent,
+  userHasPermission,
 });
 
 registerAdminRbacRoutes(app, {
