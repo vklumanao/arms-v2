@@ -40,7 +40,7 @@ export async function runMigrations() {
       full_name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('student','faculty','admin')),
+      role TEXT NOT NULL,
       department TEXT,
       ckan_org_id TEXT,
       ckan_group_id TEXT,
@@ -141,6 +141,32 @@ export async function runMigrations() {
     $$;
     `,
   );
+
+  await query(`
+    DO $$
+    DECLARE
+      rec RECORD;
+    BEGIN
+      -- Allow flexible/custom role keys by removing legacy enum-like role CHECK constraints.
+      -- Handles both default generated name (users_role_check) and any custom equivalent.
+      FOR rec IN
+        SELECT c.conname
+        FROM pg_constraint c
+        JOIN pg_class t ON t.oid = c.conrelid
+        JOIN pg_namespace n ON n.oid = t.relnamespace
+        WHERE n.nspname = CURRENT_SCHEMA()
+          AND t.relname = 'users'
+          AND c.contype = 'c'
+          AND pg_get_constraintdef(c.oid) ILIKE '%role%'
+          AND pg_get_constraintdef(c.oid) ILIKE '%student%'
+          AND pg_get_constraintdef(c.oid) ILIKE '%faculty%'
+          AND pg_get_constraintdef(c.oid) ILIKE '%admin%'
+      LOOP
+        EXECUTE format('ALTER TABLE users DROP CONSTRAINT IF EXISTS %I', rec.conname);
+      END LOOP;
+    END
+    $$;
+  `);
 
   // Reset token table is used by auth password recovery flow.
   await query(`
