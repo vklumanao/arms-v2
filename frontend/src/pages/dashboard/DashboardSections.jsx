@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,9 +107,9 @@ const getChartColors = (count) =>
   Array.from({ length: count }, (_, index) => getChartColor(index));
 
 const PANEL_CARD_CLASS =
-  "min-h-[320px] md:min-h-[420px] min-w-0 flex flex-col border-slate-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
+  "min-h-[320px] md:min-h-[420px] min-w-0 flex flex-col border-zinc-200/70 bg-white/90 shadow-[0_18px_40px_-32px_rgba(15,76,129,0.65)]";
 const PANEL_HEADER_CLASS =
-  "bg-gradient-to-r from-slate-50 via-white to-slate-100 px-4 sm:px-5 py-3 sm:py-4";
+  "bg-gradient-to-r from-zinc-50 via-white to-zinc-100 px-4 sm:px-5 py-3 sm:py-4";
 const PANEL_BODY_CLASS = "p-4 sm:p-6 flex-1";
 
 ChartJS.register(
@@ -126,31 +126,31 @@ ChartJS.register(
 
 function SummaryCard({ label, value, hint, Icon = null }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-slate-300/70 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-zinc-300/70 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 break-words">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600 break-words">
           {label}
         </p>
         {Icon ? (
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/70 bg-white text-slate-700 shadow-sm transition group-hover:border-slate-300/80">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200/70 bg-white text-zinc-700 shadow-sm transition group-hover:border-zinc-300/80">
             <Icon className="h-4 w-4" aria-hidden="true" />
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-3xl font-semibold leading-none text-slate-900">
+      <p className="mt-2 text-3xl font-semibold leading-none text-zinc-900">
         {value}
       </p>
-      {hint ? <p className="mt-2 text-xs text-slate-600">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-xs text-zinc-600">{hint}</p> : null}
     </div>
   );
 }
 
 function SummaryCardSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm">
-      <div className="h-3 w-24 rounded-full bg-slate-200/70" />
-      <div className="mt-3 h-8 w-20 rounded-full bg-slate-200/70" />
-      <div className="mt-3 h-3 w-32 rounded-full bg-slate-200/60" />
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/90 p-4 shadow-sm">
+      <div className="h-3 w-24 rounded-full bg-zinc-200/70" />
+      <div className="mt-3 h-8 w-20 rounded-full bg-zinc-200/70" />
+      <div className="mt-3 h-3 w-32 rounded-full bg-zinc-200/60" />
     </div>
   );
 }
@@ -163,12 +163,12 @@ function LoadingBlock({
 }) {
   return (
     <div role="status" aria-live="polite" className="space-y-3">
-      <div className={`h-4 ${headerWidthClass} rounded-full bg-slate-200/70`} />
+      <div className={`h-4 ${headerWidthClass} rounded-full bg-zinc-200/70`} />
       <div
-        className={`h-3 ${subHeaderWidthClass} rounded-full bg-slate-200/70`}
+        className={`h-3 ${subHeaderWidthClass} rounded-full bg-zinc-200/70`}
       />
       <div
-        className={`${chartHeightClass} w-full rounded-2xl bg-slate-200/50`}
+        className={`${chartHeightClass} w-full rounded-2xl bg-zinc-200/50`}
       />
       <span className="sr-only">{label}</span>
     </div>
@@ -178,11 +178,11 @@ function LoadingBlock({
 function LoadingListBlock({ label = "Loading recent activity...", rows = 3 }) {
   return (
     <div role="status" aria-live="polite" className="space-y-3">
-      <div className="h-4 w-32 rounded-full bg-slate-200/70" />
+      <div className="h-4 w-32 rounded-full bg-zinc-200/70" />
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={`loading-row-${index}`}
-          className="h-12 w-full rounded-xl bg-slate-200/60"
+          className="h-12 w-full rounded-xl bg-zinc-200/60"
         />
       ))}
       <span className="sr-only">{label}</span>
@@ -196,7 +196,7 @@ function SortableHeader({ label, sortKey, sortConfig, onChange }) {
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+      className="inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500"
       onClick={() => {
         onChange((prev) => {
           const nextDirection =
@@ -222,18 +222,18 @@ function SortableHeader({ label, sortKey, sortConfig, onChange }) {
 
 function ActivityItem({ colorClass, title, meta, secondary }) {
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+    <div className="rounded-xl border border-zinc-200/70 bg-white/80 px-4 py-3">
       <div className="flex items-start gap-3">
         <span className={`mt-1 h-2 w-2 rounded-full ${colorClass}`} />
         <div className="min-w-0">
-          <p className="font-medium text-slate-900 break-words">{title}</p>
+          <p className="font-medium text-zinc-900 break-words">{title}</p>
           {secondary ? (
-            <p className="mt-1 text-xs text-slate-600 break-words">
+            <p className="mt-1 text-xs text-zinc-600 break-words">
               {secondary}
             </p>
           ) : null}
           {meta ? (
-            <p className="mt-1 text-xs text-slate-500 break-words">{meta}</p>
+            <p className="mt-1 text-xs text-zinc-500 break-words">{meta}</p>
           ) : null}
         </div>
       </div>
@@ -252,7 +252,7 @@ export function DashboardSection({
 }) {
   const toneClass =
     tone === "contrast"
-      ? "bg-gradient-to-br from-slate-50 via-white to-slate-100"
+      ? "bg-gradient-to-br from-zinc-50 via-white to-zinc-100"
       : "bg-white/80";
   if (!framed) {
     return (
@@ -260,15 +260,15 @@ export function DashboardSection({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             {eyebrow ? (
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 {eyebrow}
               </p>
             ) : null}
-            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+            <h2 className="mt-1 text-xl font-semibold text-zinc-900">
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 max-w-3xl text-sm text-slate-600">
+              <p className="mt-1 max-w-3xl text-sm text-zinc-600">
                 {description}
               </p>
             ) : null}
@@ -284,13 +284,13 @@ export function DashboardSection({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="mt-1 text-xl font-semibold text-slate-900">{title}</h2>
+          <h2 className="mt-1 text-xl font-semibold text-zinc-900">{title}</h2>
           {description ? (
-            <p className="mt-1 max-w-3xl text-sm text-slate-600">
+            <p className="mt-1 max-w-3xl text-sm text-zinc-600">
               {description}
             </p>
           ) : null}
@@ -298,7 +298,7 @@ export function DashboardSection({
         {action ? <div>{action}</div> : null}
       </div>
       <div
-        className={`rounded-3xl border border-slate-200/70 ${toneClass} p-4 sm:p-5 shadow-sm`}
+        className={`rounded-3xl border border-zinc-200/70 ${toneClass} p-4 sm:p-5 shadow-sm`}
       >
         {children}
       </div>
@@ -329,12 +329,12 @@ export function DashboardHeader({
     !isAdmin && greetingName ? `Good to see you, ${greetingName}` : title;
 
   return (
-    <div className="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-4 sm:p-6 shadow-sm">
+    <div className="rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-zinc-50 via-white to-zinc-100 p-4 sm:p-6 shadow-sm">
       <PageHeader
         title={resolvedTitle}
         actions={
-          <div className="flex flex-col items-start gap-1.5 text-xs text-slate-500 md:items-end">
-            <div className="flex flex-wrap items-center gap-3 text-slate-400">
+          <div className="flex flex-col items-start gap-1.5 text-xs text-zinc-500 md:items-end">
+            <div className="flex flex-wrap items-center gap-3 text-zinc-400">
               <span>
                 {lastUpdatedLabel
                   ? `Updated ${lastUpdatedLabel}`
@@ -342,13 +342,13 @@ export function DashboardHeader({
               </span>
 
               {!isAdmin && (
-                <span className="font-medium text-slate-500">My scope</span>
+                <span className="font-medium text-zinc-500">My scope</span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-slate-500">
+            <div className="flex flex-wrap items-center gap-3 text-zinc-500">
               {activeFilterCount > 0 && (
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-zinc-700">
                   {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
                 </span>
               )}
@@ -367,7 +367,7 @@ export function DashboardHeader({
                     filters?.startDate
                       ? formatDateLabel(filters.startDate)
                       : "--"
-                  } — ${
+                  } ? ${
                     filters?.endDate ? formatDateLabel(filters.endDate) : "--"
                   }`}
                 </span>
@@ -376,7 +376,7 @@ export function DashboardHeader({
           </div>
         }
       />
-      <p className="mt-2 max-w-3xl text-sm text-slate-600">
+      <p className="mt-2 max-w-3xl text-sm text-zinc-600">
         <span className="sm:hidden">
           Quick overview of key research metrics.
         </span>
@@ -395,7 +395,7 @@ export function DashboardHeader({
               {showFilters ? "Hide filters" : "Filters"}
             </Button>
             {activeFilterCount ? (
-              <span className="rounded-full border border-slate-200/70 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <span className="rounded-full border border-zinc-200/70 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                 {activeFilterCount} active
               </span>
             ) : null}
@@ -408,20 +408,20 @@ export function DashboardHeader({
           >
             <div className="sm:col-span-2 lg:col-span-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Global Filters
                 </p>
                 {activeFilterCount ? (
-                  <span className="rounded-full border border-slate-200/70 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <span className="rounded-full border border-zinc-200/70 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     {activeFilterCount} active filter
                     {activeFilterCount === 1 ? "" : "s"}
                   </span>
                 ) : null}
               </div>
-              <div className="mt-2 h-px w-full bg-slate-200/70" />
+              <div className="mt-2 h-px w-full bg-zinc-200/70" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Research Center
               </p>
               <Select
@@ -451,7 +451,7 @@ export function DashboardHeader({
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Department
               </p>
               <Select
@@ -481,7 +481,7 @@ export function DashboardHeader({
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Year
               </p>
               <Select
@@ -512,7 +512,7 @@ export function DashboardHeader({
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Date from
               </p>
               <Input
@@ -531,7 +531,7 @@ export function DashboardHeader({
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Date to
               </p>
               <Input
@@ -559,7 +559,7 @@ export function DashboardHeader({
                 Clear all
               </Button>
               {activeFilterCount ? (
-                <span className="hidden text-xs text-slate-500 lg:inline">
+                <span className="hidden text-xs text-zinc-500 lg:inline">
                   Showing filtered results
                 </span>
               ) : null}
@@ -567,7 +567,7 @@ export function DashboardHeader({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
               Presets
             </span>
             <Button
@@ -625,7 +625,7 @@ export function OverviewSection({
       {Array.from({ length: isAdmin ? 6 : 4 }).map((_, index) => (
         <SummaryCardSkeleton
           key={`summary-skeleton-${index}`}
-          className="rounded-xl border border-slate-200 bg-white"
+          className="rounded-xl border border-zinc-200 bg-white"
         />
       ))}
     </div>
@@ -638,28 +638,28 @@ export function OverviewSection({
             value={formatCount(summaryCounts.centers)}
             hint="All centers"
             Icon={Building2}
-            className="rounded-xl border border-slate-200 bg-white"
+            className="rounded-xl border border-zinc-200 bg-white"
           />
           <SummaryCard
             label="Departments"
             value={formatCount(summaryCounts.departments)}
             hint="All departments"
             Icon={BookOpen}
-            className="rounded-xl border border-slate-200 bg-white"
+            className="rounded-xl border border-zinc-200 bg-white"
           />
           <SummaryCard
             label="Affiliates"
             value={formatCount(summaryCounts.affiliates)}
             hint="Active faculty + students"
             Icon={Users}
-            className="rounded-xl border border-slate-200 bg-white"
+            className="rounded-xl border border-zinc-200 bg-white"
           />
           <SummaryCard
             label="Research Projects"
             value={formatCount(summaryCounts.projects)}
             hint="Filtered projects"
             Icon={FolderKanban}
-            className="rounded-xl border border-slate-200 bg-white"
+            className="rounded-xl border border-zinc-200 bg-white"
           />
         </>
       ) : (
@@ -669,7 +669,7 @@ export function OverviewSection({
             value={formatCount(summaryCounts.projects)}
             hint="Projects I submitted"
             Icon={FolderKanban}
-            className="rounded-xl border border-slate-200 bg-white"
+            className="rounded-xl border border-zinc-200 bg-white"
           />
         </>
       )}
@@ -679,7 +679,7 @@ export function OverviewSection({
         value={formatCount(summaryCounts.outputs)}
         hint={
           summaryCounts.outputsSubmitted && summaryCounts.outputsExpected
-            ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} · Expected: ${formatCount(
+            ? `Submitted: ${formatCount(summaryCounts.outputsSubmitted)} ? Expected: ${formatCount(
                 summaryCounts.outputsExpected,
               )}`
             : summaryCounts.outputsSubmitted
@@ -689,7 +689,7 @@ export function OverviewSection({
                 : "No outputs"
         }
         Icon={FileText}
-        className="rounded-xl border border-slate-200 bg-white"
+        className="rounded-xl border border-zinc-200 bg-white"
       />
 
       <SummaryCard
@@ -703,7 +703,7 @@ export function OverviewSection({
               : "No awards"
         }
         Icon={Award}
-        className="rounded-xl border border-slate-200 bg-white"
+        className="rounded-xl border border-zinc-200 bg-white"
       />
 
       {!isAdmin ? (
@@ -712,7 +712,7 @@ export function OverviewSection({
           value={formatCount(summaryCounts.linkedProjects)}
           hint="Projects where I'm listed"
           Icon={Users}
-          className="rounded-xl border border-slate-200 bg-white"
+          className="rounded-xl border border-zinc-200 bg-white"
         />
       ) : null}
     </div>
@@ -723,7 +723,7 @@ export function OverviewSection({
   return (
     <DashboardPanel
       title="Overview"
-      cardClassName="border border-slate-200 bg-white/95 rounded-2xl"
+      cardClassName="border border-zinc-200 bg-white/95 rounded-2xl"
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName="p-6"
     >
@@ -749,7 +749,7 @@ export function TopContributorsSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
       action={
-        <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+        <div className="inline-flex items-center gap-1 rounded-full bg-zinc-100 p-1">
           <Button
             type="button"
             variant={view === "month" ? "outline" : "ghost"}
@@ -771,24 +771,24 @@ export function TopContributorsSection({
         </div>
       }
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Top 5 faculty by owned projects ({label}).
       </p>
       {loading ? (
         <LoadingListBlock label="Loading top contributors..." rows={4} />
       ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-zinc-600">
           No contributor activity yet for this period.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white/80 shadow-sm">
           <Table className="min-w-[520px] w-full text-sm">
             <TableHeader>
-              <TableRow className="bg-slate-50/90">
-                <TableHead className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <TableRow className="bg-zinc-50/90">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                   Contributor
                 </TableHead>
-                <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                   Projects
                 </TableHead>
               </TableRow>
@@ -797,12 +797,12 @@ export function TopContributorsSection({
               {rows.map((row) => (
                 <TableRow
                   key={`contrib-${safeString(row?.key) || safeString(row?.name)}`}
-                  className="hover:bg-slate-100/70"
+                  className="hover:bg-zinc-100/70"
                 >
-                  <TableCell className="py-3 font-medium text-slate-900">
+                  <TableCell className="py-3 font-medium text-zinc-900">
                     {safeString(row?.name) || "Unnamed"}
                   </TableCell>
-                  <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                  <TableCell className="py-3 text-right tabular-nums text-zinc-700">
                     {formatCount(row?.projects)}
                   </TableCell>
                 </TableRow>
@@ -833,7 +833,7 @@ export function FundingOverviewSection({ loading, fundingOverview }) {
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Aggregated funding totals across current filters.
       </p>
 
@@ -919,7 +919,7 @@ export function AwardsByLevelSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Distribution of awards across recognition levels.
       </p>
       {loading ? (
@@ -928,7 +928,7 @@ export function AwardsByLevelSection({
           chartHeightClass="h-40"
         />
       ) : totalAwards === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-zinc-600">
           No awards recorded for the current scope.
         </p>
       ) : (
@@ -957,7 +957,7 @@ export function OutputVisibilitySection({ loading, visibility }) {
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Public vs private research outputs for compliance tracking.
       </p>
       {loading ? (
@@ -967,7 +967,7 @@ export function OutputVisibilitySection({ loading, visibility }) {
           ))}
         </div>
       ) : total === 0 ? (
-        <p className="text-sm text-slate-600">No outputs recorded yet.</p>
+        <p className="text-sm text-zinc-600">No outputs recorded yet.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           <SummaryCard
@@ -1007,7 +1007,7 @@ export function FacultyActivitySection({ loading, activity }) {
   return (
     <DashboardPanel
       title="My Activity This Month"
-      cardClassName="border-slate-200/70 bg-white/90 shadow-sm"
+      cardClassName="border-zinc-200/70 bg-white/90 shadow-sm"
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName="p-6"
     >
@@ -1022,12 +1022,12 @@ export function FacultyActivitySection({ loading, activity }) {
           {items.map((item) => (
             <div
               key={`activity-${item.label}`}
-              className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4"
+              className="rounded-2xl border border-zinc-200/70 bg-zinc-50/60 p-4"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                 {item.label}
               </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
+              <p className="mt-2 text-2xl font-semibold text-zinc-900">
                 {item.value}
               </p>
             </div>
@@ -1112,14 +1112,14 @@ export function FacultyStatusSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">{description}</p>
+      <p className="mb-3 text-xs text-zinc-600">{description}</p>
       {loading ? (
         <LoadingBlock
           label="Loading project status..."
           chartHeightClass="h-40"
         />
       ) : total === 0 ? (
-        <p className="text-sm text-slate-600">No projects found.</p>
+        <p className="text-sm text-zinc-600">No projects found.</p>
       ) : (
         <div
           role="img"
@@ -1203,21 +1203,21 @@ export function LinkedProjectsSection({ loading, linkedProjects }) {
       action={
         <Link
           to="/projects"
-          className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 hover:underline"
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:underline"
         >
           View all
         </Link>
       }
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Projects where you are part of the research team.
       </p>
       {loading ? (
         <LoadingListBlock label="Loading linked projects..." rows={3} />
       ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-600">No linked projects yet.</p>
+        <p className="text-sm text-zinc-600">No linked projects yet.</p>
       ) : (
-        <ul className="space-y-2 text-sm text-slate-700">
+        <ul className="space-y-2 text-sm text-zinc-700">
           {rows.map((project) => {
             const projectId = safeString(
               project?.ckan_dataset_id || project?.id,
@@ -1230,21 +1230,21 @@ export function LinkedProjectsSection({ loading, linkedProjects }) {
             return (
               <li
                 key={`linked-project-${projectId || safeString(project?.title)}`}
-                className="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3"
+                className="rounded-xl border border-zinc-200/70 bg-white/80 px-4 py-3"
               >
                 {projectId ? (
                   <Link
                     to={`/projects/${encodeURIComponent(projectId)}`}
-                    className="font-medium text-slate-900 break-words hover:underline"
+                    className="font-medium text-zinc-900 break-words hover:underline"
                   >
                     {safeString(project?.title) || "Untitled project"}
                   </Link>
                 ) : (
-                  <span className="font-medium text-slate-900 break-words">
+                  <span className="font-medium text-zinc-900 break-words">
                     {safeString(project?.title) || "Untitled project"}
                   </span>
                 )}
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-zinc-500">
                   {updatedLabel
                     ? `Updated ${formatDateLabel(updatedLabel)}`
                     : "Updated date unavailable"}
@@ -1292,7 +1292,7 @@ export function CenterBreakdownSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Top centers by activity across projects and outputs.
       </p>
       {loading ? (
@@ -1301,12 +1301,12 @@ export function CenterBreakdownSection({
           chartHeightClass="h-48"
         />
       ) : centerBreakdownRows.length === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-zinc-600">
           No research center metrics available for the current scope.
         </p>
       ) : (
         <>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
             <span>
               {showAllCenters
                 ? `Showing all ${centerBreakdownRows.length} centers`
@@ -1316,7 +1316,7 @@ export function CenterBreakdownSection({
               Click a column to sort the table.
             </span>
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white/80 shadow-sm">
             <div className="max-h-[420px] overflow-auto">
               <Table
                 aria-label="Research center breakdown table"
@@ -1327,8 +1327,8 @@ export function CenterBreakdownSection({
                   outputs.
                 </caption>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/90">
-                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <TableRow className="bg-zinc-50/90">
+                    <TableHead className="sticky top-0 z-10 bg-zinc-50/95 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                       <SortableHeader
                         label="Research Center"
                         sortKey="name"
@@ -1336,7 +1336,7 @@ export function CenterBreakdownSection({
                         onChange={onSortChange}
                       />
                     </TableHead>
-                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <TableHead className="sticky top-0 z-10 bg-zinc-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                       <SortableHeader
                         label="Projects"
                         sortKey="projects"
@@ -1344,7 +1344,7 @@ export function CenterBreakdownSection({
                         onChange={onSortChange}
                       />
                     </TableHead>
-                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <TableHead className="sticky top-0 z-10 bg-zinc-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                       <SortableHeader
                         label="Affiliates"
                         sortKey="affiliates"
@@ -1352,7 +1352,7 @@ export function CenterBreakdownSection({
                         onChange={onSortChange}
                       />
                     </TableHead>
-                    <TableHead className="sticky top-0 z-10 bg-slate-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <TableHead className="sticky top-0 z-10 bg-zinc-50/95 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                       <SortableHeader
                         label="Outputs"
                         sortKey="outputs"
@@ -1367,16 +1367,16 @@ export function CenterBreakdownSection({
                     <TableRow
                       key={`center-breakdown-${row.id}`}
                       className={`transition ${
-                        index % 2 === 0 ? "bg-white" : "bg-slate-50/40"
-                      } hover:bg-slate-100/70`}
+                        index % 2 === 0 ? "bg-white" : "bg-zinc-50/40"
+                      } hover:bg-zinc-100/70`}
                     >
-                      <TableCell className="py-3 font-medium text-slate-900">
+                      <TableCell className="py-3 font-medium text-zinc-900">
                         {isAdmin && row.id && row.id !== "__unassigned__" ? (
                           <Link
                             to={`/admin/research-center/${encodeURIComponent(
                               String(row.id),
                             )}`}
-                            className="decoration-slate-300 underline-offset-4 hover:underline"
+                            className="decoration-zinc-300 underline-offset-4 hover:underline"
                           >
                             {row.name}
                           </Link>
@@ -1384,15 +1384,15 @@ export function CenterBreakdownSection({
                           row.name
                         )}
                       </TableCell>
-                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                      <TableCell className="py-3 text-right tabular-nums text-zinc-700">
                         {formatCount(row.projects)}
                       </TableCell>
-                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                      <TableCell className="py-3 text-right tabular-nums text-zinc-700">
                         {row.affiliates === null
                           ? "-"
                           : formatCount(row.affiliates)}
                       </TableCell>
-                      <TableCell className="py-3 text-right tabular-nums text-slate-700">
+                      <TableCell className="py-3 text-right tabular-nums text-zinc-700">
                         {formatCount(row.outputs)}
                       </TableCell>
                     </TableRow>
@@ -1405,7 +1405,7 @@ export function CenterBreakdownSection({
       )}
       {centerBreakdownRows.length > TOP_CENTER_ROWS ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-zinc-500">
             {showAllCenters
               ? "Showing all centers in scope."
               : `Showing top ${TOP_CENTER_ROWS} centers by activity. Refine filters to focus.`}
@@ -1478,13 +1478,13 @@ export function ProjectsPerCenterSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Distribution of projects by research center.
       </p>
       {loading ? (
         <LoadingBlock label="Loading projects per research center..." />
       ) : projectsPerCenterData.length === 0 ? (
-        <p className="text-sm text-slate-600">No projects found.</p>
+        <p className="text-sm text-zinc-600">No projects found.</p>
       ) : (
         <div
           role="img"
@@ -1502,7 +1502,7 @@ export function ProjectsPerCenterSection({
             }.`}
           </p>
           {projectsPerCenterData.length > MAX_BAR_LABELS ? (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-zinc-500">
               Showing labels for top {MAX_BAR_LABELS}. Hover for full details.
             </p>
           ) : null}
@@ -1558,13 +1558,13 @@ export function OutputsByTypeSection({
       headerClassName={PANEL_HEADER_CLASS}
       bodyClassName={PANEL_BODY_CLASS}
     >
-      <p className="mb-3 text-xs text-slate-600">
+      <p className="mb-3 text-xs text-zinc-600">
         Output distribution across publication and innovation categories.
       </p>
       {loading ? (
         <LoadingBlock label="Loading outputs by type..." />
       ) : outputsByTypeData.length === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-zinc-600">
           No research outputs available for the current scope.
         </p>
       ) : (
@@ -1635,7 +1635,7 @@ export function OutputsOverTimeSection({
       action={
         <div className="flex flex-wrap items-center gap-2">
           {!isAdmin ? (
-            <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+            <div className="inline-flex items-center gap-1 rounded-full bg-zinc-100 p-1">
               <Button
                 type="button"
                 variant={rangeView === "last6" ? "outline" : "ghost"}
@@ -1656,7 +1656,7 @@ export function OutputsOverTimeSection({
               </Button>
             </div>
           ) : null}
-          <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+          <div className="inline-flex items-center gap-1 rounded-full bg-zinc-100 p-1">
             <Button
               type="button"
               variant={trendView === "monthly" ? "outline" : "ghost"}
@@ -1682,7 +1682,7 @@ export function OutputsOverTimeSection({
       {loading ? (
         <LoadingBlock label="Loading outputs over time..." />
       ) : outputsTrendData.length === 0 ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-zinc-600">
           No output trend data available for the current scope.
         </p>
       ) : (
@@ -1717,12 +1717,12 @@ export function RecentActivitySection({
   return (
     <>
       {showHeader ? (
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/70 pb-3">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200/70 pb-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">
               Recent Activity / Highlights
             </p>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-zinc-600">
               Latest updates across projects, outputs, and awards within your
               current scope.
             </p>
@@ -1739,7 +1739,7 @@ export function RecentActivitySection({
           action={
             <Link
               to="/projects"
-              className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 hover:underline"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:underline"
             >
               View all
             </Link>
@@ -1748,9 +1748,9 @@ export function RecentActivitySection({
           {loading ? (
             <LoadingListBlock label="Loading recent projects..." rows={3} />
           ) : recentProjects.length === 0 ? (
-            <p className="text-sm text-slate-600">No project activity yet.</p>
+            <p className="text-sm text-zinc-600">No project activity yet.</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-700">
+            <ul className="space-y-2 text-sm text-zinc-700">
               {recentProjects.map((project) => {
                 const projectId = safeString(project?.id);
                 const centerName =
@@ -1767,11 +1767,11 @@ export function RecentActivitySection({
                   >
                     {projectId ? (
                       <ActivityItem
-                        colorClass="bg-sky-500/70"
+                        colorClass="bg-zinc-500/70"
                         title={
                           <Link
                             to={`/projects/${encodeURIComponent(projectId)}`}
-                            className="font-medium text-slate-900 hover:underline"
+                            className="font-medium text-zinc-900 hover:underline"
                           >
                             {safeString(project?.title) || "Untitled project"}
                           </Link>
@@ -1784,7 +1784,7 @@ export function RecentActivitySection({
                       />
                     ) : (
                       <ActivityItem
-                        colorClass="bg-sky-500/70"
+                        colorClass="bg-zinc-500/70"
                         title={safeString(project?.title) || "Untitled project"}
                         meta={`${centerName}${
                           updatedLabel
@@ -1808,7 +1808,7 @@ export function RecentActivitySection({
           action={
             <Link
               to="/outputs"
-              className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 hover:underline"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:underline"
             >
               View all
             </Link>
@@ -1819,13 +1819,13 @@ export function RecentActivitySection({
           ) : recentOutputs.mode === "submitted" &&
             Array.isArray(recentOutputs.rows) &&
             recentOutputs.rows.length ? (
-            <ul className="space-y-2 text-sm text-slate-700">
+            <ul className="space-y-2 text-sm text-zinc-700">
               {recentOutputs.rows.map((row) => (
                 <li
                   key={`recent-output-${safeString(row?.id) || safeString(row?.file_name)}`}
                 >
                   <ActivityItem
-                    colorClass="bg-emerald-500/70"
+                    colorClass="bg-zinc-500/70"
                     title={
                       safeString(row?.file_name) ||
                       safeString(row?.output_type) ||
@@ -1845,16 +1845,16 @@ export function RecentActivitySection({
           ) : recentOutputs.mode === "expected" &&
             Array.isArray(recentOutputs.rows) &&
             recentOutputs.rows.length ? (
-            <ul className="space-y-2 text-sm text-slate-700">
+            <ul className="space-y-2 text-sm text-zinc-700">
               {recentOutputs.rows.map((row) => (
                 <li key={`recent-expected-${row.projectId}`}>
                   {row.projectId ? (
                     <ActivityItem
-                      colorClass="bg-amber-500/70"
+                      colorClass="bg-zinc-500/70"
                       title={
                         <Link
                           to={`/projects/${encodeURIComponent(row.projectId)}`}
-                          className="font-medium text-slate-900 hover:underline"
+                          className="font-medium text-zinc-900 hover:underline"
                         >
                           {safeString(row?.projectTitle) ||
                             "Project outputs updated"}
@@ -1872,7 +1872,7 @@ export function RecentActivitySection({
                     />
                   ) : (
                     <ActivityItem
-                      colorClass="bg-amber-500/70"
+                      colorClass="bg-zinc-500/70"
                       title="Project outputs updated"
                       meta={`${
                         row.labels?.length
@@ -1889,7 +1889,7 @@ export function RecentActivitySection({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-slate-600">No output activity yet.</p>
+            <p className="text-sm text-zinc-600">No output activity yet.</p>
           )}
         </DashboardPanel>
 
@@ -1901,7 +1901,7 @@ export function RecentActivitySection({
           action={
             <Link
               to="/awards"
-              className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 hover:underline"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:underline"
             >
               View all
             </Link>
@@ -1910,15 +1910,15 @@ export function RecentActivitySection({
           {loading ? (
             <LoadingListBlock label="Loading recent awards..." rows={3} />
           ) : recentAwards.length === 0 ? (
-            <p className="text-sm text-slate-600">No awards recorded yet.</p>
+            <p className="text-sm text-zinc-600">No awards recorded yet.</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-700">
+            <ul className="space-y-2 text-sm text-zinc-700">
               {recentAwards.map((award) => (
                 <li
                   key={`recent-award-${safeString(award?.id) || safeString(award?.ckan_dataset_id) || safeString(award?.award_recognition)}`}
                 >
                   <ActivityItem
-                    colorClass="bg-rose-500/70"
+                    colorClass="bg-zinc-500/70"
                     title={
                       safeString(award?.award_recognition) ||
                       "Award / Recognition"
