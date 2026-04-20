@@ -26,17 +26,17 @@ export default function UserMultiSelect({
     <label className="block space-y-1 text-sm">
       {headerIsCaps ? (
         <div className="flex items-start justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             {label}
           </span>
           {headerBadge ? (
-            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">
+            <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-zinc-500">
               {headerBadge}
             </span>
           ) : null}
         </div>
       ) : (
-        <span className="font-semibold text-slate-700">{label}</span>
+        <span className="font-semibold text-zinc-700">{label}</span>
       )}
       <div ref={fieldRef} className="relative space-y-2">
         <Input
@@ -68,7 +68,7 @@ export default function UserMultiSelect({
               <button
                 key={`user-option-${user.id}`}
                 type="button"
-                className="w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-[var(--surface-muted)]"
+                className="w-full rounded px-2 py-1 text-left text-sm text-zinc-700 hover:bg-[var(--surface-muted)]"
                 onClick={() => {
                   onSelect(user);
                   onSearchChange("");
@@ -84,7 +84,7 @@ export default function UserMultiSelect({
       <Card className="bg-muted/30 shadow-none">
         <CardContent className="p-3">
           {selections.length === 0 ? (
-            <p className="text-xs text-slate-500">{emptyText}</p>
+            <p className="text-xs text-zinc-500">{emptyText}</p>
           ) : (
             <div className="flex flex-wrap gap-1">
               {selections.map((name) => (
@@ -109,7 +109,7 @@ export default function UserMultiSelect({
         </CardContent>
       </Card>
       {error ? <p className="field-error">{error}</p> : null}
-      <p className="text-xs text-slate-500">{helperText}</p>
+      <p className="text-xs text-zinc-500">{helperText}</p>
     </label>
   );
 }
