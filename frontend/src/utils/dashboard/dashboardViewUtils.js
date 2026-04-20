@@ -1,6 +1,6 @@
 export function getActivityToneClass(tone) {
-  if (tone === "warning") return "border-amber-300 bg-amber-50";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50";
+  if (tone === "warning") return "border-zinc-300 bg-zinc-50";
+  if (tone === "success") return "border-zinc-300 bg-zinc-50";
   return "border-[var(--border)] bg-white";
 }
 
