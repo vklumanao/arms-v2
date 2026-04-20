@@ -112,10 +112,10 @@ export default function LoginPage() {
 
   return (
     <section className="mx-auto max-w-md">
-      <Card className="border border-slate-200 shadow-sm">
+      <Card className="border border-zinc-200 shadow-sm">
         <CardHeader className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold text-zinc-900">Sign in</h1>
+          <p className="text-sm text-zinc-500">
             Access your workspace to continue your workflow.
           </p>
         </CardHeader>
@@ -123,7 +123,7 @@ export default function LoginPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-600">Email</label>
+              <label className="text-sm text-zinc-600">Email</label>
               <Input
                 type="email"
                 required
@@ -137,7 +137,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-600">Password</label>
+              <label className="text-sm text-zinc-600">Password</label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -153,7 +153,7 @@ export default function LoginPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -162,14 +162,14 @@ export default function LoginPage() {
             </div>
 
             {/* Error */}
-            {error && <p className="text-sm text-slate-600">{error}</p>}
+            {error && <p className="text-sm text-zinc-600">{error}</p>}
 
             {showVerifyHint && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-zinc-500">
                 Need a new verification link?{" "}
                 <Link
                   to="/verify-email"
-                  className="underline hover:text-slate-700"
+                  className="underline hover:text-zinc-700"
                 >
                   Verify email
                 </Link>
@@ -189,11 +189,11 @@ export default function LoginPage() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-between text-sm text-slate-500">
-          <Link to="/register" className="hover:text-slate-700">
+        <CardFooter className="flex justify-between text-sm text-zinc-500">
+          <Link to="/register" className="hover:text-zinc-700">
             Create account
           </Link>
-          <Link to="/forgot-password" className="hover:text-slate-700">
+          <Link to="/forgot-password" className="hover:text-zinc-700">
             Forgot password
           </Link>
         </CardFooter>
