@@ -490,24 +490,24 @@ export default function SubmitAwardRecognitionPage() {
         <Card>
           {loadingEdit ? (
             <CardContent className="p-5">
-              <p className="text-sm text-slate-600">Loading award record...</p>
+              <p className="text-sm text-zinc-600">Loading award record...</p>
             </CardContent>
           ) : null}
           <CardContent className="space-y-4 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-4 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-zinc-200/70 bg-zinc-50/70 px-4 py-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Award Details
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-zinc-600">
                   Provide the official award name and issuing body.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
+                <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
                   {form.level ? `Level: ${form.level}` : "Level: Not set"}
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
                   {form.year_received
                     ? `Year: ${form.year_received}`
                     : "Year: -"}
@@ -517,7 +517,7 @@ export default function SubmitAwardRecognitionPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Award / Recognition
                 </span>
                 <Input
@@ -534,7 +534,7 @@ export default function SubmitAwardRecognitionPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Awarding Body
                 </span>
                 <Input
@@ -551,7 +551,7 @@ export default function SubmitAwardRecognitionPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Year Received
                 </span>
                 <Input
@@ -574,7 +574,7 @@ export default function SubmitAwardRecognitionPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Level
                 </span>
                 <Select
@@ -600,7 +600,7 @@ export default function SubmitAwardRecognitionPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Title of Research (Optional)
                 </span>
                 <Select
@@ -693,18 +693,18 @@ export default function SubmitAwardRecognitionPage() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                     Supporting MOV File
                   </span>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-semibold text-zinc-900">
                           {movFile?.name ||
                             existingMov?.fileName ||
                             "No supporting MOV file attached yet"}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-zinc-500">
                           {movFile
                             ? `${formatFileSize(movFile.size)} selected for upload`
                             : existingMov?.filePath
@@ -733,7 +733,7 @@ export default function SubmitAwardRecognitionPage() {
                         href={existingMov.filePath}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-900"
+                        className="mt-3 inline-flex text-sm font-semibold text-zinc-700 hover:text-zinc-900"
                       >
                         Open current MOV attachment
                       </a>
@@ -745,7 +745,7 @@ export default function SubmitAwardRecognitionPage() {
                 </div>
 
                 <label className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                     Supporting MOV Reference
                   </span>
                   <Input
@@ -758,7 +758,7 @@ export default function SubmitAwardRecognitionPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                     Notes
                   </span>
                   <Textarea
@@ -774,7 +774,7 @@ export default function SubmitAwardRecognitionPage() {
           </CardContent>
 
           <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
-            <p className="text-sm text-rose-700">{error || " "}</p>
+            <p className="text-sm text-zinc-700">{error || " "}</p>
             <div className="flex gap-2">
               <Button
                 type="button"
