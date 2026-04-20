@@ -112,7 +112,7 @@ export default function ExpectedOutputModal({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Output type</span>
+              <span className="font-semibold text-zinc-700">Output type</span>
               <Select
                 value={newOutputDraft.output_type || "__none__"}
                 onValueChange={(value) =>
@@ -143,7 +143,7 @@ export default function ExpectedOutputModal({
 
             {newOutputDraft.output_type === "product_software" ? (
               <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-zinc-700">
                   Specific output
                 </span>
                 <Select
@@ -173,7 +173,7 @@ export default function ExpectedOutputModal({
             ) : null}
 
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Notes</span>
+              <span className="font-semibold text-zinc-700">Notes</span>
               <Input
                 placeholder="Short note about this expected output"
                 value={newOutputDraft.notes || ""}
@@ -187,7 +187,7 @@ export default function ExpectedOutputModal({
             </label>
 
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Output link (optional)
               </span>
               <Input
@@ -203,11 +203,11 @@ export default function ExpectedOutputModal({
             </label>
 
             <div className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Output file (optional)
               </span>
               <div
-                className={`upload-field ${isDragging ? "ring-2 ring-blue-400" : ""}`}
+                className={`upload-field ${isDragging ? "ring-2 ring-zinc-400" : ""}`}
                 onDragOver={(event) => {
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "copy";
@@ -233,7 +233,7 @@ export default function ExpectedOutputModal({
                   <div className="upload-picker-info">
                     <FileText
                       size={16}
-                      className="mt-0.5 text-slate-500"
+                      className="mt-0.5 text-zinc-500"
                       aria-hidden="true"
                     />
                     <div className="space-y-0.5">
@@ -272,7 +272,7 @@ export default function ExpectedOutputModal({
                   <p className="upload-field-hint">
                     Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-zinc-500">
                     Tip: you can provide an output link, an output file, or
                     both.
                   </p>
