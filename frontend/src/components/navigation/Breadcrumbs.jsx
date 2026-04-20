@@ -15,7 +15,6 @@ const SEGMENT_LABELS = {
   users: "Users",
   "research-center": "Research Centers",
   departments: "Departments",
-  controls: "Admin Controls",
   login: "Login",
   register: "Register",
   "forgot-password": "Forgot Password",
