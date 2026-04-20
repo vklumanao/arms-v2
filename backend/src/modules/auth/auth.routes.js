@@ -66,6 +66,10 @@ export function registerAuthRoutes(app, deps) {
     consumeEmailVerificationToken,
     sendEmail,
     logAuditEvent,
+    listRolePermissionMap,
+    saveRolePermissionMap,
+    resetRolePermissionMapToDefaults,
+    userHasPermission,
   } = deps;
 
   const formatFullName = ({ first_name, middle_initial, last_name }) => {
@@ -703,15 +707,10 @@ export function registerAuthRoutes(app, deps) {
   });
 
   // Permission map is protected to avoid exposing full authorization model publicly.
-  app.get("/api/permissions/role-map", authMiddleware, (req, res) => {
-    return res.json({ map: ROLE_PERMISSIONS });
+  app.get("/api/permissions/role-map", authMiddleware, async (req, res) => {
+    const map = await listRolePermissionMap();
+    return res.json({ map });
   });
-
-  function userHasPermission(user, permission) {
-    const role = normalizeRole(user?.role);
-    const permissions = ROLE_PERMISSIONS?.[role] || [];
-    return permissions.includes(permission);
-  }
 
   function normalizePermissionList(rawList) {
     const next = [];
@@ -745,8 +744,7 @@ export function registerAuthRoutes(app, deps) {
     return next;
   }
 
-  // Updates the role-to-permission map for this running server instance.
-  // Note: this does not persist across server restarts.
+  // Updates the persistent role-to-permission map.
   app.put("/api/permissions/role-map", authMiddleware, async (req, res) => {
     if (!userHasPermission(req.user, "admin.controls.manage")) {
       return res.status(403).json({ error: "Forbidden" });
@@ -758,14 +756,7 @@ export function registerAuthRoutes(app, deps) {
     }
 
     const nextMap = normalizeRolePermissionMap(rawMap);
-    for (const role of Object.keys(nextMap)) {
-      if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
-      ROLE_PERMISSIONS[role].splice(
-        0,
-        ROLE_PERMISSIONS[role].length,
-        ...nextMap[role],
-      );
-    }
+    const savedMap = await saveRolePermissionMap(nextMap);
 
     await logAuditEvent({
       actorUserId: req.user?.id || null,
@@ -773,7 +764,7 @@ export function registerAuthRoutes(app, deps) {
       details: { roles: Object.keys(nextMap) },
     });
 
-    return res.json({ ok: true, map: ROLE_PERMISSIONS });
+    return res.json({ ok: true, map: savedMap });
   });
 
   app.post(
@@ -784,15 +775,7 @@ export function registerAuthRoutes(app, deps) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      const defaults = normalizeRolePermissionMap(DEFAULT_ROLE_PERMISSIONS);
-      for (const role of Object.keys(defaults)) {
-        if (!Array.isArray(ROLE_PERMISSIONS[role])) ROLE_PERMISSIONS[role] = [];
-        ROLE_PERMISSIONS[role].splice(
-          0,
-          ROLE_PERMISSIONS[role].length,
-          ...defaults[role],
-        );
-      }
+      const map = await resetRolePermissionMapToDefaults();
 
       await logAuditEvent({
         actorUserId: req.user?.id || null,
@@ -800,7 +783,7 @@ export function registerAuthRoutes(app, deps) {
         details: {},
       });
 
-      return res.json({ ok: true, map: ROLE_PERMISSIONS });
+      return res.json({ ok: true, map });
     },
   );
 }
