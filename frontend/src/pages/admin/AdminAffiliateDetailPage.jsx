@@ -285,7 +285,7 @@ export default function AdminAffiliateDetailPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-600">Loading affiliate...</p>
+        <p className="text-sm text-zinc-600">Loading affiliate...</p>
       ) : error ? (
         <EmptyState title="Unable to load" description={error} />
       ) : !affiliate ? (
@@ -299,16 +299,16 @@ export default function AdminAffiliateDetailPage() {
             <CardContent className="p-6">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-5">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-xl font-bold uppercase text-white shadow">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold uppercase text-white shadow">
                     {initials}
                   </div>
 
                   <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-slate-900">
+                    <h2 className="text-xl font-bold text-zinc-900">
                       {affiliate?.full_name || "-"}
                     </h2>
 
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-zinc-500">
                       {affiliate?.email || "-"}
                     </p>
 
@@ -337,8 +337,8 @@ export default function AdminAffiliateDetailPage() {
 
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
                   <div>
-                    <p className="text-slate-500">Research Center</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-zinc-500">Research Center</p>
+                    <p className="font-semibold text-zinc-900">
                       {affiliate?.ckan_org_id
                         ? centerNameById[affiliate.ckan_org_id] || "-"
                         : "-"}
@@ -346,29 +346,29 @@ export default function AdminAffiliateDetailPage() {
                   </div>
 
                   <div>
-                    <p className="text-slate-500">Department</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-zinc-500">Department</p>
+                    <p className="font-semibold text-zinc-900">
                       {departmentLabel}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-slate-500">Employment Status</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-zinc-500">Employment Status</p>
+                    <p className="font-semibold text-zinc-900">
                       {affiliate?.employment_status || "-"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-slate-500">Designation</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-zinc-500">Designation</p>
+                    <p className="font-semibold text-zinc-900">
                       {affiliate?.designation || "-"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-slate-500">GS Faculty</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-zinc-500">GS Faculty</p>
+                    <p className="font-semibold text-zinc-900">
                       {affiliate?.is_gs_faculty ? "Yes" : "No"}
                     </p>
                   </div>
@@ -391,7 +391,7 @@ export default function AdminAffiliateDetailPage() {
                 className="overflow-hidden border border-black/20 bg-white shadow-sm"
               >
                 <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-600">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">
                     {card.label}
                   </p>
                   <p className="mt-2 text-3xl font-bold text-black">
@@ -403,17 +403,17 @@ export default function AdminAffiliateDetailPage() {
           </div>
 
           <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-            <CardHeader className="border-b border-gray-200 px-6 py-5">
+            <CardHeader className="border-b border-zinc-200 px-6 py-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-semibold text-black">
                     Related Projects
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
+                  <CardDescription className="text-zinc-600">
                     Projects linked to this affiliate.
                   </CardDescription>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-zinc-600">
                   {filteredProjects.length} row(s).
                 </p>
               </div>
@@ -438,7 +438,7 @@ export default function AdminAffiliateDetailPage() {
                       <SelectTrigger className="w-full sm:w-[160px] capitalize">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-300 shadow-md">
+                      <SelectContent className="bg-white border border-zinc-300 shadow-md">
                         {projectStatusOptions.map((status) => (
                           <SelectItem key={status} value={status}>
                             {status === "all" ? "All statuses" : status}
@@ -451,7 +451,7 @@ export default function AdminAffiliateDetailPage() {
                       <SelectTrigger className="w-full sm:w-[140px]">
                         <SelectValue placeholder="Year" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-300 shadow-md">
+                      <SelectContent className="bg-white border border-zinc-300 shadow-md">
                         {projectYearOptions.map((year) => (
                           <SelectItem key={year} value={year}>
                             {year === "all" ? "All years" : year}
@@ -516,7 +516,7 @@ export default function AdminAffiliateDetailPage() {
             <CardContent className="p-0">
               <div className="max-h-[420px] overflow-auto">
                 <Table>
-                  <TableHeader className="bg-gray-50/80 text-gray-600">
+                  <TableHeader className="bg-zinc-50/80 text-zinc-600">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Project Title</TableHead>
