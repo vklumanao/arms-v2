@@ -425,19 +425,19 @@ export default function AdminUsersPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
                 Admin Workspace
               </p>
-              <h1 className="text-2xl font-bold text-black md:text-3xl">
+              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
                 User Management
               </h1>
-              <p className="max-w-2xl text-sm text-black">
+              <p className="max-w-2xl text-sm text-[#1E3A8A]">
                 Manage account access, role assignment, password reset, and
                 account-level activity.
               </p>
@@ -460,43 +460,43 @@ export default function AdminUsersPage() {
             ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm"
+                className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                     {label}
                   </p>
-                  <Icon className="h-4 w-4 text-black" />
+                  <Icon className="h-4 w-4 text-[#1E3A8A]" />
                 </div>
-                <p className="mt-2 text-2xl font-bold text-black">{value}</p>
+                <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">{value}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-        <CardHeader className="border-b border-zinc-200 px-6 py-5">
+      <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
+        <CardHeader className="border-b border-blue-200/70 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-black">
+              <CardTitle className="text-base font-semibold text-[#1E3A8A]">
                 Accounts Directory
               </CardTitle>
-              <CardDescription className="text-zinc-600">
+              <CardDescription className="text-slate-600">
                 Showing {filteredUsers.length} account(s).
               </CardDescription>
             </div>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-slate-600">
               {filteredUsers.length} row(s).
             </p>
           </div>
         </CardHeader>
 
         <CardContent className="p-4">
-          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+          <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
             <label className="relative block w-full md:max-w-xl">
               <span className="sr-only">Search users</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
               <Input
                 className="pl-9"
                 placeholder="Search user by name, email, or role"
@@ -510,7 +510,7 @@ export default function AdminUsersPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-black hover:text-black"
+                className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
                 onClick={() => setUserSearch("")}
                 disabled={!hasActiveDirectoryFilters}
               >
@@ -520,12 +520,12 @@ export default function AdminUsersPage() {
 
             {hasActiveDirectoryFilters ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                   Active Filters
                 </span>
                 <button
                   type="button"
-                  className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                  className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                   onClick={() => setUserSearch("")}
                 >
                   Search: "{String(userSearch || "").trim()}" x
@@ -536,9 +536,9 @@ export default function AdminUsersPage() {
         </CardContent>
 
         <CardContent className="p-4 pt-0">
-          <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
             <Table className="min-w-[980px]">
-              <TableHeader className="bg-zinc-50/80 text-zinc-600">
+              <TableHeader className="bg-blue-50/80 text-slate-600">
                 <TableRow>
                   <TableHead>No.</TableHead>
                   <TableHead>Name</TableHead>
@@ -554,7 +554,7 @@ export default function AdminUsersPage() {
                   <TableRow>
                     <TableCell
                       colSpan={8}
-                      className="py-10 text-center text-sm text-zinc-600"
+                      className="py-10 text-center text-sm text-slate-600"
                     >
                       No users found.
                     </TableCell>
@@ -627,8 +627,8 @@ export default function AdminUsersPage() {
                             size="icon"
                             className={
                               user.is_active
-                                ? "h-8 w-8 text-zinc-700 hover:bg-zinc-50"
-                                : "h-8 w-8 text-zinc-700 hover:bg-zinc-50"
+                                ? "h-8 w-8 text-slate-700 hover:bg-blue-50/60"
+                                : "h-8 w-8 text-slate-700 hover:bg-blue-50/60"
                             }
                             disabled={Boolean(savingUserById[user.id])}
                             onClick={() => openStatusConfirm(user)}
@@ -712,8 +712,8 @@ export default function AdminUsersPage() {
                 Add a faculty or student account with optional center and
                 department assignment.
               </DialogDescription>
-              <p className="text-xs text-zinc-500 mb-3">
-                Fields marked with <span className="text-zinc-500">*</span> are
+              <p className="text-xs text-slate-500 mb-3">
+                Fields marked with <span className="text-slate-500">*</span> are
                 required.
               </p>
             </DialogHeader>
@@ -721,8 +721,8 @@ export default function AdminUsersPage() {
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="grid gap-3 sm:grid-cols-3 md:col-span-2">
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-zinc-700">
-                      First Name <span className="text-zinc-500">*</span>
+                    <span className="font-medium text-slate-700">
+                      First Name <span className="text-slate-500">*</span>
                     </span>
                     <Input
                       value={createForm.first_name}
@@ -736,8 +736,8 @@ export default function AdminUsersPage() {
                     />
                   </label>
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-zinc-700">
-                      Middle Initial <span className="text-zinc-500">*</span>
+                    <span className="font-medium text-slate-700">
+                      Middle Initial <span className="text-slate-500">*</span>
                     </span>
                     <Input
                       value={createForm.middle_initial}
@@ -752,8 +752,8 @@ export default function AdminUsersPage() {
                     />
                   </label>
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-zinc-700">
-                      Last Name <span className="text-zinc-500">*</span>
+                    <span className="font-medium text-slate-700">
+                      Last Name <span className="text-slate-500">*</span>
                     </span>
                     <Input
                       value={createForm.last_name}
@@ -768,8 +768,8 @@ export default function AdminUsersPage() {
                   </label>
                 </div>
                 <label className="space-y-1 text-sm">
-                  <span className="font-medium text-zinc-700">
-                    Email <span className="text-zinc-500">*</span>
+                  <span className="font-medium text-slate-700">
+                    Email <span className="text-slate-500">*</span>
                   </span>
                   <Input
                     type="email"
@@ -784,8 +784,8 @@ export default function AdminUsersPage() {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-medium text-zinc-700">
-                    Role <span className="text-zinc-500">*</span>
+                  <span className="font-medium text-slate-700">
+                    Role <span className="text-slate-500">*</span>
                   </span>
                   <Select
                     value={createForm.role}
@@ -812,7 +812,7 @@ export default function AdminUsersPage() {
                   </Select>
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-medium text-zinc-700">
+                  <span className="font-medium text-slate-700">
                     Research Center
                   </span>
                   <Select
@@ -838,7 +838,7 @@ export default function AdminUsersPage() {
                   </Select>
                 </label>
                 <label className="space-y-1 text-sm md:col-span-2">
-                  <span className="font-medium text-zinc-700">Department</span>
+                  <span className="font-medium text-slate-700">Department</span>
                   <Select
                     value={createForm.ckan_group_id}
                     onValueChange={(value) =>
@@ -865,8 +865,8 @@ export default function AdminUsersPage() {
 
               {createResult?.temporary_password ? (
                 <Card className="bg-muted/40">
-                  <CardContent className="space-y-1 p-4 text-sm text-zinc-700">
-                    <p className="font-semibold text-zinc-900">
+                  <CardContent className="space-y-1 p-4 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">
                       Account created
                     </p>
                     <p className="mt-1">
@@ -875,7 +875,7 @@ export default function AdminUsersPage() {
                         {createResult.temporary_password}
                       </span>
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Share this once, then require the user to change it after
                       first login.
                     </p>
@@ -912,3 +912,5 @@ export default function AdminUsersPage() {
     </section>
   );
 }
+
+
