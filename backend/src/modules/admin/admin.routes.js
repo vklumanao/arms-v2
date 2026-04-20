@@ -16,24 +16,36 @@ import { config } from "../../config/index.js";
 export function registerAdminRoutes(app, deps) {
   const serviceBotEmails = new Set(
     (config.serviceBotEmails || []).map((value) =>
-      String(value || "").trim().toLowerCase(),
+      String(value || "")
+        .trim()
+        .toLowerCase(),
     ),
   );
   const serviceBotNames = new Set(
     (config.serviceBotNames || []).map((value) =>
-      String(value || "").trim().toLowerCase(),
+      String(value || "")
+        .trim()
+        .toLowerCase(),
     ),
   );
   const serviceBotIds = new Set(
     (config.serviceBotIds || []).map((value) =>
-      String(value || "").trim().toLowerCase(),
+      String(value || "")
+        .trim()
+        .toLowerCase(),
     ),
   );
   const isServiceBotProfile = (profile) => {
     if (!profile) return false;
-    const email = String(profile?.email || "").trim().toLowerCase();
-    const name = String(profile?.full_name || "").trim().toLowerCase();
-    const id = String(profile?.id || "").trim().toLowerCase();
+    const email = String(profile?.email || "")
+      .trim()
+      .toLowerCase();
+    const name = String(profile?.full_name || "")
+      .trim()
+      .toLowerCase();
+    const id = String(profile?.id || "")
+      .trim()
+      .toLowerCase();
     if (email && serviceBotEmails.has(email)) return true;
     if (name && serviceBotNames.has(name)) return true;
     if (id && serviceBotIds.has(id)) return true;
@@ -74,6 +86,7 @@ export function registerAdminRoutes(app, deps) {
     findUserByEmail,
     findUserById,
     updateUser,
+    userHasPermission,
   } = deps;
 
   /**
@@ -180,7 +193,9 @@ export function registerAdminRoutes(app, deps) {
 
     if (labelKeys.length > 0) {
       values.push(labelKeys);
-      clauses.push(`LOWER(COALESCE(department, '')) = ANY($${values.length}::text[])`);
+      clauses.push(
+        `LOWER(COALESCE(department, '')) = ANY($${values.length}::text[])`,
+      );
     }
 
     if (clauses.length === 0) return [];
@@ -321,7 +336,9 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function parseRecipientUsersFromExtras(extras) {
-    const raw = asTrimmedString(getDatasetExtraByKey(extras, "recipient_users"));
+    const raw = asTrimmedString(
+      getDatasetExtraByKey(extras, "recipient_users"),
+    );
     if (!raw) return [];
     try {
       const parsed = JSON.parse(raw);
@@ -857,6 +874,16 @@ export function registerAdminRoutes(app, deps) {
   }
 
   function ensureAdminOrCenterChief(res, user) {
+    if (typeof userHasPermission === "function") {
+      const isAdminByPermission = userHasPermission(
+        user,
+        "admin.controls.manage",
+      );
+      const isScopedCenterChiefByPermission =
+        userHasPermission(user, "affiliates.view") &&
+        isCenterChiefScopedUser(user);
+      if (isAdminByPermission || isScopedCenterChiefByPermission) return true;
+    }
     const role = String(user?.role || "")
       .trim()
       .toLowerCase();
@@ -1117,8 +1144,7 @@ export function registerAdminRoutes(app, deps) {
 
       const scopedRows = managedCenterId
         ? rows.filter(
-            (row) =>
-              String(row?.ckan_org_id || "").trim() === managedCenterId,
+            (row) => String(row?.ckan_org_id || "").trim() === managedCenterId,
           )
         : rows;
 
@@ -1166,14 +1192,10 @@ export function registerAdminRoutes(app, deps) {
 
           if (!isScopedMember) {
             const targetUserId = String(existing?.ckan_user_id || "").trim();
-            const targetUsername = String(
-              existing?.ckan_username || "",
-            ).trim();
+            const targetUsername = String(existing?.ckan_username || "").trim();
             if (targetUserId || targetUsername) {
               try {
-                const members = await listOrganizationMembers(
-                  managedCenterId,
-                );
+                const members = await listOrganizationMembers(managedCenterId);
                 isScopedMember = (members || []).some((member) => {
                   const memberId = String(member?.id || "").trim();
                   const memberName = String(member?.name || "").trim();
@@ -1244,7 +1266,10 @@ export function registerAdminRoutes(app, deps) {
             String(req.body?.department || "").trim() ||
             null,
           ckan_group_id:
-            selectedGroup?.name || selectedGroup?.id || requestedGroupId || null,
+            selectedGroup?.name ||
+            selectedGroup?.id ||
+            requestedGroupId ||
+            null,
           ckan_org_id: String(req.body?.ckan_org_id || "").trim() || null,
           designation: String(req.body?.designation || "").trim() || null,
           employment_status:
@@ -1404,16 +1429,17 @@ export function registerAdminRoutes(app, deps) {
               id: orgId,
               name: row?.title || row?.display_name || row?.name || "-",
               description:
-                String(row?.description || getExtraValue(row, "description") || "")
-                  .trim() || null,
+                String(
+                  row?.description || getExtraValue(row, "description") || "",
+                ).trim() || null,
               code:
                 String(getExtraValue(row, "code") || "").trim() ||
                 String(row?.name || row?.id || "")
                   .toUpperCase()
                   .replace(/[^A-Z0-9_]/g, "_"),
-              social_media_link: String(
-                getExtraValue(row, "social_media_link") || "",
-              ).trim() || null,
+              social_media_link:
+                String(getExtraValue(row, "social_media_link") || "").trim() ||
+                null,
               center_chief_id:
                 savedChiefId || centerChiefByOrg[orgId]?.id || null,
               center_chief_name:
@@ -1435,8 +1461,9 @@ export function registerAdminRoutes(app, deps) {
                 .toUpperCase()
                 .replace(/[^A-Z0-9_]/g, "_"),
             description:
-              String(row?.description || getExtraValue(row, "description") || "")
-                .trim() || null,
+              String(
+                row?.description || getExtraValue(row, "description") || "",
+              ).trim() || null,
             social_media_link:
               String(getExtraValue(row, "social_media_link") || "").trim() ||
               null,
@@ -1609,8 +1636,9 @@ export function registerAdminRoutes(app, deps) {
                   "CKAN User",
                 email: member?.email || localUser?.email || null,
                 role:
-                  String(localUser?.role || "").trim().toLowerCase() ||
-                  roleFromCapacity,
+                  String(localUser?.role || "")
+                    .trim()
+                    .toLowerCase() || roleFromCapacity,
                 is_active: localUser ? localUser.is_active !== false : true,
               };
             }),
@@ -1619,28 +1647,32 @@ export function registerAdminRoutes(app, deps) {
             id: user?.ckan_user_id || user?.id || user?.email || null,
             full_name: user?.full_name || user?.email || "ARMS User",
             email: user?.email || null,
-            role: String(user?.role || "student").trim().toLowerCase(),
+            role: String(user?.role || "student")
+              .trim()
+              .toLowerCase(),
             is_active: user?.is_active !== false,
           }));
           let profiles = Array.from(
-            [...ckanProfiles, ...assignedProfiles].reduce((acc, profile) => {
-              const key =
-                asTrimmedString(profile?.email).toLowerCase() ||
-                asTrimmedString(profile?.id).toLowerCase();
-              if (!key) return acc;
-              if (!acc.has(key)) {
-                acc.set(key, profile);
+            [...ckanProfiles, ...assignedProfiles]
+              .reduce((acc, profile) => {
+                const key =
+                  asTrimmedString(profile?.email).toLowerCase() ||
+                  asTrimmedString(profile?.id).toLowerCase();
+                if (!key) return acc;
+                if (!acc.has(key)) {
+                  acc.set(key, profile);
+                  return acc;
+                }
+                const current = acc.get(key);
+                acc.set(key, {
+                  ...current,
+                  ...profile,
+                  email: profile?.email || current?.email,
+                  role: profile?.role || current?.role,
+                });
                 return acc;
-              }
-              const current = acc.get(key);
-              acc.set(key, {
-                ...current,
-                ...profile,
-                email: profile?.email || current?.email,
-                role: profile?.role || current?.role,
-              });
-              return acc;
-            }, new Map()).values(),
+              }, new Map())
+              .values(),
           );
           const chiefKey = asTrimmedString(savedCenterChiefId).toLowerCase();
           if (chiefKey) {
@@ -1686,10 +1718,7 @@ export function registerAdminRoutes(app, deps) {
           totalAffiliates = normalized.length;
           centerProfilesLength = normalized.length;
         } else {
-          adminCount =
-            departmentChairperson || countedChairperson
-              ? 1
-              : 0;
+          adminCount = departmentChairperson || countedChairperson ? 1 : 0;
           const memberCapacityByKey = activeMembers.reduce((acc, member) => {
             const capacity = String(member?.capacity || "")
               .trim()
@@ -1771,13 +1800,14 @@ export function registerAdminRoutes(app, deps) {
         if (type === "center" && id) {
           if (!ensureCenterScope(res, req.user, id)) return;
           // Resolve linked members/projects/agendas for a single research center.
-          const [agendas, members, datasets, groups, centerOrg] = await Promise.all([
-            listOrganizationAgendas(id),
-            listOrganizationMembers(id),
-            listDatasets({ orgId: id, page: 1, limit: 100 }),
-            listGroups(),
-            getOrganization(id),
-          ]);
+          const [agendas, members, datasets, groups, centerOrg] =
+            await Promise.all([
+              listOrganizationAgendas(id),
+              listOrganizationMembers(id),
+              listDatasets({ orgId: id, page: 1, limit: 100 }),
+              listGroups(),
+              getOrganization(id),
+            ]);
           const centerUsers = await listAssignedCenterUsers(centerOrg);
           const groupNameById = (groups || []).reduce((acc, group) => {
             const key = String(group?.name || group?.id || "").trim();
@@ -1800,8 +1830,7 @@ export function registerAdminRoutes(app, deps) {
             (members || [])
               .filter(
                 (member) =>
-                  String(member?.state || "active").toLowerCase() !==
-                  "deleted",
+                  String(member?.state || "active").toLowerCase() !== "deleted",
               )
               .map(async (member) => {
                 const memberExtras = extrasToMap(member?.extras);
@@ -1831,8 +1860,9 @@ export function registerAdminRoutes(app, deps) {
                     "CKAN User",
                   email: member?.email || localUser?.email || null,
                   role:
-                    String(localUser?.role || "").trim().toLowerCase() ||
-                    roleFromCapacity,
+                    String(localUser?.role || "")
+                      .trim()
+                      .toLowerCase() || roleFromCapacity,
                   department:
                     localUser?.department ||
                     (deptId ? groupNameById[deptId] || deptId : null),
@@ -1842,16 +1872,20 @@ export function registerAdminRoutes(app, deps) {
           );
           const ckanProfileByKey = new Map();
           ckanProfiles.forEach((profile) => {
-            uniqueTrimmed([profile?.id, profile?.email], { lower: true }).forEach(
-              (key) => {
-                ckanProfileByKey.set(key, profile);
-              },
-            );
+            uniqueTrimmed([profile?.id, profile?.email], {
+              lower: true,
+            }).forEach((key) => {
+              ckanProfileByKey.set(key, profile);
+            });
           });
           const assignedProfiles = centerUsers.map((user) => {
             const existing =
-              ckanProfileByKey.get(asTrimmedString(user?.ckan_user_id).toLowerCase()) ||
-              ckanProfileByKey.get(asTrimmedString(user?.email).toLowerCase()) ||
+              ckanProfileByKey.get(
+                asTrimmedString(user?.ckan_user_id).toLowerCase(),
+              ) ||
+              ckanProfileByKey.get(
+                asTrimmedString(user?.email).toLowerCase(),
+              ) ||
               null;
             return {
               id: user?.ckan_user_id || user?.id || user?.email || null,
@@ -1863,34 +1897,40 @@ export function registerAdminRoutes(app, deps) {
               email: existing?.email || user?.email || null,
               role:
                 existing?.role ||
-                String(user?.role || "student").trim().toLowerCase(),
+                String(user?.role || "student")
+                  .trim()
+                  .toLowerCase(),
               department: existing?.department || user?.department || null,
               is_active: user?.is_active !== false,
             };
           });
           let profiles = Array.from(
-            [...ckanProfiles, ...assignedProfiles].reduce((acc, profile) => {
-              const key =
-                asTrimmedString(profile?.email).toLowerCase() ||
-                asTrimmedString(profile?.id).toLowerCase();
-              if (!key) return acc;
-              if (!acc.has(key)) {
-                acc.set(key, profile);
+            [...ckanProfiles, ...assignedProfiles]
+              .reduce((acc, profile) => {
+                const key =
+                  asTrimmedString(profile?.email).toLowerCase() ||
+                  asTrimmedString(profile?.id).toLowerCase();
+                if (!key) return acc;
+                if (!acc.has(key)) {
+                  acc.set(key, profile);
+                  return acc;
+                }
+                const current = acc.get(key);
+                acc.set(key, {
+                  ...current,
+                  ...profile,
+                  full_name: profile?.full_name || current?.full_name,
+                  email: profile?.email || current?.email,
+                  department: profile?.department || current?.department,
+                  role: profile?.role || current?.role,
+                });
                 return acc;
-              }
-              const current = acc.get(key);
-              acc.set(key, {
-                ...current,
-                ...profile,
-                full_name: profile?.full_name || current?.full_name,
-                email: profile?.email || current?.email,
-                department: profile?.department || current?.department,
-                role: profile?.role || current?.role,
-              });
-              return acc;
-            }, new Map()).values(),
+              }, new Map())
+              .values(),
           );
-          profiles = profiles.filter((profile) => !isServiceBotProfile(profile));
+          profiles = profiles.filter(
+            (profile) => !isServiceBotProfile(profile),
+          );
           const centerChiefId = String(
             getExtraValue(centerOrg, "center_chief_id") || "",
           ).trim();
@@ -1934,8 +1974,7 @@ export function registerAdminRoutes(app, deps) {
             return {
               id: dataset?.id || dataset?.name || crypto.randomUUID(),
               title: dataset?.title || dataset?.name || "-",
-              status:
-                meta.project_status || meta.status || "ongoing",
+              status: meta.project_status || meta.status || "ongoing",
               year: meta.project_year || null,
               lead_researcher: meta.lead_researcher || null,
               department_name: deptId ? groupNameById[deptId] || deptId : null,
@@ -1966,9 +2005,8 @@ export function registerAdminRoutes(app, deps) {
               listOrganizations(),
               getGroup(id),
             ]);
-          const departmentUsers = await listAssignedDepartmentUsers(
-            departmentGroup,
-          );
+          const departmentUsers =
+            await listAssignedDepartmentUsers(departmentGroup);
           const centerNameById = (centers || []).reduce((acc, center) => {
             const key = String(center?.name || center?.id || "").trim();
             if (!key) return acc;
@@ -1991,7 +2029,9 @@ export function registerAdminRoutes(app, deps) {
                   role:
                     asTrimmedString(user?.ckan_user_id) === savedChairpersonId
                       ? "admin"
-                      : String(user?.role || "student").trim().toLowerCase(),
+                      : String(user?.role || "student")
+                          .trim()
+                          .toLowerCase(),
                   department:
                     departmentGroup?.title ||
                     departmentGroup?.display_name ||
@@ -2032,46 +2072,46 @@ export function registerAdminRoutes(app, deps) {
                     is_active: true,
                   }));
 
-            const projects = (datasets || [])
-              .filter((dataset) => {
-                const meta = extrasToMap(dataset?.extras);
-                return String(meta.department_id || "").trim() === id;
-              })
-              .map((dataset) => {
-                const meta = extrasToMap(dataset?.extras);
-                const centerId = String(
-                  dataset?.organization?.name || dataset?.owner_org || "",
-                ).trim();
-                const agendaId = String(meta.research_agenda_id || "").trim();
-                const agendaNameFromMeta = String(
-                  meta.research_agenda ||
-                    meta.research_agendas ||
-                    meta.agenda_name ||
-                    meta.agenda ||
-                    "",
-                ).trim();
-                return {
-                  id: dataset?.id || dataset?.name || crypto.randomUUID(),
-                  title: dataset?.title || dataset?.name || "-",
-                  status:
-                    meta.project_status ||
+          const projects = (datasets || [])
+            .filter((dataset) => {
+              const meta = extrasToMap(dataset?.extras);
+              return String(meta.department_id || "").trim() === id;
+            })
+            .map((dataset) => {
+              const meta = extrasToMap(dataset?.extras);
+              const centerId = String(
+                dataset?.organization?.name || dataset?.owner_org || "",
+              ).trim();
+              const agendaId = String(meta.research_agenda_id || "").trim();
+              const agendaNameFromMeta = String(
+                meta.research_agenda ||
+                  meta.research_agendas ||
+                  meta.agenda_name ||
+                  meta.agenda ||
+                  "",
+              ).trim();
+              return {
+                id: dataset?.id || dataset?.name || crypto.randomUUID(),
+                title: dataset?.title || dataset?.name || "-",
+                status:
+                  meta.project_status ||
                   dataset?.state ||
                   (dataset?.private ? "private" : "public"),
                 year: meta.project_year || null,
                 lead_researcher: meta.lead_researcher || null,
-                  department_name:
-                    departmentGroup?.title ||
-                    departmentGroup?.display_name ||
-                    departmentGroup?.name ||
-                    id,
-                  research_center_name: centerId
-                    ? centerNameById[centerId] || centerId
-                    : null,
-                  agenda_name: agendaNameFromMeta || agendaId || null,
-                  start_date: meta.start_date || null,
-                  end_date: meta.end_date || null,
-                };
-              });
+                department_name:
+                  departmentGroup?.title ||
+                  departmentGroup?.display_name ||
+                  departmentGroup?.name ||
+                  id,
+                research_center_name: centerId
+                  ? centerNameById[centerId] || centerId
+                  : null,
+                agenda_name: agendaNameFromMeta || agendaId || null,
+                start_date: meta.start_date || null,
+                end_date: meta.end_date || null,
+              };
+            });
 
           return res.json({ profiles, projects, agendas: [] });
         }
@@ -2411,7 +2451,10 @@ export function registerAdminRoutes(app, deps) {
             orgId: created?.name || created?.id || orgName,
             username: centerChiefUsername,
           });
-          await syncLocalCenterChiefProfile(selected, created || { name: orgName });
+          await syncLocalCenterChiefProfile(
+            selected,
+            created || { name: orgName },
+          );
         } catch (error) {
           if (created?.name || created?.id) {
             try {
