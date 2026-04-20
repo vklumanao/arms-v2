@@ -18,6 +18,18 @@ function mockAuthPayload() {
       full_name: "Demo Admin",
       role: "admin",
       is_active: true,
+      roles: [{ id: "demo-role-admin", key: "admin", name: "Admin" }],
+      permissions: [
+        "dashboard.view",
+        "affiliate_profile.view",
+        "affiliations.manage",
+        "research_outputs.view",
+        "awards_recognition.view",
+        "admin.controls.manage",
+        "admin.users.manage",
+        "admin.affiliates.manage",
+        "admin.rbac.manage",
+      ],
       is_center_chief: false,
       managed_center_id: null,
       managed_center_name: null,
@@ -63,11 +75,163 @@ function mockApiPayload(path, options = {}) {
           "admin.controls.manage",
           "admin.users.manage",
           "admin.affiliates.manage",
+          "admin.rbac.manage",
         ],
       },
     };
   }
   if (cleanPath === "/permissions/role-map/reset") return { ok: true };
+
+  if (cleanPath === "/admin/rbac/overview") {
+    return {
+      data: {
+        roles: [
+          {
+            id: "demo-role-admin",
+            key: "admin",
+            name: "Admin",
+            assigned_user_count: 1,
+            permission_count: 9,
+            is_critical: true,
+          },
+        ],
+        permissions: [
+          {
+            id: "perm-1",
+            key: "dashboard.view",
+            label: "Dashboard: View",
+            module: "Dashboard",
+          },
+          {
+            id: "perm-2",
+            key: "admin.users.manage",
+            label: "Admin Users: Manage",
+            module: "User Management",
+          },
+          {
+            id: "perm-3",
+            key: "admin.rbac.manage",
+            label: "RBAC: Manage",
+            module: "Access Control",
+          },
+        ],
+        groupedPermissions: {},
+        rolePermissionMap: {
+          admin: [
+            "dashboard.view",
+            "affiliate_profile.view",
+            "affiliations.manage",
+            "research_outputs.view",
+            "awards_recognition.view",
+            "admin.controls.manage",
+            "admin.users.manage",
+            "admin.affiliates.manage",
+            "admin.rbac.manage",
+          ],
+        },
+        users: [
+          {
+            id: "demo-user-1",
+            full_name: "Demo Admin",
+            email: "demo@arms.local",
+            role: "admin",
+            roles: [{ id: "demo-role-admin", key: "admin", name: "Admin" }],
+            is_active: true,
+          },
+        ],
+      },
+    };
+  }
+  if (cleanPath === "/roles" && method === "GET") {
+    return {
+      data: [
+        {
+          id: "demo-role-admin",
+          key: "admin",
+          name: "Admin",
+          description: "Full system administration access.",
+          assigned_user_count: 1,
+          permission_count: 9,
+          is_critical: true,
+        },
+      ],
+    };
+  }
+  if (cleanPath === "/permissions" && method === "GET") {
+    return {
+      data: [
+        {
+          id: "perm-1",
+          key: "create_user",
+          label: "Create User",
+          module: "User Management",
+          action: "create",
+        },
+        {
+          id: "perm-2",
+          key: "edit_user",
+          label: "Edit User",
+          module: "User Management",
+          action: "edit",
+        },
+        {
+          id: "perm-3",
+          key: "delete_user",
+          label: "Delete User",
+          module: "User Management",
+          action: "delete",
+        },
+        {
+          id: "perm-4",
+          key: "view_reports",
+          label: "View Reports",
+          module: "Reports",
+          action: "view",
+        },
+      ],
+    };
+  }
+  if (
+    cleanPath.startsWith("/roles/") &&
+    cleanPath.endsWith("/permissions") &&
+    method === "GET"
+  ) {
+    return {
+      data: {
+        role_id: "demo-role-admin",
+        role_key: "admin",
+        permission_keys: [
+          "create_user",
+          "edit_user",
+          "delete_user",
+          "view_reports",
+          "admin.rbac.manage",
+          "admin.users.manage",
+        ],
+      },
+    };
+  }
+  if (
+    cleanPath.startsWith("/roles/") &&
+    cleanPath.endsWith("/permissions") &&
+    method === "POST"
+  ) {
+    return { data: { ok: true } };
+  }
+  if (cleanPath === "/admin/rbac/roles" && method === "POST") {
+    const body =
+      typeof options.body === "string"
+        ? JSON.parse(options.body || "{}")
+        : options.body || {};
+    return {
+      data: {
+        id: "demo-role-created",
+        key: body.key || "new_role",
+        name: body.name || "New Role",
+      },
+    };
+  }
+  if (cleanPath.startsWith("/admin/rbac/roles/")) return { data: { ok: true } };
 
   if (cleanPath === "/reference-data") {
     return {
@@ -167,6 +331,47 @@ function mockApiPayload(path, options = {}) {
     };
   }
   if (cleanPath === "/admin/users") return { data: [] };
+  if (cleanPath === "/admin/users/role-options" && method === "GET") {
+    return {
+      data: [
+        { id: "demo-role-student", key: "student", name: "Student" },
+        { id: "demo-role-faculty", key: "faculty", name: "Faculty" },
+        { id: "demo-role-admin", key: "admin", name: "Admin" },
+      ],
+    };
+  }
+  if (
+    cleanPath.includes("/admin/users/") &&
+    cleanPath.endsWith("/role") &&
+    method === "PATCH"
+  ) {
+    const rawBody =
+      typeof options.body === "string"
+        ? JSON.parse(options.body || "{}")
+        : options.body || {};
+    const roleKey = String(rawBody.role || "student")
+      .trim()
+      .toLowerCase();
+    return {
+      data: {
+        id: cleanPath.split("/")[3] || "demo-user-id",
+        role:
+          roleKey === "admin"
+            ? "admin"
+            : roleKey === "faculty"
+              ? "faculty"
+              : "student",
+        roles: [
+          {
+            id: `demo-role-${roleKey}`,
+            key: roleKey,
+            name: roleKey.charAt(0).toUpperCase() + roleKey.slice(1),
+          },
+        ],
+        permissions: [],
+      },
+    };
+  }
   if (cleanPath.includes("/admin/users/") && cleanPath.endsWith("/detail")) {
     return {
       data: {
@@ -228,47 +433,6 @@ function mockApiPayload(path, options = {}) {
   }
   if (cleanPath === "/admin/controls/reference-links") {
     return { profiles: [], projects: [], agendas: [] };
-  }
-  if (cleanPath === "/admin/controls/reassign-dependencies") {
-    return { data: { updated: 0 } };
-  }
-  if (cleanPath === "/admin/controls/sync-ckan-orgs") {
-    return { summary: { synced: 0 } };
-  }
-  if (
-    cleanPath === "/admin/controls/proponents/accounts" &&
-    method === "POST"
-  ) {
-    const rawBody =
-      typeof options.body === "string"
-        ? JSON.parse(options.body || "{}")
-        : options.body || {};
-    const first = String(rawBody.first_name || "").trim();
-    const last = String(rawBody.last_name || "").trim();
-    const middleRaw = String(rawBody.middle_initial || "")
-      .replace(/\./g, "")
-      .trim();
-    const middle = middleRaw ? middleRaw.charAt(0).toUpperCase() : "";
-    const formatted =
-      last && first
-        ? `${last.toUpperCase()}, ${first.toUpperCase()}${middle ? ` ${middle}.` : ""}`
-        : rawBody.full_name || "Created Proponent";
-    return {
-      data: {
-        id: "demo-proponent-created",
-        name: formatted,
-        full_name: formatted,
-        email: rawBody.email || "created@arms.local",
-        role: rawBody.role || "faculty",
-        department: rawBody.department || null,
-        ckan_org_id: rawBody.ckan_org_id || null,
-        ckan_group_id: rawBody.ckan_group_id || null,
-        ckan_username: "created-proponent",
-        ckan_user_id: "ckan-created-user",
-        is_active: true,
-        temporary_password: "Arms!demo1234",
-      },
-    };
   }
   if (cleanPath.includes("/admin/controls/reference/")) {
     if (method === "PATCH") return { data: null };
