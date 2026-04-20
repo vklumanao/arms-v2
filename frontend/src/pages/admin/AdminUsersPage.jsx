@@ -40,6 +40,7 @@ import {
 import { useToast } from "@/components/providers/ToastProvider";
 import {
   createAdminUser,
+  fetchAdminUserRoleOptions,
   fetchAdminUsers,
   sendAdminPasswordReset,
   updateAdminUserRole,
@@ -53,13 +54,10 @@ import {
   Loader2,
   Mail,
   Search,
-  ShieldCheck,
   UserCheck,
   UserX,
   Users,
 } from "lucide-react";
-
-const ROLE_OPTIONS = ["student", "faculty", "admin"];
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10;
@@ -86,6 +84,7 @@ export default function AdminUsersPage() {
   const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
   const [createSaving, setCreateSaving] = useState(false);
   const [createResult, setCreateResult] = useState(null);
+  const [roleOptions, setRoleOptions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const toast = useToast();
   const hasActiveDirectoryFilters = useMemo(
@@ -105,8 +104,12 @@ export default function AdminUsersPage() {
     setError("");
     setMessage("");
     try {
-      const data = await fetchAdminUsers();
-      setUsers(data || []);
+      const [usersData, roleData] = await Promise.all([
+        fetchAdminUsers(),
+        fetchAdminUserRoleOptions(),
+      ]);
+      setUsers(usersData || []);
+      setRoleOptions(roleData || []);
     } catch (loadError) {
       setError(loadError.message || "Unable to load users.");
     }
@@ -144,6 +147,16 @@ export default function AdminUsersPage() {
     return { total, active, inactive, faculty, students };
   }, [users]);
 
+  const selectableRoles = useMemo(() => {
+    if (Array.isArray(roleOptions) && roleOptions.length > 0)
+      return roleOptions;
+    return [
+      { id: "fallback-student", key: "student", name: "Student" },
+      { id: "fallback-faculty", key: "faculty", name: "Faculty" },
+      { id: "fallback-admin", key: "admin", name: "Admin" },
+    ];
+  }, [roleOptions]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [userSearch]);
@@ -172,7 +185,13 @@ export default function AdminUsersPage() {
     }
     setUsers((prev) =>
       prev.map((user) =>
-        user.id === userId ? { ...user, role: updated.role } : user,
+        user.id === userId
+          ? {
+              ...user,
+              role: updated.role,
+              roles: Array.isArray(updated.roles) ? updated.roles : user.roles,
+            }
+          : user,
       ),
     );
     setSavingUserById((prev) => ({ ...prev, [userId]: false }));
@@ -229,8 +248,19 @@ export default function AdminUsersPage() {
     setMessage(`Reset password link sent to ${email}.`);
   };
 
+  const getAssignedRoleKey = (user) => {
+    const assigned = Array.isArray(user?.roles) ? user.roles : [];
+    const firstKey = String(assigned?.[0]?.key || "")
+      .trim()
+      .toLowerCase();
+    if (firstKey) return firstKey;
+    return String(user?.role || "student")
+      .trim()
+      .toLowerCase();
+  };
+
   const openRoleConfirm = (user, nextRole) => {
-    if (!user?.id || !nextRole || nextRole === user.role) return;
+    if (!user?.id || !nextRole || nextRole === getAssignedRoleKey(user)) return;
     setConfirmAction({
       type: "role",
       userId: user.id,
@@ -334,6 +364,14 @@ export default function AdminUsersPage() {
       return;
     }
 
+    const selectedRoleKey = String(createForm.role || "faculty")
+      .trim()
+      .toLowerCase();
+    const createRole =
+      selectedRoleKey === "student" || selectedRoleKey === "faculty"
+        ? selectedRoleKey
+        : "faculty";
+
     setCreateSaving(true);
     try {
       const created = await createAdminUser({
@@ -341,16 +379,43 @@ export default function AdminUsersPage() {
         middle_initial: middle_initial || null,
         last_name,
         email,
-        role: createForm.role,
+        role: createRole,
         ckan_org_id: createForm.ckan_org_id || null,
         ckan_group_id: createForm.ckan_group_id || null,
         department:
           departments.find((row) => row.id === createForm.ckan_group_id)
             ?.name || null,
       });
-      setUsers((prev) => [created, ...prev]);
-      setCreateResult(created || null);
-      setMessage("User account created.");
+      let nextUser = created || null;
+      let assignmentWarning = "";
+
+      if (created?.id && selectedRoleKey !== createRole) {
+        try {
+          const assigned = await updateAdminUserRole(
+            created.id,
+            selectedRoleKey,
+          );
+          nextUser = {
+            ...(created || {}),
+            role: assigned?.role || created?.role || "student",
+            roles: Array.isArray(assigned?.roles) ? assigned.roles : [],
+          };
+        } catch (assignError) {
+          assignmentWarning = String(
+            assignError?.message ||
+              "User created, but selected role assignment failed.",
+          );
+        }
+      }
+
+      setUsers((prev) => [nextUser, ...prev]);
+      setCreateResult(nextUser || null);
+      if (assignmentWarning) {
+        setError(assignmentWarning);
+        setMessage("User account created.");
+      } else {
+        setMessage("User account created.");
+      }
     } catch (createError) {
       setError(createError.message || "Failed to create user account.");
     } finally {
@@ -502,7 +567,7 @@ export default function AdminUsersPage() {
                       <TableCell>{user.email || "-"}</TableCell>
                       <TableCell>
                         <Select
-                          value={user.role || "student"}
+                          value={getAssignedRoleKey(user)}
                           disabled={Boolean(savingUserById[user.id])}
                           onValueChange={(value) =>
                             openRoleConfirm(user, value)
@@ -512,13 +577,13 @@ export default function AdminUsersPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {ROLE_OPTIONS.map((role) => (
+                            {selectableRoles.map((role) => (
                               <SelectItem
-                                key={role}
-                                value={role}
+                                key={role.id || role.key}
+                                value={String(role.key || "").toLowerCase()}
                                 className="capitalize"
                               >
-                                {role}
+                                {role.name || role.key}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -735,8 +800,14 @@ export default function AdminUsersPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                      <SelectItem value="student">Student</SelectItem>
+                      {selectableRoles.map((role) => (
+                        <SelectItem
+                          key={role.id || role.key}
+                          value={String(role.key || "").toLowerCase()}
+                        >
+                          {role.name || role.key}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </label>
