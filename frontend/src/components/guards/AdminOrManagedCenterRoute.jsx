@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useParams } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { hasPermission, PERMISSIONS } from "@/services/permissions";
 
 export default function AdminOrManagedCenterRoute() {
   const { profile } = useAuth();
@@ -9,15 +10,19 @@ export default function AdminOrManagedCenterRoute() {
   if (!profile) return <Navigate to="/unauthorized" replace />;
   if (!centerId) return <Navigate to="/unauthorized" replace />;
 
-  const role = String(profile?.role || "").trim().toLowerCase();
-  const isAdmin = role === "admin";
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role;
+  const isAdmin = hasPermission(
+    roleKeys,
+    PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+    profile?.permissions,
+  );
 
   if (isAdmin) return <Outlet />;
 
   const isCenterChief =
-    role === "faculty" &&
-    profile?.is_center_chief === true &&
-    Boolean(profile?.managed_center_id);
+    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
 
   if (!isCenterChief) return <Navigate to="/unauthorized" replace />;
 
@@ -26,4 +31,3 @@ export default function AdminOrManagedCenterRoute() {
 
   return <Navigate to="/unauthorized" replace />;
 }
-
