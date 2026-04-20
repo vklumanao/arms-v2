@@ -36,8 +36,8 @@ export default function PublicLayout() {
                 to={item.to}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   isActive(item.to)
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                 }`}
               >
                 {item.label}
@@ -57,8 +57,8 @@ export default function PublicLayout() {
               to={item.to}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 isActive(item.to)
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
               }`}
             >
               {item.label}
