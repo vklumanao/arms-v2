@@ -45,6 +45,7 @@ import {
   fetchUserProjects,
   updateResearchOutputVisibility,
 } from "@/services/submissions";
+import { hasPermission, PERMISSIONS } from "@/services/permissions";
 import { formatStatusLabel, normalizeStatus } from "@/utils/status";
 import { formatDate } from "@/utils/submissions";
 import {
@@ -66,19 +67,40 @@ import {
 const PROJECTS_PAGE_SIZE = 10;
 export default function ResearchProjectsPage() {
   const { user, profile } = useAuth();
-  const isAdmin =
-    String(profile?.role || user?.role || "")
-      .trim()
-      .toLowerCase() === "admin";
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role || user?.role;
+  const isAdmin = hasPermission(
+    roleKeys,
+    PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+    profile?.permissions,
+  );
+  const canCreateProjects = hasPermission(
+    roleKeys,
+    PERMISSIONS.PROJECTS_CREATE,
+    profile?.permissions,
+  );
+  const canEditProjects = hasPermission(
+    roleKeys,
+    PERMISSIONS.PROJECTS_EDIT,
+    profile?.permissions,
+  );
+  const canDeleteProjects = hasPermission(
+    roleKeys,
+    PERMISSIONS.PROJECTS_DELETE,
+    profile?.permissions,
+  );
+  const canExportProjects = hasPermission(
+    roleKeys,
+    PERMISSIONS.PROJECTS_VIEW,
+    profile?.permissions,
+  );
   const isCenterChief =
-    String(profile?.role || user?.role || "")
-      .trim()
-      .toLowerCase() === "faculty" &&
-    profile?.is_center_chief === true &&
-    Boolean(profile?.managed_center_id);
+    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
   const hasOrgId = String(profile?.ckan_org_id || "").trim();
-  const canSubmit = isAdmin || Boolean(hasOrgId);
-  const needsOrganization = !canSubmit;
+  const hasSubmitContext = isAdmin || Boolean(hasOrgId);
+  const canSubmit = canCreateProjects && hasSubmitContext;
+  const needsOrganization = canCreateProjects && !hasSubmitContext;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { centers } = useReferenceData();
@@ -614,21 +636,19 @@ export default function ResearchProjectsPage() {
 
   const getStatusBadgeClass = (status) => {
     const normalized = normalizeStatus(status);
-    if (normalized === "proposal")
-      return "border-zinc-200 bg-zinc-50 text-zinc-800";
-    if (normalized === "ongoing")
-      return "border-zinc-200 bg-zinc-50 text-zinc-800";
     if (normalized === "completed")
-      return "border-zinc-200 bg-zinc-50 text-zinc-800";
-    if (normalized === "rejected")
-      return "border-zinc-200 bg-zinc-50 text-zinc-800";
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    if (normalized === "ongoing")
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    if (normalized === "delayed" || normalized === "rejected")
+      return "border-red-200 bg-red-50 text-red-700";
+    return "border-blue-200 bg-blue-50 text-blue-700";
   };
 
   const getVisibilityBadgeClass = (isPrivate) =>
     isPrivate
-      ? "border-zinc-200 bg-zinc-50 text-zinc-800"
-      : "border-zinc-200 bg-zinc-50 text-zinc-800";
+      ? "border-blue-200/70 bg-blue-50/60 text-slate-800"
+      : "border-blue-200/70 bg-blue-50/60 text-slate-800";
 
   const buildExportRows = () =>
     filteredProjects.map((project, index) => ({
@@ -764,32 +784,32 @@ export default function ResearchProjectsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-gradient-to-br from-zinc-100 via-white to-zinc-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-zinc-200/50 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-zinc-300/40 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
                 Submissions Workspace
               </p>
-              <h1 className="text-2xl font-bold text-black md:text-3xl">
+              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
                 Research Projects
               </h1>
-              <p className="max-w-2xl text-sm text-black">
+              <p className="max-w-2xl text-sm text-[#1E3A8A]">
                 Browse projects, manage visibility, and submit new research
                 projects from one place.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {isAdmin ? (
+              {canExportProjects ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
+                      className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
                       disabled={
                         !filteredProjects.length || Boolean(exportingType)
                       }
@@ -800,16 +820,16 @@ export default function ResearchProjectsPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="bg-white border border-zinc-300 shadow-md"
+                    className="bg-white border border-blue-200 shadow-md"
                   >
                     <DropdownMenuItem
-                      className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
+                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
                       onSelect={exportAsCsv}
                     >
                       {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
+                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
                       onSelect={exportAsPdf}
                     >
                       {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
@@ -826,7 +846,7 @@ export default function ResearchProjectsPage() {
                 <Button
                   type="button"
                   disabled
-                  className="bg-white text-zinc-500 border border-zinc-300"
+                  className="bg-white text-slate-500 border border-blue-200"
                   title="Set your Organization (Research Center) in My Profile to submit."
                 >
                   Submit Research Project
@@ -836,7 +856,7 @@ export default function ResearchProjectsPage() {
           </div>
 
           {needsOrganization ? (
-            <div className="mt-4 rounded-2xl border border-zinc-300 bg-white/80 p-4 text-sm text-zinc-900">
+            <div className="mt-4 rounded-2xl border border-blue-200 bg-white/80 p-4 text-sm text-slate-900">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p>
                   You can browse projects, but submitting requires an
@@ -850,48 +870,48 @@ export default function ResearchProjectsPage() {
           ) : null}
 
           <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
-            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                 <FileText size={14} />
                 Total Projects
               </p>
-              <p className="mt-2 text-2xl font-bold text-black">
+              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
                 {analytics.total}
               </p>
             </div>
-            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                 <FileText size={14} />
                 Proposal
               </p>
-              <p className="mt-2 text-2xl font-bold text-black">
+              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
                 {analytics.proposal}
               </p>
             </div>
-            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                 <Clock3 size={14} />
                 Ongoing
               </p>
-              <p className="mt-2 text-2xl font-bold text-black">
+              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
                 {analytics.ongoing}
               </p>
             </div>
-            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                 <CheckCircle2 size={14} />
                 Completed
               </p>
-              <p className="mt-2 text-2xl font-bold text-black">
+              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
                 {analytics.completed}
               </p>
             </div>
-            <div className="rounded-xl border border-black/20 bg-white/90 p-4 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-black">
+            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                 <XCircle size={14} />
                 Rejected
               </p>
-              <p className="mt-2 text-2xl font-bold text-black">
+              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
                 {analytics.rejected}
               </p>
             </div>
@@ -900,31 +920,31 @@ export default function ResearchProjectsPage() {
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-          <CardHeader className="border-b border-zinc-200 px-6 py-5">
+        <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
+          <CardHeader className="border-b border-blue-200/70 px-6 py-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-black">
+                <CardTitle className="text-base font-semibold text-[#1E3A8A]">
                   Managed Center Projects
                 </CardTitle>
-                <CardDescription className="text-zinc-600">
+                <CardDescription className="text-slate-600">
                   Showing {centerChiefFilteredRows.length} project(s) linked to
                   your research center.
                 </CardDescription>
               </div>
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-slate-600">
                 {centerChiefFilteredRows.length} row(s).
               </p>
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <label className="relative w-full md:max-w-xl">
                   <span className="sr-only">
                     Search managed center projects
                   </span>
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
                   <Input
                     value={centerChiefSearch}
                     onChange={(event) =>
@@ -934,7 +954,7 @@ export default function ResearchProjectsPage() {
                     className="pl-9"
                   />
                 </label>
-                <span className="text-xs text-zinc-600">
+                <span className="text-xs text-slate-600">
                   Scope: {profile?.managed_center_name || "My Center"}
                 </span>
               </div>
@@ -1009,10 +1029,10 @@ export default function ResearchProjectsPage() {
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "rounded-full border-black/20 px-4 text-xs",
+                      "rounded-full border-blue-200/80 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-black text-white hover:bg-black"
-                        : "bg-white text-black hover:bg-zinc-100",
+                        ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                        : "bg-white text-[#1E3A8A] hover:bg-blue-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
                   >
@@ -1022,7 +1042,7 @@ export default function ResearchProjectsPage() {
                         "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         centerChiefQuickFilter === chip.key
                           ? "bg-white/20 text-white"
-                          : "bg-zinc-100 text-black",
+                          : "bg-blue-50 text-[#1E3A8A]",
                       )}
                     >
                       {chip.count}
@@ -1033,7 +1053,7 @@ export default function ResearchProjectsPage() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="rounded-full text-xs text-black hover:text-black"
+                  className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
                   onClick={resetCenterChiefFilters}
                 >
                   Reset all
@@ -1042,13 +1062,13 @@ export default function ResearchProjectsPage() {
 
               {hasActiveCenterChiefFilters ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                     Active Filters
                   </span>
                   {String(centerChiefSearch || "").trim() ? (
                     <button
                       type="button"
-                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                       onClick={() => setCenterChiefSearch("")}
                     >
                       Search: "{String(centerChiefSearch || "").trim()}" x
@@ -1057,7 +1077,7 @@ export default function ResearchProjectsPage() {
                   {centerChiefQuickFilter !== "all" ? (
                     <button
                       type="button"
-                      className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                      className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                       onClick={() => setCenterChiefQuickFilter("all")}
                     >
                       {centerChiefQuickFilter} x
@@ -1076,29 +1096,29 @@ export default function ResearchProjectsPage() {
                     (_, index) => (
                       <Card
                         key={`projects-skeleton-grid-${index}`}
-                        className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
+                        className="rounded-2xl border border-blue-200/70 bg-white p-5 shadow-sm"
                       >
                         <div className="animate-pulse space-y-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="w-full space-y-2">
                               <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                              <div className="h-5 w-3/4 rounded-full bg-zinc-200/70" />
-                              <div className="h-3 w-1/2 rounded-full bg-zinc-200/60" />
+                              <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
+                              <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
                             </div>
-                            <div className="h-6 w-16 rounded-full bg-zinc-200/70" />
+                            <div className="h-6 w-16 rounded-full bg-blue-100/80" />
                           </div>
                           <div className="flex gap-2">
-                            <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
-                            <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
+                            <div className="h-6 w-24 rounded-full bg-blue-100/80" />
+                            <div className="h-6 w-24 rounded-full bg-blue-100/80" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="h-24 rounded-lg bg-zinc-200/60" />
-                            <div className="h-24 rounded-lg bg-zinc-200/60" />
+                            <div className="h-24 rounded-lg bg-blue-100/70" />
+                            <div className="h-24 rounded-lg bg-blue-100/70" />
                           </div>
                           <div className="flex gap-2">
-                            <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
-                            <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
-                            <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                            <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                            <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                            <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
                           </div>
                         </div>
                       </Card>
@@ -1106,14 +1126,14 @@ export default function ResearchProjectsPage() {
                   )}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="rounded-2xl border border-blue-200/70 bg-white p-4 shadow-sm">
                   <div className="animate-pulse space-y-3">
-                    <div className="h-8 w-full rounded-lg bg-zinc-200/60" />
+                    <div className="h-8 w-full rounded-lg bg-blue-100/70" />
                     {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                       (_, index) => (
                         <div
                           key={`projects-skeleton-list-${index}`}
-                          className="h-12 w-full rounded-lg bg-zinc-200/60"
+                          className="h-12 w-full rounded-lg bg-blue-100/70"
                         />
                       ),
                     )}
@@ -1124,27 +1144,27 @@ export default function ResearchProjectsPage() {
           ) : null}
           {centerChiefLoading ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
                 Loading managed center projects...
               </div>
             </CardContent>
           ) : centerChiefRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
                 No projects found for your research center yet.
               </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
                 No managed center projects match your search.
               </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-zinc-50/80 text-zinc-600">
+                  <TableHeader className="bg-blue-50/80 text-slate-600">
                     <TableRow>
                       <TableHead className="w-[40px]">No.</TableHead>
                       <TableHead className="w-[320px]">Title</TableHead>
@@ -1174,10 +1194,10 @@ export default function ResearchProjectsPage() {
                               index +
                               1}
                           </TableCell>
-                          <TableCell className="whitespace-normal break-words font-medium text-black">
+                          <TableCell className="whitespace-normal break-words font-medium text-[#1E3A8A]">
                             {project.title || "-"}
                           </TableCell>
-                          <TableCell className="text-zinc-700">
+                          <TableCell className="text-slate-700">
                             {project.lead_researcher || "-"}
                           </TableCell>
                           <TableCell>
@@ -1198,10 +1218,10 @@ export default function ResearchProjectsPage() {
                               {project.private ? "Private" : "Public"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-zinc-700">
+                          <TableCell className="text-slate-700">
                             {project.year || "-"}
                           </TableCell>
-                          <TableCell className="text-zinc-700">
+                          <TableCell className="text-slate-700">
                             {formatDate(project.submitted_at)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1210,7 +1230,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                 onClick={() => goToProjectDetail(project)}
                                 aria-label={`View ${project?.title || "project"}`}
                                 title="View"
@@ -1221,7 +1241,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                 onClick={() => openEditModal(project)}
                                 aria-label={`Edit ${project?.title || "project"}`}
                                 title="Edit"
@@ -1232,7 +1252,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-700 hover:bg-zinc-50"
+                                className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
                                 onClick={() => handleDeleteProject(project)}
                                 aria-label={`Delete ${project?.title || "project"}`}
                                 title="Delete"
@@ -1266,31 +1286,31 @@ export default function ResearchProjectsPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-        <CardHeader className="border-b border-zinc-200 px-6 py-5">
+      <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
+        <CardHeader className="border-b border-blue-200/70 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-black">
+              <CardTitle className="text-base font-semibold text-[#1E3A8A]">
                 Research Project Records
               </CardTitle>
-              <CardDescription className="text-zinc-600">
+              <CardDescription className="text-slate-600">
                 Showing {filteredProjects.length} project(s).
               </CardDescription>
             </div>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-slate-600">
               {filteredProjects.length} row(s).
             </p>
           </div>
         </CardHeader>
 
         <CardContent className="p-4">
-          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+          <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex flex-1 flex-col gap-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <label className="relative w-full sm:max-w-md">
                     <span className="sr-only">Search projects</span>
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
                     <Input
                       className="pl-9"
                       placeholder="Search title, abstract, lead, status, year, or center"
@@ -1306,7 +1326,7 @@ export default function ResearchProjectsPage() {
                     <SelectTrigger className="w-full sm:w-[16rem]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-zinc-300 shadow-md">
+                    <SelectContent className="bg-white border border-blue-200 shadow-md">
                       <SelectItem value="submitted_desc">
                         Sort: Newest submitted
                       </SelectItem>
@@ -1320,7 +1340,7 @@ export default function ResearchProjectsPage() {
                     </SelectContent>
                   </Select>
 
-                  <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-zinc-200 bg-white p-1 sm:w-auto">
+                  <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-blue-200/70 bg-white p-1 sm:w-auto">
                     <Button
                       variant={viewMode === "grid" ? "secondary" : "ghost"}
                       size="sm"
@@ -1414,10 +1434,10 @@ export default function ResearchProjectsPage() {
                       size="sm"
                       variant="outline"
                       className={cn(
-                        "rounded-full border-black/20 px-4 text-xs",
+                        "rounded-full border-blue-200/80 px-4 text-xs",
                         quickFilter === chip.key
-                          ? "bg-black text-white hover:bg-black"
-                          : "bg-white text-black hover:bg-zinc-100",
+                          ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                          : "bg-white text-[#1E3A8A] hover:bg-blue-50",
                       )}
                       onClick={() => setQuickFilter(chip.key)}
                     >
@@ -1427,7 +1447,7 @@ export default function ResearchProjectsPage() {
                           "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                           quickFilter === chip.key
                             ? "bg-white/20 text-white"
-                            : "bg-zinc-100 text-black",
+                            : "bg-blue-50 text-[#1E3A8A]",
                         )}
                       >
                         {chip.count}
@@ -1438,7 +1458,7 @@ export default function ResearchProjectsPage() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="rounded-full text-xs text-black hover:text-black"
+                    className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
                     onClick={resetDirectoryFilters}
                   >
                     Reset all
@@ -1449,13 +1469,13 @@ export default function ResearchProjectsPage() {
 
             {hasActiveDirectoryFilters ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                   Active Filters
                 </span>
                 {String(filters.search || "").trim() ? (
                   <button
                     type="button"
-                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                     onClick={() => updateFilter("search", "")}
                   >
                     Search: "{String(filters.search || "").trim()}" x
@@ -1464,7 +1484,7 @@ export default function ResearchProjectsPage() {
                 {quickFilter !== "all" ? (
                   <button
                     type="button"
-                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                     onClick={() => setQuickFilter("all")}
                   >
                     {quickFilter} x
@@ -1473,7 +1493,7 @@ export default function ResearchProjectsPage() {
                 {String(filters.sortBy || "") !== "submitted_desc" ? (
                   <button
                     type="button"
-                    className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                     onClick={() => updateFilter("sortBy", "submitted_desc")}
                   >
                     Sort: {filters.sortBy} x
@@ -1485,7 +1505,7 @@ export default function ResearchProjectsPage() {
         </CardContent>
         {!dataLoading && filteredProjects.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
+            <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
               No research projects found. Try a different search term or submit
               a new research project.
             </div>
@@ -1513,32 +1533,40 @@ export default function ResearchProjectsPage() {
                     ownerKey &&
                     currentUserKey &&
                     ownerKey === currentUserKey &&
-                    Boolean(project?.ckan_dataset_id || project?.id);
+                    Boolean(project?.ckan_dataset_id || project?.id) &&
+                    canEditProjects;
                   const canToggleVisibility =
-                    isAdmin && Boolean(project?.ckan_dataset_id);
+                    isAdmin &&
+                    canEditProjects &&
+                    Boolean(project?.ckan_dataset_id);
                   const canEdit =
+                    canEditProjects &&
+                    (isAdmin || isOwner) &&
+                    Boolean(project?.ckan_dataset_id || project?.id);
+                  const canDelete =
+                    canDeleteProjects &&
                     (isAdmin || isOwner) &&
                     Boolean(project?.ckan_dataset_id || project?.id);
 
                   return (
                     <Card
                       key={project.id}
-                      className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-zinc-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                      className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                     >
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                               #
                               {(currentPage - 1) * PROJECTS_PAGE_SIZE +
                                 index +
                                 1}{" "}
                               · {statusLabel}
                             </p>
-                            <h3 className="mt-1 line-clamp-2 text-base font-bold text-black">
+                            <h3 className="mt-1 line-clamp-2 text-base font-bold text-[#1E3A8A]">
                               {project.title || "-"}
                             </h3>
-                            <p className="mt-1 truncate text-sm text-zinc-600">
+                            <p className="mt-1 truncate text-sm text-slate-600">
                               {project.research_center || "-"}
                             </p>
                           </div>
@@ -1557,7 +1585,7 @@ export default function ResearchProjectsPage() {
                           {isDraft ? (
                             <Badge
                               variant="outline"
-                              className="border-zinc-200 bg-zinc-100 text-zinc-700"
+                              className="border-blue-200/70 bg-blue-50 text-slate-700"
                             >
                               Draft
                             </Badge>
@@ -1567,13 +1595,13 @@ export default function ResearchProjectsPage() {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="border-zinc-200 bg-zinc-50 text-zinc-800"
+                            className="border-blue-200/70 bg-blue-50/60 text-slate-800"
                           >
                             Year: {project.year || "-"}
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="border-zinc-200 bg-zinc-50 text-zinc-800"
+                            className="border-blue-200/70 bg-blue-50/60 text-slate-800"
                           >
                             Submitted: {formatDate(project.submitted_at)}
                           </Badge>
@@ -1651,12 +1679,12 @@ export default function ResearchProjectsPage() {
                             </Button>
                           ) : null}
 
-                          {canEdit ? (
+                          {canDelete ? (
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 text-zinc-700 hover:bg-zinc-50"
+                              className="h-9 w-9 text-slate-700 hover:bg-blue-50/60"
                               onClick={() => handleDeleteProject(project)}
                               disabled={deletingProjectId === project.id}
                               aria-label={`Delete ${project?.title || "project"}`}
@@ -1680,9 +1708,9 @@ export default function ResearchProjectsPage() {
                 })}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
                 <Table className="min-w-[1120px] w-full table-fixed">
-                  <TableHeader className="bg-zinc-50/80 text-zinc-600">
+                  <TableHeader className="bg-blue-50/80 text-slate-600">
                     <TableRow>
                       <TableHead className="w-[40px]">No.</TableHead>
                       <TableHead className="w-[500px]">Title</TableHead>
@@ -1718,10 +1746,18 @@ export default function ResearchProjectsPage() {
                         ownerKey &&
                         currentUserKey &&
                         ownerKey === currentUserKey &&
-                        Boolean(project?.ckan_dataset_id || project?.id);
+                        Boolean(project?.ckan_dataset_id || project?.id) &&
+                        canEditProjects;
                       const canToggleVisibility =
-                        isAdmin && Boolean(project?.ckan_dataset_id);
+                        isAdmin &&
+                        canEditProjects &&
+                        Boolean(project?.ckan_dataset_id);
                       const canEdit =
+                        canEditProjects &&
+                        (isAdmin || isOwner) &&
+                        Boolean(project?.ckan_dataset_id || project?.id);
+                      const canDelete =
+                        canDeleteProjects &&
                         (isAdmin || isOwner) &&
                         Boolean(project?.ckan_dataset_id || project?.id);
                       return (
@@ -1729,10 +1765,10 @@ export default function ResearchProjectsPage() {
                           <TableCell>
                             {(currentPage - 1) * PROJECTS_PAGE_SIZE + index + 1}
                           </TableCell>
-                          <TableCell className="whitespace-normal break-words font-medium text-black">
+                          <TableCell className="whitespace-normal break-words font-medium text-[#1E3A8A]">
                             {project.title || "-"}
                           </TableCell>
-                          <TableCell className="text-zinc-700">
+                          <TableCell className="text-slate-700">
                             {project.year || "-"}
                           </TableCell>
                           <TableCell>
@@ -1740,7 +1776,7 @@ export default function ResearchProjectsPage() {
                               {isDraft ? (
                                 <Badge
                                   variant="outline"
-                                  className="border-zinc-200 bg-zinc-100 text-zinc-700"
+                                  className="border-blue-200/70 bg-blue-50 text-slate-700"
                                 >
                                   Draft
                                 </Badge>
@@ -1768,7 +1804,7 @@ export default function ResearchProjectsPage() {
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                  className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                   disabled={Boolean(
                                     visibilitySavingByDataset[
                                       project.ckan_dataset_id
@@ -1809,10 +1845,10 @@ export default function ResearchProjectsPage() {
                               ) : null}
                             </div>
                           </TableCell>
-                          <TableCell className="whitespace-normal break-words text-zinc-700">
+                          <TableCell className="whitespace-normal break-words text-slate-700">
                             {getProjectOrganization(project)}
                           </TableCell>
-                          <TableCell className="text-zinc-700">
+                          <TableCell className="text-slate-700">
                             {formatDate(project.submitted_at)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1821,7 +1857,7 @@ export default function ResearchProjectsPage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                 onClick={() => goToProjectDetail(project)}
                                 aria-label={`View ${project?.title || "project"}`}
                                 title="View"
@@ -1833,7 +1869,7 @@ export default function ResearchProjectsPage() {
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                  className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                   onClick={() => openEditModal(project)}
                                   aria-label={`Continue ${project?.title || "draft"}`}
                                   title="Continue"
@@ -1841,12 +1877,12 @@ export default function ResearchProjectsPage() {
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               ) : null}
-                              {canEdit ? (
+                              {canDelete ? (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-zinc-600 hover:bg-zinc-100 hover:text-black"
+                                  className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
                                   onClick={() => openEditModal(project)}
                                   aria-label={`Edit ${project?.title || "project"}`}
                                   title="Edit"
@@ -1859,7 +1895,7 @@ export default function ResearchProjectsPage() {
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-zinc-700 hover:bg-zinc-50"
+                                  className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
                                   onClick={() => handleDeleteProject(project)}
                                   disabled={deletingProjectId === project.id}
                                   aria-label={`Delete ${project?.title || "project"}`}
@@ -1903,23 +1939,23 @@ export default function ResearchProjectsPage() {
         ) : null}
       </Card>
 
-      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-        <CardHeader className="border-b border-zinc-200 px-6 py-5">
+      <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
+        <CardHeader className="border-b border-blue-200/70 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-black">
+              <CardTitle className="text-base font-semibold text-[#1E3A8A]">
                 Linked Projects
               </CardTitle>
-              <CardDescription className="text-zinc-600">
+              <CardDescription className="text-slate-600">
                 Linked content summary for your submitted research projects.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-slate-600">
                 {linkedProjectFilteredRows.length} row(s).
               </p>
 
-              <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-zinc-200 bg-white p-1 md:w-auto">
+              <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-blue-200/70 bg-white p-1 md:w-auto">
                 <Button
                   variant={linkedViewMode === "grid" ? "secondary" : "ghost"}
                   size="sm"
@@ -1945,7 +1981,7 @@ export default function ResearchProjectsPage() {
           </div>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+          <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
             <div className="flex flex-wrap items-center gap-2">
               {[
                 {
@@ -2001,10 +2037,10 @@ export default function ResearchProjectsPage() {
                   size="sm"
                   variant="outline"
                   className={cn(
-                    "rounded-full border-black/20 px-4 text-xs",
+                    "rounded-full border-blue-200/80 px-4 text-xs",
                     linkedProjectsQuickFilter === chip.key
-                      ? "bg-black text-white hover:bg-black"
-                      : "bg-white text-black hover:bg-zinc-100",
+                      ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                      : "bg-white text-[#1E3A8A] hover:bg-blue-50",
                   )}
                   onClick={() => setLinkedProjectsQuickFilter(chip.key)}
                 >
@@ -2014,7 +2050,7 @@ export default function ResearchProjectsPage() {
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       linkedProjectsQuickFilter === chip.key
                         ? "bg-white/20 text-white"
-                        : "bg-zinc-100 text-black",
+                        : "bg-blue-50 text-[#1E3A8A]",
                     )}
                   >
                     {chip.count}
@@ -2025,7 +2061,7 @@ export default function ResearchProjectsPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-black hover:text-black"
+                className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
                 onClick={resetLinkedFilters}
               >
                 Reset all
@@ -2034,12 +2070,12 @@ export default function ResearchProjectsPage() {
 
             {hasActiveLinkedFilters ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                   Active Filters
                 </span>
                 <button
                   type="button"
-                  className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                  className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
                   onClick={() => setLinkedProjectsQuickFilter("all")}
                 >
                   {linkedProjectsQuickFilter} x
@@ -2055,29 +2091,29 @@ export default function ResearchProjectsPage() {
                   (_, index) => (
                     <Card
                       key={`linked-skeleton-grid-${index}`}
-                      className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
+                      className="rounded-2xl border border-blue-200/70 bg-white p-5 shadow-sm"
                     >
                       <div className="animate-pulse space-y-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="w-full space-y-2">
                             <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-zinc-200/70" />
-                            <div className="h-3 w-1/2 rounded-full bg-zinc-200/60" />
+                            <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
+                            <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
                           </div>
-                          <div className="h-6 w-16 rounded-full bg-zinc-200/70" />
+                          <div className="h-6 w-16 rounded-full bg-blue-100/80" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
-                          <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-blue-100/80" />
+                          <div className="h-6 w-24 rounded-full bg-blue-100/80" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-zinc-200/60" />
-                          <div className="h-24 rounded-lg bg-zinc-200/60" />
+                          <div className="h-24 rounded-lg bg-blue-100/70" />
+                          <div className="h-24 rounded-lg bg-blue-100/70" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
                         </div>
                       </div>
                     </Card>
@@ -2085,14 +2121,14 @@ export default function ResearchProjectsPage() {
                 )}
               </div>
             ) : (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+              <div className="rounded-2xl border border-blue-200/70 bg-white p-4 shadow-sm">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-zinc-200/60" />
+                  <div className="h-8 w-full rounded-lg bg-blue-100/70" />
                   {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                     (_, index) => (
                       <div
                         key={`linked-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-zinc-200/60"
+                        className="h-12 w-full rounded-lg bg-blue-100/70"
                       />
                     ),
                   )}
@@ -2102,7 +2138,7 @@ export default function ResearchProjectsPage() {
           ) : null}
 
           {!dataLoading && linkedProjectFilteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
+            <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
               This section will display project summaries once you are assigned
               to a research team or have submitted a research project.
             </div>
@@ -2115,24 +2151,24 @@ export default function ResearchProjectsPage() {
               {linkedProjectFilteredRows.map((project, index) => (
                 <Card
                   key={`linked-card-${project.id}-${index}`}
-                  className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-zinc-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                           #{index + 1} ·{" "}
                           {formatStatusLabel(project.status) || "-"}
                         </p>
-                        <h3 className="mt-1 line-clamp-2 text-base font-bold text-black">
+                        <h3 className="mt-1 line-clamp-2 text-base font-bold text-[#1E3A8A]">
                           {project.title || "-"}
                         </h3>
-                        <p className="mt-1 truncate text-sm text-zinc-600">
+                        <p className="mt-1 truncate text-sm text-slate-600">
                           {project.research_center || "-"}
                         </p>
-                        <p className="mt-1 truncate text-sm text-zinc-600">
+                        <p className="mt-1 truncate text-sm text-slate-600">
                           Lead:{" "}
-                          <span className="font-semibold text-black">
+                          <span className="font-semibold text-[#1E3A8A]">
                             {project.lead_researcher || "-"}
                           </span>
                         </p>
@@ -2173,28 +2209,32 @@ export default function ResearchProjectsPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9"
-                        onClick={() => openEditModal(project)}
-                        aria-label={`Edit ${project?.title || "project"}`}
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9 text-zinc-700 hover:bg-zinc-50"
-                        onClick={() => handleDeleteProject(project)}
-                        aria-label={`Delete ${project?.title || "project"}`}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canEditProjects ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => openEditModal(project)}
+                          aria-label={`Edit ${project?.title || "project"}`}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                      {canDeleteProjects ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 text-slate-700 hover:bg-blue-50/60"
+                          onClick={() => handleDeleteProject(project)}
+                          aria-label={`Delete ${project?.title || "project"}`}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
@@ -2205,9 +2245,9 @@ export default function ResearchProjectsPage() {
           {!dataLoading &&
           linkedViewMode === "list" &&
           linkedProjectFilteredRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-zinc-50/80">
+                <TableHeader className="bg-blue-50/80">
                   <TableRow>
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead className="w-[350px]">Title</TableHead>
@@ -2225,13 +2265,13 @@ export default function ResearchProjectsPage() {
                   {linkedProjectFilteredRows.map((project, index) => (
                     <TableRow key={`linked-${project.id}`}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium text-black">
+                      <TableCell className="font-medium text-[#1E3A8A]">
                         {project.title}
                       </TableCell>
-                      <TableCell className="text-zinc-700">
+                      <TableCell className="text-slate-700">
                         {project.lead_researcher}
                       </TableCell>
-                      <TableCell className="text-zinc-700">
+                      <TableCell className="text-slate-700">
                         {project.research_center}
                       </TableCell>
                       <TableCell>
@@ -2250,7 +2290,7 @@ export default function ResearchProjectsPage() {
                           {project.private ? "Private" : "Public"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-zinc-700">
+                      <TableCell className="text-slate-700">
                         {formatDate(project.submitted_at)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -2266,28 +2306,32 @@ export default function ResearchProjectsPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openEditModal(project)}
-                            aria-label={`Edit ${project?.title || "project"}`}
-                            title="Edit"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-zinc-700 hover:bg-zinc-50"
-                            onClick={() => handleDeleteProject(project)}
-                            aria-label={`Delete ${project?.title || "project"}`}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canEditProjects ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEditModal(project)}
+                              aria-label={`Edit ${project?.title || "project"}`}
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                          {canDeleteProjects ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
+                              onClick={() => handleDeleteProject(project)}
+                              aria-label={`Delete ${project?.title || "project"}`}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -2311,3 +2355,5 @@ export default function ResearchProjectsPage() {
     </section>
   );
 }
+
+
