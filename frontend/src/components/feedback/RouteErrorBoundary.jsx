@@ -1,4 +1,4 @@
-﻿import { Component } from "react";
+import { Component } from "react";
 
 class RouteErrorBoundary extends Component {
   constructor(props) {
@@ -20,10 +20,10 @@ class RouteErrorBoundary extends Component {
       return (
         <section className="rounded border bg-white p-6">
           <h1 className="text-2xl font-bold">Page Error</h1>
-          <p className="mt-2 text-gray-700">
+          <p className="mt-2 text-zinc-700">
             This page failed to load. Please refresh or try again later.
           </p>
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-zinc-500">
             {this.state.error?.message || "Unknown route rendering error"}
           </p>
         </section>
