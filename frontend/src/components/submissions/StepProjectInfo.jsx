@@ -42,7 +42,7 @@ export default function StepProjectInfo({
           </div>
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Project Title</span>
+            <span className="font-semibold text-zinc-700">Project Title</span>
             <Input
               placeholder="e.g. AI Mentorship in Public Schools"
               required
@@ -54,7 +54,7 @@ export default function StepProjectInfo({
           </label>
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-zinc-700">
               Project Summary
             </span>
             <Textarea
@@ -76,7 +76,7 @@ export default function StepProjectInfo({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Project Year</span>
+              <span className="font-semibold text-zinc-700">Project Year</span>
               <Input
                 type="number"
                 min="2000"
@@ -94,7 +94,7 @@ export default function StepProjectInfo({
             </label>
 
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Research Center
               </span>
               <Input
@@ -163,7 +163,7 @@ export default function StepProjectInfo({
           </div>
 
           <label className="block space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-zinc-700">
               Research Team (Students)
             </span>
             <Input
