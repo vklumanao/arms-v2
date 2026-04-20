@@ -89,7 +89,7 @@ export default function AppShell() {
       : true,
   );
 
-  const [, setPermissionVersion] = useState(0);
+  const [permissionVersion, setPermissionVersion] = useState(0);
   const desktopSidebarScrollRef = useRef(null);
   const mobileSidebarScrollRef = useRef(null);
   const desktopSidebarScrollTopRef = useRef(0);
@@ -140,8 +140,8 @@ export default function AppShell() {
       (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
     return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
       isActive
-        ? "bg-black text-white"
-        : "text-zinc-700 hover:bg-zinc-100 hover:text-black"
+        ? "bg-[#1E3A8A] text-white"
+        : "text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A]"
     }`;
   };
 
@@ -172,15 +172,15 @@ export default function AppShell() {
   );
 
   const workspaceCoreLinks = useMemo(() => {
-    const role = String(profile?.role || "")
-      .trim()
-      .toLowerCase();
-    const isAdmin = role === "admin";
-    const isFaculty = role === "faculty";
+    const roleKeys =
+      profile?.roles?.map((entry) => entry?.key) || profile?.role;
+    const isAdmin = hasPermission(
+      roleKeys,
+      PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+      profile?.permissions,
+    );
     const isCenterChief =
-      isFaculty &&
-      profile?.is_center_chief === true &&
-      Boolean(profile?.managed_center_id);
+      profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
 
     const links = [
       {
@@ -193,8 +193,7 @@ export default function AppShell() {
 
     const canAccessResearchCenters =
       isAdmin ||
-      (isFaculty &&
-        profile?.is_center_chief === true &&
+      (profile?.is_center_chief === true &&
         Boolean(profile?.managed_center_id));
 
     if (canAccessResearchCenters) {
@@ -225,12 +224,17 @@ export default function AppShell() {
         to: "/admin/affiliates",
         label: "Affiliates",
         icon: UserRoundSearch,
-        permission: PERMISSIONS.DASHBOARD_VIEW,
+        permission: PERMISSIONS.AFFILIATES_VIEW,
       });
     }
 
     return links;
-  }, [profile?.is_center_chief, profile?.managed_center_id, profile?.role]);
+  }, [
+    profile?.is_center_chief,
+    profile?.managed_center_id,
+    profile?.role,
+    profile?.roles,
+  ]);
 
   const workspaceResearchLinks = useMemo(
     () => [
@@ -238,62 +242,47 @@ export default function AppShell() {
         to: "/projects",
         label: "Research Projects",
         icon: FolderOpen,
-        permission: PERMISSIONS.AFFILIATIONS_MANAGE,
+        permission: PERMISSIONS.PROJECTS_VIEW,
       },
       {
         to: "/outputs",
         label: "Research Outputs",
         icon: Database,
-        permission: PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
+        permission: PERMISSIONS.OUTPUTS_VIEW,
       },
       {
         to: "/awards",
         label: "Awards and Recognitions",
         icon: Award,
-        permission: PERMISSIONS.AWARDS_RECOGNITION_VIEW,
+        permission: PERMISSIONS.AWARDS_VIEW,
       },
     ],
     [],
   );
 
-  const workspaceLinks = useMemo(
-    () => [...workspaceCoreLinks, ...workspaceResearchLinks],
-    [workspaceCoreLinks, workspaceResearchLinks],
-  );
-
-  const isAcademicRole = ["student", "faculty"].includes(profile?.role || "");
-  const isAdminRole = profile?.role === "admin";
-
   const navGroups = useMemo(() => {
     if (!profile) return [];
 
     const groups = [];
-
-    if (isAcademicRole || isAdminRole) {
-      groups.push(
-        { key: "core", title: "Core Modules", links: workspaceCoreLinks },
-        {
-          key: "research",
-          title: "Research Modules",
-          links: workspaceResearchLinks,
-        },
-      );
-    } else {
-      groups.push({
-        key: "workspace",
-        title: "Workspace",
-        links: workspaceLinks,
-      });
-    }
+    groups.push(
+      { key: "core", title: "Core Modules", links: workspaceCoreLinks },
+      {
+        key: "research",
+        title: "Research Modules",
+        links: workspaceResearchLinks,
+      },
+    );
 
     if (
       hasPermission(
         profile?.roles?.map((entry) => entry?.key) || profile?.role,
         PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+        profile?.permissions,
       ) ||
       hasPermission(
         profile?.roles?.map((entry) => entry?.key) || profile?.role,
         PERMISSIONS.ADMIN_RBAC_MANAGE,
+        profile?.permissions,
       )
     ) {
       groups.push({
@@ -306,11 +295,8 @@ export default function AppShell() {
     return groups;
   }, [
     adminGovernanceLinks,
-    isAcademicRole,
-    isAdminRole,
     profile,
     workspaceCoreLinks,
-    workspaceLinks,
     workspaceResearchLinks,
   ]);
 
@@ -319,15 +305,28 @@ export default function AppShell() {
       navGroups
         .map((group) => ({
           ...group,
-          items: group.links.filter((item) =>
-            hasPermission(
+          items: group.links.filter((item) => {
+            const isCenterChief =
+              profile?.is_center_chief === true &&
+              Boolean(profile?.managed_center_id);
+            if (item.to === "/admin/affiliates" && isCenterChief) return true;
+            return hasPermission(
               profile?.roles?.map((entry) => entry?.key) || profile?.role,
               item.permission,
-            ),
-          ),
+              profile?.permissions,
+            );
+          }),
         }))
         .filter((group) => group.items.length > 0),
-    [navGroups, profile?.role, profile?.roles],
+    [
+      navGroups,
+      permissionVersion,
+      profile?.is_center_chief,
+      profile?.managed_center_id,
+      profile?.permissions,
+      profile?.role,
+      profile?.roles,
+    ],
   );
 
   useEffect(() => {
@@ -473,7 +472,7 @@ export default function AppShell() {
         </Button>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-zinc-700">
+          <p className="text-sm font-semibold text-slate-700">
             Sign in to access your workspace.
           </p>
           <Button
@@ -507,12 +506,12 @@ export default function AppShell() {
               aria-label="Account menu"
               className={cn(
                 "w-full rounded-lg shadow-black/5",
-                "hover:border-border hover:bg-white",
-                "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
+                "hover:border-[#93C5FD] hover:bg-blue-50",
+                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
               )}
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-zinc-100 text-black">
+                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -523,26 +522,26 @@ export default function AppShell() {
               variant="ghost"
               className={cn(
                 "group w-full justify-between gap-3 rounded-lg px-3 py-2.5 text-left shadow-sm shadow-black/5",
-                "hover:border-border hover:bg-white",
-                "data-[state=open]:border-border data-[state=open]:bg-white data-[state=open]:shadow-md",
+                "hover:border-[#93C5FD] hover:bg-blue-50",
+                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
               )}
             >
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-zinc-100 text-black">
+                  <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-zinc-900">
+                  <span className="block truncate text-sm font-semibold text-slate-900">
                     {displayName}
                   </span>
-                  <span className="block truncate text-xs text-zinc-600">
+                  <span className="block truncate text-xs text-slate-600">
                     {roleLabel}
                   </span>
                 </span>
               </span>
-              <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500 transition-transform group-data-[state=open]:rotate-180" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
             </Button>
           )}
         </DropdownMenuTrigger>
@@ -554,15 +553,15 @@ export default function AppShell() {
           <DropdownMenuLabel className="px-2 py-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-zinc-100 text-black">
+                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-zinc-900">
+                <p className="truncate text-sm font-semibold text-slate-900">
                   {displayName}
                 </p>
-                <p className="truncate text-xs font-normal text-zinc-600">
+                <p className="truncate text-xs font-normal text-slate-600">
                   {roleLabel}
                 </p>
               </div>
@@ -576,14 +575,14 @@ export default function AppShell() {
                 onClick={onNavigate}
                 className="flex w-full items-center gap-2"
               >
-                <User className="h-4 w-4 text-black-500" />
+                <User className="h-4 w-4 text-[#1E3A8A]" />
                 <span className="min-w-0 flex-1 truncate">My Profile</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-zinc-700 focus:bg-zinc-50 focus:text-zinc-700 flex w-full items-center gap-2"
+            className="text-slate-700 focus:bg-blue-50 focus:text-[#1E3A8A] flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
@@ -669,8 +668,8 @@ export default function AppShell() {
             }}
           >
             {visibleGroups.length === 0 ? (
-              <div className="rounded-md border border-dashed border-[var(--border)] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-zinc-800">
+              <div className="rounded-md border border-dashed border-[var(--border)] bg-white/80 p-4">
+                <p className="text-sm font-semibold text-slate-800">
                   No navigation items available.
                 </p>
               </div>
@@ -701,12 +700,12 @@ export default function AppShell() {
   if (isAuthPage) {
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="border-b border-border bg-white/88 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <header className="border-b border-border bg-white/92 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-5">
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-zinc-600"
+                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
               >
                 CenterPulse
               </Link>
@@ -807,7 +806,7 @@ export default function AppShell() {
             {isLandingPage && !user ? (
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-zinc-600"
+                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
               >
                 CenterPulse
               </Link>
@@ -847,7 +846,7 @@ export default function AppShell() {
                 <NotificationPanel />
               </div>
             ) : user && profileLoading ? (
-              <span className="text-sm text-zinc-600">Loading profile...</span>
+              <span className="text-sm text-slate-600">Loading profile...</span>
             ) : (
               <Button asChild variant="outline">
                 <Link to="/login">Login</Link>
