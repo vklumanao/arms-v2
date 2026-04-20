@@ -831,10 +831,10 @@ export default function AdminDepartmentDetailPage() {
               </Button>
               {showDeletePopover ? (
                 <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-md border border-border bg-popover p-3 text-xs text-popover-foreground shadow-md">
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-zinc-900">
                     Deletion is blocked
                   </p>
-                  <p className="mt-1 text-slate-600">
+                  <p className="mt-1 text-zinc-600">
                     This department cannot be deleted while it has{" "}
                     {deleteGuard.reasons.projectCount
                       ? `${deleteGuard.reasons.projectCount} linked project(s)`
@@ -866,22 +866,22 @@ export default function AdminDepartmentDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-zinc-50 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-lg font-bold uppercase text-white shadow-sm">
                 {initials}
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-xl font-bold text-slate-900">
+                <CardTitle className="text-xl font-bold text-zinc-900">
                   {department?.name || "Department"}
                 </CardTitle>
-                <CardDescription className="text-sm text-slate-500">
+                <CardDescription className="text-sm text-zinc-500">
                   Code:{" "}
-                  <span className="font-mono font-semibold text-slate-700">
+                  <span className="font-mono font-semibold text-zinc-700">
                     {department?.code || "-"}
                   </span>{" "}
                   · Chairperson:{" "}
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     {department?.chairpersonName || "-"}
                   </span>
                 </CardDescription>
@@ -901,7 +901,7 @@ export default function AdminDepartmentDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading department...</p>
+            <p className="text-sm text-zinc-600">Loading department...</p>
           ) : error ? (
             <EmptyState title="Unable to load" description={error} />
           ) : !department ? (
@@ -912,17 +912,17 @@ export default function AdminDepartmentDetailPage() {
           ) : (
             <>
               <div className="rounded-lg border border-[var(--border)] bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700">
                   {String(department?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
               <div className="rounded-lg border border-[var(--border)] bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                   Social Media
                 </p>
                 {String(department?.socialMediaLink || "").trim() ? (
@@ -935,7 +935,7 @@ export default function AdminDepartmentDetailPage() {
                     {String(department?.socialMediaLink || "").trim()}
                   </a>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="mt-2 text-sm text-zinc-600">
                     No social media link yet.
                   </p>
                 )}
@@ -952,13 +952,13 @@ export default function AdminDepartmentDetailPage() {
                   <div className="grid gap-3 md:grid-cols-3">
                     <Card className="bg-muted/30">
                       <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                           Members
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-zinc-900">
                           {usage.profileCount}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-xs text-zinc-600">
                           Admin {usage.memberBreakdown?.adminCount || 0} ·
                           Editor {usage.memberBreakdown?.editorCount || 0} ·
                           Member {usage.memberBreakdown?.memberCount || 0}
@@ -967,13 +967,13 @@ export default function AdminDepartmentDetailPage() {
                     </Card>
                     <Card className="bg-muted/30">
                       <CardContent className="p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                           Projects
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-zinc-900">
                           {usage.projectCount}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-xs text-zinc-600">
                           Linked research projects.
                         </p>
                       </CardContent>
@@ -986,7 +986,7 @@ export default function AdminDepartmentDetailPage() {
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-base font-bold text-slate-900">
+                          <CardTitle className="text-base font-bold text-zinc-900">
                             Linked Affiliates
                           </CardTitle>
                           <CardDescription>
@@ -1029,19 +1029,19 @@ export default function AdminDepartmentDetailPage() {
                                         1}
                                     </TableCell>
 
-                                    <TableCell className="font-medium text-slate-900">
+                                    <TableCell className="font-medium text-zinc-900">
                                       {row?.full_name || row?.name || "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {row?.email || "-"}
                                     </TableCell>
 
-                                    <TableCell className="capitalize text-slate-700">
+                                    <TableCell className="capitalize text-zinc-700">
                                       {row?.role || "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {(() => {
                                         const affiliate =
                                           affiliateById[
@@ -1067,7 +1067,7 @@ export default function AdminDepartmentDetailPage() {
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 text-[var(--danger)] hover:bg-red-50"
+                                        className="h-8 w-8 text-[var(--danger)] hover:bg-zinc-50"
                                         onClick={() => setUnlinkTarget(row)}
                                         aria-label={`Unlink ${row?.full_name || "affiliate"}`}
                                         title="Unlink"
@@ -1103,20 +1103,20 @@ export default function AdminDepartmentDetailPage() {
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="space-y-1">
-                            <CardTitle className="text-base font-bold text-slate-900">
+                            <CardTitle className="text-base font-bold text-zinc-900">
                               Linked Projects
                             </CardTitle>
                             <CardDescription>
                               Showing {filteredProjects.length} project(s).
                             </CardDescription>
                             {agendaFilter ? (
-                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                                <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-slate-700">
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+                                <span className="rounded-full border border-border bg-white px-2.5 py-1 font-semibold text-zinc-700">
                                   Agenda: {agendaFilter}
                                 </span>
                                 <button
                                   type="button"
-                                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                                  className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
                                   onClick={() => setAgendaFilter("")}
                                 >
                                   Clear agenda
@@ -1126,7 +1126,7 @@ export default function AdminDepartmentDetailPage() {
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <label className="relative w-full min-w-[14rem] md:w-auto">
-                              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                               <Input
                                 className="pl-8"
                                 placeholder="Search projects"
@@ -1218,30 +1218,30 @@ export default function AdminDepartmentDetailPage() {
                                       {(projectsPage - 1) * PAGE_SIZE + idx + 1}
                                     </TableCell>
 
-                                    <TableCell className="font-medium text-slate-900">
+                                    <TableCell className="font-medium text-zinc-900">
                                       {row?.title || "-"}
                                     </TableCell>
 
-                                    <TableCell className="capitalize text-slate-700">
+                                    <TableCell className="capitalize text-zinc-700">
                                       {row?.status || "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {row?.year || "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {row?.lead_researcher || "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {row?.research_center_name ||
                                         row?.organization_name ||
                                         row?.research_center ||
                                         "-"}
                                     </TableCell>
 
-                                    <TableCell className="text-slate-700">
+                                    <TableCell className="text-zinc-700">
                                       {normalizeAgendaLabel(row?.agenda_name) ||
                                         "-"}
                                     </TableCell>
@@ -1298,7 +1298,7 @@ export default function AdminDepartmentDetailPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">Name</span>
+              <span className="font-semibold text-zinc-700">Name</span>
               <Input
                 value={editForm.name}
                 onChange={(event) =>
@@ -1311,7 +1311,7 @@ export default function AdminDepartmentDetailPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Code</span>
+              <span className="font-semibold text-zinc-700">Code</span>
               <Input
                 value={editForm.code}
                 onChange={(event) =>
@@ -1324,7 +1324,7 @@ export default function AdminDepartmentDetailPage() {
             </label>
 
             <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">Description</span>
+              <span className="font-semibold text-zinc-700">Description</span>
               <Textarea
                 value={editForm.description}
                 onChange={(event) =>
@@ -1339,7 +1339,7 @@ export default function AdminDepartmentDetailPage() {
             </label>
 
             <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Social Media Link
               </span>
               <Input
@@ -1352,13 +1352,13 @@ export default function AdminDepartmentDetailPage() {
                 }
                 placeholder="Optional: https://facebook.com/your-department"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-zinc-500">
                 Optional. Shown in the department overview.
               </p>
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Chairperson</span>
+              <span className="font-semibold text-zinc-700">Chairperson</span>
               <Select
                 value={String(editForm.chairpersonId || "")}
                 onValueChange={(value) =>
