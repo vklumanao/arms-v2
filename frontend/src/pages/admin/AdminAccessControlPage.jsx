@@ -20,10 +20,47 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 
 const BASE_ACTION_COLUMNS = ["create", "view", "edit", "delete"];
+const MODULE_HIERARCHY = [
+  "Dashboard",
+  "Research Projects",
+  "Research Outputs",
+  "Awards and Recognitions",
+  "Submissions",
+  "Affiliates",
+  "User Management",
+  "Access Control",
+  "Administration",
+  "Reports",
+  "General",
+];
+const HIDDEN_MATRIX_MODULES = new Set(["profile", "settings"]);
+
+function formatActionLabel(value) {
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!text) return "Action";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function compareModuleNamesByHierarchy(a, b) {
+  const nameA = String(a || "").trim();
+  const nameB = String(b || "").trim();
+  const orderMap = new Map(
+    MODULE_HIERARCHY.map((name, index) => [name.toLowerCase(), index]),
+  );
+  const rankA = orderMap.has(nameA.toLowerCase())
+    ? orderMap.get(nameA.toLowerCase())
+    : Number.MAX_SAFE_INTEGER;
+  const rankB = orderMap.has(nameB.toLowerCase())
+    ? orderMap.get(nameB.toLowerCase())
+    : Number.MAX_SAFE_INTEGER;
+  if (rankA !== rankB) return rankA - rankB;
+  return nameA.localeCompare(nameB);
+}
 
 function areSetsEqual(a, b) {
   if (a.size !== b.size) return false;
@@ -35,7 +72,6 @@ function areSetsEqual(a, b) {
 
 export default function AdminAccessControlPage() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState("roles");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState([]);
@@ -44,18 +80,12 @@ export default function AdminAccessControlPage() {
   const [currentPermissionSet, setCurrentPermissionSet] = useState(new Set());
   const [draftPermissionSet, setDraftPermissionSet] = useState(new Set());
   const [roleSearch, setRoleSearch] = useState("");
-  const [moduleSearch, setModuleSearch] = useState("");
-  const [permissionSearch, setPermissionSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState("all");
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", description: "" });
   const [createDraftPermissionSet, setCreateDraftPermissionSet] = useState(
     new Set(),
   );
-  const [createModuleSearch, setCreateModuleSearch] = useState("");
-  const [createPermissionSearch, setCreatePermissionSearch] = useState("");
-  const [createActionFilter, setCreateActionFilter] = useState("all");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const selectedRole = useMemo(
@@ -141,37 +171,16 @@ export default function AdminAccessControlPage() {
     });
   }, [roles, roleSearch]);
 
-  const normalizedActionFilter = String(actionFilter || "all")
-    .trim()
-    .toLowerCase();
-  const filteredPermissions = useMemo(() => {
-    const moduleKeyword = String(moduleSearch || "")
-      .trim()
-      .toLowerCase();
-    const permissionKeyword = String(permissionSearch || "")
-      .trim()
-      .toLowerCase();
-    return permissions.filter((permission) => {
-      const moduleName = String(permission?.module || "General").trim();
-      const action = String(permission?.action || "manage")
-        .trim()
-        .toLowerCase();
-      const label = String(permission?.label || "").toLowerCase();
-      const key = String(permission?.key || "").toLowerCase();
-      const moduleText = moduleName.toLowerCase();
-      if (moduleKeyword && !moduleText.includes(moduleKeyword)) return false;
-      if (
-        permissionKeyword &&
-        !label.includes(permissionKeyword) &&
-        !key.includes(permissionKeyword)
-      ) {
-        return false;
-      }
-      if (normalizedActionFilter !== "all" && action !== normalizedActionFilter)
-        return false;
-      return true;
-    });
-  }, [permissions, moduleSearch, permissionSearch, normalizedActionFilter]);
+  const filteredPermissions = useMemo(
+    () =>
+      permissions.filter((permission) => {
+        const moduleName = String(permission?.module || "General")
+          .trim()
+          .toLowerCase();
+        return !HIDDEN_MATRIX_MODULES.has(moduleName);
+      }),
+    [permissions],
+  );
 
   const actionColumns = useMemo(() => {
     const dynamic = Array.from(
@@ -206,9 +215,24 @@ export default function AdminAccessControlPage() {
       actionMap.get(action).push(permission);
     }
     return Array.from(grouped.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => compareModuleNamesByHierarchy(a[0], b[0]))
       .map(([moduleName, actionMap]) => ({ moduleName, actionMap }));
   }, [filteredPermissions]);
+
+  const filteredPermissionKeys = useMemo(
+    () =>
+      filteredPermissions
+        .map((permission) => String(permission?.key || "").trim())
+        .filter(Boolean),
+    [filteredPermissions],
+  );
+
+  const allFilteredPermissionsChecked = useMemo(
+    () =>
+      filteredPermissionKeys.length > 0 &&
+      filteredPermissionKeys.every((key) => draftPermissionSet.has(key)),
+    [draftPermissionSet, filteredPermissionKeys],
+  );
 
   const rowKeys = useCallback(
     (moduleName) => {
@@ -296,9 +320,6 @@ export default function AdminAccessControlPage() {
       toast.success("Role created", `${name} is ready for access control.`);
       setCreateForm({ name: "", description: "" });
       setCreateDraftPermissionSet(new Set());
-      setCreateModuleSearch("");
-      setCreatePermissionSearch("");
-      setCreateActionFilter("all");
       setCreateModalOpen(false);
       await reloadBaseData();
       if (created?.id) setSelectedRoleId(created.id);
@@ -351,46 +372,16 @@ export default function AdminAccessControlPage() {
     }
   };
 
-  const createNormalizedActionFilter = String(createActionFilter || "all")
-    .trim()
-    .toLowerCase();
-  const createFilteredPermissions = useMemo(() => {
-    const moduleKeyword = String(createModuleSearch || "")
-      .trim()
-      .toLowerCase();
-    const permissionKeyword = String(createPermissionSearch || "")
-      .trim()
-      .toLowerCase();
-    return permissions.filter((permission) => {
-      const moduleName = String(permission?.module || "General").trim();
-      const action = String(permission?.action || "manage")
-        .trim()
-        .toLowerCase();
-      const label = String(permission?.label || "").toLowerCase();
-      const key = String(permission?.key || "").toLowerCase();
-      const moduleText = moduleName.toLowerCase();
-      if (moduleKeyword && !moduleText.includes(moduleKeyword)) return false;
-      if (
-        permissionKeyword &&
-        !label.includes(permissionKeyword) &&
-        !key.includes(permissionKeyword)
-      ) {
-        return false;
-      }
-      if (
-        createNormalizedActionFilter !== "all" &&
-        action !== createNormalizedActionFilter
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [
-    permissions,
-    createModuleSearch,
-    createPermissionSearch,
-    createNormalizedActionFilter,
-  ]);
+  const createFilteredPermissions = useMemo(
+    () =>
+      permissions.filter((permission) => {
+        const moduleName = String(permission?.module || "General")
+          .trim()
+          .toLowerCase();
+        return !HIDDEN_MATRIX_MODULES.has(moduleName);
+      }),
+    [permissions],
+  );
 
   const createActionColumns = useMemo(() => {
     const dynamic = Array.from(
@@ -425,9 +416,26 @@ export default function AdminAccessControlPage() {
       actionMap.get(action).push(permission);
     }
     return Array.from(grouped.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => compareModuleNamesByHierarchy(a[0], b[0]))
       .map(([moduleName, actionMap]) => ({ moduleName, actionMap }));
   }, [createFilteredPermissions]);
+
+  const createFilteredPermissionKeys = useMemo(
+    () =>
+      createFilteredPermissions
+        .map((permission) => String(permission?.key || "").trim())
+        .filter(Boolean),
+    [createFilteredPermissions],
+  );
+
+  const allCreateFilteredPermissionsChecked = useMemo(
+    () =>
+      createFilteredPermissionKeys.length > 0 &&
+      createFilteredPermissionKeys.every((key) =>
+        createDraftPermissionSet.has(key),
+      ),
+    [createDraftPermissionSet, createFilteredPermissionKeys],
+  );
 
   const createRowKeys = useCallback(
     (moduleName) => {
@@ -476,17 +484,17 @@ export default function AdminAccessControlPage() {
 
   return (
     <section className="page-stack-lg">
-      <Card className="border-zinc-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-zinc-100">
+      <Card className="border-blue-200/80 bg-gradient-to-b from-blue-50/35 to-white shadow-sm">
+        <CardHeader className="border-b border-blue-200/80 bg-blue-50/35">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
                 Administration
               </p>
-              <CardTitle className="mt-1 text-2xl">
+              <CardTitle className="mt-1 text-2xl text-[#1E3A8A]">
                 Access Control Panel
               </CardTitle>
-              <p className="mt-2 text-sm text-zinc-600">
+              <p className="mt-2 text-sm text-slate-600">
                 Manage roles and permission matrix with a scalable RBAC layout.
               </p>
             </div>
@@ -500,85 +508,80 @@ export default function AdminAccessControlPage() {
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-5">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="border border-zinc-200 bg-zinc-50">
-              <TabsTrigger value="roles">Roles</TabsTrigger>
-              <TabsTrigger value="permissions">Permissions</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="roles" className="mt-4">
-              <div className="grid gap-4 xl:grid-cols-12">
-                <Card className="xl:col-span-3">
-                  <CardHeader className="space-y-2 border-b border-zinc-100 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <CardTitle className="text-base">Roles</CardTitle>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setCreateForm({ name: "", description: "" });
-                          setCreateDraftPermissionSet(new Set());
-                          setCreateModuleSearch("");
-                          setCreatePermissionSearch("");
-                          setCreateActionFilter("all");
-                          setCreateModalOpen(true);
-                        }}
+          <div className="mt-4">
+            <div className="grid gap-4 xl:grid-cols-12">
+              <Card className="xl:col-span-6 border-blue-200/70">
+                <CardHeader className="space-y-2 border-b border-blue-200/70 bg-blue-50/25 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base text-[#1E3A8A]">
+                      Roles
+                    </CardTitle>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setCreateForm({ name: "", description: "" });
+                        setCreateDraftPermissionSet(new Set());
+                        setCreateModalOpen(true);
+                      }}
+                    >
+                      Add Role
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder="Search role"
+                    value={roleSearch}
+                    onChange={(event) => setRoleSearch(event.target.value)}
+                  />
+                </CardHeader>
+                <CardContent className="max-h-[520px] space-y-2 overflow-auto p-3">
+                  {filteredRoles.map((role) => {
+                    const selected = role.id === selectedRoleId;
+                    return (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => setSelectedRoleId(role.id)}
+                        className={[
+                          "w-full rounded-lg border px-3 py-2 text-left transition",
+                          selected
+                            ? "border-[#1E3A8A] bg-blue-100/70 ring-1 ring-blue-200"
+                            : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40",
+                        ].join(" ")}
                       >
-                        Add Role
-                      </Button>
-                    </div>
-                    <Input
-                      placeholder="Search role"
-                      value={roleSearch}
-                      onChange={(event) => setRoleSearch(event.target.value)}
-                    />
-                  </CardHeader>
-                  <CardContent className="max-h-[520px] space-y-2 overflow-auto p-3">
-                    {filteredRoles.map((role) => {
-                      const selected = role.id === selectedRoleId;
-                      return (
-                        <button
-                          key={role.id}
-                          type="button"
-                          onClick={() => setSelectedRoleId(role.id)}
-                          className={[
-                            "w-full rounded-lg border px-3 py-2 text-left transition",
-                            selected
-                              ? "border-zinc-900 bg-zinc-100"
-                              : "border-zinc-200 bg-white hover:border-zinc-400",
-                          ].join(" ")}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-semibold text-zinc-900">
-                                {role.name}
-                              </p>
-                              <p className="text-xs text-zinc-500">
-                                {role.key}
-                              </p>
-                            </div>
-                            {role.is_critical ? (
-                              <Badge variant="secondary">Critical</Badge>
-                            ) : null}
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {role.name}
+                            </p>
                           </div>
-                        </button>
-                      );
-                    })}
-                    {filteredRoles.length === 0 ? (
-                      <p className="rounded-lg border border-dashed border-zinc-300 p-3 text-sm text-zinc-600">
-                        No roles found.
-                      </p>
-                    ) : null}
-                  </CardContent>
-                </Card>
+                          {role.is_critical ? (
+                            <Badge variant="secondary">Critical</Badge>
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {filteredRoles.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+                      No roles found.
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
 
-                <Card className="xl:col-span-3">
-                  <CardHeader className="border-b border-zinc-100 p-4">
-                    <CardTitle className="text-base">Role Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 p-4">
-                    {selectedRole ? (
-                      <>
+              <Card className="xl:col-span-6 border-blue-200/70">
+                <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 p-4">
+                  <CardTitle className="text-base text-[#1E3A8A]">
+                    Role Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-4">
+                  {selectedRole ? (
+                    <>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Role Name
+                        </label>
                         <Input
                           placeholder="Role name"
                           value={editForm.name}
@@ -590,6 +593,12 @@ export default function AdminAccessControlPage() {
                             }))
                           }
                         />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Description
+                        </label>
                         <Input
                           placeholder="Description"
                           value={editForm.description}
@@ -601,16 +610,9 @@ export default function AdminAccessControlPage() {
                             }))
                           }
                         />
-                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600">
-                          <p>
-                            Users:{" "}
-                            {Number(selectedRole.assigned_user_count || 0)}
-                          </p>
-                          <p>
-                            Permissions:{" "}
-                            {Number(selectedRole.permission_count || 0)}
-                          </p>
-                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           onClick={onSaveRoleDetails}
                           disabled={saving || isReadonlyRole}
@@ -624,161 +626,158 @@ export default function AdminAccessControlPage() {
                         >
                           Delete Role
                         </Button>
-                        {isReadonlyRole ? (
-                          <p className="text-xs text-zinc-500">
-                            Admin/Critical role is protected from edits.
-                          </p>
-                        ) : null}
-                      </>
-                    ) : (
-                      <p className="text-sm text-zinc-600">
-                        Select a role to manage details.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      Select a role to manage details.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-                <Card className="xl:col-span-6">
-                  <CardHeader className="space-y-2 border-b border-zinc-100 p-4">
-                    <CardTitle className="text-base">
-                      Permissions Matrix
-                    </CardTitle>
-                    <div className="grid gap-2 md:grid-cols-3">
-                      <Input
-                        placeholder="Filter modules"
-                        value={moduleSearch}
-                        onChange={(event) =>
-                          setModuleSearch(event.target.value)
+              <Card className="xl:col-span-12 border-blue-200/70">
+                <CardHeader className="space-y-2 border-b border-blue-200/70 bg-blue-50/25 p-4">
+                  <CardTitle className="text-base text-[#1E3A8A]">
+                    Permissions Matrix
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200/70 bg-blue-50/30 px-3 py-2">
+                    <p className="text-xs text-slate-600">
+                      Use row and column checkboxes for fast assignment.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          isReadonlyRole || filteredPermissionKeys.length === 0
                         }
-                      />
-                      <Input
-                        placeholder="Search permission"
-                        value={permissionSearch}
-                        onChange={(event) =>
-                          setPermissionSearch(event.target.value)
+                        onClick={() => toggleKeys(filteredPermissionKeys, true)}
+                      >
+                        Select All Visible
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          isReadonlyRole || filteredPermissionKeys.length === 0
                         }
-                      />
-                      <select
-                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                        value={actionFilter}
-                        onChange={(event) =>
-                          setActionFilter(event.target.value)
+                        onClick={() =>
+                          toggleKeys(filteredPermissionKeys, false)
                         }
                       >
-                        <option value="all">All Actions</option>
-                        {Array.from(
-                          new Set(
-                            permissions
-                              .map((permission) =>
-                                String(permission?.action || "manage")
-                                  .trim()
-                                  .toLowerCase(),
-                              )
-                              .filter(Boolean),
-                          ),
-                        )
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((action) => (
-                            <option key={action} value={action}>
-                              {action}
-                            </option>
-                          ))}
-                      </select>
+                        Clear All Visible
+                      </Button>
+                      <Badge variant="secondary">
+                        {allFilteredPermissionsChecked
+                          ? "All visible selected"
+                          : "Partial selection"}
+                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 p-4">
-                    <div className="overflow-auto rounded-lg border border-zinc-200">
-                      <table className="w-full min-w-[720px] border-collapse text-sm">
-                        <thead className="bg-zinc-50">
-                          <tr>
-                            <th className="border-b border-zinc-200 px-3 py-2 text-left font-semibold text-zinc-700">
-                              Module
-                            </th>
-                            {actionColumns.map((action) => {
-                              const keys = columnKeys(action);
-                              const checked =
-                                keys.length > 0 &&
-                                keys.every((key) =>
-                                  draftPermissionSet.has(key),
-                                );
-                              return (
-                                <th
-                                  key={action}
-                                  className="border-b border-zinc-200 px-3 py-2 text-center font-semibold uppercase tracking-[0.08em] text-zinc-600"
-                                >
-                                  <label className="inline-flex cursor-pointer items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      disabled={
-                                        isReadonlyRole || keys.length === 0
-                                      }
-                                      onChange={(event) =>
-                                        toggleColumn(
-                                          action,
-                                          event.target.checked,
-                                        )
-                                      }
-                                    />
-                                    <span>{action}</span>
-                                  </label>
-                                </th>
-                              );
-                            })}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {matrixRows.map((row) => {
-                            const rowPermissionKeys = rowKeys(row.moduleName);
-                            const rowChecked =
-                              rowPermissionKeys.length > 0 &&
-                              rowPermissionKeys.every((key) =>
-                                draftPermissionSet.has(key),
-                              );
+                  </div>
+
+                  <div className="overflow-auto rounded-lg border border-blue-200/70 bg-white">
+                    <table className="w-full min-w-[820px] border-collapse text-sm">
+                      <thead className="bg-blue-100/70">
+                        <tr>
+                          <th className="border-b border-blue-200/70 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                            Module
+                          </th>
+                          {actionColumns.map((action) => {
+                            const keys = columnKeys(action);
+                            const checked =
+                              keys.length > 0 &&
+                              keys.every((key) => draftPermissionSet.has(key));
                             return (
-                              <tr
-                                key={row.moduleName}
-                                className="hover:bg-zinc-50/80"
+                              <th
+                                key={action}
+                                className="min-w-[120px] border-b border-blue-200/70 px-3 py-2 text-center"
                               >
-                                <td className="border-b border-zinc-100 px-3 py-2 text-zinc-800">
-                                  <label className="inline-flex cursor-pointer items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={rowChecked}
-                                      disabled={
-                                        isReadonlyRole ||
-                                        rowPermissionKeys.length === 0
-                                      }
-                                      onChange={(event) =>
-                                        toggleRow(
-                                          row.moduleName,
-                                          event.target.checked,
-                                        )
-                                      }
-                                    />
-                                    <span className="font-medium">
-                                      {row.moduleName}
-                                    </span>
-                                  </label>
-                                </td>
-                                {actionColumns.map((action) => {
-                                  const cell = row.actionMap.get(action) || [];
-                                  const keys = cell
-                                    .map((permission) =>
-                                      String(permission?.key || "").trim(),
-                                    )
-                                    .filter(Boolean);
-                                  const checked =
-                                    keys.length > 0 &&
-                                    keys.every((permissionKey) =>
-                                      draftPermissionSet.has(permissionKey),
-                                    );
-                                  return (
-                                    <td
-                                      key={`${row.moduleName}-${action}`}
-                                      className="border-b border-zinc-100 px-3 py-2 text-center"
-                                    >
-                                      {keys.length > 0 ? (
+                                <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={
+                                      isReadonlyRole || keys.length === 0
+                                    }
+                                    onChange={(event) =>
+                                      toggleColumn(action, event.target.checked)
+                                    }
+                                  />
+                                  <span>{formatActionLabel(action)}</span>
+                                </label>
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {matrixRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={actionColumns.length + 1}
+                              className="px-4 py-8 text-center text-sm text-slate-500"
+                            >
+                              No permissions matched your current filters.
+                            </td>
+                          </tr>
+                        ) : null}
+                        {matrixRows.map((row) => {
+                          const rowPermissionKeys = rowKeys(row.moduleName);
+                          const rowChecked =
+                            rowPermissionKeys.length > 0 &&
+                            rowPermissionKeys.every((key) =>
+                              draftPermissionSet.has(key),
+                            );
+                          return (
+                            <tr
+                              key={row.moduleName}
+                              className="hover:bg-blue-50/80"
+                            >
+                              <td className="border-b border-blue-100 px-3 py-2">
+                                <label className="inline-flex cursor-pointer items-center gap-2 text-slate-800">
+                                  <input
+                                    type="checkbox"
+                                    checked={rowChecked}
+                                    disabled={
+                                      isReadonlyRole ||
+                                      rowPermissionKeys.length === 0
+                                    }
+                                    onChange={(event) =>
+                                      toggleRow(
+                                        row.moduleName,
+                                        event.target.checked,
+                                      )
+                                    }
+                                  />
+                                  <span className="font-medium">
+                                    {row.moduleName}
+                                  </span>
+                                </label>
+                              </td>
+                              {actionColumns.map((action) => {
+                                const cell = row.actionMap.get(action) || [];
+                                const keys = cell
+                                  .map((permission) =>
+                                    String(permission?.key || "").trim(),
+                                  )
+                                  .filter(Boolean);
+                                const checked =
+                                  keys.length > 0 &&
+                                  keys.every((permissionKey) =>
+                                    draftPermissionSet.has(permissionKey),
+                                  );
+                                return (
+                                  <td
+                                    key={`${row.moduleName}-${action}`}
+                                    className="border-b border-blue-100 px-3 py-2 text-center"
+                                  >
+                                    {keys.length > 0 ? (
+                                      <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-blue-200/80 bg-blue-100/70 px-2 py-1">
                                         <input
                                           type="checkbox"
                                           checked={checked}
@@ -790,89 +789,49 @@ export default function AdminAccessControlPage() {
                                             )
                                           }
                                         />
-                                      ) : (
-                                        <span className="text-zinc-300">-</span>
-                                      )}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                      </label>
+                                    ) : (
+                                      <span className="text-slate-300">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        onClick={onSavePermissions}
-                        disabled={
-                          saving ||
-                          !selectedRole ||
-                          !hasUnsavedPermissionChanges ||
-                          isReadonlyRole
-                        }
-                      >
-                        Save Permissions
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={saving || !hasUnsavedPermissionChanges}
-                        onClick={() =>
-                          setDraftPermissionSet(new Set(currentPermissionSet))
-                        }
-                      >
-                        Reset Draft
-                      </Button>
-                      {hasUnsavedPermissionChanges ? (
-                        <Badge variant="secondary">Unsaved changes</Badge>
-                      ) : null}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="permissions" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    Permissions Catalog
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {permissions.map((permission) => (
-                    <div
-                      key={permission.id || permission.key}
-                      className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      onClick={onSavePermissions}
+                      disabled={
+                        saving ||
+                        !selectedRole ||
+                        !hasUnsavedPermissionChanges ||
+                        isReadonlyRole
+                      }
                     >
-                      <p className="text-sm font-medium text-zinc-900">
-                        {permission.label || permission.key}
-                      </p>
-                      <p className="text-xs text-zinc-600">
-                        {permission.module} | {permission.action || "manage"} |{" "}
-                        {permission.key}
-                      </p>
-                    </div>
-                  ))}
+                      Save Permissions
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={saving || !hasUnsavedPermissionChanges}
+                      onClick={() =>
+                        setDraftPermissionSet(new Set(currentPermissionSet))
+                      }
+                    >
+                      Reset Draft
+                    </Button>
+                    {hasUnsavedPermissionChanges ? (
+                      <Badge variant="secondary">Unsaved changes</Badge>
+                    ) : null}
+                  </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="users" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Users</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-zinc-600">
-                    User-role assignment is intentionally out of scope in this
-                    screen.
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -908,10 +867,10 @@ export default function AdminAccessControlPage() {
           if (!saving) setCreateModalOpen(open);
         }}
       >
-        <DialogContent className="max-h-[92vh] w-full max-w-6xl overflow-y-auto border border-zinc-200 bg-white">
+        <DialogContent className="max-h-[92vh] w-full max-w-6xl overflow-y-auto border border-blue-200/80 bg-white">
           <DialogHeader>
             <DialogTitle>Create Role</DialogTitle>
-            <DialogDescription className="text-zinc-600">
+            <DialogDescription className="text-slate-600">
               Fill in the role details and set permissions before creating.
             </DialogDescription>
           </DialogHeader>
@@ -936,50 +895,46 @@ export default function AdminAccessControlPage() {
             />
           </div>
 
-          <div className="grid gap-2 md:grid-cols-3">
-            <Input
-              placeholder="Filter modules"
-              value={createModuleSearch}
-              onChange={(event) => setCreateModuleSearch(event.target.value)}
-            />
-            <Input
-              placeholder="Search permission"
-              value={createPermissionSearch}
-              onChange={(event) =>
-                setCreatePermissionSearch(event.target.value)
-              }
-            />
-            <select
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-              value={createActionFilter}
-              onChange={(event) => setCreateActionFilter(event.target.value)}
-            >
-              <option value="all">All Actions</option>
-              {Array.from(
-                new Set(
-                  permissions
-                    .map((permission) =>
-                      String(permission?.action || "manage")
-                        .trim()
-                        .toLowerCase(),
-                    )
-                    .filter(Boolean),
-                ),
-              )
-                .sort((a, b) => a.localeCompare(b))
-                .map((action) => (
-                  <option key={action} value={action}>
-                    {action}
-                  </option>
-                ))}
-            </select>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200/70 bg-blue-50/30 px-3 py-2">
+            <p className="text-xs text-slate-600">
+              Prepare the role by selecting module actions below.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saving || createFilteredPermissionKeys.length === 0}
+                onClick={() =>
+                  toggleCreateKeys(createFilteredPermissionKeys, true)
+                }
+              >
+                Select All Visible
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saving || createFilteredPermissionKeys.length === 0}
+                onClick={() =>
+                  toggleCreateKeys(createFilteredPermissionKeys, false)
+                }
+              >
+                Clear All Visible
+              </Button>
+              <Badge variant="secondary">
+                {allCreateFilteredPermissionsChecked
+                  ? "All visible selected"
+                  : "Partial selection"}
+              </Badge>
+            </div>
           </div>
 
-          <div className="overflow-auto rounded-lg border border-zinc-200">
-            <table className="w-full min-w-[760px] border-collapse text-sm">
-              <thead className="bg-zinc-50">
+          <div className="overflow-auto rounded-lg border border-blue-200/70 bg-white">
+            <table className="w-full min-w-[860px] border-collapse text-sm">
+              <thead className="bg-blue-100/70">
                 <tr>
-                  <th className="border-b border-zinc-200 px-3 py-2 text-left font-semibold text-zinc-700">
+                  <th className="border-b border-blue-200/70 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                     Module
                   </th>
                   {createActionColumns.map((action) => {
@@ -990,9 +945,9 @@ export default function AdminAccessControlPage() {
                     return (
                       <th
                         key={action}
-                        className="border-b border-zinc-200 px-3 py-2 text-center font-semibold uppercase tracking-[0.08em] text-zinc-600"
+                        className="min-w-[120px] border-b border-blue-200/70 px-3 py-2 text-center"
                       >
-                        <label className="inline-flex cursor-pointer items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
                           <input
                             type="checkbox"
                             checked={checked}
@@ -1001,7 +956,7 @@ export default function AdminAccessControlPage() {
                               toggleCreateKeys(keys, event.target.checked)
                             }
                           />
-                          <span>{action}</span>
+                          <span>{formatActionLabel(action)}</span>
                         </label>
                       </th>
                     );
@@ -1009,6 +964,16 @@ export default function AdminAccessControlPage() {
                 </tr>
               </thead>
               <tbody>
+                {createMatrixRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={createActionColumns.length + 1}
+                      className="px-4 py-8 text-center text-sm text-slate-500"
+                    >
+                      No permissions matched your current filters.
+                    </td>
+                  </tr>
+                ) : null}
                 {createMatrixRows.map((row) => {
                   const rowPermissionKeys = createRowKeys(row.moduleName);
                   const rowChecked =
@@ -1017,9 +982,9 @@ export default function AdminAccessControlPage() {
                       createDraftPermissionSet.has(key),
                     );
                   return (
-                    <tr key={row.moduleName} className="hover:bg-zinc-50/80">
-                      <td className="border-b border-zinc-100 px-3 py-2 text-zinc-800">
-                        <label className="inline-flex cursor-pointer items-center gap-2">
+                    <tr key={row.moduleName} className="hover:bg-blue-50/80">
+                      <td className="border-b border-blue-100 px-3 py-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-slate-800">
                           <input
                             type="checkbox"
                             checked={rowChecked}
@@ -1049,19 +1014,21 @@ export default function AdminAccessControlPage() {
                         return (
                           <td
                             key={`${row.moduleName}-${action}`}
-                            className="border-b border-zinc-100 px-3 py-2 text-center"
+                            className="border-b border-blue-100 px-3 py-2 text-center"
                           >
                             {keys.length > 0 ? (
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={saving}
-                                onChange={(event) =>
-                                  toggleCreateKeys(keys, event.target.checked)
-                                }
-                              />
+                              <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-blue-200/80 bg-blue-100/70 px-2 py-1">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={saving}
+                                  onChange={(event) =>
+                                    toggleCreateKeys(keys, event.target.checked)
+                                  }
+                                />
+                              </label>
                             ) : (
-                              <span className="text-zinc-300">-</span>
+                              <span className="text-slate-300">-</span>
                             )}
                           </td>
                         );
