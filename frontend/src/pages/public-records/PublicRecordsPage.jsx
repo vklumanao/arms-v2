@@ -50,19 +50,11 @@ const normalizeLabel = (value) => {
 
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
-  if (key === "completed") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
-  }
-  if (key === "ongoing") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
-  }
-  if (key === "proposal") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
-  }
-  if (key === "rejected") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
-  }
-  return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  if (key === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (key === "ongoing" || key === "active") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (key === "delayed" || key === "rejected" || key === "cancelled")
+    return "border-red-200 bg-red-50 text-red-700";
+  return "border-blue-200 bg-blue-50 text-blue-700";
 };
 
 const classificationBadgeClass = (classification) => {
