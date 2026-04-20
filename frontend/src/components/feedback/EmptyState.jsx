@@ -4,9 +4,9 @@ export default function EmptyState({ title, description }) {
   return (
     <Card>
       <CardContent className="p-6">
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
+        <p className="text-sm font-semibold text-zinc-800">{title}</p>
         {description ? (
-          <p className="mt-1 text-sm text-slate-600">{description}</p>
+          <p className="mt-1 text-sm text-zinc-600">{description}</p>
         ) : null}
       </CardContent>
     </Card>
