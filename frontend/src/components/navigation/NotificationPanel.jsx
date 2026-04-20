@@ -58,7 +58,7 @@ export default function NotificationPanel() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4 text-sm text-slate-700">
+        <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4 text-sm text-zinc-700">
           Real-time notifications are temporarily disabled in local backend mode.
         </div>
 
