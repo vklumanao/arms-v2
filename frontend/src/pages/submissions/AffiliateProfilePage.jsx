@@ -256,7 +256,7 @@ export default function AffiliateProfilePage() {
     <section className="page-stack-lg">
       {loading ? (
         <Card className="overflow-hidden">
-          <CardContent className="p-5 text-sm text-slate-600">
+          <CardContent className="p-5 text-sm text-zinc-600">
             Loading profile...
           </CardContent>
         </Card>
@@ -265,7 +265,7 @@ export default function AffiliateProfilePage() {
           <form onSubmit={saveProfile}>
             <Card className="overflow-hidden h-full">
               <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                <CardTitle className="text-lg font-semibold text-slate-900">
+                <CardTitle className="text-lg font-semibold text-zinc-900">
                   Profile Details
                 </CardTitle>
                 <CardDescription>
@@ -275,7 +275,7 @@ export default function AffiliateProfilePage() {
 
               <CardContent className="grid gap-4 p-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Personal Info
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
@@ -284,7 +284,7 @@ export default function AffiliateProfilePage() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="grid gap-2 sm:grid-cols-3 sm:col-span-2">
                     <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-zinc-700">
                         First name
                       </span>
                       <Input
@@ -299,7 +299,7 @@ export default function AffiliateProfilePage() {
                     </label>
 
                     <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-zinc-700">
                         Middle initial
                       </span>
                       <Input
@@ -315,7 +315,7 @@ export default function AffiliateProfilePage() {
                     </label>
 
                     <label className="space-y-1 text-sm">
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-zinc-700">
                         Last name
                       </span>
                       <Input
@@ -331,7 +331,7 @@ export default function AffiliateProfilePage() {
                   </div>
 
                   <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-zinc-700">
                       Department
                     </span>
                     <Select
@@ -377,7 +377,7 @@ export default function AffiliateProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Affiliation
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
@@ -385,7 +385,7 @@ export default function AffiliateProfilePage() {
 
                 <div className="grid gap-2 sm:grid-cols-2">
                   <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-zinc-700">
                       Research Center
                     </span>
                     <Select
@@ -412,7 +412,7 @@ export default function AffiliateProfilePage() {
                   </label>
 
                   <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-zinc-700">
                       Google Scholar Link
                     </span>
                     <Input
@@ -430,7 +430,7 @@ export default function AffiliateProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Professional
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
@@ -438,7 +438,7 @@ export default function AffiliateProfilePage() {
 
                 <div className="grid gap-2 sm:grid-cols-3">
                   <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-zinc-700">
                       Employment Status
                     </span>
                     <Select
@@ -463,7 +463,7 @@ export default function AffiliateProfilePage() {
                   </label>
 
                   <label className="space-y-1 text-sm sm:col-span-2">
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-zinc-700">
                       Designation
                     </span>
                     <Input
@@ -479,7 +479,7 @@ export default function AffiliateProfilePage() {
                   </label>
                 </div>
 
-                <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-slate-700">
+                <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-zinc-700">
                   <input
                     type="checkbox"
                     checked={Boolean(form.is_gs_faculty)}
@@ -505,7 +505,7 @@ export default function AffiliateProfilePage() {
           <form onSubmit={requestPasswordChange}>
             <Card className="overflow-hidden">
               <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                <CardTitle className="text-lg font-semibold text-slate-900">
+                <CardTitle className="text-lg font-semibold text-zinc-900">
                   Change Password
                 </CardTitle>
                 <CardDescription>Update your account password.</CardDescription>
@@ -513,7 +513,7 @@ export default function AffiliateProfilePage() {
 
               <CardContent className="grid gap-3 p-6 sm:grid-cols-3">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     Current Password
                   </span>
                   <div className="relative">
@@ -550,7 +550,7 @@ export default function AffiliateProfilePage() {
                 </label>
 
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     New Password
                   </span>
                   <div className="relative">
@@ -587,7 +587,7 @@ export default function AffiliateProfilePage() {
                 </label>
 
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-zinc-700">
                     Confirm New Password
                   </span>
                   <div className="relative">
@@ -624,7 +624,7 @@ export default function AffiliateProfilePage() {
                 </label>
 
                 <div className="sm:col-span-3 flex items-center justify-between">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-zinc-500">
                     Password must be at least 8 characters and include
                     uppercase, lowercase, and a number.
                   </p>
