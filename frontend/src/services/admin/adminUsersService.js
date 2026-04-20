@@ -6,6 +6,14 @@ export async function fetchAdminUsers() {
   return payload?.data || [];
 }
 
+export async function fetchAdminUserRoleOptions(search = "") {
+  const query = new URLSearchParams();
+  if (String(search || "").trim()) query.set("search", String(search).trim());
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const payload = await apiFetch(`/admin/users/role-options${suffix}`);
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
 export async function createAdminUser(payload) {
   const result = await apiFetch("/admin/users", {
     method: "POST",
@@ -37,4 +45,3 @@ export async function fetchAdminUserDetail(userId) {
 export async function sendAdminPasswordReset(email) {
   await requestPasswordReset(email);
 }
-
