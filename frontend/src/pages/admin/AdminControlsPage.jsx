@@ -162,10 +162,10 @@ export default function AdminControlsPage() {
           <p>
             Apply these role-permission changes? This takes effect immediately.
           </p>
-          <div className="space-y-2 text-xs text-slate-600">
+          <div className="space-y-2 text-xs text-zinc-600">
             {diffRows.map(({ role, added, removed }) => (
               <div key={role} className="rounded-md border border-border p-2">
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-zinc-900">
                   {ROLE_LABELS[role] || role}
                 </p>
                 {added.length ? (
@@ -273,7 +273,7 @@ export default function AdminControlsPage() {
 
       {!isAdmin ? (
         <Card>
-          <CardContent className="p-6 text-sm text-slate-600">
+          <CardContent className="p-6 text-sm text-zinc-600">
             You do not have access to this page.
           </CardContent>
         </Card>
@@ -281,13 +281,13 @@ export default function AdminControlsPage() {
         <Card>
           <CardHeader className="flex flex-wrap items-start justify-between gap-3 space-y-0">
             <div>
-              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-900">
+              <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-900">
                 Roles & Permissions
               </CardTitle>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-zinc-500">
                 System-wide access matrix for Student, Faculty, and Admin.
                 {envLabel ? (
-                  <span className="ml-2 rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[10px] uppercase text-slate-600">
+                  <span className="ml-2 rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[10px] uppercase text-zinc-600">
                     {envLabel}
                   </span>
                 ) : null}
@@ -328,14 +328,14 @@ export default function AdminControlsPage() {
 
           <CardContent className="space-y-3">
             {loading ? (
-              <p className="text-sm text-slate-600">Loading permissions...</p>
+              <p className="text-sm text-zinc-600">Loading permissions...</p>
             ) : null}
 
             <div className="grid gap-2 sm:grid-cols-3">
               {roleKeys.map((role) => (
                 <Card key={`role-summary-${role}`} className="bg-muted/30">
                   <CardContent className="p-3">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                    <div className="flex items-center justify-between text-xs font-semibold text-zinc-700">
                       <span>{ROLE_LABELS[role]}</span>
                       <span>
                         {(permissionDraft[role] || []).length}/
@@ -379,7 +379,7 @@ export default function AdminControlsPage() {
                   disabled={loading}
                 />
               </label>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-zinc-500">
                 Showing {filteredPermissionKeys.length} of{" "}
                 {permissionKeys.length} permissions.
               </p>
@@ -389,13 +389,13 @@ export default function AdminControlsPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="sticky left-0 z-10 bg-muted/30 text-left font-semibold text-slate-700">
+                    <TableHead className="sticky left-0 z-10 bg-muted/30 text-left font-semibold text-zinc-700">
                       Permission
                     </TableHead>
                     {roleKeys.map((role) => (
                       <TableHead
                         key={`role-column-${role}`}
-                        className="text-center font-semibold text-slate-700"
+                        className="text-center font-semibold text-zinc-700"
                       >
                         {ROLE_LABELS[role]}
                       </TableHead>
@@ -406,7 +406,7 @@ export default function AdminControlsPage() {
                   {groupedPermissionRows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        className="text-slate-600"
+                        className="text-zinc-600"
                         colSpan={roleKeys.length + 1}
                       >
                         No permissions matched your search.
@@ -416,10 +416,10 @@ export default function AdminControlsPage() {
                     groupedPermissionRows.map((row) => {
                       if (row.kind === "group") {
                         return (
-                          <TableRow key={row.key} className="bg-slate-50/70">
+                          <TableRow key={row.key} className="bg-zinc-50/70">
                             <TableCell
                               colSpan={roleKeys.length + 1}
-                              className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
+                              className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500"
                             >
                               {row.group}
                             </TableCell>
@@ -430,11 +430,11 @@ export default function AdminControlsPage() {
                       const permission = row.permission;
                       return (
                         <TableRow key={`permission-row-${permission}`}>
-                          <TableCell className="sticky left-0 z-10 bg-white text-slate-700">
+                          <TableCell className="sticky left-0 z-10 bg-white text-zinc-700">
                             <p className="font-medium">
                               {PERMISSION_LABELS[permission] || permission}
                             </p>
-                            <p className="text-xs text-slate-500 font-mono">
+                            <p className="text-xs text-zinc-500 font-mono">
                               {permission}
                             </p>
                           </TableCell>
@@ -445,7 +445,7 @@ export default function AdminControlsPage() {
                             >
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 accent-slate-700 disabled:opacity-60"
+                                className="h-4 w-4 accent-zinc-700 disabled:opacity-60"
                                 disabled={loading || confirmLoading}
                                 aria-label={`${ROLE_LABELS[role] || role}: ${permission}`}
                                 checked={Boolean(
