@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   Eye,
@@ -740,7 +740,7 @@ export default function AdminDepartmentPage() {
                   <Button
                     variant="outline"
                     disabled={exporting || filteredRows.length === 0}
-                    className="border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                    className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -748,10 +748,10 @@ export default function AdminDepartmentPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="bg-white border border-gray-300 shadow-md"
+                  className="bg-white border border-zinc-300 shadow-md"
                 >
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     onSelect={() =>
                       exportRowsAsCsv(sortedFilteredRows, "filtered")
                     }
@@ -759,7 +759,7 @@ export default function AdminDepartmentPage() {
                     Export CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-black hover:bg-gray-100 focus:bg-gray-100"
+                    className="text-black hover:bg-zinc-100 focus:bg-zinc-100"
                     onSelect={() =>
                       exportRowsAsPdf(sortedFilteredRows, "filtered")
                     }
@@ -794,7 +794,7 @@ export default function AdminDepartmentPage() {
             </p>
           </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-slate-50 p-1 lg:w-auto">
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-black/20 bg-zinc-50 p-1 lg:w-auto">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="sm"
@@ -856,7 +856,7 @@ export default function AdminDepartmentPage() {
                   "rounded-full border-black/20 px-4 text-xs",
                   quickFilter === chip.key
                     ? "bg-zinc-200 text-black hover:bg-zinc-200"
-                    : "bg-white text-black hover:bg-slate-50",
+                    : "bg-white text-black hover:bg-zinc-50",
                 )}
                 onClick={() => setQuickFilter(chip.key)}
               >
@@ -866,7 +866,7 @@ export default function AdminDepartmentPage() {
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
                       ? "bg-black/10 text-black"
-                      : "bg-slate-100 text-black",
+                      : "bg-zinc-100 text-black",
                   )}
                 >
                   {chip.count}
@@ -936,24 +936,24 @@ export default function AdminDepartmentPage() {
                       <div className="animate-pulse space-y-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-slate-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-slate-200/70" />
-                            <div className="h-3 w-1/2 rounded-full bg-slate-200/60" />
+                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
+                            <div className="h-5 w-3/4 rounded-full bg-zinc-200/70" />
+                            <div className="h-3 w-1/2 rounded-full bg-zinc-200/60" />
                           </div>
-                          <div className="h-6 w-16 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-16 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-slate-200/70" />
-                          <div className="h-6 w-24 rounded-full bg-slate-200/70" />
+                          <div className="h-6 w-20 rounded-full bg-zinc-200/70" />
+                          <div className="h-6 w-24 rounded-full bg-zinc-200/70" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
-                          <div className="h-24 rounded-lg bg-slate-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
+                          <div className="h-24 rounded-lg bg-zinc-200/60" />
                         </div>
                         <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
-                          <div className="h-9 w-9 rounded-lg bg-slate-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
+                          <div className="h-9 w-9 rounded-lg bg-zinc-200/70" />
                         </div>
                       </div>
                     </Card>
@@ -963,12 +963,12 @@ export default function AdminDepartmentPage() {
             ) : (
               <div className="rounded-2xl border border-black/20 bg-white shadow-sm p-4">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-slate-200/60" />
+                  <div className="h-8 w-full rounded-lg bg-zinc-200/60" />
                   {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                     (_, index) => (
                       <div
                         key={`department-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-slate-200/60"
+                        className="h-12 w-full rounded-lg bg-zinc-200/60"
                       />
                     ),
                   )}
@@ -978,7 +978,7 @@ export default function AdminDepartmentPage() {
           ) : null}
 
           {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
+            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
               No department records found.
             </div>
           ) : null}
@@ -989,13 +989,13 @@ export default function AdminDepartmentPage() {
                 {paginatedRows.map((row, index) => (
                   <Card
                     key={`${row.tag}-${row.id}`}
-                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-slate-50/50"
+                    className="group rounded-2xl border border-black/20 bg-gradient-to-b from-white to-zinc-50/50"
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-black">
-                            #{(currentPage - 1) * PAGE_SIZE + index + 1} Â·{" "}
+                            #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
                             {row.type}
                           </p>
                           <h3 className="mt-1 truncate text-base font-bold text-black">
@@ -1056,8 +1056,8 @@ export default function AdminDepartmentPage() {
                             {row.profileCount}
                           </p>
                           <p className="mt-1 text-xs text-black">
-                            Admin {row.memberBreakdown?.adminCount || 0} Â·
-                            Editor {row.memberBreakdown?.editorCount || 0} Â·
+                            Admin {row.memberBreakdown?.adminCount || 0} ·
+                            Editor {row.memberBreakdown?.editorCount || 0} ·
                             Member {row.memberBreakdown?.memberCount || 0}
                           </p>
                         </button>
@@ -1128,9 +1128,9 @@ export default function AdminDepartmentPage() {
               ) : null}
             </>
           ) : !dataLoading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-gray-50">
+                <TableHeader className="bg-zinc-50">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>
@@ -1299,13 +1299,13 @@ export default function AdminDepartmentPage() {
             </DialogHeader>
 
             {editLoading ? (
-              <p className="mt-4 text-sm text-gray-600">
+              <p className="mt-4 text-sm text-zinc-600">
                 Loading department details...
               </p>
             ) : (
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                     Department Name *
                   </label>
                   <Input
@@ -1318,7 +1318,7 @@ export default function AdminDepartmentPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                     Code *
                   </label>
                   <Input
@@ -1334,7 +1334,7 @@ export default function AdminDepartmentPage() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                     Description
                   </label>
                   <Textarea
@@ -1346,7 +1346,7 @@ export default function AdminDepartmentPage() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                     Social Media Link
                   </label>
                   <Input
@@ -1361,7 +1361,7 @@ export default function AdminDepartmentPage() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                     Chairperson *
                   </label>
                   <Select
@@ -1418,7 +1418,7 @@ export default function AdminDepartmentPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                       Department Name *
                     </label>
                     <Input
@@ -1430,7 +1430,7 @@ export default function AdminDepartmentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                       Code *
                     </label>
                     <Input
@@ -1443,7 +1443,7 @@ export default function AdminDepartmentPage() {
                         )
                       }
                     />
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-zinc-400">
                       Use uppercase abbreviation.
                     </p>
                   </div>
@@ -1451,7 +1451,7 @@ export default function AdminDepartmentPage() {
 
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                       Description *
                     </label>
                     <Textarea
@@ -1466,7 +1466,7 @@ export default function AdminDepartmentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                       Chairperson *
                     </label>
                     <Select
