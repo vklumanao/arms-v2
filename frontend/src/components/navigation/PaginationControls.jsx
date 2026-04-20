@@ -14,7 +14,7 @@ export default function PaginationControls({
   return (
     <Card className={cn(className)}>
       <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
-        <p className="min-w-0 text-slate-600">
+        <p className="min-w-0 text-zinc-600">
           Page {page} of {totalPages}
         </p>
         <div className="ml-auto flex flex-wrap items-center gap-2">
