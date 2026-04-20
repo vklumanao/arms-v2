@@ -95,8 +95,26 @@ import { registerDashboardRoutes } from "./modules/dashboard/dashboard.routes.js
 import { registerSubmissionsRoutes } from "./modules/submissions/submissions.routes.js";
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
+import { registerAdminRbacRoutes } from "./modules/admin/rbac.routes.js";
 import { registerAwardsRoutes } from "./modules/awards/awards.routes.js";
 import { registerPublicRecordsRoutes } from "./modules/public-records/public-records.routes.js";
+import {
+  createRole,
+  deleteRole,
+  ensureRbacSeedData,
+  getUserAuthContext,
+  listPermissions,
+  listRoles,
+  listRolePermissionMap,
+  listRolePermissions,
+  resetRolePermissionMapToDefaults,
+  saveRolePermissionMap,
+  setUserRoles,
+  setRolePermissions,
+  updateRole,
+  userHasPermission,
+  listUsersWithRoles,
+} from "./stores/rbac.store.js";
 
 // Startup flow:
 // 1) Validate required environment configuration.
@@ -112,6 +130,7 @@ if (importSummary.imported > 0) {
   );
 }
 await ensureDefaultAdmin();
+await ensureRbacSeedData();
 
 const app = express();
 app.use(express.json({ limit: "40mb" }));
@@ -251,6 +270,17 @@ async function resolveCenterChiefContext(user) {
   }
 }
 
+async function buildAuthenticatedUser(user) {
+  if (!user) return null;
+  const context = await getUserAuthContext(user.id, user.role);
+  const withRbac = {
+    ...user,
+    roles: context.roles || [],
+    permissions: context.permissions || [],
+  };
+  return resolveCenterChiefContext(withRbac);
+}
+
 /**
  * Authenticates requests using either bearer tokens or the session cookie.
  *
@@ -277,7 +307,7 @@ async function authMiddleware(req, res, next) {
     const payload = jwt.verify(token, config.jwtSecret);
     const user = await findUserById(payload.sub);
     if (!user || user.is_active === false) return unauthorized(res);
-    req.user = await resolveCenterChiefContext(user);
+    req.user = await buildAuthenticatedUser(user);
     req.auth = payload;
     return next();
   } catch {
@@ -615,7 +645,7 @@ registerAuthRoutes(app, {
   verifyPassword,
   hashPassword,
   toAuthPayload,
-  resolveCenterChiefContext,
+  resolveCenterChiefContext: buildAuthenticatedUser,
   signSession,
   setSessionCookie,
   clearSessionCookie,
@@ -627,6 +657,11 @@ registerAuthRoutes(app, {
   consumeEmailVerificationToken,
   sendEmail,
   logAuditEvent,
+  listRolePermissionMap,
+  listRolePermissions,
+  saveRolePermissionMap,
+  resetRolePermissionMapToDefaults,
+  userHasPermission,
 });
 
 registerProfileRoutes(app, {
@@ -789,8 +824,25 @@ registerAdminUserRoutes(app, {
   findUserByEmail,
   assignUserToOrganizationEditor,
   assignUserToGroupEditor,
-  setOrganizationMemberRole,
+  listRoles,
+  setUserRoles,
   logAuditEvent,
+});
+
+registerAdminRbacRoutes(app, {
+  authMiddleware,
+  badRequest,
+  logAuditEvent,
+  listRoles,
+  listPermissions,
+  listRolePermissionMap,
+  listRolePermissions,
+  listUsersWithRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  setRolePermissions,
+  userHasPermission,
 });
 
 /**
