@@ -18,7 +18,10 @@ export default function RoleRoute({ allow }) {
   if (profile && profile.is_active === false)
     return <Navigate to="/login" replace />;
   if (!profile) return <Navigate to="/unauthorized" replace />;
-  if (!allow.includes(profile.role))
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => String(entry?.key || "").toLowerCase())
+    : [String(profile?.role || "").toLowerCase()];
+  if (!roleKeys.some((role) => allow.includes(role)))
     return <Navigate to="/unauthorized" replace />;
 
   return <Outlet />;
