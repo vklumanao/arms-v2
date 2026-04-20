@@ -56,4 +56,3 @@ export async function deleteCkanDataset(datasetId) {
     method: "DELETE",
   });
 }
-
