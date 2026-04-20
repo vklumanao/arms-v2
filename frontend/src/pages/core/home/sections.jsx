@@ -18,9 +18,9 @@ import {
 } from "./content";
 
 function SectionIntro({ eyebrow, title, subtitle, inverted = false }) {
-  const eyebrowClass = inverted ? "text-sky-200" : "text-slate-500";
-  const titleClass = inverted ? "text-white" : "text-slate-900";
-  const subtitleClass = inverted ? "text-slate-200" : "text-slate-600";
+  const eyebrowClass = inverted ? "text-zinc-200" : "text-zinc-500";
+  const titleClass = inverted ? "text-white" : "text-zinc-900";
+  const subtitleClass = inverted ? "text-zinc-200" : "text-zinc-600";
 
   return (
     <div>
@@ -48,9 +48,9 @@ function SectionIntro({ eyebrow, title, subtitle, inverted = false }) {
 export function HeroSection() {
   return (
     <section id="home" className="scroll-mt-28">
-      <div className="relative overflow-hidden rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-6 sm:p-10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-sky-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-cyan-200/35 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br from-zinc-50 via-white to-zinc-50 p-6 sm:p-10">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-zinc-200/45 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-zinc-200/35 blur-3xl" />
 
         <div className="relative z-10 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
           <div className="page-stack-lg">
@@ -64,12 +64,12 @@ export function HeroSection() {
               </CardContent>
             </Card>
 
-            <h1 className="max-w-4xl text-3xl font-black leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            <h1 className="max-w-4xl text-3xl font-black leading-tight text-zinc-900 sm:text-4xl lg:text-5xl">
               One Academic Platform for Affiliation, Review, Documentation, and
               Research Visibility
             </h1>
 
-            <p className="max-w-3xl text-sm leading-6 text-slate-700 sm:text-base">
+            <p className="max-w-3xl text-sm leading-6 text-zinc-700 sm:text-base">
               ARMS streamlines research administration with structured
               submissions, role-based evaluation, MOV evidence management, and
               publication-ready records for institutional transparency.
@@ -77,19 +77,19 @@ export function HeroSection() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                className="rounded-lg bg-sky-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-900"
+                className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900"
                 to="/projects"
               >
                 Start Submission
               </Link>
               <Link
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100"
                 to="/dashboard"
               >
                 Open Dashboard
               </Link>
               <Link
-                className="rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100"
+                className="rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
                 to="/public-records"
               >
                 View Public Records
@@ -103,10 +103,10 @@ export function HeroSection() {
                   className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       {item.title}
                     </p>
-                    <p className="mt-1 text-sm font-bold text-slate-900">
+                    <p className="mt-1 text-sm font-bold text-zinc-900">
                       {item.description}
                     </p>
                   </CardContent>
@@ -122,13 +122,13 @@ export function HeroSection() {
                 className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                     {item.title}
                   </p>
-                  <h2 className="mt-2 text-lg font-black text-slate-900">
+                  <h2 className="mt-2 text-lg font-black text-zinc-900">
                     {item.heading}
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">
                     {item.description}
                   </p>
                 </CardContent>
@@ -152,13 +152,13 @@ export function SystemFramingSection() {
         {systemFramingCards.map((item) => (
           <Card key={item.title} className="bg-muted/30 shadow-none">
             <CardContent className="p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700">
                 {item.title}
               </p>
-              <h2 className="mt-2 text-lg font-black text-slate-900">
+              <h2 className="mt-2 text-lg font-black text-zinc-900">
                 {item.heading}
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className="mt-2 text-sm leading-6 text-zinc-700">
                 {item.description}
               </p>
             </CardContent>
@@ -178,13 +178,13 @@ export function AudienceSection() {
           className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <CardContent className="p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700">
               Audience {idx + 1}
             </p>
-            <h2 className="mt-2 text-lg font-black text-slate-900">
+            <h2 className="mt-2 text-lg font-black text-zinc-900">
               {item.heading}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
               {item.description}
             </p>
           </CardContent>
@@ -215,22 +215,22 @@ export function WorkflowSection() {
               <Card className="h-full shadow-none transition hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-5">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-sky-700">
+                    <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-zinc-700">
                       Step {item.step}
                     </span>
-                    <ShieldCheck size={16} className="text-sky-600" />
+                    <ShieldCheck size={16} className="text-zinc-600" />
                   </div>
-                  <p className="text-base font-black text-slate-900">
+                  <p className="text-base font-black text-zinc-900">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
                     {item.description}
                   </p>
                 </CardContent>
               </Card>
               {!isLast ? (
                 <span
-                  className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-sky-200 bg-white p-1 text-sky-600 xl:inline-flex"
+                  className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-1 text-zinc-600 xl:inline-flex"
                   aria-hidden="true"
                 >
                   <ArrowRight size={14} />
@@ -255,8 +255,8 @@ export function BenefitsSection() {
         {benefitsCards.map((item) => (
           <Card key={item.heading} className="bg-muted/30 shadow-none">
             <CardContent className="p-5">
-              <h3 className="font-bold text-slate-900">{item.heading}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
                 {item.description}
               </p>
             </CardContent>
@@ -269,7 +269,7 @@ export function BenefitsSection() {
 
 export function BrandPromiseSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-r from-sky-900 to-cyan-800 p-6 text-white sm:p-8">
+    <section className="rounded-3xl border bg-gradient-to-r from-zinc-900 to-zinc-800 p-6 text-white sm:p-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
         <SectionIntro
           eyebrow="Brand Promise"
@@ -283,7 +283,7 @@ export function BrandPromiseSection() {
               key={item.title}
               className="rounded-xl border border-white/20 bg-white/10 p-4"
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-sky-100">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-100">
                 {item.title}
               </p>
               <p className="mt-1 text-sm font-bold text-white">
@@ -308,8 +308,8 @@ export function ModulesSection() {
         {moduleCards.map((item) => (
           <Card key={item.heading} className="bg-muted/30 shadow-none">
             <CardContent className="p-4">
-              <h3 className="font-bold text-slate-900">{item.heading}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
                 {item.description}
               </p>
             </CardContent>
@@ -334,10 +334,10 @@ export function RolesSection() {
             className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <CardContent className="p-5">
-              <h3 className="text-lg font-black text-slate-900">
+              <h3 className="text-lg font-black text-zinc-900">
                 {item.heading}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
                 {item.description}
               </p>
             </CardContent>
@@ -350,7 +350,7 @@ export function RolesSection() {
 
 export function GovernanceSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-br from-white to-slate-50 p-6 sm:p-8">
+    <section className="rounded-3xl border bg-gradient-to-br from-white to-zinc-50 p-6 sm:p-8">
       <SectionIntro
         eyebrow="Governance Principles"
         title="Designed for Academic Integrity and Compliance"
@@ -362,8 +362,8 @@ export function GovernanceSection() {
             className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <CardContent className="p-5">
-              <h3 className="font-bold text-slate-900">{item.heading}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
                 {item.description}
               </p>
             </CardContent>
@@ -376,7 +376,7 @@ export function GovernanceSection() {
 
 export function SuccessIndicatorsSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-6 sm:p-8">
+    <section className="rounded-3xl border bg-gradient-to-br from-white via-zinc-50 to-zinc-50 p-6 sm:p-8">
       <SectionIntro
         eyebrow="Success Indicators"
         title="What Effective ARMS Adoption Looks Like"
@@ -388,10 +388,10 @@ export function SuccessIndicatorsSection() {
             className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <CardContent className="p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sky-700">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-700">
                 {item.title}
               </p>
-              <p className="mt-2 text-sm font-bold text-slate-900">
+              <p className="mt-2 text-sm font-bold text-zinc-900">
                 {item.description}
               </p>
             </CardContent>
@@ -413,10 +413,10 @@ export function VisionSection() {
         />
         <Card className="bg-muted/30 shadow-none">
           <CardContent className="p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Core Message
             </p>
-            <p className="mt-2 text-lg font-black leading-snug text-slate-900">
+            <p className="mt-2 text-lg font-black leading-snug text-zinc-900">
               One platform. One process. One trusted source of research truth.
             </p>
           </CardContent>
@@ -429,7 +429,7 @@ export function VisionSection() {
 export function AboutSection() {
   return (
     <section id="about" className="scroll-mt-28">
-      <div className="rounded-3xl border bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white sm:p-8">
+      <div className="rounded-3xl border bg-gradient-to-r from-zinc-900 to-zinc-800 p-6 text-white sm:p-8">
         <SectionIntro
           eyebrow="About ARMS"
           title="A Modern Academic Platform for Affiliation and Research Management"
@@ -443,14 +443,14 @@ export function AboutSection() {
               className="rounded-xl border border-white/20 bg-white/5 p-4"
             >
               <h3 className="font-bold">{item.heading}</h3>
-              <p className="mt-1 text-sm text-slate-200">{item.description}</p>
+              <p className="mt-1 text-sm text-zinc-200">{item.description}</p>
             </article>
           ))}
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-5">
           <h3 className="text-xl font-black">Expected Institutional Impact</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-200">
+          <p className="mt-2 text-sm leading-6 text-zinc-200">
             By centralizing data and process controls, ARMS reduces
             administrative friction, improves inter-unit coordination, and
             strengthens evidence for planning and accreditation.
@@ -463,16 +463,16 @@ export function AboutSection() {
 
 export function FinalCtaSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-r from-sky-800 to-cyan-700 p-6 text-white sm:p-8">
+    <section className="rounded-3xl border bg-gradient-to-r from-zinc-800 to-zinc-700 p-6 text-white sm:p-8">
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-sky-100">
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-100">
             Next Action
           </p>
           <h2 className="mt-2 text-2xl font-black text-white">
             Start Managing Affiliation and Research Records with Structure
           </h2>
-          <p className="mt-2 text-sm leading-6 text-sky-100">
+          <p className="mt-2 text-sm leading-6 text-zinc-100">
             Transition from manual tracking to a consistent, role-based research
             workflow for your unit.
           </p>
@@ -480,7 +480,7 @@ export function FinalCtaSection() {
         <div className="flex flex-wrap gap-3 lg:justify-end">
           <Link
             to="/projects"
-            className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-sky-900 transition hover:bg-sky-50"
+            className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-zinc-900 transition hover:bg-zinc-50"
           >
             Research Projects
           </Link>
