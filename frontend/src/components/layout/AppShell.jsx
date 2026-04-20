@@ -141,7 +141,7 @@ export default function AppShell() {
     return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
       isActive
         ? "bg-black text-white"
-        : "text-gray-700 hover:bg-gray-100 hover:text-black"
+        : "text-zinc-700 hover:bg-zinc-100 hover:text-black"
     }`;
   };
 
@@ -461,7 +461,7 @@ export default function AppShell() {
         </Button>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-slate-700">
+          <p className="text-sm font-semibold text-zinc-700">
             Sign in to access your workspace.
           </p>
           <Button
@@ -522,15 +522,15 @@ export default function AppShell() {
                   </AvatarFallback>
                 </Avatar>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-900">
+                  <span className="block truncate text-sm font-semibold text-zinc-900">
                     {displayName}
                   </span>
-                  <span className="block truncate text-xs text-slate-600">
+                  <span className="block truncate text-xs text-zinc-600">
                     {roleLabel}
                   </span>
                 </span>
               </span>
-              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500 transition-transform group-data-[state=open]:rotate-180" />
             </Button>
           )}
         </DropdownMenuTrigger>
@@ -547,10 +547,10 @@ export default function AppShell() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-900">
+                <p className="truncate text-sm font-semibold text-zinc-900">
                   {displayName}
                 </p>
-                <p className="truncate text-xs font-normal text-slate-600">
+                <p className="truncate text-xs font-normal text-zinc-600">
                   {roleLabel}
                 </p>
               </div>
@@ -571,7 +571,7 @@ export default function AppShell() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-700 focus:bg-red-50 focus:text-red-700 flex w-full items-center gap-2"
+            className="text-zinc-700 focus:bg-zinc-50 focus:text-zinc-700 flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
@@ -658,7 +658,7 @@ export default function AppShell() {
           >
             {visibleGroups.length === 0 ? (
               <div className="rounded-md border border-dashed border-[var(--border)] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-sm font-semibold text-zinc-800">
                   No navigation items available.
                 </p>
               </div>
@@ -694,7 +694,7 @@ export default function AppShell() {
             <div className="flex items-center gap-5">
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-blue-600"
+                className="shrink-0 text-lg font-bold text-zinc-600"
               >
                 CenterPulse
               </Link>
@@ -795,7 +795,7 @@ export default function AppShell() {
             {isLandingPage && !user ? (
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-blue-600"
+                className="shrink-0 text-lg font-bold text-zinc-600"
               >
                 CenterPulse
               </Link>
@@ -835,7 +835,7 @@ export default function AppShell() {
                 <NotificationPanel />
               </div>
             ) : user && profileLoading ? (
-              <span className="text-sm text-slate-600">Loading profile...</span>
+              <span className="text-sm text-zinc-600">Loading profile...</span>
             ) : (
               <Button asChild variant="outline">
                 <Link to="/login">Login</Link>
