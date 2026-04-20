@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import {
   getAdminUserDetail,
   listAdminUsers,
-  updateAdminUserRole,
   updateAdminUserStatus,
 } from "./users.service.js";
 
@@ -10,6 +9,10 @@ import {
  * Checks whether user role includes required permission.
  */
 function hasPermission(user, permission, ROLE_PERMISSIONS) {
+  const directPermissions = Array.isArray(user?.permissions)
+    ? user.permissions
+    : [];
+  if (directPermissions.includes(permission)) return true;
   const role = String(user?.role || "").toLowerCase();
   const permissions = ROLE_PERMISSIONS?.[role] || [];
   return permissions.includes(permission);
@@ -54,7 +57,8 @@ export function registerAdminUserRoutes(app, deps) {
     findUserByEmail,
     assignUserToOrganizationEditor,
     assignUserToGroupEditor,
-    setOrganizationMemberRole,
+    listRoles,
+    setUserRoles,
     logAuditEvent,
   } = deps;
 
@@ -226,6 +230,24 @@ export function registerAdminUserRoutes(app, deps) {
   );
 
   app.get(
+    "/api/admin/users/role-options",
+    authMiddleware,
+    requireAdminUsersManage,
+    async (req, res) => {
+      try {
+        const roles = await listRoles({
+          search: req.query?.search || "",
+        });
+        return res.json({ data: roles || [] });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to load role options."),
+        });
+      }
+    },
+  );
+
+  app.get(
     "/api/admin/users/:userId/detail",
     authMiddleware,
     requireAdminUsersManage,
@@ -253,22 +275,44 @@ export function registerAdminUserRoutes(app, deps) {
     requireAdminUsersManage,
     async (req, res) => {
       try {
-        // Service enforces lockout checks and CKAN role sync semantics.
-        const result = await updateAdminUserRole(
-          {
-            actorUserId: req.user?.id,
-            targetUserId: req.params.userId,
-            role: req.body?.role,
-          },
-          { updateUser, setOrganizationMemberRole, logAuditEvent },
-        );
+        const targetUserId = String(req.params?.userId || "").trim();
+        if (!targetUserId) return res.status(400).json({ error: "User id is required." });
+        const roleKey = String(req.body?.role || "")
+          .trim()
+          .toLowerCase();
+        if (!roleKey) return res.status(400).json({ error: "Role is required." });
+
+        const result = await setUserRoles({
+          userId: targetUserId,
+          roleKeys: [roleKey],
+        });
 
         if (result?.error) {
           return res
             .status(Number(result.status) || 400)
             .json({ error: result.error });
         }
-        return res.json({ data: result.data || null });
+
+        await logAuditEvent({
+          actorUserId: req.user?.id || null,
+          eventType: "admin.user.role_updated",
+          details: {
+            target_user_id: targetUserId,
+            new_role_key: roleKey,
+            resolved_legacy_role: result?.data?.role || null,
+          },
+        });
+
+        return res.json({
+          data: {
+            id: targetUserId,
+            role: result?.data?.role || "student",
+            roles: Array.isArray(result?.data?.roles) ? result.data.roles : [],
+            permissions: Array.isArray(result?.data?.permissions)
+              ? result.data.permissions
+              : [],
+          },
+        });
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to update user role."),
