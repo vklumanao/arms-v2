@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { isValidEmail } from "@/utils/validation";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
       <Card>
         <CardHeader className="space-y-1 text-center">
           <h1 className="text-2xl font-bold">Forgot Password</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-zinc-600">
             Enter your email and we will send a reset link.
           </p>
         </CardHeader>
