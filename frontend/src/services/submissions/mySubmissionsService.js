@@ -36,10 +36,37 @@ export async function fetchLinkedProjects() {
 
 export async function fetchAllProjects() {
   try {
-    const payload = await apiFetch("/submissions/projects");
-    return { data: payload?.data || [], error: null };
-  } catch (error) {
-    return { data: [], error };
+    // Backend does not expose /submissions/projects.
+    // Use available scoped endpoints to avoid 404 noise in the client.
+    const minePayload = await apiFetch("/submissions/mine/projects");
+    const mineData = Array.isArray(minePayload?.data) ? minePayload.data : [];
+    if (mineData.length > 0) {
+      return { data: mineData, error: null };
+    }
+
+    const centerChiefPayload = await apiFetch(
+      "/submissions/center-chief/projects",
+    );
+    return {
+      data: Array.isArray(centerChiefPayload?.data)
+        ? centerChiefPayload.data
+        : [],
+      error: null,
+    };
+  } catch (mineError) {
+    try {
+      const centerChiefPayload = await apiFetch(
+        "/submissions/center-chief/projects",
+      );
+      return {
+        data: Array.isArray(centerChiefPayload?.data)
+          ? centerChiefPayload.data
+          : [],
+        error: null,
+      };
+    } catch (centerChiefError) {
+      return { data: [], error: mineError || centerChiefError };
+    }
   }
 }
 
@@ -75,7 +102,9 @@ export async function fetchMyResearchOutputs() {
 
 export async function fetchCenterChiefResearchOutputs() {
   try {
-    const payload = await apiFetch("/submissions/center-chief/research-outputs");
+    const payload = await apiFetch(
+      "/submissions/center-chief/research-outputs",
+    );
     return { data: payload?.data || [], error: null };
   } catch (error) {
     return { data: [], error };
