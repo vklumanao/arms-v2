@@ -21,6 +21,7 @@ export function registerAwardsRoutes(app, deps) {
     listUsers,
     listOrganizationMembers,
     findUserByEmail,
+    userHasPermission,
   } = deps;
 
   const PAGE_LIMIT = 100;
@@ -63,11 +64,8 @@ export function registerAwardsRoutes(app, deps) {
   }
 
   function isCenterChiefUser(user) {
-    const role = asTrimmedString(user?.role).toLowerCase();
     return (
-      role === "faculty" &&
-      user?.is_center_chief === true &&
-      Boolean(asTrimmedString(user?.managed_center_id))
+      user?.is_center_chief === true && Boolean(asTrimmedString(user?.managed_center_id))
     );
   }
 
@@ -82,6 +80,18 @@ export function registerAwardsRoutes(app, deps) {
       getExtra(extras, "research_center_id");
     if (!managedCenterId || !datasetOrgId) return false;
     return managedCenterId === datasetOrgId;
+  }
+
+  function requirePermission(req, res, permission) {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return false;
+    }
+    if (!userHasPermission(req.user, permission)) {
+      res.status(403).json({ error: "Forbidden" });
+      return false;
+    }
+    return true;
   }
 
   function upsertExtra(extras, key, value) {
@@ -477,6 +487,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.get("/api/awards", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.view")) return;
       const q = asTrimmedString(req.query?.q);
       const projectId = asTrimmedString(req.query?.project_id);
       const rows = await listAllAwardDatasets(req.user, q, projectId);
@@ -490,12 +501,10 @@ export function registerAwardsRoutes(app, deps) {
 
   app.get("/api/awards/center-chief", authMiddleware, async (req, res) => {
     try {
-      const role = asTrimmedString(req.user?.role).toLowerCase();
+      if (!requirePermission(req, res, "awards.view")) return;
       const managedCenterId = asTrimmedString(req.user?.managed_center_id);
       const isCenterChief =
-        role === "faculty" &&
-        req.user?.is_center_chief === true &&
-        Boolean(managedCenterId);
+        req.user?.is_center_chief === true && Boolean(managedCenterId);
 
       if (!isCenterChief) {
         return res.status(403).json({
@@ -517,6 +526,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.get("/api/awards/recipient-options", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.view")) return;
       const rows = await listEligibleRecipientUsers("");
       return res.json({ data: rows });
     } catch (error) {
@@ -528,6 +538,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.get("/api/awards/:id", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.view")) return;
       const dataset = await getDataset(req.params.id);
       if (!dataset || !isAwardDataset(dataset)) {
         return res.status(404).json({ error: "Award record not found." });
@@ -561,6 +572,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.post("/api/awards", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.create")) return;
       const payload = parseOrThrow(
         awardRecognitionSchema,
         req.body || {},
@@ -623,6 +635,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.patch("/api/awards/:id", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.edit")) return;
       const existingDataset = await getDataset(req.params.id);
       if (!existingDataset || !isAwardDataset(existingDataset)) {
         return res.status(404).json({ error: "Award record not found." });
@@ -720,6 +733,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.delete("/api/awards/:id", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.delete")) return;
       const dataset = await getDataset(req.params.id);
       if (!dataset || !isAwardDataset(dataset)) {
         return res.status(404).json({ error: "Award record not found." });
@@ -752,6 +766,7 @@ export function registerAwardsRoutes(app, deps) {
 
   app.post("/api/awards/:id/mov-upload", authMiddleware, async (req, res) => {
     try {
+      if (!requirePermission(req, res, "awards.edit")) return;
       const dataset = await getDataset(req.params.id);
       if (!dataset || !isAwardDataset(dataset)) {
         return res.status(404).json({ error: "Award record not found." });
