@@ -1046,26 +1046,26 @@ export default function SubmitProjectPage() {
         }
       />
 
-      <div className="rounded-lg border border-slate-200 bg-white px-4 py-4">
+      <div className="rounded-lg border border-zinc-200 bg-white px-4 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
               Progress
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-zinc-600">
               Complete each step to continue
             </p>
           </div>
 
-          <p className="text-xs font-medium text-slate-600">
+          <p className="text-xs font-medium text-zinc-600">
             {step + 1} of {SUBMISSION_STEPS.length}
           </p>
         </div>
 
         <div className="relative mt-6">
-          <div className="absolute left-7 right-11 top-4 h-px bg-slate-200">
+          <div className="absolute left-7 right-11 top-4 h-px bg-zinc-200">
             <div
-              className="h-px bg-slate-700 transition-all duration-300"
+              className="h-px bg-zinc-700 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -1094,12 +1094,12 @@ export default function SubmitProjectPage() {
                     className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold bg-white transition-colors
                 ${
                   completed
-                    ? "bg-slate-700 border-slate-700 text-white"
+                    ? "bg-zinc-700 border-zinc-700 text-white"
                     : active
-                      ? "border-slate-700 text-slate-900"
+                      ? "border-zinc-700 text-zinc-900"
                       : locked
-                        ? "border-slate-200 text-slate-300"
-                        : "border-slate-300 text-slate-500 group-hover:border-slate-400"
+                        ? "border-zinc-200 text-zinc-300"
+                        : "border-zinc-300 text-zinc-500 group-hover:border-zinc-400"
                 }
               `}
                   >
@@ -1110,10 +1110,10 @@ export default function SubmitProjectPage() {
                     className={`text-[11px] leading-tight text-center transition-colors
                 ${
                   active
-                    ? "text-slate-900 font-medium"
+                    ? "text-zinc-900 font-medium"
                     : locked
-                      ? "text-slate-400"
-                      : "text-slate-600 group-hover:text-slate-800"
+                      ? "text-zinc-400"
+                      : "text-zinc-600 group-hover:text-zinc-800"
                 }
               `}
                   >
@@ -1128,7 +1128,7 @@ export default function SubmitProjectPage() {
 
       {loadingEdit ? (
         <Card>
-          <CardContent className="p-5 text-sm text-slate-600">
+          <CardContent className="p-5 text-sm text-zinc-600">
             Loading submission for revision...
           </CardContent>
         </Card>
@@ -1137,7 +1137,7 @@ export default function SubmitProjectPage() {
       <form onSubmit={handleSubmitAttempt}>
         <Card className="overflow-hidden">
           <CardHeader className="flex flex-wrap items-start justify-between gap-2 border-b px-5 py-4">
-            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-slate-500">
+            <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-500">
               {SUBMISSION_STEPS[step].label}
             </CardTitle>
             <div className="flex items-center gap-2">
