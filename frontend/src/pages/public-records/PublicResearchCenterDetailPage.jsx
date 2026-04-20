@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   fetchPublicCenterAffiliates,
@@ -70,11 +70,11 @@ const includesPublicationSignal = (value) => {
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
   if (key === "completed")
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (key === "ongoing") return "border-sky-200 bg-sky-50 text-sky-700";
-  if (key === "proposal") return "border-amber-200 bg-amber-50 text-amber-700";
-  if (key === "rejected") return "border-rose-200 bg-rose-50 text-rose-700";
-  return "border-slate-200 bg-slate-50 text-slate-700";
+    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  if (key === "ongoing") return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  if (key === "proposal") return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  if (key === "rejected") return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  return "border-zinc-200 bg-zinc-50 text-zinc-700";
 };
 
 const getSocialMeta = (url) => {
@@ -374,7 +374,7 @@ export default function PublicResearchCenterDetailPage() {
     return (
       <section className="page-stack-lg">
         <Card>
-          <CardContent className="p-6 text-sm text-slate-600">
+          <CardContent className="p-6 text-sm text-zinc-600">
             Research center not found.
           </CardContent>
         </Card>
@@ -393,23 +393,23 @@ export default function PublicResearchCenterDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-slate-50 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-zinc-50 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold uppercase text-white shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-lg font-bold uppercase text-white shadow-sm">
                 {initials}
               </div>
               <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-slate-900">
+                <CardTitle className="text-2xl font-bold text-zinc-900">
                   {center?.name || "Research Center"}
                 </CardTitle>
 
-                <CardDescription className="text-base text-slate-600">
+                <CardDescription className="text-base text-zinc-600">
                   Code:{" "}
-                  <span className="font-mono font-semibold text-slate-800">
+                  <span className="font-mono font-semibold text-zinc-800">
                     {center?.code || center?.id || "-"}
                   </span>{" "}
-                  · Center Chief:{" "}
-                  <span className="font-semibold text-slate-800">
+                  � Center Chief:{" "}
+                  <span className="font-semibold text-zinc-800">
                     {center?.center_chief_name || "-"}
                   </span>
                 </CardDescription>
@@ -438,7 +438,7 @@ export default function PublicResearchCenterDetailPage() {
 
                   {socialLink ? (
                     <a
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900"
                       href={socialLink}
                       target="_blank"
                       rel="noreferrer"
@@ -455,7 +455,7 @@ export default function PublicResearchCenterDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-base text-slate-600">
+            <p className="text-base text-zinc-600">
               Loading research center...
             </p>
           ) : error ? (
@@ -468,17 +468,17 @@ export default function PublicResearchCenterDetailPage() {
           ) : (
             <>
               <div className="rounded-lg border border-[var(--border)] bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-base text-slate-700">
+                <p className="mt-2 whitespace-pre-wrap text-base text-zinc-700">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
                   Research Agenda
                 </p>
                 {agendaDisplay.length ? (
@@ -486,14 +486,14 @@ export default function PublicResearchCenterDetailPage() {
                     {agendaDisplay.map((agenda) => (
                       <span
                         key={agenda}
-                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-slate-700"
+                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-zinc-700"
                       >
                         {agenda}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-base text-slate-600">No agenda linked.</p>
+                  <p className="text-base text-zinc-600">No agenda linked.</p>
                 )}
               </div>
 
@@ -531,13 +531,13 @@ export default function PublicResearchCenterDetailPage() {
                     ].map((item) => (
                       <Card key={item.label} className="bg-muted/30">
                         <CardContent className="p-5">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
                             {item.label}
                           </p>
-                          <p className="mt-2 text-3xl font-bold text-slate-900">
+                          <p className="mt-2 text-3xl font-bold text-zinc-900">
                             {item.value}
                           </p>
-                          <p className="mt-1 text-sm text-slate-600">
+                          <p className="mt-1 text-sm text-zinc-600">
                             {item.desc}
                           </p>
                         </CardContent>
@@ -550,7 +550,7 @@ export default function PublicResearchCenterDetailPage() {
                   <Card className="overflow-hidden">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                       <div>
-                        <CardTitle className="text-lg font-bold text-slate-900">
+                        <CardTitle className="text-lg font-bold text-zinc-900">
                           Linked Affiliates
                         </CardTitle>
                         <CardDescription className="text-base">
@@ -596,7 +596,7 @@ export default function PublicResearchCenterDetailPage() {
                                         idx +
                                         1}
                                     </TableCell>
-                                    <TableCell className="font-medium text-slate-900">
+                                    <TableCell className="font-medium text-zinc-900">
                                       {row?.full_name || "-"}
                                     </TableCell>
                                     <TableCell>{row?.email || "-"}</TableCell>
@@ -633,7 +633,7 @@ export default function PublicResearchCenterDetailPage() {
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                         <div className="space-y-2">
-                          <CardTitle className="text-lg font-bold text-slate-900">
+                          <CardTitle className="text-lg font-bold text-zinc-900">
                             Linked Projects
                           </CardTitle>
                           <CardDescription className="text-base">
@@ -665,7 +665,7 @@ export default function PublicResearchCenterDetailPage() {
                                 <TableCell>
                                   {(projectsPage - 1) * PAGE_SIZE + idx + 1}
                                 </TableCell>
-                                <TableCell className="font-medium text-slate-900">
+                                <TableCell className="font-medium text-zinc-900">
                                   {record.title || "Untitled project"}
                                 </TableCell>
                                 <TableCell>
