@@ -59,6 +59,8 @@ function sanitizeProfile(user) {
     is_center_chief: Boolean(user.is_center_chief),
     managed_center_id: user.managed_center_id || null,
     managed_center_name: user.managed_center_name || null,
+    roles: Array.isArray(user.roles) ? user.roles : [],
+    permissions: Array.isArray(user.permissions) ? user.permissions : [],
   };
 }
 
