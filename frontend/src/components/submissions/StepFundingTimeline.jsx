@@ -51,7 +51,7 @@ export default function StepFundingTimeline({
 
           <div className="space-y-4">
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Funding Type</span>
+              <span className="font-semibold text-zinc-700">Funding Type</span>
               <Select
                 value={form.funding_type || "internal"}
                 onValueChange={(value) => setField("funding_type", value)}
@@ -73,7 +73,7 @@ export default function StepFundingTimeline({
             </label>
 
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Funding Source
               </span>
               <Input
@@ -88,11 +88,11 @@ export default function StepFundingTimeline({
             </label>
 
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Funding Amount
               </span>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-slate-500">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-zinc-500">
                   ₱
                 </span>
                 <Input
@@ -128,7 +128,7 @@ export default function StepFundingTimeline({
 
           <div className="space-y-4">
             <label className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-zinc-700">
                 Industry/Agency partner
               </span>
               <Input
@@ -143,12 +143,12 @@ export default function StepFundingTimeline({
             </label>
 
             <div className="block space-y-1 text-sm">
-              <span className="font-semibold text-slate-700">Signed MOA</span>
+              <span className="font-semibold text-zinc-700">Signed MOA</span>
 
               <div className="upload-field">
                 <div className="upload-picker">
                   <div className="upload-picker-info">
-                    <FileText size={16} className="mt-0.5 text-slate-500" />
+                    <FileText size={16} className="mt-0.5 text-zinc-500" />
                     <div className="space-y-0.5">
                       <p className="upload-picker-name">
                         {moaFile?.name || "No file selected"}
@@ -193,7 +193,7 @@ export default function StepFundingTimeline({
                   <p className="upload-field-hint">
                     Allowed: PDF, DOC, XLS, PNG, JPG | Max 25MB
                   </p>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-zinc-600">
                     Upload is saved when you submit/save revision.
                   </p>
                 </div>
@@ -202,7 +202,7 @@ export default function StepFundingTimeline({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Start Date</span>
+                <span className="font-semibold text-zinc-700">Start Date</span>
                 <Input
                   type="date"
                   value={form.start_date}
@@ -215,7 +215,7 @@ export default function StepFundingTimeline({
               </label>
 
               <label className="block space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">End Date</span>
+                <span className="font-semibold text-zinc-700">End Date</span>
                 <Input
                   type="date"
                   value={form.end_date}
