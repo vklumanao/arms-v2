@@ -26,6 +26,38 @@ export const DEFAULT_PERMISSION_CATALOG = [
     is_system: true,
   },
   {
+    key: "projects.view",
+    label: "Research Projects: View",
+    module: "Research Projects",
+    action: "view",
+    description: "View research projects.",
+    is_system: true,
+  },
+  {
+    key: "projects.create",
+    label: "Research Projects: Create",
+    module: "Research Projects",
+    action: "create",
+    description: "Create project drafts and submissions.",
+    is_system: true,
+  },
+  {
+    key: "projects.edit",
+    label: "Research Projects: Edit",
+    module: "Research Projects",
+    action: "edit",
+    description: "Edit project records and metadata.",
+    is_system: true,
+  },
+  {
+    key: "projects.delete",
+    label: "Research Projects: Delete",
+    module: "Research Projects",
+    action: "delete",
+    description: "Delete project records.",
+    is_system: true,
+  },
+  {
     key: "research_outputs.view",
     label: "Research Outputs: View",
     module: "Submissions",
@@ -34,11 +66,75 @@ export const DEFAULT_PERMISSION_CATALOG = [
     is_system: true,
   },
   {
+    key: "outputs.view",
+    label: "Research Outputs: View",
+    module: "Research Outputs",
+    action: "view",
+    description: "View research output listings.",
+    is_system: true,
+  },
+  {
+    key: "outputs.create",
+    label: "Research Outputs: Create",
+    module: "Research Outputs",
+    action: "create",
+    description: "Add research output resources.",
+    is_system: true,
+  },
+  {
+    key: "outputs.edit",
+    label: "Research Outputs: Edit",
+    module: "Research Outputs",
+    action: "edit",
+    description: "Edit research output resources.",
+    is_system: true,
+  },
+  {
+    key: "outputs.delete",
+    label: "Research Outputs: Delete",
+    module: "Research Outputs",
+    action: "delete",
+    description: "Delete research output resources.",
+    is_system: true,
+  },
+  {
     key: "awards_recognition.view",
     label: "Awards and Recognition: View",
     module: "Submissions",
     action: "view",
     description: "View awards and recognition records.",
+    is_system: true,
+  },
+  {
+    key: "awards.view",
+    label: "Awards and Recognition: View",
+    module: "Awards and Recognitions",
+    action: "view",
+    description: "View awards and recognition records.",
+    is_system: true,
+  },
+  {
+    key: "awards.create",
+    label: "Awards and Recognition: Create",
+    module: "Awards and Recognitions",
+    action: "create",
+    description: "Create award and recognition records.",
+    is_system: true,
+  },
+  {
+    key: "awards.edit",
+    label: "Awards and Recognition: Edit",
+    module: "Awards and Recognitions",
+    action: "edit",
+    description: "Edit award and recognition records.",
+    is_system: true,
+  },
+  {
+    key: "awards.delete",
+    label: "Awards and Recognition: Delete",
+    module: "Awards and Recognitions",
+    action: "delete",
+    description: "Delete award and recognition records.",
     is_system: true,
   },
   {
@@ -64,6 +160,22 @@ export const DEFAULT_PERMISSION_CATALOG = [
     module: "Administration",
     action: "manage",
     description: "Manage affiliate assignment and directory records.",
+    is_system: true,
+  },
+  {
+    key: "affiliates.view",
+    label: "Affiliates: View",
+    module: "Affiliates",
+    action: "view",
+    description: "View affiliates directory and profile details.",
+    is_system: true,
+  },
+  {
+    key: "affiliates.edit",
+    label: "Affiliates: Edit",
+    module: "Affiliates",
+    action: "edit",
+    description: "Update affiliate assignments and records.",
     is_system: true,
   },
   {
@@ -151,6 +263,15 @@ export const DEFAULT_ROLE_PERMISSION_MAP = {
   student: [
     "dashboard.view",
     "affiliate_profile.view",
+    "projects.view",
+    "projects.create",
+    "projects.edit",
+    "outputs.view",
+    "outputs.create",
+    "outputs.edit",
+    "awards.view",
+    "awards.create",
+    "awards.edit",
     "affiliations.manage",
     "research_outputs.view",
     "awards_recognition.view",
@@ -158,6 +279,16 @@ export const DEFAULT_ROLE_PERMISSION_MAP = {
   faculty: [
     "dashboard.view",
     "affiliate_profile.view",
+    "projects.view",
+    "projects.create",
+    "projects.edit",
+    "outputs.view",
+    "outputs.create",
+    "outputs.edit",
+    "outputs.delete",
+    "awards.view",
+    "awards.create",
+    "awards.edit",
     "affiliations.manage",
     "research_outputs.view",
     "awards_recognition.view",
@@ -209,7 +340,9 @@ function inferPermissionAction(permission) {
 function deriveLegacyRoleFromAssignedRoles(roleRows, fallbackRole) {
   const keys = new Set(
     (Array.isArray(roleRows) ? roleRows : []).map((row) =>
-      String(row?.key || "").trim().toLowerCase(),
+      String(row?.key || "")
+        .trim()
+        .toLowerCase(),
     ),
   );
   if (keys.has("admin")) return "admin";
@@ -229,7 +362,9 @@ async function getRoleIdMapByKey() {
   const result = await query(`SELECT id, key FROM roles`);
   const map = new Map();
   for (const row of result.rows || []) {
-    const key = String(row?.key || "").trim().toLowerCase();
+    const key = String(row?.key || "")
+      .trim()
+      .toLowerCase();
     if (!key) continue;
     map.set(key, row.id);
   }
@@ -240,7 +375,9 @@ async function getPermissionIdMapByKey() {
   const result = await query(`SELECT id, key FROM permissions`);
   const map = new Map();
   for (const row of result.rows || []) {
-    const key = String(row?.key || "").trim().toLowerCase();
+    const key = String(row?.key || "")
+      .trim()
+      .toLowerCase();
     if (!key) continue;
     map.set(key, row.id);
   }
@@ -283,6 +420,89 @@ async function runLegacyRoleCleanupOnce() {
       JSON.stringify({
         applied_at: new Date().toISOString(),
         deprecated_roles: deprecatedRoleKeys,
+      }),
+    ],
+  );
+}
+
+async function runContextualRoleCleanupOnce() {
+  const settingKey = "rbac.contextual_role_cleanup_v1_applied";
+  const marker = await query(
+    `SELECT key FROM system_settings WHERE key = $1 LIMIT 1`,
+    [settingKey],
+  );
+  if (marker.rows?.[0]) return;
+
+  const contextualRoleKeys = ["center_chief"];
+  await query(
+    `
+    UPDATE users
+    SET role = 'faculty', updated_at = NOW()
+    WHERE LOWER(TRIM(COALESCE(role, ''))) = ANY($1::text[])
+    `,
+    [contextualRoleKeys],
+  );
+  await query(
+    `
+    DELETE FROM roles
+    WHERE key = ANY($1::text[])
+    `,
+    [contextualRoleKeys],
+  );
+  await query(
+    `
+    INSERT INTO system_settings (key, value, updated_at)
+    VALUES ($1, $2::jsonb, NOW())
+    ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW()
+    `,
+    [
+      settingKey,
+      JSON.stringify({
+        applied_at: new Date().toISOString(),
+        contextual_roles_removed: contextualRoleKeys,
+      }),
+    ],
+  );
+}
+
+async function runApprovalPermissionCleanupOnce() {
+  const settingKey = "rbac.approval_permissions_cleanup_v1_applied";
+  const marker = await query(
+    `SELECT key FROM system_settings WHERE key = $1 LIMIT 1`,
+    [settingKey],
+  );
+  if (marker.rows?.[0]) return;
+
+  const deprecatedPermissionKeys = ["projects.approve", "awards.approve"];
+  await query(
+    `
+    DELETE FROM role_permissions rp
+    USING permissions p
+    WHERE rp.permission_id = p.id
+      AND p.key = ANY($1::text[])
+    `,
+    [deprecatedPermissionKeys],
+  );
+  await query(
+    `
+    DELETE FROM permissions
+    WHERE key = ANY($1::text[])
+    `,
+    [deprecatedPermissionKeys],
+  );
+  await query(
+    `
+    INSERT INTO system_settings (key, value, updated_at)
+    VALUES ($1, $2::jsonb, NOW())
+    ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW()
+    `,
+    [
+      settingKey,
+      JSON.stringify({
+        applied_at: new Date().toISOString(),
+        deprecated_permissions: deprecatedPermissionKeys,
       }),
     ],
   );
@@ -345,11 +565,15 @@ export async function ensureRbacSeedData() {
 
   // Cleanup legacy templates once; avoid deleting roles repeatedly on every boot.
   await runLegacyRoleCleanupOnce();
+  await runContextualRoleCleanupOnce();
+  await runApprovalPermissionCleanupOnce();
 
   const roleIdMap = await getRoleIdMapByKey();
   const permissionIdMap = await getPermissionIdMapByKey();
 
-  for (const [roleKey, defaultKeys] of Object.entries(DEFAULT_ROLE_PERMISSION_MAP)) {
+  for (const [roleKey, defaultKeys] of Object.entries(
+    DEFAULT_ROLE_PERMISSION_MAP,
+  )) {
     const roleId = roleIdMap.get(String(roleKey || "").toLowerCase());
     if (!roleId) continue;
 
@@ -366,13 +590,6 @@ export async function ensureRbacSeedData() {
       }
       continue;
     }
-
-    const countResult = await query(
-      `SELECT COUNT(*)::int AS count FROM role_permissions WHERE role_id = $1`,
-      [roleId],
-    );
-    const hasAssignments = Number(countResult.rows?.[0]?.count || 0) > 0;
-    if (hasAssignments) continue;
 
     const permissionKeys = normalizeUniqueList(defaultKeys);
     for (const permissionKey of permissionKeys) {
@@ -401,7 +618,9 @@ export async function ensureRbacSeedData() {
 }
 
 export async function listRoles({ search = "" } = {}) {
-  const keyword = String(search || "").trim().toLowerCase();
+  const keyword = String(search || "")
+    .trim()
+    .toLowerCase();
   const result = await query(
     `
     SELECT
@@ -448,10 +667,20 @@ export async function listRoles({ search = "" } = {}) {
   }));
 }
 
-export async function listPermissions({ search = "", module = "", action = "" } = {}) {
-  const keyword = String(search || "").trim().toLowerCase();
-  const moduleFilter = String(module || "").trim().toLowerCase();
-  const actionFilter = String(action || "").trim().toLowerCase();
+export async function listPermissions({
+  search = "",
+  module = "",
+  action = "",
+} = {}) {
+  const keyword = String(search || "")
+    .trim()
+    .toLowerCase();
+  const moduleFilter = String(module || "")
+    .trim()
+    .toLowerCase();
+  const actionFilter = String(action || "")
+    .trim()
+    .toLowerCase();
   const result = await query(
     `
     SELECT
@@ -506,7 +735,9 @@ export async function listRolePermissionMap() {
 
   const map = {};
   for (const row of result.rows || []) {
-    const roleKey = String(row?.role_key || "").trim().toLowerCase();
+    const roleKey = String(row?.role_key || "")
+      .trim()
+      .toLowerCase();
     if (!roleKey) continue;
     if (!Array.isArray(map[roleKey])) map[roleKey] = [];
     const permissionKey = String(row?.permission_key || "").trim();
@@ -546,7 +777,9 @@ async function findRoleByIdentifier(identifier) {
   const value = String(identifier || "").trim();
   if (!value) return null;
 
-  const byId = await query(`SELECT * FROM roles WHERE id::text = $1 LIMIT 1`, [value]);
+  const byId = await query(`SELECT * FROM roles WHERE id::text = $1 LIMIT 1`, [
+    value,
+  ]);
   if (byId.rows?.[0]) return byId.rows[0];
 
   const byKey = await query(`SELECT * FROM roles WHERE key = $1 LIMIT 1`, [
@@ -564,8 +797,17 @@ export async function createRole(input = {}) {
   if (!name) {
     return { error: "Role name is required.", status: 400 };
   }
+  if (key === "center_chief") {
+    return {
+      error:
+        "Role key 'center_chief' is reserved for contextual center assignment.",
+      status: 409,
+    };
+  }
 
-  const existing = await query(`SELECT id FROM roles WHERE key = $1 LIMIT 1`, [key]);
+  const existing = await query(`SELECT id FROM roles WHERE key = $1 LIMIT 1`, [
+    key,
+  ]);
   if (existing.rows?.[0]) {
     return { error: "Role key already exists.", status: 409 };
   }
@@ -606,6 +848,13 @@ export async function updateRole(identifier, input = {}) {
   if (!existing.is_system && input.key) {
     const proposedKey = normalizeKey(input.key);
     if (!proposedKey) return { error: "Role key is invalid.", status: 400 };
+    if (proposedKey === "center_chief") {
+      return {
+        error:
+          "Role key 'center_chief' is reserved for contextual center assignment.",
+        status: 409,
+      };
+    }
     const duplicate = await query(
       `SELECT id FROM roles WHERE key = $1 AND id <> $2 LIMIT 1`,
       [proposedKey, existing.id],
@@ -698,7 +947,9 @@ export async function setRolePermissions(identifier, permissionKeys = []) {
 
   const foundKeys = new Set(
     (permissionRows.rows || []).map((row) =>
-      String(row?.key || "").trim().toLowerCase(),
+      String(row?.key || "")
+        .trim()
+        .toLowerCase(),
     ),
   );
 
@@ -735,7 +986,11 @@ export async function setRolePermissions(identifier, permissionKeys = []) {
     );
   }
 
-  if (String(role.key || "").trim().toLowerCase() === "admin") {
+  if (
+    String(role.key || "")
+      .trim()
+      .toLowerCase() === "admin"
+  ) {
     const criticalPermissions = await query(
       `SELECT id FROM permissions WHERE key IN ('admin.controls.manage', 'admin.rbac.manage')`,
     );
@@ -755,7 +1010,9 @@ export async function setRolePermissions(identifier, permissionKeys = []) {
 }
 
 export async function listUsersWithRoles({ search = "", limit = 500 } = {}) {
-  const keyword = String(search || "").trim().toLowerCase();
+  const keyword = String(search || "")
+    .trim()
+    .toLowerCase();
   const safeLimit = Math.min(1000, Math.max(1, Number(limit || 500) || 500));
 
   const result = await query(
@@ -809,11 +1066,7 @@ export async function listUsersWithRoles({ search = "", limit = 500 } = {}) {
   }));
 }
 
-export async function setUserRoles({
-  userId,
-  roleIds = [],
-  roleKeys = [],
-}) {
+export async function setUserRoles({ userId, roleIds = [], roleKeys = [] }) {
   const normalizedUserId = String(userId || "").trim();
   if (!normalizedUserId) {
     return { error: "User id is required.", status: 400 };
@@ -838,9 +1091,10 @@ export async function setUserRoles({
     targetRoles = byId.rows || [];
   }
   if (normalizedRoleKeys.length > 0) {
-    const byKey = await query(`SELECT id, key FROM roles WHERE key = ANY($1::text[])`, [
-      normalizedRoleKeys,
-    ]);
+    const byKey = await query(
+      `SELECT id, key FROM roles WHERE key = ANY($1::text[])`,
+      [normalizedRoleKeys],
+    );
     const seen = new Set(targetRoles.map((row) => String(row.id)));
     for (const row of byKey.rows || []) {
       if (seen.has(String(row.id))) continue;
@@ -854,7 +1108,9 @@ export async function setUserRoles({
     return { error: "No valid roles were provided.", status: 400 };
   }
 
-  const keys = new Set(targetRoles.map((row) => String(row.key || "").toLowerCase()));
+  const keys = new Set(
+    targetRoles.map((row) => String(row.key || "").toLowerCase()),
+  );
   if (!keys.has("admin") && keys.size === 0) {
     return { error: "At least one role must be assigned.", status: 400 };
   }
@@ -876,18 +1132,28 @@ export async function setUserRoles({
     targetRoles.map((role) => ({ key: role.key })),
     user.role,
   );
+  // Single-role policy: keep users.role aligned to the assigned RBAC role key for visibility.
+  // If multiple roles are ever provided, fall back to legacy role derivation for compatibility.
+  const nextUserRoleValue =
+    targetRoles.length === 1
+      ? String(targetRoles[0]?.key || "")
+          .trim()
+          .toLowerCase() || nextLegacyRole
+      : nextLegacyRole;
   await query(`UPDATE users SET role = $2, updated_at = NOW() WHERE id = $1`, [
     normalizedUserId,
-    nextLegacyRole,
+    nextUserRoleValue,
   ]);
 
-  const context = await getUserAuthContext(normalizedUserId, nextLegacyRole);
+  const context = await getUserAuthContext(normalizedUserId, nextUserRoleValue);
   return {
     data: {
       user_id: normalizedUserId,
       roles: context.roles,
       permissions: context.permissions,
-      role: nextLegacyRole,
+      role: nextUserRoleValue,
+      assigned_role_key: nextUserRoleValue,
+      legacy_role: nextLegacyRole,
     },
   };
 }
@@ -952,7 +1218,9 @@ export function userHasPermission(user, permission) {
   );
   if (userPermissions.has(permissionKey)) return true;
 
-  const legacyRole = String(user?.role || "").trim().toLowerCase();
+  const legacyRole = String(user?.role || "")
+    .trim()
+    .toLowerCase();
   const fallback = DEFAULT_ROLE_PERMISSION_MAP[legacyRole] || [];
   return fallback.includes(permissionKey);
 }
@@ -960,7 +1228,12 @@ export function userHasPermission(user, permission) {
 export async function saveRolePermissionMap(map = {}) {
   const roleMap = map && typeof map === "object" ? map : {};
   for (const [roleKey, permissions] of Object.entries(roleMap)) {
-    await setRolePermissions(String(roleKey || "").trim().toLowerCase(), permissions);
+    await setRolePermissions(
+      String(roleKey || "")
+        .trim()
+        .toLowerCase(),
+      permissions,
+    );
   }
   return listRolePermissionMap();
 }
