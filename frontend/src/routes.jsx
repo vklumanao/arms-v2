@@ -2,12 +2,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import PublicLayout from "@/components/layout/PublicLayout";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import RoleRoute from "@/components/guards/RoleRoute";
 import AdminOrManagedCenterRoute from "@/components/guards/AdminOrManagedCenterRoute";
-import AdminOrCenterChiefRoute from "@/components/guards/AdminOrCenterChiefRoute";
 import PermissionRoute from "@/components/guards/PermissionRoute";
 import RouteErrorBoundary from "@/components/feedback/RouteErrorBoundary";
-import { PERMISSIONS } from "@/services/permissions";
+import { hasPermission, PERMISSIONS } from "@/services/permissions";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
   AboutPage,
@@ -66,14 +64,16 @@ function ResearchCenterEntryRoute() {
 
   if (!profile) return <Navigate to="/unauthorized" replace />;
 
-  const role = String(profile?.role || "")
-    .trim()
-    .toLowerCase();
-  const isAdmin = role === "admin";
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role;
+  const isAdmin = hasPermission(
+    roleKeys,
+    PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+    profile?.permissions,
+  );
   const isCenterChief =
-    role === "faculty" &&
-    profile?.is_center_chief === true &&
-    Boolean(profile?.managed_center_id);
+    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
 
   if (isCenterChief) {
     const managedCenterId = String(profile?.managed_center_id || "").trim();
@@ -143,58 +143,54 @@ export default function AppRoutes() {
           />
 
           <Route
-            element={<RoleRoute allow={["faculty", "student", "admin"]} />}
-          >
-            <Route
-              path="/profile"
-              element={withPermission(
-                PERMISSIONS.AFFILIATE_PROFILE_VIEW,
-                <AffiliateProfilePage />,
-              )}
-            />
-            <Route
-              path="/projects"
-              element={withPermission(
-                PERMISSIONS.AFFILIATIONS_MANAGE,
-                <ResearchProjectsPage />,
-              )}
-            />
-            <Route
-              path="/projects/:id"
-              element={withPermission(
-                PERMISSIONS.AFFILIATIONS_MANAGE,
-                <ResearchProjectDetailPage />,
-              )}
-            />
-            <Route
-              path="/projects/submit"
-              element={withPermission(
-                PERMISSIONS.AFFILIATIONS_MANAGE,
-                <SubmitProjectPage />,
-              )}
-            />
-            <Route
-              path="/outputs"
-              element={withPermission(
-                PERMISSIONS.RESEARCH_OUTPUTS_VIEW,
-                <ResearchOutputsPage />,
-              )}
-            />
-            <Route
-              path="/awards"
-              element={withPermission(
-                PERMISSIONS.AWARDS_RECOGNITION_VIEW,
-                <AwardsRecognitionPage />,
-              )}
-            />
-            <Route
-              path="/awards/new"
-              element={withPermission(
-                PERMISSIONS.AWARDS_RECOGNITION_VIEW,
-                <SubmitAwardRecognitionPage />,
-              )}
-            />
-          </Route>
+            path="/profile"
+            element={withPermission(
+              PERMISSIONS.AFFILIATE_PROFILE_VIEW,
+              <AffiliateProfilePage />,
+            )}
+          />
+          <Route
+            path="/projects"
+            element={withPermission(
+              PERMISSIONS.PROJECTS_VIEW,
+              <ResearchProjectsPage />,
+            )}
+          />
+          <Route
+            path="/projects/:id"
+            element={withPermission(
+              PERMISSIONS.PROJECTS_VIEW,
+              <ResearchProjectDetailPage />,
+            )}
+          />
+          <Route
+            path="/projects/submit"
+            element={withPermission(
+              PERMISSIONS.PROJECTS_CREATE,
+              <SubmitProjectPage />,
+            )}
+          />
+          <Route
+            path="/outputs"
+            element={withPermission(
+              PERMISSIONS.OUTPUTS_VIEW,
+              <ResearchOutputsPage />,
+            )}
+          />
+          <Route
+            path="/awards"
+            element={withPermission(
+              PERMISSIONS.AWARDS_VIEW,
+              <AwardsRecognitionPage />,
+            )}
+          />
+          <Route
+            path="/awards/new"
+            element={withPermission(
+              PERMISSIONS.AWARDS_CREATE,
+              <SubmitAwardRecognitionPage />,
+            )}
+          />
 
           <Route>
             <Route
@@ -215,16 +211,20 @@ export default function AppRoutes() {
             </Route>
           </Route>
 
-          <Route element={<RoleRoute allow={["admin"]} />}>
-            <Route
-              path="/admin/departments"
-              element={withBoundary(<AdminDepartmentPage />)}
-            />
-            <Route
-              path="/admin/departments/:id"
-              element={withBoundary(<AdminDepartmentDetailPage />)}
-            />
-          </Route>
+          <Route
+            path="/admin/departments"
+            element={withPermission(
+              PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+              <AdminDepartmentPage />,
+            )}
+          />
+          <Route
+            path="/admin/departments/:id"
+            element={withPermission(
+              PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+              <AdminDepartmentDetailPage />,
+            )}
+          />
 
           <Route
             path="/admin/users"
@@ -241,22 +241,20 @@ export default function AppRoutes() {
             )}
           />
 
-          <Route element={<AdminOrCenterChiefRoute />}>
-            <Route
-              path="/admin/affiliates"
-              element={withPermission(
-                PERMISSIONS.DASHBOARD_VIEW,
-                <AdminAffiliatesModulePage />,
-              )}
-            />
-            <Route
-              path="/admin/affiliates/:id"
-              element={withPermission(
-                PERMISSIONS.DASHBOARD_VIEW,
-                <AdminAffiliateDetailPage />,
-              )}
-            />
-          </Route>
+          <Route
+            path="/admin/affiliates"
+            element={withPermission(
+              PERMISSIONS.AFFILIATES_VIEW,
+              <AdminAffiliatesModulePage />,
+            )}
+          />
+          <Route
+            path="/admin/affiliates/:id"
+            element={withPermission(
+              PERMISSIONS.AFFILIATES_VIEW,
+              <AdminAffiliateDetailPage />,
+            )}
+          />
         </Route>
       </Route>
 
