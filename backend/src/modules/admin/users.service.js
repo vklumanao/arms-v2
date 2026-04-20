@@ -19,7 +19,9 @@ function asTrimmedString(value) {
  * - Returns one of: `admin`, `faculty`, `student`.
  */
 function normalizeRole(role) {
-  const value = String(role || "student").trim().toLowerCase();
+  const value = String(role || "student")
+    .trim()
+    .toLowerCase();
   if (value === "admin") return "admin";
   if (value === "faculty") return "faculty";
   return "student";
@@ -131,12 +133,11 @@ async function findUserByIdRaw(userId) {
  * - Exposes only fields required by admin UI.
  */
 function toAdminUserRow(row) {
-  const roles =
-    Array.isArray(row?.roles)
-      ? row.roles
-      : typeof row?.roles === "string"
-        ? JSON.parse(row.roles || "[]")
-        : [];
+  const roles = Array.isArray(row?.roles)
+    ? row.roles
+    : typeof row?.roles === "string"
+      ? JSON.parse(row.roles || "[]")
+      : [];
   return {
     id: row.id,
     full_name: row.full_name || null,
@@ -194,7 +195,6 @@ export async function listAdminUsers() {
     FROM users u
     LEFT JOIN user_roles ur ON ur.user_id = u.id
     LEFT JOIN roles r ON r.id = ur.role_id
-    WHERE u.role IN ('faculty', 'student')
     GROUP BY u.id
     ORDER BY u.created_at DESC, u.email ASC
     `,
@@ -229,7 +229,9 @@ async function listOwnedDatasetsForUser(user, listDatasets) {
     const datasets = Array.isArray(result?.datasets) ? result.datasets : [];
     if (!datasets.length) break;
 
-    rows.push(...datasets.filter((dataset) => isDatasetOwnedByUser(dataset, user)));
+    rows.push(
+      ...datasets.filter((dataset) => isDatasetOwnedByUser(dataset, user)),
+    );
     const total = Number(result?.count || 0);
     if (datasets.length < limit || (page * limit >= total && total > 0)) break;
     page += 1;
@@ -342,11 +344,14 @@ export async function getAdminUserDetail(userId, { listDatasets }) {
       id: dataset?.id || dataset?.name || null,
       title: dataset?.title || dataset?.name || "Untitled project",
       status,
-      updated_at: dataset?.metadata_modified || dataset?.metadata_created || null,
+      updated_at:
+        dataset?.metadata_modified || dataset?.metadata_created || null,
     });
   }
 
-  projects.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+  projects.sort(
+    (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0),
+  );
   const currentProjectsCount = statusCounts.proposal + statusCounts.ongoing;
 
   const { roleAudit, roleAuditActorMap } = await loadRoleAudit(user.id);
