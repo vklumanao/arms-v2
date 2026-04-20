@@ -71,21 +71,21 @@ export function ToastProvider({ children }) {
             const tone =
               toast.type === "success"
                 ? {
-                    card: "border-emerald-300/70 bg-emerald-50/95 text-emerald-950",
-                    icon: "bg-emerald-100 text-emerald-700",
+                    card: "border-zinc-300/70 bg-zinc-50/95 text-zinc-950",
+                    icon: "bg-zinc-100 text-zinc-700",
                     label: "Success",
                     Icon: CheckCircle2,
                   }
                 : toast.type === "error"
                   ? {
-                      card: "border-rose-300/70 bg-rose-50/95 text-rose-950",
-                      icon: "bg-rose-100 text-rose-700",
+                      card: "border-zinc-300/70 bg-zinc-50/95 text-zinc-950",
+                      icon: "bg-zinc-100 text-zinc-700",
                       label: "Error",
                       Icon: AlertTriangle,
                     }
                   : {
-                      card: "border-sky-300/70 bg-sky-50/95 text-sky-950",
-                      icon: "bg-sky-100 text-sky-700",
+                      card: "border-zinc-300/70 bg-zinc-50/95 text-zinc-950",
+                      icon: "bg-zinc-100 text-zinc-700",
                       label: "Info",
                       Icon: Info,
                     };
