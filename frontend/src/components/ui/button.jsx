@@ -11,17 +11,17 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground hover:opacity-95 shadow-sm",
 
-        mono: "bg-black text-white hover:bg-gray-800 active:bg-gray-900 shadow-sm",
+        mono: "bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 shadow-sm",
 
         destructive:
-          "bg-black text-white hover:bg-gray-800 active:bg-gray-900 shadow-sm",
+          "bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 shadow-sm",
 
         outline:
-          "border border-gray-300 bg-white text-black hover:bg-gray-100 active:bg-gray-200",
+          "border border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200",
 
-        secondary: "bg-gray-100 text-black hover:bg-gray-200",
+        secondary: "bg-zinc-100 text-black hover:bg-zinc-200",
 
-        ghost: "text-black hover:bg-gray-100",
+        ghost: "text-black hover:bg-zinc-100",
 
         link: "text-black underline-offset-4 hover:underline",
       },
