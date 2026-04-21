@@ -669,7 +669,12 @@ export function registerAuthRoutes(app, deps) {
       }
 
       const password_hash = await hashPassword(parsed.password);
-      await updateUser(user.id, { password_hash });
+      const patch = { password_hash };
+      if (config.emailVerificationEnabled && user.email_verified !== true) {
+        patch.email_verified = true;
+        patch.email_verified_at = new Date().toISOString();
+      }
+      await updateUser(user.id, patch);
 
       if (user.ckan_username) {
         try {
@@ -697,6 +702,13 @@ export function registerAuthRoutes(app, deps) {
         eventType: "auth.password_reset_completed",
         details: { email: user.email },
       });
+      if (config.emailVerificationEnabled && user.email_verified !== true) {
+        await logAuditEvent({
+          actorUserId: user.id,
+          eventType: "auth.email_verified_via_password_setup",
+          details: { email: user.email },
+        });
+      }
 
       return res.json({ ok: true });
     } catch (error) {
