@@ -368,11 +368,12 @@ function mockApiPayload(path, options = {}) {
         ckan_username: "created-user",
         ckan_user_id: "ckan-created-user",
         is_active: true,
+        email_verified: false,
+        email_verified_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         last_sign_in_at: null,
         email_confirmed_at: null,
-        temporary_password: "Arms!demo1234",
       },
     };
   }
@@ -421,6 +422,13 @@ function mockApiPayload(path, options = {}) {
         reviews: [],
       },
     };
+  }
+  if (
+    cleanPath.includes("/admin/users/") &&
+    cleanPath.endsWith("/resend-invite") &&
+    method === "POST"
+  ) {
+    return { ok: true };
   }
   if (cleanPath.includes("/admin/users/")) return { data: null };
 
