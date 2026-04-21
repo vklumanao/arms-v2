@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 import {
+  buildInviteSetPasswordEmailHtml,
+  buildInviteSetPasswordEmailText,
+  buildResetLink,
+} from "../auth/auth.email.js";
+import {
   getAdminUserDetail,
   listAdminUsers,
   updateAdminUserStatus,
@@ -58,8 +63,12 @@ export function registerAdminUserRoutes(app, deps) {
     createUser,
     hashPassword,
     findUserByEmail,
+    findUserById,
     assignUserToOrganizationEditor,
     assignUserToGroupEditor,
+    createPasswordResetToken,
+    sendEmail,
+    config,
     listRoles,
     setUserRoles,
     logAuditEvent,
@@ -211,6 +220,36 @@ export function registerAdminUserRoutes(app, deps) {
           ckan_username: ckanUser.name,
           ckan_user_id: ckanUser.id || null,
           is_active: true,
+          email_verified: config.emailVerificationEnabled ? false : true,
+          email_verified_at: config.emailVerificationEnabled
+            ? null
+            : new Date().toISOString(),
+        });
+        const inviteToken = await createPasswordResetToken(
+          created.id,
+          config.resetTokenTtlMinutes,
+        );
+        const inviteLink = buildResetLink(config.publicAppUrl, inviteToken);
+        await sendEmail({
+          to: created.email,
+          subject: "Complete your ARMS account setup",
+          html: buildInviteSetPasswordEmailHtml({
+            fullName: created.full_name,
+            link: inviteLink,
+          }),
+          text: buildInviteSetPasswordEmailText({
+            fullName: created.full_name,
+            link: inviteLink,
+          }),
+        });
+
+        await logAuditEvent({
+          actorUserId: req.user?.id || null,
+          eventType: "admin.user.invite_sent",
+          details: {
+            target_user_id: created.id,
+            target_email: created.email,
+          },
         });
 
         return res.status(201).json({
@@ -225,16 +264,79 @@ export function registerAdminUserRoutes(app, deps) {
             ckan_username: created.ckan_username || null,
             ckan_user_id: created.ckan_user_id || null,
             is_active: created.is_active !== false,
+            email_verified: created.email_verified === true,
+            email_verified_at: created.email_verified_at || null,
             created_at: created.created_at || null,
             updated_at: created.updated_at || null,
             last_sign_in_at: null,
             email_confirmed_at: null,
-            temporary_password: temporaryPassword,
           },
         });
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to create user."),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/users/:userId/resend-invite",
+    authMiddleware,
+    requireAdminUsersManage,
+    async (req, res) => {
+      try {
+        const targetUserId = String(req.params?.userId || "").trim();
+        if (!targetUserId) {
+          return res.status(400).json({ error: "User id is required." });
+        }
+
+        const user = await findUserById(targetUserId);
+        if (!user) {
+          return res.status(404).json({ error: "User not found." });
+        }
+        if (user.is_active === false) {
+          return res.status(400).json({
+            error: "Cannot send invite to a deactivated account.",
+          });
+        }
+        if (user.email_verified === true) {
+          return res.status(400).json({
+            error: "User email is already verified.",
+          });
+        }
+
+        const inviteToken = await createPasswordResetToken(
+          user.id,
+          config.resetTokenTtlMinutes,
+        );
+        const inviteLink = buildResetLink(config.publicAppUrl, inviteToken);
+        await sendEmail({
+          to: user.email,
+          subject: "Complete your ARMS account setup",
+          html: buildInviteSetPasswordEmailHtml({
+            fullName: user.full_name,
+            link: inviteLink,
+          }),
+          text: buildInviteSetPasswordEmailText({
+            fullName: user.full_name,
+            link: inviteLink,
+          }),
+        });
+
+        await logAuditEvent({
+          actorUserId: req.user?.id || null,
+          eventType: "admin.user.invite_resent",
+          details: {
+            target_user_id: user.id,
+            target_email: user.email,
+          },
+        });
+
+        return res.json({ ok: true });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to resend invite."),
         });
       }
     },
