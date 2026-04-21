@@ -202,6 +202,36 @@ export function hasPermission(roleOrRoles, permission, directPermissions = []) {
   return permissions.includes(permission);
 }
 
+export function canAccessAffiliates(profile) {
+  if (!profile) return false;
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role;
+  const isAdmin = hasPermission(
+    roleKeys,
+    PERMISSIONS.ADMIN_CONTROLS_MANAGE,
+    profile?.permissions,
+  );
+  const isCenterChief =
+    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
+  return isAdmin || isCenterChief;
+}
+
+export function canAccessRoutePermission(profile, permission) {
+  if (!profile) return false;
+  if (!permission) return true;
+  if (
+    permission === PERMISSIONS.AFFILIATES_VIEW &&
+    canAccessAffiliates(profile)
+  ) {
+    return true;
+  }
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles.map((entry) => entry?.key)
+    : profile?.role;
+  return hasPermission(roleKeys, permission, profile?.permissions);
+}
+
 export function getRolePermissionMap() {
   return cloneRoleMap(rolePermissionCache);
 }

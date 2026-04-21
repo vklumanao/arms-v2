@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+  canAccessAffiliates,
+  canAccessRoutePermission,
   hasPermission,
   PERMISSIONS,
   PERMISSIONS_UPDATED_EVENT,
@@ -179,8 +181,6 @@ export default function AppShell() {
       PERMISSIONS.ADMIN_CONTROLS_MANAGE,
       profile?.permissions,
     );
-    const isCenterChief =
-      profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
 
     const links = [
       {
@@ -215,11 +215,11 @@ export default function AppShell() {
         to: "/admin/departments",
         label: "Departments",
         icon: FolderTree,
-        permission: PERMISSIONS.DASHBOARD_VIEW,
+        permission: PERMISSIONS.ADMIN_CONTROLS_MANAGE,
       });
     }
 
-    if (isAdmin || isCenterChief) {
+    if (canAccessAffiliates(profile)) {
       links.push({
         to: "/admin/affiliates",
         label: "Affiliates",
@@ -230,10 +230,7 @@ export default function AppShell() {
 
     return links;
   }, [
-    profile?.is_center_chief,
-    profile?.managed_center_id,
-    profile?.role,
-    profile?.roles,
+    profile,
   ]);
 
   const workspaceResearchLinks = useMemo(
@@ -301,31 +298,25 @@ export default function AppShell() {
   ]);
 
   const visibleGroups = useMemo(
-    () =>
+    () => {
+      const roleGuardVersion = permissionVersion;
+      return (
       navGroups
         .map((group) => ({
           ...group,
           items: group.links.filter((item) => {
-            const isCenterChief =
-              profile?.is_center_chief === true &&
-              Boolean(profile?.managed_center_id);
-            if (item.to === "/admin/affiliates" && isCenterChief) return true;
-            return hasPermission(
-              profile?.roles?.map((entry) => entry?.key) || profile?.role,
-              item.permission,
-              profile?.permissions,
-            );
+            // Re-evaluate nav visibility whenever role-permission map updates.
+            void roleGuardVersion;
+            return canAccessRoutePermission(profile, item.permission);
           }),
         }))
-        .filter((group) => group.items.length > 0),
+        .filter((group) => group.items.length > 0)
+      );
+    },
     [
       navGroups,
       permissionVersion,
-      profile?.is_center_chief,
-      profile?.managed_center_id,
-      profile?.permissions,
-      profile?.role,
-      profile?.roles,
+      profile,
     ],
   );
 

@@ -3,8 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
 import AppLoading from "@/components/feedback/AppLoading";
 import {
-  PERMISSIONS,
-  hasPermission,
+  canAccessRoutePermission,
   PERMISSIONS_UPDATED_EVENT,
   syncRolePermissionMapFromServer,
 } from "@/services/permissions";
@@ -55,17 +54,7 @@ export default function PermissionRoute({ permission, children }) {
   if (profileLoading) return <AppLoading label="Loading permissions..." />;
   if (permissionsLoading) return <AppLoading label="Loading permissions..." />;
   if (!profile) return <Navigate to="/unauthorized" replace />;
-  const roleKeys = Array.isArray(profile?.roles)
-    ? profile.roles.map((entry) => entry?.key)
-    : profile?.role;
-  const isCenterChief =
-    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
-  const isCenterChiefAffiliatesAccess =
-    permission === PERMISSIONS.AFFILIATES_VIEW && isCenterChief;
-  if (
-    !isCenterChiefAffiliatesAccess &&
-    !hasPermission(roleKeys, permission, profile?.permissions)
-  ) {
+  if (!canAccessRoutePermission(profile, permission)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
