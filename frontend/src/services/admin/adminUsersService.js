@@ -45,3 +45,9 @@ export async function fetchAdminUserDetail(userId) {
 export async function sendAdminPasswordReset(email) {
   await requestPasswordReset(email);
 }
+
+export async function resendAdminUserInvite(userId) {
+  await apiFetch(`/admin/users/${userId}/resend-invite`, {
+    method: "POST",
+  });
+}
