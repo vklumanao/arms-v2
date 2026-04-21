@@ -149,6 +149,8 @@ function toAdminUserRow(row) {
     ckan_username: row.ckan_username || null,
     ckan_user_id: row.ckan_user_id || null,
     is_active: row.is_active !== false,
+    email_verified: row.email_verified === true,
+    email_verified_at: row.email_verified_at || null,
     created_at: row.created_at || null,
     updated_at: row.updated_at || null,
     last_sign_in_at: null,
@@ -177,6 +179,8 @@ export async function listAdminUsers() {
       u.ckan_username,
       u.ckan_user_id,
       u.is_active,
+      u.email_verified,
+      u.email_verified_at,
       u.created_at,
       u.updated_at,
       COALESCE(
