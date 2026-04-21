@@ -100,6 +100,9 @@ export const ROLE_PERMISSIONS = {
 };
 
 export const PERMISSIONS_UPDATED_EVENT = "arms:permissions-updated";
+const ALWAYS_GRANTED_PERMISSIONS = new Set([
+  PERMISSIONS.AFFILIATE_PROFILE_VIEW,
+]);
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -136,7 +139,11 @@ function normalizeRolePermissionMap(raw) {
       .toLowerCase();
     if (!key) return;
     const fallback = ROLE_PERMISSIONS[key] || [];
-    next[key] = normalizePermissionList(input?.[key] || fallback);
+    const normalizedList = normalizePermissionList(input?.[key] || fallback);
+    ALWAYS_GRANTED_PERMISSIONS.forEach((permission) => {
+      if (!normalizedList.includes(permission)) normalizedList.push(permission);
+    });
+    next[key] = normalizedList;
   });
 
   if (!Array.isArray(next.admin)) next.admin = [];
@@ -165,7 +172,10 @@ function setRolePermissionCache(nextMap, emitEvent = true) {
 
 export function getPermissionsForRole(role) {
   const normalizedRole = String(role || "").toLowerCase();
-  return rolePermissionCache[normalizedRole] || [];
+  const permissions = rolePermissionCache[normalizedRole] || [];
+  const merged = new Set(permissions);
+  ALWAYS_GRANTED_PERMISSIONS.forEach((permission) => merged.add(permission));
+  return Array.from(merged);
 }
 
 export function getPermissionsForRoles(roles) {
@@ -179,6 +189,9 @@ export function getPermissionsForRoles(roles) {
 
 export function hasPermission(roleOrRoles, permission, directPermissions = []) {
   if (!permission) return true;
+  if (ALWAYS_GRANTED_PERMISSIONS.has(String(permission || "").trim())) {
+    return true;
+  }
   const directSet = new Set(
     (Array.isArray(directPermissions) ? directPermissions : [])
       .map((value) => String(value || "").trim())

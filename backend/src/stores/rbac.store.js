@@ -1,5 +1,7 @@
 import { query } from "../db/client.js";
 
+const ALWAYS_GRANTED_PERMISSION_KEYS = new Set(["affiliate_profile.view"]);
+
 export const DEFAULT_PERMISSION_CATALOG = [
   {
     key: "dashboard.view",
@@ -1198,12 +1200,14 @@ export async function getUserAuthContext(userId, fallbackRole = "student") {
   const permissions = (permissionResult.rows || [])
     .map((row) => String(row?.key || "").trim())
     .filter(Boolean);
+  const permissionSet = new Set(permissions);
+  ALWAYS_GRANTED_PERMISSION_KEYS.forEach((key) => permissionSet.add(key));
 
   const legacy_role = deriveLegacyRoleFromAssignedRoles(roleRows, fallbackRole);
 
   return {
     roles,
-    permissions,
+    permissions: Array.from(permissionSet),
     legacy_role,
   };
 }
@@ -1211,6 +1215,7 @@ export async function getUserAuthContext(userId, fallbackRole = "student") {
 export function userHasPermission(user, permission) {
   const permissionKey = String(permission || "").trim();
   if (!permissionKey) return true;
+  if (ALWAYS_GRANTED_PERMISSION_KEYS.has(permissionKey)) return true;
   const userPermissions = new Set(
     (Array.isArray(user?.permissions) ? user.permissions : [])
       .map((value) => String(value || "").trim())

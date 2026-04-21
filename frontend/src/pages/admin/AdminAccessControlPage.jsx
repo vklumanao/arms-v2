@@ -37,6 +37,7 @@ const MODULE_HIERARCHY = [
   "General",
 ];
 const HIDDEN_MATRIX_MODULES = new Set(["profile", "settings"]);
+const HIDDEN_MATRIX_PERMISSION_KEYS = new Set(["affiliate_profile.view"]);
 
 function formatActionLabel(value) {
   const text = String(value || "")
@@ -174,6 +175,10 @@ export default function AdminAccessControlPage() {
   const filteredPermissions = useMemo(
     () =>
       permissions.filter((permission) => {
+        const permissionKey = String(permission?.key || "")
+          .trim()
+          .toLowerCase();
+        if (HIDDEN_MATRIX_PERMISSION_KEYS.has(permissionKey)) return false;
         const moduleName = String(permission?.module || "General")
           .trim()
           .toLowerCase();
@@ -375,6 +380,10 @@ export default function AdminAccessControlPage() {
   const createFilteredPermissions = useMemo(
     () =>
       permissions.filter((permission) => {
+        const permissionKey = String(permission?.key || "")
+          .trim()
+          .toLowerCase();
+        if (HIDDEN_MATRIX_PERMISSION_KEYS.has(permissionKey)) return false;
         const moduleName = String(permission?.module || "General")
           .trim()
           .toLowerCase();
@@ -777,7 +786,7 @@ export default function AdminAccessControlPage() {
                                     className="border-b border-blue-100 px-3 py-2 text-center"
                                   >
                                     {keys.length > 0 ? (
-                                      <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-blue-200/80 bg-blue-100/70 px-2 py-1">
+                                      <label className="inline-flex cursor-pointer items-center justify-center px-2 py-1">
                                         <input
                                           type="checkbox"
                                           checked={checked}
