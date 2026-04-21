@@ -42,6 +42,7 @@ import {
   createAdminUser,
   fetchAdminUserRoleOptions,
   fetchAdminUsers,
+  resendAdminUserInvite,
   sendAdminPasswordReset,
   updateAdminUserRole,
   updateAdminUserStatus,
@@ -248,6 +249,27 @@ export default function AdminUsersPage() {
     setMessage(`Reset password link sent to ${email}.`);
   };
 
+  const resendInvite = async (user) => {
+    const userId = String(user?.id || "").trim();
+    if (!userId) {
+      setError("Selected user is invalid.");
+      return;
+    }
+    if (user?.is_active === false) {
+      setError("Cannot send invite to a deactivated account.");
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await resendAdminUserInvite(userId);
+      setMessage(`Setup invite sent to ${user?.email || "user email"}.`);
+    } catch (inviteError) {
+      setError(inviteError.message || "Failed to resend setup invite.");
+    }
+  };
+
   const getAssignedRoleKey = (user) => {
     const assigned = Array.isArray(user?.roles) ? user.roles : [];
     const firstKey = String(assigned?.[0]?.key || "")
@@ -303,6 +325,21 @@ export default function AdminUsersPage() {
     });
   };
 
+  const openInviteConfirm = (user) => {
+    if (!user?.id || !user?.email) {
+      setError("Selected user has no email.");
+      return;
+    }
+    setConfirmAction({
+      type: "invite",
+      user,
+      userLabel: user.full_name || user.email || "this user",
+      title: "Confirm Invite Resend",
+      message: `Resend account setup invite to ${user.email}?`,
+      confirmLabel: "Resend Invite",
+    });
+  };
+
   const executeConfirmedAction = async () => {
     if (!confirmAction) return;
     setConfirmLoading(true);
@@ -313,6 +350,8 @@ export default function AdminUsersPage() {
       await toggleUserActive(confirmAction.userId, confirmAction.nextActive);
     } else if (confirmAction.type === "reset") {
       await sendResetLink(confirmAction.email);
+    } else if (confirmAction.type === "invite") {
+      await resendInvite(confirmAction.user);
     }
 
     setConfirmLoading(false);
@@ -412,9 +451,11 @@ export default function AdminUsersPage() {
       setCreateResult(nextUser || null);
       if (assignmentWarning) {
         setError(assignmentWarning);
-        setMessage("User account created.");
+        setMessage(
+          "User account created and setup invite sent. Role assignment needs review.",
+        );
       } else {
-        setMessage("User account created.");
+        setMessage("User account created and setup invite sent.");
       }
     } catch (createError) {
       setError(createError.message || "Failed to create user account.");
@@ -591,23 +632,28 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          const state = pendingResetByUserId[user.id]
-                            ? "pending_reset"
-                            : user.is_active
-                              ? "active"
-                              : "deactivated";
+                          const state = !user.is_active
+                            ? "deactivated"
+                            : user.email_verified !== true
+                              ? "pending_verification"
+                              : pendingResetByUserId[user.id]
+                                ? "pending_reset"
+                                : "active";
                           return (
                             <Badge
                               variant={
                                 state === "active"
                                   ? "secondary"
-                                  : state === "pending_reset"
+                                  : state === "pending_reset" ||
+                                      state === "pending_verification"
                                     ? "outline"
                                     : "destructive"
                               }
                             >
                               {state === "active"
                                 ? "Active"
+                                : state === "pending_verification"
+                                  ? "Pending verification"
                                 : state === "pending_reset"
                                   ? "Pending reset"
                                   : "Deactivated"}
@@ -659,9 +705,21 @@ export default function AdminUsersPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => openResetConfirm(user)}
-                            aria-label={`Send password reset to ${user?.full_name || user?.email || "user"}`}
-                            title="Send reset"
+                            onClick={() =>
+                              user.email_verified !== true
+                                ? openInviteConfirm(user)
+                                : openResetConfirm(user)
+                            }
+                            aria-label={
+                              user.email_verified !== true
+                                ? `Resend setup invite to ${user?.full_name || user?.email || "user"}`
+                                : `Send password reset to ${user?.full_name || user?.email || "user"}`
+                            }
+                            title={
+                              user.email_verified !== true
+                                ? "Resend invite"
+                                : "Send reset"
+                            }
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
@@ -863,21 +921,22 @@ export default function AdminUsersPage() {
                 </label>
               </div>
 
-              {createResult?.temporary_password ? (
+              {createResult ? (
                 <Card className="bg-muted/40">
                   <CardContent className="space-y-1 p-4 text-sm text-slate-700">
                     <p className="font-semibold text-slate-900">
                       Account created
                     </p>
                     <p className="mt-1">
-                      Temporary password:{" "}
-                      <span className="font-mono font-semibold">
-                        {createResult.temporary_password}
+                      A setup invite was sent to{" "}
+                      <span className="font-semibold">
+                        {createResult.email || "the user's email"}
                       </span>
+                      .
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Share this once, then require the user to change it after
-                      first login.
+                      The user must set a password from the email link to verify
+                      and activate account access.
                     </p>
                   </CardContent>
                 </Card>
