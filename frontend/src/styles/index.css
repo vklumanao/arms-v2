@@ -268,6 +268,33 @@ h6,
   max-width: 72rem;
 }
 
+.public-layout-header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.public-nav-link {
+  border-radius: 0.55rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.public-nav-link:hover {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.public-nav-link.is-active {
+  background: var(--brand);
+  color: #ffffff;
+}
+
 .public-layout-main {
   margin: 0 auto;
   width: 100%;
