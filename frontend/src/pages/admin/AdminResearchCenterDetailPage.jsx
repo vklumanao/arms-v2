@@ -74,8 +74,8 @@ function normalizeTab(value) {
   const tab = String(value || "")
     .trim()
     .toLowerCase();
-  if (["overview", "affiliates", "projects"].includes(tab)) return tab;
-  return "overview";
+  if (["affiliates", "projects"].includes(tab)) return tab;
+  return "projects";
 }
 
 function getSocialMeta(url) {
@@ -788,7 +788,9 @@ export default function AdminResearchCenterDetailPage() {
 
             {showDeletePopover ? (
               <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-md border border-slate-300 bg-white p-3 text-xs text-slate-600 shadow-md">
-                <p className="font-semibold text-slate-900">Deletion is blocked</p>
+                <p className="font-semibold text-slate-900">
+                  Deletion is blocked
+                </p>
                 <p className="mt-1">
                   This center cannot be deleted while it has{" "}
                   {deleteGuard.reasons.projectCount
@@ -818,7 +820,7 @@ export default function AdminResearchCenterDetailPage() {
         )}
       </div>
 
-      <Card className="overflow-hidden border-blue-200/80 bg-gradient-to-b from-blue-50/25 to-white">
+      <Card className="overflow-hidden border border-blue-200/80 bg-gradient-to-b from-blue-50/25 to-white shadow-sm backdrop-blur">
         <CardHeader className="border-b border-blue-200/80 bg-blue-50/30 px-6 py-5">
           <div className="flex flex-col gap-5 rounded-[var(--radius-lg)] border border-blue-200/70 bg-white p-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-5">
@@ -887,365 +889,338 @@ export default function AdminResearchCenterDetailPage() {
             />
           ) : (
             <>
-              <div className="rounded-lg border border-blue-200/70 bg-blue-50/25 p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  Description
-                </p>
+              <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+                <aside className="space-y-4">
+                  <div className="rounded-lg border border-blue-200/70 bg-blue-50/25 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      Description
+                    </p>
 
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                  {String(center?.description || "").trim() ||
-                    "No description provided."}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  Research Agenda
-                </p>
-
-                {center.agendaNames.length ? (
-                  <div className="flex flex-wrap gap-3">
-                    {center.agendaNames.map((agenda) => (
-                    <button
-                      key={agenda}
-                      type="button"
-                      className="inline-flex items-center rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-blue-50"
-                        onClick={() => applyAgendaFilter(agenda)}
-                        title="Filter linked projects by this agenda"
-                      >
-                        {agenda}
-                      </button>
-                    ))}
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                      {String(center?.description || "").trim() ||
+                        "No description provided."}
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-600">No agenda linked.</p>
-                )}
-              </div>
 
-              <Tabs value={activeTab} onValueChange={setTab}>
-                <TabsList className="text-sm border border-blue-200 bg-white">
-                  <TabsTrigger
-                    value="overview"
-                    className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
-                  >
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="affiliates"
-                    className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
-                  >
-                    Affiliates
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="projects"
-                    className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
-                  >
-                    Projects
-                  </TabsTrigger>
-                </TabsList>
+                  <div className="space-y-3 rounded-lg border border-blue-200/70 bg-white p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Research Agenda
+                    </p>
 
-                <TabsContent value="overview" className="mt-5 space-y-5">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {[
-                      {
-                        label: "Members",
-                        value: usage.profileCount,
-                        sub: `Admin ${usage.memberBreakdown?.adminCount || 0} · Editor ${usage.memberBreakdown?.editorCount || 0} · Member ${usage.memberBreakdown?.memberCount || 0}`,
-                      },
-                      {
-                        label: "Projects",
-                        value: usage.projectCount,
-                        sub: "Linked research projects.",
-                      },
-                      {
-                        label: "Agenda",
-                        value: center.agendaNames.length,
-                        sub: "Research agenda items.",
-                      },
-                    ].map((item) => (
-                      <Card
-                        key={item.label}
-                        className="border border-blue-200/70 bg-gradient-to-b from-blue-50/20 to-white"
-                      >
-                        <CardContent className="p-5">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
-                            {item.label}
-                          </p>
-                          <p className="mt-1 text-2xl font-bold text-slate-900">
-                            {item.value}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-600">
-                            {item.sub}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="affiliates" className="mt-4 space-y-3">
-                  <Card className="overflow-hidden border border-blue-200/70 bg-white">
-                    <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
-                      <CardTitle className="text-base font-bold text-[#1E3A8A]">
-                        Linked Affiliates
-                      </CardTitle>
-                      <CardDescription className="text-sm text-slate-600">
-                        Showing {links.profiles.length} affiliate(s).
-                      </CardDescription>
-                    </CardHeader>
-
-                    {links.profiles.length === 0 ? (
-                      <CardContent className="p-6">
-                        <EmptyState
-                          title="No affiliates"
-                          description="No linked affiliates found for this research center."
-                        />
-                      </CardContent>
+                    {center.agendaNames.length ? (
+                      <div className="flex flex-wrap gap-3">
+                        {center.agendaNames.map((agenda) => (
+                          <button
+                            key={agenda}
+                            type="button"
+                            className="inline-flex items-center rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-blue-50"
+                            onClick={() => applyAgendaFilter(agenda)}
+                            title="Filter linked projects by this agenda"
+                          >
+                            {agenda}
+                          </button>
+                        ))}
+                      </div>
                     ) : (
-                      <>
-                        <CardContent className="p-0">
-                          <div className="overflow-x-auto">
-                            <Table className="min-w-[980px]">
-                              <TableHeader>
-                                <TableRow className="bg-blue-100/70">
-                                  <TableHead>No.</TableHead>
-                                  <TableHead>Full Name</TableHead>
-                                  <TableHead>Email</TableHead>
-                                  <TableHead>Role</TableHead>
-                                  <TableHead>Department</TableHead>
-                                  <TableHead className="text-right">
-                                    Actions
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
+                      <p className="text-sm text-slate-600">
+                        No agenda linked.
+                      </p>
+                    )}
+                  </div>
+                </aside>
 
-                              <TableBody>
-                                {paginatedAffiliates.map((row, idx) => {
-                                  const rowId = String(row?.id || "").trim();
-                                  const centerChiefId = String(
-                                    center?.centerChiefId || "",
-                                  ).trim();
-                                  const isChief =
-                                    rowId &&
-                                    centerChiefId &&
-                                    rowId === centerChiefId;
+                <div className="space-y-4">
+                  <Tabs value={activeTab} onValueChange={setTab}>
+                    <TabsList className="text-sm border border-blue-200 bg-white">
+                      <TabsTrigger
+                        value="projects"
+                        className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
+                      >
+                        Projects
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="affiliates"
+                        className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
+                      >
+                        Affiliates
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="affiliates" className="mt-4 space-y-3">
+                      <Card className="overflow-hidden border border-blue-200/70 bg-white">
+                        <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
+                          <CardTitle className="text-base font-bold text-[#1E3A8A]">
+                            Linked Affiliates
+                          </CardTitle>
+                          <CardDescription className="text-sm text-slate-600">
+                            Showing {links.profiles.length} affiliate(s).
+                          </CardDescription>
+                        </CardHeader>
 
-                                  return (
+                        {links.profiles.length === 0 ? (
+                          <CardContent className="p-6">
+                            <EmptyState
+                              title="No affiliates"
+                              description="No linked affiliates found for this research center."
+                            />
+                          </CardContent>
+                        ) : (
+                          <>
+                            <CardContent className="p-0">
+                              <div className="overflow-x-auto">
+                                <Table className="min-w-[980px]">
+                                  <TableHeader>
+                                    <TableRow className="bg-blue-100/70">
+                                      <TableHead>No.</TableHead>
+                                      <TableHead>Full Name</TableHead>
+                                      <TableHead>Email</TableHead>
+                                      <TableHead>Role</TableHead>
+                                      <TableHead>Department</TableHead>
+                                      <TableHead className="text-right">
+                                        Actions
+                                      </TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+
+                                  <TableBody>
+                                    {paginatedAffiliates.map((row, idx) => {
+                                      const rowId = String(
+                                        row?.id || "",
+                                      ).trim();
+                                      const centerChiefId = String(
+                                        center?.centerChiefId || "",
+                                      ).trim();
+                                      const isChief =
+                                        rowId &&
+                                        centerChiefId &&
+                                        rowId === centerChiefId;
+
+                                      return (
+                                        <TableRow
+                                          key={row?.id || `${idx}`}
+                                          className="hover:bg-blue-50/80"
+                                        >
+                                          <TableCell>
+                                            {(affiliatesPage - 1) * PAGE_SIZE +
+                                              idx +
+                                              1}
+                                          </TableCell>
+                                          <TableCell className="font-medium text-slate-900">
+                                            {row?.full_name || row?.name || "-"}
+                                          </TableCell>
+                                          <TableCell className="text-slate-700">
+                                            {row?.email || "-"}
+                                          </TableCell>
+                                          <TableCell className="capitalize text-slate-700">
+                                            {row?.role || "-"}
+                                          </TableCell>
+                                          <TableCell className="text-slate-700">
+                                            {row?.department || "-"}
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8 text-slate-600 hover:bg-blue-50"
+                                              disabled={isChief}
+                                              onClick={() =>
+                                                setUnlinkTarget(row)
+                                              }
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </CardContent>
+
+                            <PaginationControls
+                              page={affiliatesPage}
+                              totalPages={affiliatesTotalPages}
+                              onPageChange={setAffiliatesPage}
+                              className="border-t border-slate-200"
+                            />
+                          </>
+                        )}
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="projects" className="mt-5 space-y-4">
+                      {links.projects.length === 0 ? (
+                        <EmptyState
+                          title="No projects"
+                          description="No linked projects found for this research center."
+                        />
+                      ) : (
+                        <Card className="overflow-hidden border border-blue-200/70 bg-white">
+                          <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
+                            <CardTitle className="text-base font-bold text-[#1E3A8A]">
+                              Linked Projects
+                            </CardTitle>
+
+                            <CardDescription className="text-sm text-slate-600">
+                              Showing {filteredProjects.length} project(s).
+                            </CardDescription>
+
+                            {agendaFilter && (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                                <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800">
+                                  Agenda: {agendaFilter}
+                                </span>
+                                <button
+                                  className="text-xs font-semibold text-slate-500 hover:text-[#1E3A8A]"
+                                  onClick={() => setAgendaFilter("")}
+                                >
+                                  Clear agenda
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-2 mt-4">
+                              <Input
+                                className="w-[180px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0"
+                                placeholder="Search projects"
+                                value={projectSearch}
+                                onChange={(e) =>
+                                  setProjectSearch(e.target.value)
+                                }
+                              />
+
+                              <Select
+                                value={projectStatus}
+                                onValueChange={setProjectStatus}
+                              >
+                                <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
+                                  <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projectStatusOptions.map((status) => (
+                                    <SelectItem key={status} value={status}>
+                                      {status === "all"
+                                        ? "All statuses"
+                                        : status}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <Select
+                                value={projectYear}
+                                onValueChange={setProjectYear}
+                              >
+                                <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
+                                  <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projectYearOptions.map((year) => (
+                                    <SelectItem key={year} value={year}>
+                                      {year === "all" ? "All years" : year}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                variant="outline"
+                                className="h-7 px-2.5 text-xs border-slate-300 text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A] transition"
+                                onClick={() => {
+                                  setProjectSearch("");
+                                  setProjectStatus("all");
+                                  setProjectYear("all");
+                                  setAgendaFilter("");
+                                }}
+                              >
+                                Reset
+                              </Button>
+                            </div>
+                          </CardHeader>
+
+                          <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                              <Table className="min-w-[980px]">
+                                <TableHeader>
+                                  <TableRow className="bg-blue-100/70">
+                                    <TableHead>No.</TableHead>
+                                    <TableHead>Project Title</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Year</TableHead>
+                                    <TableHead>Lead Researcher</TableHead>
+                                    <TableHead>Department</TableHead>
+                                    <TableHead>Agendum</TableHead>
+                                    <TableHead className="text-right">
+                                      Actions
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+
+                                <TableBody>
+                                  {paginatedProjects.map((row, idx) => (
                                     <TableRow
                                       key={row?.id || `${idx}`}
                                       className="hover:bg-blue-50/80"
                                     >
                                       <TableCell>
-                                        {(affiliatesPage - 1) * PAGE_SIZE +
+                                        {(projectsPage - 1) * PAGE_SIZE +
                                           idx +
                                           1}
                                       </TableCell>
                                       <TableCell className="font-medium text-slate-900">
-                                        {row?.full_name || row?.name || "-"}
+                                        {row?.title || "-"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant="outline"
+                                          className={`capitalize ${statusBadgeClass(row?.status)}`}
+                                        >
+                                          {formatStatusLabel(row?.status) ||
+                                            "-"}
+                                        </Badge>
                                       </TableCell>
                                       <TableCell className="text-slate-700">
-                                        {row?.email || "-"}
-                                      </TableCell>
-                                      <TableCell className="capitalize text-slate-700">
-                                        {row?.role || "-"}
+                                        {row?.year || "-"}
                                       </TableCell>
                                       <TableCell className="text-slate-700">
-                                        {row?.department || "-"}
+                                        {row?.lead_researcher || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-slate-700">
+                                        {row?.department_name || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-slate-700">
+                                        {row?.agenda_name || "-"}
                                       </TableCell>
                                       <TableCell className="text-right">
                                         <Button
-                                          type="button"
                                           variant="ghost"
                                           size="icon"
                                           className="h-8 w-8 text-slate-600 hover:bg-blue-50"
-                                          disabled={isChief}
-                                          onClick={() => setUnlinkTarget(row)}
+                                          onClick={() => goToProject(row)}
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Eye className="h-4 w-4" />
                                         </Button>
                                       </TableCell>
                                     </TableRow>
-                                  );
-                                })}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CardContent>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </CardContent>
 
-                        <PaginationControls
-                          page={affiliatesPage}
-                          totalPages={affiliatesTotalPages}
-                          onPageChange={setAffiliatesPage}
-                          className="border-t border-slate-200"
-                        />
-                      </>
-                    )}
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="projects" className="mt-5 space-y-4">
-                  {links.projects.length === 0 ? (
-                    <EmptyState
-                      title="No projects"
-                      description="No linked projects found for this research center."
-                    />
-                  ) : (
-                    <Card className="overflow-hidden border border-blue-200/70 bg-white">
-                      <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
-                        <CardTitle className="text-base font-bold text-[#1E3A8A]">
-                          Linked Projects
-                        </CardTitle>
-
-                        <CardDescription className="text-sm text-slate-600">
-                          Showing {filteredProjects.length} project(s).
-                        </CardDescription>
-
-                        {agendaFilter && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                            <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800">
-                              Agenda: {agendaFilter}
-                            </span>
-                            <button
-                              className="text-xs font-semibold text-slate-500 hover:text-[#1E3A8A]"
-                              onClick={() => setAgendaFilter("")}
-                            >
-                              Clear agenda
-                            </button>
-                          </div>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-2 mt-4">
-                          <Input
-                            className="w-[180px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0"
-                            placeholder="Search projects"
-                            value={projectSearch}
-                            onChange={(e) => setProjectSearch(e.target.value)}
+                          <PaginationControls
+                            page={projectsPage}
+                            totalPages={projectsTotalPages}
+                            onPageChange={setProjectsPage}
+                            className="border-t border-slate-200"
                           />
-
-                          <Select
-                            value={projectStatus}
-                            onValueChange={setProjectStatus}
-                          >
-                            <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
-                              <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {projectStatusOptions.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                  {status === "all" ? "All statuses" : status}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Select
-                            value={projectYear}
-                            onValueChange={setProjectYear}
-                          >
-                            <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
-                              <SelectValue placeholder="Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {projectYearOptions.map((year) => (
-                                <SelectItem key={year} value={year}>
-                                  {year === "all" ? "All years" : year}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Button
-                            variant="outline"
-                            className="h-7 px-2.5 text-xs border-slate-300 text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A] transition"
-                            onClick={() => {
-                              setProjectSearch("");
-                              setProjectStatus("all");
-                              setProjectYear("all");
-                              setAgendaFilter("");
-                            }}
-                          >
-                            Reset
-                          </Button>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                          <Table className="min-w-[980px]">
-                            <TableHeader>
-                              <TableRow className="bg-blue-100/70">
-                                <TableHead>No.</TableHead>
-                                <TableHead>Project Title</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Year</TableHead>
-                                <TableHead>Lead Researcher</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead>Agendum</TableHead>
-                                <TableHead className="text-right">
-                                  Actions
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-
-                            <TableBody>
-                              {paginatedProjects.map((row, idx) => (
-                                <TableRow
-                                  key={row?.id || `${idx}`}
-                                  className="hover:bg-blue-50/80"
-                                >
-                                  <TableCell>
-                                    {(projectsPage - 1) * PAGE_SIZE + idx + 1}
-                                  </TableCell>
-                                  <TableCell className="font-medium text-slate-900">
-                                    {row?.title || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge
-                                      variant="outline"
-                                      className={`capitalize ${statusBadgeClass(row?.status)}`}
-                                    >
-                                      {formatStatusLabel(row?.status) || "-"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.year || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.lead_researcher || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.department_name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-slate-700">
-                                    {row?.agenda_name || "-"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-slate-600 hover:bg-blue-50"
-                                      onClick={() => goToProject(row)}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </CardContent>
-
-                      <PaginationControls
-                        page={projectsPage}
-                        totalPages={projectsTotalPages}
-                        onPageChange={setProjectsPage}
-                        className="border-t border-slate-200"
-                      />
-                    </Card>
-                  )}
-                </TabsContent>
-              </Tabs>
+                        </Card>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
             </>
           )}
         </CardContent>
@@ -1331,7 +1306,9 @@ export default function AdminResearchCenterDetailPage() {
 
             <div className="space-y-4">
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Description</span>
+                <span className="font-semibold text-slate-700">
+                  Description
+                </span>
                 <Textarea
                   value={editForm.description}
                   onChange={(event) =>
@@ -1450,4 +1427,3 @@ export default function AdminResearchCenterDetailPage() {
     </section>
   );
 }
-

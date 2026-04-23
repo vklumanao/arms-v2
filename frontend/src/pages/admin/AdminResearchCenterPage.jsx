@@ -1347,7 +1347,9 @@ export default function AdminResearchCenterPage() {
                       </div>
                     </div>
                   ) : scopedLinksError ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">{scopedLinksError}</p>
+                    <p className="p-4 text-sm text-[#1E3A8A]">
+                      {scopedLinksError}
+                    </p>
                   ) : filteredScopedMembers.length === 0 ? (
                     <p className="p-4 text-sm text-[#1E3A8A]">
                       No members matched the current filters.
@@ -1517,7 +1519,9 @@ export default function AdminResearchCenterPage() {
                       </div>
                     </div>
                   ) : scopedLinksError ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">{scopedLinksError}</p>
+                    <p className="p-4 text-sm text-[#1E3A8A]">
+                      {scopedLinksError}
+                    </p>
                   ) : filteredScopedProjects.length === 0 ? (
                     <p className="p-4 text-sm text-[#1E3A8A]">
                       No linked projects matched the current filters.
@@ -2470,7 +2474,9 @@ export default function AdminResearchCenterPage() {
                       }}
                     />
                     {editErrors.name && (
-                      <p className="text-xs text-slate-800">{editErrors.name}</p>
+                      <p className="text-xs text-slate-800">
+                        {editErrors.name}
+                      </p>
                     )}
                   </div>
 
@@ -2494,7 +2500,9 @@ export default function AdminResearchCenterPage() {
                       }}
                     />
                     {editErrors.code && (
-                      <p className="text-xs text-slate-800">{editErrors.code}</p>
+                      <p className="text-xs text-slate-800">
+                        {editErrors.code}
+                      </p>
                     )}
                   </div>
 
@@ -2957,5 +2965,3 @@ export default function AdminResearchCenterPage() {
     </section>
   );
 }
-
-
