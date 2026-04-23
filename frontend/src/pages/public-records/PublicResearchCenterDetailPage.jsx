@@ -69,11 +69,12 @@ const includesPublicationSignal = (value) => {
 
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
-  if (key === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (key === "ongoing" || key === "active") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (key === "completed") return "border-border bg-muted text-foreground";
+  if (key === "ongoing" || key === "active")
+    return "border-border bg-muted text-foreground";
   if (key === "delayed" || key === "rejected" || key === "cancelled")
-    return "border-red-200 bg-red-50 text-red-700";
-  return "border-blue-200 bg-blue-50 text-blue-700";
+    return "border-border bg-muted text-foreground";
+  return "border-border bg-muted text-foreground";
 };
 
 const getSocialMeta = (url) => {
@@ -373,7 +374,7 @@ export default function PublicResearchCenterDetailPage() {
     return (
       <section className="page-stack-lg">
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600">
+          <CardContent className="p-6 text-sm text-muted-foreground">
             Research center not found.
           </CardContent>
         </Card>
@@ -392,23 +393,23 @@ export default function PublicResearchCenterDetailPage() {
 
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-zinc-50 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-card via-card to-muted p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-lg font-bold uppercase text-white shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-lg font-bold uppercase text-background shadow-sm">
                 {initials}
               </div>
               <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-zinc-900">
+                <CardTitle className="text-2xl font-bold text-foreground">
                   {center?.name || "Research Center"}
                 </CardTitle>
 
-                <CardDescription className="text-base text-zinc-600">
+                <CardDescription className="text-base text-muted-foreground">
                   Code:{" "}
-                  <span className="font-mono font-semibold text-zinc-800">
+                  <span className="font-mono font-semibold text-foreground">
                     {center?.code || center?.id || "-"}
                   </span>{" "}
-                  · Center Chief:{" "}
-                  <span className="font-semibold text-zinc-800">
+                  | Center Chief:{" "}
+                  <span className="font-semibold text-foreground">
                     {center?.center_chief_name || "-"}
                   </span>
                 </CardDescription>
@@ -437,7 +438,7 @@ export default function PublicResearchCenterDetailPage() {
 
                   {socialLink ? (
                     <a
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-border hover:text-foreground"
                       href={socialLink}
                       target="_blank"
                       rel="noreferrer"
@@ -454,7 +455,7 @@ export default function PublicResearchCenterDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <p className="text-base text-zinc-600">
+            <p className="text-base text-muted-foreground">
               Loading research center...
             </p>
           ) : error ? (
@@ -466,18 +467,18 @@ export default function PublicResearchCenterDetailPage() {
             />
           ) : (
             <>
-              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              <div className="rounded-lg border border-[var(--border)] bg-card p-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Description
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-base text-zinc-700">
+                <p className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
                   {String(center?.description || "").trim() ||
                     "No description provided."}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                   Research Agenda
                 </p>
                 {agendaDisplay.length ? (
@@ -485,14 +486,14 @@ export default function PublicResearchCenterDetailPage() {
                     {agendaDisplay.map((agenda) => (
                       <span
                         key={agenda}
-                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-zinc-700"
+                        className="inline-flex items-center rounded-full border border-border bg-card px-4 py-2 text-base font-semibold text-muted-foreground"
                       >
                         {agenda}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-base text-zinc-600">No agenda linked.</p>
+                  <p className="text-base text-muted-foreground">No agenda linked.</p>
                 )}
               </div>
 
@@ -530,13 +531,13 @@ export default function PublicResearchCenterDetailPage() {
                     ].map((item) => (
                       <Card key={item.label} className="bg-muted/30">
                         <CardContent className="p-5">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                             {item.label}
                           </p>
-                          <p className="mt-2 text-3xl font-bold text-zinc-900">
+                          <p className="mt-2 text-3xl font-bold text-foreground">
                             {item.value}
                           </p>
-                          <p className="mt-1 text-sm text-zinc-600">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             {item.desc}
                           </p>
                         </CardContent>
@@ -549,7 +550,7 @@ export default function PublicResearchCenterDetailPage() {
                   <Card className="overflow-hidden">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                       <div>
-                        <CardTitle className="text-lg font-bold text-zinc-900">
+                        <CardTitle className="text-lg font-bold text-foreground">
                           Linked Affiliates
                         </CardTitle>
                         <CardDescription className="text-base">
@@ -595,7 +596,7 @@ export default function PublicResearchCenterDetailPage() {
                                         idx +
                                         1}
                                     </TableCell>
-                                    <TableCell className="font-medium text-zinc-900">
+                                    <TableCell className="font-medium text-foreground">
                                       {row?.full_name || "-"}
                                     </TableCell>
                                     <TableCell>{row?.email || "-"}</TableCell>
@@ -632,7 +633,7 @@ export default function PublicResearchCenterDetailPage() {
                     <Card className="overflow-hidden">
                       <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                         <div className="space-y-2">
-                          <CardTitle className="text-lg font-bold text-zinc-900">
+                          <CardTitle className="text-lg font-bold text-foreground">
                             Linked Projects
                           </CardTitle>
                           <CardDescription className="text-base">
@@ -664,7 +665,7 @@ export default function PublicResearchCenterDetailPage() {
                                 <TableCell>
                                   {(projectsPage - 1) * PAGE_SIZE + idx + 1}
                                 </TableCell>
-                                <TableCell className="font-medium text-zinc-900">
+                                <TableCell className="font-medium text-foreground">
                                   {record.title || "Untitled project"}
                                 </TableCell>
                                 <TableCell>
