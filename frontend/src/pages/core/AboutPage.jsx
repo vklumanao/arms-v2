@@ -12,14 +12,14 @@ export default function AboutPage() {
 
         <div className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-            About ARMS
+            About CenterPulse
           </p>
           <h1 className="mt-2 max-w-4xl text-3xl font-black leading-tight text-zinc-900 sm:text-4xl">
-            Affiliation and Research Management System
+            CenterPulse: Affiliation and Research Monitoring System
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-700 sm:text-base">
-            ARMS centralizes affiliation records and research workflows so
-            institutions can manage submissions, reviews, and outputs with
+            CenterPulse centralizes affiliation records and research workflows
+            so institutions can manage submissions, reviews, and outputs with
             consistent standards, visibility, and governance.
           </p>
 
@@ -88,7 +88,7 @@ export default function AboutPage() {
               Next Action
             </p>
             <h2 className="mt-2 text-2xl font-black text-white">
-              Continue with ARMS
+              Continue with CenterPulse
             </h2>
             <p className="mt-2 text-sm leading-6 text-zinc-100">
               Access your account, create a new one, or browse public research

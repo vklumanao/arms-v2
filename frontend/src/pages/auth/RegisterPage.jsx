@@ -215,13 +215,13 @@ export default function RegisterPage() {
         <aside className="hidden rounded-[1.8rem] border border-slate-200/65 bg-gradient-to-br from-[#12377f] via-[#1E3A8A] to-[#0f766e] p-8 text-white shadow-[0_24px_56px_rgba(15,23,42,0.28)] lg:flex lg:flex-col">
           <img
             src="icon.svg"
-            alt="ARMS Logo"
+            alt="CenterPulse Logo"
             className="h-12 w-auto rounded-xl bg-white/90 p-1.5"
           />
 
           <div className="mt-8 space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/90">
-              Join ARMS
+              Join CenterPulse
             </p>
             <h1 className="font-['Manrope'] text-3xl font-extrabold leading-tight">
               Build your research profile in one step.
@@ -253,9 +253,13 @@ export default function RegisterPage() {
         <Card className="rounded-[1.8rem] border border-slate-200/80 bg-white/95 shadow-[0_14px_44px_rgba(15,23,42,0.14)] backdrop-blur">
           <CardHeader className="space-y-3 pb-2">
             <div className="flex items-center gap-3 lg:hidden">
-              <img src="icon.svg" alt="ARMS Logo" className="h-10 w-auto" />
+              <img
+                src="icon.svg"
+                alt="CenterPulse Logo"
+                className="h-10 w-auto"
+              />
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Join ARMS
+                Join CenterPulse
               </p>
             </div>
 

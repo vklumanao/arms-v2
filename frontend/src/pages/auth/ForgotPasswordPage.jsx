@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
             <div className="flex items-center gap-3">
               <img
                 src="icon.svg"
-                alt="ARMS Logo"
+                alt="CenterPulse Logo"
                 className="h-11 w-auto rounded-xl bg-white/90 p-1.5"
               />
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/95">
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
           <CardContent className="space-y-5 px-6 py-6 sm:px-8 sm:py-7">
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                Use the email linked to your ARMS account.
+                Use the email linked to your CenterPulse account.
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
                 Check spam or junk if mail does not appear.

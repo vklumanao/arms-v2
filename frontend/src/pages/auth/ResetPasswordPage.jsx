@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
             <div className="flex items-center gap-3">
               <img
                 src="icon.svg"
-                alt="ARMS Logo"
+                alt="CenterPulse Logo"
                 className="h-11 w-auto rounded-xl bg-white/90 p-1.5"
               />
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/95">

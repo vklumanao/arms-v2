@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
             Verify your email
           </h1>
           <p className="text-sm text-zinc-500">
-            Confirming your email activates your ARMS account.
+            Confirming your email activates your CenterPulse account.
           </p>
         </CardHeader>
 

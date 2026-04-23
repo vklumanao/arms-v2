@@ -120,7 +120,7 @@ export default function LoginPage() {
             <div className="flex items-center gap-3">
               <img
                 src="icon.svg"
-                alt="ARMS Logo"
+                alt="CenterPulse Logo"
                 className="h-11 w-auto rounded-xl bg-white/90 p-1.5"
               />
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/95">
@@ -128,7 +128,7 @@ export default function LoginPage() {
               </p>
             </div>
             <h1 className="mt-5 font-['Manrope'] text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-              Sign in to ARMS
+              Sign in to CenterPulse
             </h1>
             <p className="mt-2 max-w-lg text-sm text-cyan-100/95">
               Access your workspace and continue your research workflow.
