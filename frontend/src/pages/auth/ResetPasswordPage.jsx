@@ -61,7 +61,7 @@ export default function ResetPasswordPage() {
       <Card className="border border-zinc-200 bg-white shadow-sm rounded-2xl">
         <CardHeader className="text-center space-y-3 pb-2">
           <img
-            src="/arms-logo-v2.svg"
+            src="icon.svg"
             alt="ARMS Logo"
             className="mx-auto h-10 w-auto opacity-90"
           />
