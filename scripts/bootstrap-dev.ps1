@@ -109,12 +109,78 @@ function Compose-Args($repoRoot) {
   )
 }
 
+function Invoke-DockerCommand([string[]]$dockerCommandArgs, [string]$failureMessage) {
+  # Run a Docker CLI command and surface a focused failure message.
+  & docker @dockerCommandArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw $failureMessage
+  }
+}
+
+function Test-DockerPreflight() {
+  # Validate that Docker Desktop is reachable before the bootstrap work begins.
+  Write-Step "Checking Docker Desktop and Compose availability..."
+  Invoke-DockerCommand @("version") "Docker CLI/engine is not responding. Start Docker Desktop and try again."
+  Invoke-DockerCommand @("compose", "version") "Docker Compose is unavailable. Ensure Docker Desktop installed the Compose plugin."
+
+  $dockerInfoOutput = & docker info --format "{{json .}}" 2>$null
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace(($dockerInfoOutput -join ""))) {
+    throw "Docker daemon is not ready. Open Docker Desktop, wait for the engine to finish starting, then retry."
+  }
+
+  $dockerInfo = ($dockerInfoOutput -join "`n") | ConvertFrom-Json
+  if ($dockerInfo.OSType -ne "linux") {
+    throw "Docker is not in Linux containers mode. Switch Docker Desktop to Linux containers, then rerun bootstrap."
+  }
+
+  Write-Step "Docker preflight checks passed."
+}
+
 function Invoke-Compose($repoRoot, [string[]]$composeCommandArgs) {
   # Run docker compose and fail fast when the command fails.
   $composeArgs = Compose-Args $repoRoot
   & docker compose @composeArgs @composeCommandArgs
   if ($LASTEXITCODE -ne 0) {
     throw "docker compose failed: $($composeCommandArgs -join ' ')"
+  }
+}
+
+function Invoke-ComposeWithGuidance($repoRoot, [string[]]$composeCommandArgs, [string]$actionDescription) {
+  # Run docker compose and attach a recovery hint when it fails.
+  $composeArgs = Compose-Args $repoRoot
+  & docker compose @composeArgs @composeCommandArgs
+  if ($LASTEXITCODE -ne 0) {
+    $commandText = "docker compose $($composeArgs + $composeCommandArgs -join ' ')"
+    throw "$actionDescription failed.`nRetry command: $commandText"
+  }
+}
+
+function Invoke-ComposeBuild($repoRoot, [string]$service, [int]$attempts = 2) {
+  # Build services one by one to reduce first-run BuildKit flakiness after Docker reinstalls.
+  for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+    Write-Step "Building '$service' image (attempt $attempt of $attempts)..."
+    $composeArgs = Compose-Args $repoRoot
+    & docker compose @composeArgs build $service
+    if ($LASTEXITCODE -eq 0) {
+      return
+    }
+
+    if ($attempt -lt $attempts) {
+      Write-Step "Build for '$service' failed. Retrying after a short pause..."
+      Start-Sleep -Seconds 5
+    }
+  }
+
+  $composeArgs = Compose-Args $repoRoot
+  $retryCommand = "docker compose $($composeArgs + @('build', $service) -join ' ')"
+  throw "Failed to build '$service' after $attempts attempts.`nRetry command: $retryCommand"
+}
+
+function Warm-ComposeImages($repoRoot) {
+  # Warm the heaviest app images before the full compose up to avoid parallel first-run build failures.
+  $servicesToBuild = @("frontend", "backend", "ckan")
+  foreach ($service in $servicesToBuild) {
+    Invoke-ComposeBuild $repoRoot $service
   }
 }
 
@@ -333,8 +399,11 @@ if (Is-MissingOrPlaceholder $ckanAdminPassword @("CHANGE_ME", "CHANGE_ME_STRONG"
 
 Set-EnvValue $backendEnvPath "ARMS_BOOTSTRAP_ADMIN_CKAN_USERNAME" $ckanAdminUsername
 
+Test-DockerPreflight
+Warm-ComposeImages $repoRoot
+
 Write-Step "Starting Docker compose stack..."
-Invoke-Compose $repoRoot @("up", "-d", "--build")
+Invoke-ComposeWithGuidance $repoRoot @("up", "-d", "--build") "Docker compose startup"
 
 Wait-ForServiceHealthy $repoRoot "ckan"
 Wait-ForServiceHealthy $repoRoot "backend"
@@ -371,7 +440,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Step "Recreating backend to apply latest env values..."
-Invoke-Compose $repoRoot @("up", "-d", "--force-recreate", "backend")
+Invoke-ComposeWithGuidance $repoRoot @("up", "-d", "--force-recreate", "backend") "Backend recreation"
 
 Write-Step "Bootstrap complete."
 Write-Step "ARMS bootstrap admin email: $bootstrapAdminEmail"

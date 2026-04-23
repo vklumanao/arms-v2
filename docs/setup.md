@@ -32,6 +32,8 @@ What this script does:
 
 - creates `backend/.env` and `ckan-docker/.env` if missing (from `.env.example`)
 - generates secrets if placeholders are still present
+- checks Docker Desktop / Compose health and confirms Linux containers mode
+- warms `frontend`, `backend`, and `ckan` images one by one before full startup
 - starts the Docker Compose stack
 - waits for `ckan` and `backend`
 - creates CKAN service user + CKAN admin
