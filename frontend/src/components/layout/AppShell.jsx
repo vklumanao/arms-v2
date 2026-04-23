@@ -79,6 +79,7 @@ export default function AppShell() {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
+    if (stored === null) return true;
     return stored === "true";
   });
   const [hoverExpanded, setHoverExpanded] = useState(false);
