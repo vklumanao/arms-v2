@@ -305,6 +305,33 @@ function Create-CkanUserToken($repoRoot, $username, $tokenName) {
   return $trimmedToken
 }
 
+function Test-CkanApiKey($repoRoot, $token) {
+  # Validate that the configured CKAN API token can still authenticate against the live CKAN instance.
+  $trimmedToken = [string]$token
+  if ([string]::IsNullOrWhiteSpace($trimmedToken)) {
+    return $false
+  }
+
+  try {
+    $responseText = & curl.exe `
+      --silent `
+      --show-error `
+      --max-time 15 `
+      -X POST `
+      -H "Authorization: $trimmedToken" `
+      -H "Content-Type: application/json" `
+      -d "{}" `
+      "http://localhost:5000/api/3/action/user_list"
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace(($responseText -join ""))) {
+      return $false
+    }
+    $payload = ($responseText -join "`n") | ConvertFrom-Json
+    return ($payload.success -eq $true)
+  } catch {
+    return $false
+  }
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
 
@@ -414,10 +441,31 @@ Ensure-CkanUser $repoRoot $ckanAdminUsername $ckanAdminEmail $ckanAdminPassword 
 Ensure-CkanSysadmin $repoRoot $ckanAdminUsername
 
 $currentApiKey = Get-EnvValue $backendEnvPath "CKAN_API_KEY"
-if ($RotateToken -or (Is-MissingOrPlaceholder $currentApiKey @("CHANGE_ME"))) {
+if ($RotateToken) {
+  Write-Step "RotateToken requested; generating a fresh CKAN_API_KEY."
+}
+
+$needsTokenRefresh =
+  $RotateToken -or
+  (Is-MissingOrPlaceholder $currentApiKey @("CHANGE_ME"))
+
+if (-not $needsTokenRefresh) {
+  Write-Step "Validating existing CKAN_API_KEY against live CKAN..."
+  if (Test-CkanApiKey $repoRoot $currentApiKey) {
+    Write-Step "Existing CKAN_API_KEY is valid."
+  } else {
+    $needsTokenRefresh = $true
+    Write-Step "Existing CKAN_API_KEY is stale or invalid; generating a new token."
+  }
+}
+
+if ($needsTokenRefresh) {
   $tokenName = "arms-bootstrap-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
   $ckanApiKey = Create-CkanUserToken $repoRoot $serviceUsername $tokenName
   Set-EnvValue $backendEnvPath "CKAN_API_KEY" $ckanApiKey
+  if (-not (Test-CkanApiKey $repoRoot $ckanApiKey)) {
+    throw "Generated CKAN_API_KEY did not validate against CKAN."
+  }
   Write-Step "CKAN_API_KEY refreshed from service account token."
 } else {
   Write-Step "CKAN_API_KEY already set; skipping token refresh."

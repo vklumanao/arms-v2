@@ -37,6 +37,7 @@ What this script does:
 - starts the Docker Compose stack
 - waits for `ckan` and `backend`
 - creates CKAN service user + CKAN admin
+- validates the saved `CKAN_API_KEY` against live CKAN and refreshes it automatically if stale
 - writes `CKAN_API_KEY` into `backend/.env`
 - creates ARMS bootstrap admin (one-time)
 - recreates backend so new env values apply
