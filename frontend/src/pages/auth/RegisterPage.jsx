@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, Eye, EyeOff, X } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { fetchCkanGroups, fetchCkanOrganizations } from "@/services/ckanApi";
 import { isValidEmail, validatePasswordStrength } from "@/utils/validation";
@@ -208,322 +217,394 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] overflow-hidden px-4 py-8 sm:px-6 sm:py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(14,165,233,0.16),transparent_40%),radial-gradient(circle_at_88%_8%,rgba(30,58,138,0.16),transparent_48%),radial-gradient(circle_at_50%_96%,rgba(16,185,129,0.14),transparent_42%)]" />
-
-      <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[0.92fr_minmax(0,1.5fr)]">
-        <aside className="hidden rounded-[1.8rem] border border-slate-200/65 bg-gradient-to-br from-[#12377f] via-[#1E3A8A] to-[#0f766e] p-8 text-white shadow-[0_24px_56px_rgba(15,23,42,0.28)] lg:flex lg:flex-col">
-          <img
-            src="icon.svg"
-            alt="CenterPulse Logo"
-            className="h-12 w-auto rounded-xl bg-white/90 p-1.5"
-          />
-
-          <div className="mt-8 space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/90">
-              Join CenterPulse
-            </p>
-            <h1 className="font-['Manrope'] text-3xl font-extrabold leading-tight">
-              Build your research profile in one step.
-            </h1>
-            <p className="text-sm text-blue-100/95">
-              Create your account to manage projects, outputs, and affiliations
-              with your research center.
-            </p>
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/90">
-              Why register?
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-slate-100">
-              <li>Track research outputs in one workspace.</li>
-              <li>Align with centers and departments.</li>
-              <li>Access role-based tools securely.</li>
-            </ul>
-          </div>
-
-          <div className="mt-auto rounded-2xl border border-white/20 bg-slate-950/20 px-4 py-3 text-sm text-cyan-50">
-            {ckanLoading || ckanGroupsLoading
-              ? "Syncing registration options..."
-              : "Registration options are ready."}
-          </div>
-        </aside>
-
-        <Card className="rounded-[1.8rem] border border-slate-200/80 bg-white/95 shadow-[0_14px_44px_rgba(15,23,42,0.14)] backdrop-blur">
-          <CardHeader className="space-y-3 pb-2">
-            <div className="flex items-center gap-3 lg:hidden">
-              <img
-                src="icon.svg"
-                alt="CenterPulse Logo"
-                className="h-10 w-auto"
-              />
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Join CenterPulse
-              </p>
-            </div>
-
-            <h2 className="font-['Manrope'] text-2xl font-extrabold tracking-tight text-slate-900 sm:text-[2rem]">
-              Create your account
-            </h2>
-            <p className="text-sm text-slate-600">
-              Register as student or faculty and start managing your research
-              work.
-            </p>
-          </CardHeader>
-
-          <CardContent className="pt-4">
-            <form onSubmit={onSubmit} className="space-y-6">
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Profile details
-                </p>
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      First name
-                    </label>
-                    <Input
-                      className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                      placeholder="Juan"
-                      required
-                      value={form.first_name}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, first_name: e.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      M.I.
-                    </label>
-                    <Input
-                      className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                      placeholder="M"
-                      maxLength={2}
-                      value={form.middle_initial}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          middle_initial: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      Last name
-                    </label>
-                    <Input
-                      className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                      placeholder="Dela Cruz"
-                      required
-                      value={form.last_name}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, last_name: e.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                    Email address
-                  </label>
-                  <Input
-                    className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                    placeholder="you@example.com"
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, email: e.target.value }))
-                    }
-                  />
+    <section className="auth-shell">
+      <div className="auth-shell-inner">
+        <div className="auth-layout auth-layout-register">
+          <aside className="auth-spotlight">
+            <div className="auth-spotlight-inner">
+              <div className="auth-spotlight-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-spotlight-logo"
+                />
+                <div>
+                  <p className="auth-spotlight-kicker">Join The Workspace</p>
+                  <p className="auth-spotlight-name">CenterPulse</p>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Security setup
+              <div className="auth-spotlight-copy">
+                <h1 className="auth-spotlight-title">
+                  Create a polished research profile in one pass.
+                </h1>
+                <p className="auth-spotlight-text">
+                  Register once, connect your role, and start working inside the
+                  same system used for submissions, affiliations, and public
+                  records.
                 </p>
+              </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      Password
-                    </label>
+              <div className="auth-spotlight-points">
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <Users size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Built for students and faculty
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Choose your role now so your workspace opens with the
+                      right tools.
+                    </p>
+                  </div>
+                </div>
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <Building2 size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Connect to centers and departments
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Optional affiliations help align your account with the
+                      right research unit.
+                    </p>
+                  </div>
+                </div>
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <ShieldCheck size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Verification signs you in automatically
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      After email confirmation, you&apos;ll enter the dashboard
+                      without another login step.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                    <div className="relative">
+              <div className="auth-spotlight-stats">
+                <div className="auth-spotlight-stat">
+                  <p className="auth-spotlight-stat-label">
+                    Registration status
+                  </p>
+                  <p className="auth-spotlight-stat-value">
+                    {ckanLoading || ckanGroupsLoading
+                      ? "Syncing research centers and departments..."
+                      : "Registration options are ready."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <Card className="auth-card">
+            <CardHeader className="auth-card-hero">
+              <div className="auth-card-hero-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-card-hero-logo"
+                />
+                <span className="auth-eyebrow">Account Registration</span>
+              </div>
+              <div className="auth-card-hero-copy">
+                <h2 className="auth-title">Create your account</h2>
+                <p className="auth-subtitle">
+                  Register as student or faculty and start managing your
+                  research work in one secure workspace.
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="auth-card-body">
+              <form onSubmit={onSubmit} className="auth-form-stack">
+                <div className="auth-panel">
+                  <p className="auth-section-heading">Profile details</p>
+
+                  <div className="auth-form-grid auth-form-grid-3">
+                    <div className="auth-field-group">
+                      <label className="auth-label">First name</label>
                       <Input
-                        className="h-11 rounded-xl border-slate-300 bg-white pr-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                        placeholder="Create a secure password"
-                        type={showPassword ? "text" : "password"}
+                        className="auth-input"
+                        placeholder="Juan"
                         required
-                        value={form.password}
+                        value={form.first_name}
                         onChange={(e) =>
-                          setForm((p) => ({ ...p, password: e.target.value }))
+                          setForm((p) => ({ ...p, first_name: e.target.value }))
                         }
                       />
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                      >
-                        {showPassword ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </Button>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      Confirm password
-                    </label>
-
-                    <div className="relative">
+                    <div className="auth-field-group">
+                      <label className="auth-label">M.I.</label>
                       <Input
-                        className="h-11 rounded-xl border-slate-300 bg-white pr-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                        placeholder="Re-enter password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        required
-                        value={form.confirm_password}
+                        className="auth-input"
+                        placeholder="M"
+                        maxLength={2}
+                        value={form.middle_initial}
                         onChange={(e) =>
                           setForm((p) => ({
                             ...p,
-                            confirm_password: e.target.value,
+                            middle_initial: e.target.value,
                           }))
                         }
                       />
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </Button>
                     </div>
+
+                    <div className="auth-field-group">
+                      <label className="auth-label">Last name</label>
+                      <Input
+                        className="auth-input"
+                        placeholder="Dela Cruz"
+                        required
+                        value={form.last_name}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, last_name: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="auth-field-group mt-4">
+                    <label className="auth-label">Email address</label>
+                    <Input
+                      className="auth-input"
+                      placeholder="you@example.com"
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, email: e.target.value }))
+                      }
+                    />
                   </div>
                 </div>
 
-                {passwordValue ? (
-                  <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
-                    <div className="flex items-center gap-1.5">
-                      {passwordChecks.length ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-slate-300" />
-                      )}
-                      <span>8+ chars</span>
+                <div className="auth-panel">
+                  <p className="auth-section-heading">Security setup</p>
+
+                  <div className="auth-form-grid auth-form-grid-2">
+                    <div className="auth-field-group">
+                      <label className="auth-label">Password</label>
+
+                      <div className="relative">
+                        <Input
+                          className="auth-input pr-10"
+                          placeholder="Create a secure password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={form.password}
+                          onChange={(e) =>
+                            setForm((p) => ({ ...p, password: e.target.value }))
+                          }
+                        />
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      {passwordChecks.uppercase ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-slate-300" />
-                      )}
-                      <span>Uppercase</span>
-                    </div>
+                    <div className="auth-field-group">
+                      <label className="auth-label">Confirm password</label>
 
-                    <div className="flex items-center gap-1.5">
-                      {passwordChecks.lowercase ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-slate-300" />
-                      )}
-                      <span>Lowercase</span>
-                    </div>
+                      <div className="relative">
+                        <Input
+                          className="auth-input pr-10"
+                          placeholder="Re-enter password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          value={form.confirm_password}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              confirm_password: e.target.value,
+                            }))
+                          }
+                        />
 
-                    <div className="flex items-center gap-1.5">
-                      {passwordChecks.number ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-slate-300" />
-                      )}
-                      <span>Number</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                          onClick={() =>
+                            setShowConfirmPassword((prev) => !prev)
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                ) : null}
 
-                {form.confirm_password ? (
-                  <p
-                    className={`mt-2 text-xs font-medium ${
-                      passwordsMatch ? "text-emerald-700" : "text-rose-600"
-                    }`}
-                  >
-                    {passwordsMatch
-                      ? "Passwords match."
-                      : "Passwords do not match yet."}
-                  </p>
-                ) : null}
-              </div>
+                  {passwordValue ? (
+                    <div className="auth-password-grid mt-4">
+                      <div
+                        className={`auth-password-chip ${passwordChecks.length ? "is-valid" : ""}`}
+                      >
+                        {passwordChecks.length ? (
+                          <Check className="mr-1 inline h-3.5 w-3.5" />
+                        ) : (
+                          <X className="mr-1 inline h-3.5 w-3.5" />
+                        )}
+                        8+ chars
+                      </div>
+                      <div
+                        className={`auth-password-chip ${passwordChecks.uppercase ? "is-valid" : ""}`}
+                      >
+                        {passwordChecks.uppercase ? (
+                          <Check className="mr-1 inline h-3.5 w-3.5" />
+                        ) : (
+                          <X className="mr-1 inline h-3.5 w-3.5" />
+                        )}
+                        Uppercase
+                      </div>
+                      <div
+                        className={`auth-password-chip ${passwordChecks.lowercase ? "is-valid" : ""}`}
+                      >
+                        {passwordChecks.lowercase ? (
+                          <Check className="mr-1 inline h-3.5 w-3.5" />
+                        ) : (
+                          <X className="mr-1 inline h-3.5 w-3.5" />
+                        )}
+                        Lowercase
+                      </div>
+                      <div
+                        className={`auth-password-chip ${passwordChecks.number ? "is-valid" : ""}`}
+                      >
+                        {passwordChecks.number ? (
+                          <Check className="mr-1 inline h-3.5 w-3.5" />
+                        ) : (
+                          <X className="mr-1 inline h-3.5 w-3.5" />
+                        )}
+                        Number
+                      </div>
+                    </div>
+                  ) : null}
 
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Workspace setup
-                </p>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      Role
-                    </label>
-
-                    <Select
-                      value={form.role}
-                      onValueChange={(value) =>
-                        setForm((p) => ({ ...p, role: value }))
-                      }
+                  {form.confirm_password ? (
+                    <p
+                      className={`auth-password-hint ${passwordsMatch ? "is-valid" : "is-invalid"}`}
                     >
-                      <SelectTrigger className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-[#1E3A8A]/35">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
+                      {passwordsMatch
+                        ? "Passwords match."
+                        : "Passwords do not match yet."}
+                    </p>
+                  ) : null}
+                </div>
 
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="faculty">Faculty</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="auth-panel">
+                  <p className="auth-section-heading">Workspace setup</p>
+
+                  <div className="auth-form-grid auth-form-grid-2">
+                    <div className="auth-field-group">
+                      <label className="auth-label">Role</label>
+
+                      <Select
+                        value={form.role}
+                        onValueChange={(value) =>
+                          setForm((p) => ({ ...p, role: value }))
+                        }
+                      >
+                        <SelectTrigger className="auth-select-trigger">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="faculty">Faculty</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="auth-field-group">
+                      <label className="auth-label">
+                        Research center (optional)
+                      </label>
+
+                      <Select
+                        value={form.ckan_org_id || NONE_SELECT_VALUE}
+                        onValueChange={(value) =>
+                          setForm((p) => ({
+                            ...p,
+                            ckan_org_id:
+                              value === NONE_SELECT_VALUE ? "" : value,
+                          }))
+                        }
+                        disabled={ckanLoading}
+                      >
+                        <SelectTrigger className="auth-select-trigger">
+                          <SelectValue
+                            placeholder={
+                              ckanLoading
+                                ? "Loading centers..."
+                                : "Select research center"
+                            }
+                          />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          <SelectItem value={NONE_SELECT_VALUE}>
+                            None
+                          </SelectItem>
+
+                          {ckanOrganizations.map((org) => (
+                            <SelectItem key={org.id} value={org.name || org.id}>
+                              {org.title || org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {ckanError ? (
+                        <p className="field-error">{ckanError}</p>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                      Research center (optional)
-                    </label>
+                  <div className="auth-field-group mt-4">
+                    <label className="auth-label">Department (optional)</label>
 
                     <Select
-                      value={form.ckan_org_id || NONE_SELECT_VALUE}
+                      value={form.ckan_group_id || NONE_SELECT_VALUE}
                       onValueChange={(value) =>
                         setForm((p) => ({
                           ...p,
-                          ckan_org_id: value === NONE_SELECT_VALUE ? "" : value,
+                          ckan_group_id:
+                            value === NONE_SELECT_VALUE ? "" : value,
                         }))
                       }
-                      disabled={ckanLoading}
+                      disabled={ckanGroupsLoading}
                     >
-                      <SelectTrigger className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-[#1E3A8A]/35">
+                      <SelectTrigger className="auth-select-trigger">
                         <SelectValue
                           placeholder={
-                            ckanLoading
-                              ? "Loading centers..."
-                              : "Select research center"
+                            ckanGroupsLoading
+                              ? "Loading departments..."
+                              : "Select department"
                           }
                         />
                       </SelectTrigger>
@@ -531,100 +612,65 @@ export default function RegisterPage() {
                       <SelectContent>
                         <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
 
-                        {ckanOrganizations.map((org) => (
-                          <SelectItem key={org.id} value={org.name || org.id}>
-                            {org.title || org.name}
+                        {ckanGroups.map((group) => (
+                          <SelectItem
+                            key={group.id}
+                            value={group.name || group.id}
+                          >
+                            {group.title || group.display_name || group.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
-                    {ckanError ? (
-                      <p className="text-xs text-amber-700">{ckanError}</p>
+                    {ckanGroupsError ? (
+                      <p className="field-error">{ckanGroupsError}</p>
                     ) : null}
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-                    Department (optional)
-                  </label>
+                {error ? (
+                  <div className="notice notice-error">
+                    <div>
+                      <p className="notice-title">
+                        Registration could not continue
+                      </p>
+                      <p className="notice-text">{error}</p>
+                    </div>
+                  </div>
+                ) : null}
 
-                  <Select
-                    value={form.ckan_group_id || NONE_SELECT_VALUE}
-                    onValueChange={(value) =>
-                      setForm((p) => ({
-                        ...p,
-                        ckan_group_id: value === NONE_SELECT_VALUE ? "" : value,
-                      }))
-                    }
-                    disabled={ckanGroupsLoading}
-                  >
-                    <SelectTrigger className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-[#1E3A8A]/35">
-                      <SelectValue
-                        placeholder={
-                          ckanGroupsLoading
-                            ? "Loading departments..."
-                            : "Select department"
-                        }
-                      />
-                    </SelectTrigger>
+                {message ? (
+                  <div className="notice notice-success">
+                    <div>
+                      <p className="notice-title">Registration successful</p>
+                      <p className="notice-text">{message}</p>
+                    </div>
+                  </div>
+                ) : null}
 
-                    <SelectContent>
-                      <SelectItem value={NONE_SELECT_VALUE}>None</SelectItem>
+                <Button
+                  disabled={loading || cooldownSeconds > 0}
+                  className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
+                >
+                  {loading
+                    ? "Creating account..."
+                    : cooldownSeconds > 0
+                      ? `Retry in ${cooldownSeconds}s`
+                      : "Create account"}
+                  <ArrowRight size={16} />
+                </Button>
+              </form>
+            </CardContent>
 
-                      {ckanGroups.map((group) => (
-                        <SelectItem
-                          key={group.id}
-                          value={group.name || group.id}
-                        >
-                          {group.title || group.display_name || group.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {ckanGroupsError ? (
-                    <p className="text-xs text-amber-700">{ckanGroupsError}</p>
-                  ) : null}
-                </div>
-              </div>
-
-              {error ? (
-                <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  {error}
-                </div>
-              ) : null}
-
-              {message ? (
-                <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {message}
-                </div>
-              ) : null}
-
-              <Button
-                disabled={loading || cooldownSeconds > 0}
-                className="h-11 w-full rounded-xl bg-gradient-to-r from-[#0f766e] to-[#1E3A8A] text-sm font-semibold text-white shadow-[0_12px_26px_rgba(30,58,138,0.24)] transition hover:from-[#0f766e] hover:to-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-75"
-              >
-                {loading
-                  ? "Creating account..."
-                  : cooldownSeconds > 0
-                    ? `Retry in ${cooldownSeconds}s`
-                    : "Create account"}
-              </Button>
-            </form>
-          </CardContent>
-
-          <CardFooter className="justify-center border-t border-slate-200/80 pt-5 text-sm text-slate-600">
-            Already have an account?
-            <Link
-              className="ml-1 font-semibold text-[#1E3A8A] hover:text-[#1d4ed8] hover:underline"
-              to="/login"
-            >
-              Sign in
-            </Link>
-          </CardFooter>
-        </Card>
+            <CardFooter className="auth-footer-row">
+              <span className="text-slate-600">Already have an account?</span>
+              <Link className="auth-inline-link" to="/login">
+                Sign in
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     </section>
   );
