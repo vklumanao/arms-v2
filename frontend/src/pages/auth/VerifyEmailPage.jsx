@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
   resendVerificationEmail,
   verifyEmailWithToken,
@@ -10,6 +11,8 @@ import {
 import { isValidEmail } from "@/utils/validation";
 
 export default function VerifyEmailPage() {
+  const navigate = useNavigate();
+  const { completeAuthPayload } = useAuth();
   const [searchParams] = useSearchParams();
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
   const [status, setStatus] = useState("idle");
@@ -25,8 +28,13 @@ export default function VerifyEmailPage() {
       setStatus("loading");
       setError("");
       try {
-        await verifyEmailWithToken(token);
-        if (active) setStatus("success");
+        const payload = await verifyEmailWithToken(token);
+        await completeAuthPayload(payload);
+        if (!active) return;
+        setStatus("success");
+        window.setTimeout(() => {
+          navigate("/dashboard", { replace: true });
+        }, 900);
       } catch (err) {
         if (!active) return;
         setStatus("error");
@@ -82,14 +90,14 @@ export default function VerifyEmailPage() {
           {status === "success" && (
             <div className="space-y-3">
               <p className="text-sm text-zinc-900 font-medium">
-                Your email has been verified. You can now sign in.
+                Your email has been verified. Signing you in now...
               </p>
 
               <Button
                 asChild
                 className="w-full h-11 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white"
               >
-                <Link to="/login">Go to login</Link>
+                <Link to="/dashboard">Continue to dashboard</Link>
               </Button>
             </div>
           )}

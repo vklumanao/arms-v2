@@ -180,7 +180,7 @@ export default function RegisterPage() {
 
       if (result?.requires_verification) {
         setMessage(
-          "Registration successful. Please check your email to verify your account.",
+          "Registration successful. Please check your email to verify your account. After verification, you'll be signed in automatically.",
         );
         window.localStorage.removeItem(SIGNUP_COOLDOWN_KEY);
         return;
