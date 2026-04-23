@@ -19,7 +19,7 @@ export default function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+      <header className="public-layout-header px-4 py-3 sm:px-6 sm:py-4">
         <div className="public-layout-inner flex items-center justify-between gap-4">
           <Link to="/home">
             <img
@@ -34,11 +34,7 @@ export default function PublicLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  isActive(item.to)
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                }`}
+                className={`public-nav-link ${isActive(item.to) ? "is-active" : ""}`}
               >
                 {item.label}
               </NavLink>
@@ -55,11 +51,7 @@ export default function PublicLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                isActive(item.to)
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-              }`}
+              className={`public-nav-link ${isActive(item.to) ? "is-active" : ""}`}
             >
               {item.label}
             </NavLink>
