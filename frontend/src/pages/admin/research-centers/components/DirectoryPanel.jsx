@@ -30,10 +30,11 @@ export default function DirectoryPanel({
   currentPage,
   totalPages,
   onPageChange,
+  useWindowedScroll = true,
 }) {
   return (
     <Card className="overflow-hidden border-blue-200/80 bg-white/95 shadow-[0_24px_64px_rgba(30,58,138,0.10)] backdrop-blur">
-      <CardHeader className="space-y-4 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(236,253,245,0.88))] px-5 py-5">
+      <CardHeader className="space-y-4 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(236,253,245,0.88))] px-4 py-4 sm:px-5 sm:py-5">
         <div className="space-y-1">
           <CardTitle className="text-lg font-bold text-[#1E3A8A]">
             Research Center Directory
@@ -107,7 +108,12 @@ export default function DirectoryPanel({
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="max-h-[72vh] overflow-y-auto p-3">
+        <div
+          className={cn(
+            "p-3",
+            useWindowedScroll ? "max-h-[72vh] overflow-y-auto" : "",
+          )}
+        >
           {dataLoading ? (
             <div className="space-y-3">
               {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
@@ -159,7 +165,7 @@ export default function DirectoryPanel({
                       ) : null}
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-100/75 px-2 py-2 text-center text-[#1E3A8A]">
                         <div className="font-bold">{row.profileCount}</div>
                         <div>Members</div>
