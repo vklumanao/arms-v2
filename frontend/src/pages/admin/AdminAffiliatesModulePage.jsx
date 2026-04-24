@@ -61,6 +61,8 @@ import {
   updateAffiliateProfile,
 } from "@/services/admin";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
+import AffiliatesWorkspaceHero from "./affiliates-module/components/AffiliatesWorkspaceHero";
+import AffiliatesDirectoryContent from "./affiliates-module/components/AffiliatesDirectoryContent";
 
 export default function AdminAffiliatesModulePage() {
   const navigate = useNavigate();
@@ -487,99 +489,14 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
-        <div className="relative">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
-                Admin Workspace
-              </p>
-              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
-                Affiliate Workspace
-              </h1>
-              <p className="max-w-2xl text-sm text-[#1E3A8A]">
-                Manage affiliate records, review membership status, and export
-                directory reports from one panel.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {canExportAffiliates ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={!filteredRows.length || Boolean(exportingType)}
-                      className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
-                    >
-                      <Download className="h-4 w-4" />
-                      Export
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="bg-white border border-blue-200 shadow-md"
-                  >
-                    <DropdownMenuItem
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                      onSelect={exportAsCsv}
-                      disabled={!filteredRows.length || Boolean(exportingType)}
-                    >
-                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                      onSelect={exportAsPdf}
-                      disabled={!filteredRows.length || Boolean(exportingType)}
-                    >
-                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  Affiliates
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.total}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  Active
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.active}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  GS Faculty
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.gsFaculty}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AffiliatesWorkspaceHero
+        canExportAffiliates={canExportAffiliates}
+        filteredCount={filteredRows.length}
+        exportingType={exportingType}
+        affiliateMetrics={affiliateMetrics}
+        onExportCsv={exportAsCsv}
+        onExportPdf={exportAsPdf}
+      />
 
       <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -822,318 +739,19 @@ export default function AdminAffiliatesModulePage() {
         ) : null}
       </div>
 
-      <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-        <CardContent className="p-4">
-          {dataLoading ? (
-            viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                  (_, index) => (
-                    <Card
-                      key={`affiliate-skeleton-grid-${index}`}
-                      className="rounded-2xl border border-blue-200/80 bg-white/80 p-5 shadow-sm"
-                    >
-                      <div className="animate-pulse space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
-                            <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
-                          </div>
-                          <div className="h-6 w-16 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-blue-100/80" />
-                          <div className="h-6 w-24 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                        </div>
-                      </div>
-                    </Card>
-                  ),
-                )}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm p-4">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-blue-100/70" />
-                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                    (_, index) => (
-                      <div
-                        key={`affiliate-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-blue-100/70"
-                      />
-                    ),
-                  )}
-                </div>
-              </div>
-            )
-          ) : null}
-
-          {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
-              No affiliate records found.
-            </div>
-          ) : null}
-
-          {!dataLoading && viewMode === "grid" && filteredRows.length > 0 ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {pagination.items.map((row, index) => (
-                  <Card
-                    key={row.id || `${row.email}-${index}`}
-                    className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
-                            #{pagination.start + index + 1} ·{" "}
-                            {String(row.role || "affiliate")}
-                          </p>
-                          <h3 className="mt-1 truncate text-base font-bold text-[#1E3A8A]">
-                            {row.full_name || "-"}
-                          </h3>
-                          <p className="mt-1 truncate text-sm text-[#1E3A8A]">
-                            {row.email || "-"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 text-[#1E3A8A]"
-                        >
-                          Dept: {row.department || "-"}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="border-blue-200/80 text-[#1E3A8A]"
-                        >
-                          Center:{" "}
-                          {row.ckan_org_id
-                            ? centerNameById[row.ckan_org_id] || "-"
-                            : "-"}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 text-[#1E3A8A]"
-                        >
-                          GS: {row.is_gs_faculty ? "Yes" : "No"}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                            Projects
-                          </p>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {Number(row.research_project_count || 0)}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            Publications {Number(row.publication_count || 0)}
-                          </p>
-                        </div>
-
-                        <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                            Outputs
-                          </p>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {Number(row.awards_count || 0)}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            IPs {Number(row.ip_count || 0)} · Works{" "}
-                            {Number(row.creative_work_count || 0)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => goToAffiliateDetail(row)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-
-                        {canEditAffiliates ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9"
-                            disabled={row.source === "ckan_only"}
-                            onClick={() => openEditModal(row)}
-                            title={
-                              row.source === "ckan_only"
-                                ? "Edit disabled (CKAN only)"
-                                : "Edit"
-                            }
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        ) : null}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {pagination.totalPages > 1 ? (
-                <div className="mt-3">
-                  <PaginationControls
-                    page={currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={setCurrentPage}
-                    className="border-0 rounded-none shadow-none bg-transparent"
-                  />
-                </div>
-              ) : null}
-            </>
-          ) : null}
-
-          {!dataLoading && viewMode === "list" && filteredRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
-              <Table>
-                <TableHeader className="bg-blue-50/80">
-                  <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>GS Faculty</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Awards</TableHead>
-                    <TableHead>Publications</TableHead>
-                    <TableHead>IPs</TableHead>
-                    <TableHead>Creative Works</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pagination.items.map((row, index) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="text-slate-600">
-                        {pagination.start + index + 1}
-                      </TableCell>
-
-                      <TableCell>
-                        <p className="font-semibold text-[#1E3A8A]">
-                          {row.full_name || "-"}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {row.email || "-"}
-                        </p>
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.ckan_org_id
-                          ? centerNameById[row.ckan_org_id] || "-"
-                          : "-"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.department || "-"}
-                      </TableCell>
-
-                      <TableCell className="capitalize text-slate-700">
-                        {row.role || "-"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.is_gs_faculty ? "Yes" : "No"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.research_project_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.awards_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.publication_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.ip_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.creative_work_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => goToAffiliateDetail(row)}
-                            aria-label={`View ${row?.full_name || "affiliate"}`}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-
-                          {canEditAffiliates ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              disabled={row.source === "ckan_only"}
-                              onClick={() => openEditModal(row)}
-                              aria-label={`Edit ${row?.full_name || "affiliate"}`}
-                              title={
-                                row.source === "ckan_only"
-                                  ? "Edit disabled (CKAN only)"
-                                  : "Edit"
-                              }
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {pagination.totalPages > 1 ? (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={12} className="px-3 py-3">
-                        <PaginationControls
-                          page={currentPage}
-                          totalPages={pagination.totalPages}
-                          onPageChange={setCurrentPage}
-                          className="border-0 rounded-none shadow-none bg-transparent"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                ) : null}
-              </Table>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
+      <AffiliatesDirectoryContent
+        dataLoading={dataLoading}
+        viewMode={viewMode}
+        directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
+        filteredRows={filteredRows}
+        pagination={pagination}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        centerNameById={centerNameById}
+        canEditAffiliates={canEditAffiliates}
+        goToAffiliateDetail={goToAffiliateDetail}
+        openEditModal={openEditModal}
+      />
       {editingAffiliate && canEditAffiliates ? (
         <Dialog
           open={Boolean(editingAffiliate)}
@@ -1180,7 +798,9 @@ export default function AdminAffiliatesModulePage() {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Last name</span>
+                  <span className="font-semibold text-slate-700">
+                    Last name
+                  </span>
                   <Input
                     value={editForm.last_name || ""}
                     onChange={(event) =>
@@ -1248,7 +868,9 @@ export default function AdminAffiliatesModulePage() {
                 </Select>
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Designation</span>
+                <span className="font-semibold text-slate-700">
+                  Designation
+                </span>
                 <Input
                   placeholder="e.g. Associate Professor"
                   value={editForm.designation}
@@ -1421,5 +1043,3 @@ export default function AdminAffiliatesModulePage() {
     </section>
   );
 }
-
-
