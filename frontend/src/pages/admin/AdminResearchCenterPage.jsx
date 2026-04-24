@@ -1,35 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Building2,
-  Download,
-  Eye,
-  FolderKanban,
-  LayoutGrid,
-  Link2,
-  List,
-  Pencil,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { cn } from "@/utils/cn";
+import { Download, Eye, Pencil, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -37,108 +15,47 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
-import PaginationControls from "@/components/navigation/PaginationControls";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
+import { cn } from "@/utils/cn";
 import {
-  deleteReference,
   createReference,
+  deleteReference,
   fetchReferenceData,
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/services/admin";
 import { validateCenterForm } from "@/utils/admin";
+import {
+  EMPTY_EDITING,
+  INITIAL_FILTERS,
+  INITIAL_MEMBER_FILTERS,
+  INITIAL_PROJECT_FILTERS,
+  MEMBER_PAGE_SIZE,
+  PAGE_SIZE,
+  PROJECT_PAGE_SIZE,
+} from "./research-centers/constants";
+import { createEditingState } from "./research-centers/helpers";
+import DirectoryPanel from "./research-centers/components/DirectoryPanel";
+import WorkspaceOverview from "./research-centers/components/WorkspaceOverview";
+import MembersPanel from "./research-centers/components/MembersPanel";
+import ProjectsPanel from "./research-centers/components/ProjectsPanel";
+import AgendasPanel from "./research-centers/components/AgendasPanel";
+import SettingsPanel from "./research-centers/components/SettingsPanel";
+import CreateResearchCenterDialog from "./research-centers/components/CreateResearchCenterDialog";
 
-const INITIAL_FILTERS = {
-  search: "",
-};
-const INITIAL_MEMBER_FILTERS = {
-  search: "",
-  role: "all",
-  department: "all",
-  status: "all",
-};
-const INITIAL_PROJECT_FILTERS = {
-  search: "",
-  status: "all",
-  department: "all",
-};
-const SOCIAL_MEDIA_OPTIONS = [
-  {
-    value: "facebook",
-    label: "Facebook",
-    placeholder: "https://facebook.com/your-center",
-  },
-  {
-    value: "instagram",
-    label: "Instagram",
-    placeholder: "https://instagram.com/your-center",
-  },
-  {
-    value: "x",
-    label: "X (Twitter)",
-    placeholder: "https://x.com/your-center",
-  },
-  {
-    value: "linkedin",
-    label: "LinkedIn",
-    placeholder: "https://linkedin.com/company/your-center",
-  },
-  {
-    value: "youtube",
-    label: "YouTube",
-    placeholder: "https://youtube.com/@your-center",
-  },
-  {
-    value: "website",
-    label: "Website",
-    placeholder: "https://your-center.edu",
-  },
-];
-const EMPTY_EDITING = {
-  id: null,
-  name: "",
-  code: "",
-  description: "",
-  socialMediaLink: "",
-  socialMediaPlatform: "facebook",
-  centerChiefId: "",
-  agendaInput: "",
-  researchAgendas: [],
-};
 export default function AdminResearchCenterPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const toast = useToast();
-  const PAGE_SIZE = 10;
-  const DIRECTORY_SKELETON_COUNT = 6;
-  const AGENDA_SKELETON_COUNT = 6;
-  const AGENDA_PAGE_SIZE = 6;
-  const AGENDA_PREVIEW_COUNT = 3;
+
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [quickFilter, setQuickFilter] = useState("all");
   const [rows, setRows] = useState([]);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
   const [editLoading, setEditLoading] = useState(false);
   const [deletingRow, setDeletingRow] = useState(null);
@@ -146,13 +63,10 @@ export default function AdminResearchCenterPage() {
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [agendaCurrentPage, setAgendaCurrentPage] = useState(1);
-  const [expandedAgendaRows, setExpandedAgendaRows] = useState({});
-  const [viewMode, setViewMode] = useState("grid");
   const [exporting, setExporting] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newResearchCenterName, setnewResearchCenterName] = useState("");
-  const [newResearchCenterCode, setnewResearchCenterCode] = useState("");
+  const [newResearchCenterName, setNewResearchCenterName] = useState("");
+  const [newResearchCenterCode, setNewResearchCenterCode] = useState("");
   const [newResearchCenterDescription, setNewResearchCenterDescription] =
     useState("");
   const [
@@ -169,11 +83,6 @@ export default function AdminResearchCenterPage() {
   const [newResearchAgendas, setNewResearchAgendas] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
   const [agendaNamesByCenterId, setAgendaNamesByCenterId] = useState({});
-  const [agendaMatrixLoading, setAgendaMatrixLoading] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: "name",
-    direction: "asc",
-  });
   const [editErrors, setEditErrors] = useState({});
   const [createErrors, setCreateErrors] = useState({});
   const [scopedMembers, setScopedMembers] = useState([]);
@@ -184,9 +93,13 @@ export default function AdminResearchCenterPage() {
   const [projectFilters, setProjectFilters] = useState(INITIAL_PROJECT_FILTERS);
   const [memberPage, setMemberPage] = useState(1);
   const [projectPage, setProjectPage] = useState(1);
+  const [selectedCenterId, setSelectedCenterId] = useState("");
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("overview");
+
   const isScopedCenterChief =
     profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
   const managedCenterId = String(profile?.managed_center_id || "").trim();
+
   const scopedCenterRow = useMemo(
     () =>
       isScopedCenterChief
@@ -197,30 +110,8 @@ export default function AdminResearchCenterPage() {
     [isScopedCenterChief, managedCenterId, rows],
   );
 
-  const getSocialPlatformFromLink = (link) => {
-    const value = String(link || "")
-      .trim()
-      .toLowerCase();
-    if (!value) return "facebook";
-    if (value.includes("facebook.com") || value.includes("fb.com")) {
-      return "facebook";
-    }
-    if (value.includes("instagram.com")) return "instagram";
-    if (value.includes("x.com") || value.includes("twitter.com")) return "x";
-    if (value.includes("linkedin.com")) return "linkedin";
-    if (value.includes("youtube.com") || value.includes("youtu.be"))
-      return "youtube";
-    return "website";
-  };
-
-  const getSocialPlaceholder = (platform) => {
-    const match = SOCIAL_MEDIA_OPTIONS.find((item) => item.value === platform);
-    return match?.placeholder || "https://example.com";
-  };
-
   const loadResearchCenterRows = useCallback(async () => {
     setDataLoading(true);
-    setAgendaMatrixLoading(true);
     setDataError("");
     try {
       const referencePayload = await fetchReferenceData();
@@ -262,7 +153,7 @@ export default function AdminResearchCenterPage() {
               };
             } catch {
               return {
-                id: center.id,
+                id: centerId,
                 projectCount: 0,
                 profileCount: 0,
                 memberBreakdown: {
@@ -277,11 +168,10 @@ export default function AdminResearchCenterPage() {
         ),
         Promise.all(
           centersData.map(async (center) => {
-            const centerId = center?.id;
             try {
               const linked = await fetchReferenceLinks({
                 type: "center",
-                id: centerId,
+                id: center?.id,
               });
               const agendaNames = Array.isArray(linked?.agendas)
                 ? [
@@ -292,9 +182,9 @@ export default function AdminResearchCenterPage() {
                     ),
                   ].sort((a, b) => a.localeCompare(b))
                 : [];
-              return { id: centerId, agendaNames };
+              return { id: center?.id, agendaNames };
             } catch {
-              return { id: centerId, agendaNames: [] };
+              return { id: center?.id, agendaNames: [] };
             }
           }),
         ),
@@ -311,10 +201,9 @@ export default function AdminResearchCenterPage() {
 
       const mapped = centersData
         .map((item) => {
-          const orgId = item.id;
           const centerMeta =
             centerMetaById[
-              String(orgId || "")
+              String(item?.id || "")
                 .trim()
                 .toLowerCase()
             ] || null;
@@ -328,32 +217,35 @@ export default function AdminResearchCenterPage() {
           )?.name;
           const centerChiefName =
             centerChiefNameFromMeta || centerChiefNameFromId || "";
+
           return {
-            id: orgId,
-            code: String(item?.code || "").trim() || String(orgId || "-"),
-            name: item.name || "-",
+            id: item?.id,
+            code: String(item?.code || "").trim() || String(item?.id || "-"),
+            name: item?.name || "-",
             description: String(item?.description || "").trim(),
             socialMediaLink: String(item?.social_media_link || "").trim(),
             type: "Research Center",
             tag: "research-center",
             centerChiefId,
             centerChiefName: centerChiefName || "-",
-            projectCount: usageMap[orgId]?.projectCount || 0,
-            profileCount: usageMap[orgId]?.profileCount || 0,
-            memberBreakdown: usageMap[orgId]?.memberBreakdown || {
+            projectCount: usageMap[item?.id]?.projectCount || 0,
+            profileCount: usageMap[item?.id]?.profileCount || 0,
+            memberBreakdown: usageMap[item?.id]?.memberBreakdown || {
               adminCount: 0,
               editorCount: 0,
               memberCount: 0,
               totalCount: 0,
             },
-            agendaCount: agendaNamesMap[orgId]?.length || 0,
+            agendaCount: agendaNamesMap[item?.id]?.length || 0,
             totalLinks:
-              (usageMap[orgId]?.projectCount || 0) +
-              (usageMap[orgId]?.profileCount || 0),
+              (usageMap[item?.id]?.projectCount || 0) +
+              (usageMap[item?.id]?.profileCount || 0),
           };
         })
         .filter((row) =>
-          isScopedCenterChief ? row.id === managedCenterId : true,
+          isScopedCenterChief
+            ? String(row?.id || "").trim() === managedCenterId
+            : true,
         )
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -396,38 +288,27 @@ export default function AdminResearchCenterPage() {
             setScopedProjects(
               Array.isArray(linked?.projects) ? linked.projects : [],
             );
-          } catch (linksError) {
+          } catch (error) {
             setScopedMembers([]);
             setScopedProjects([]);
             setScopedLinksError(
-              linksError.message || "Unable to load Research Center members.",
+              error.message ||
+                "Unable to load research center workspace details.",
             );
           } finally {
             setScopedLinksLoading(false);
           }
-        } else {
-          setScopedMembers([]);
-          setScopedProjects([]);
-          setScopedLinksError(
-            "Assigned Research Center could not be resolved.",
-          );
         }
-      } else {
-        setScopedMembers([]);
-        setScopedProjects([]);
-        setScopedLinksError("");
-        setScopedLinksLoading(false);
       }
-    } catch (loadError) {
+    } catch (error) {
       setRows([]);
       setAgendaNamesByCenterId({});
       setScopedMembers([]);
       setScopedProjects([]);
       setScopedLinksError("");
-      setDataError(loadError.message || "Unable to load research center data.");
+      setDataError(error.message || "Unable to load research center data.");
     } finally {
       setDataLoading(false);
-      setAgendaMatrixLoading(false);
     }
   }, [isScopedCenterChief, managedCenterId]);
 
@@ -457,18 +338,26 @@ export default function AdminResearchCenterPage() {
       if (
         quickFilter === "with_projects" &&
         Number(row?.projectCount || 0) === 0
-      )
+      ) {
         return false;
+      }
       if (
         quickFilter === "with_affiliates" &&
         Number(row?.profileCount || 0) === 0
-      )
+      ) {
         return false;
-      if (quickFilter === "with_agendas" && Number(row?.agendaCount || 0) === 0)
+      }
+      if (
+        quickFilter === "with_agendas" &&
+        Number(row?.agendaCount || 0) === 0
+      ) {
         return false;
+      }
+
       const agendaNames = Array.isArray(agendaNamesByCenterId[row.id])
         ? agendaNamesByCenterId[row.id].join(" ").toLowerCase()
         : "";
+
       if (
         keyword &&
         !(
@@ -479,7 +368,9 @@ export default function AdminResearchCenterPage() {
             .includes(keyword) ||
           agendaNames.includes(keyword) ||
           row.type.toLowerCase().includes(keyword) ||
-          row.id.toLowerCase().includes(keyword)
+          String(row.id || "")
+            .toLowerCase()
+            .includes(keyword)
         )
       ) {
         return false;
@@ -487,53 +378,17 @@ export default function AdminResearchCenterPage() {
 
       return true;
     });
-  }, [agendaNamesByCenterId, rows, filters, quickFilter]);
+  }, [agendaNamesByCenterId, filters.search, quickFilter, rows]);
 
-  const sortedFilteredRows = useMemo(() => {
-    const source = [...filteredRows];
-    const { key, direction } = sortConfig;
-    const factor = direction === "asc" ? 1 : -1;
-
-    source.sort((a, b) => {
-      const av = a?.[key];
-      const bv = b?.[key];
-
-      if (typeof av === "number" && typeof bv === "number") {
-        return (av - bv) * factor;
-      }
-
-      return (
-        String(av ?? "")
-          .toLowerCase()
-          .localeCompare(String(bv ?? "").toLowerCase()) * factor
-      );
-    });
-
-    return source;
-  }, [filteredRows, sortConfig]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedFilteredRows.length / PAGE_SIZE),
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedFilteredRows.slice(start, start + PAGE_SIZE);
-  }, [sortedFilteredRows, currentPage, PAGE_SIZE]);
-  const agendaTotalPages = Math.max(
-    1,
-    Math.ceil(sortedFilteredRows.length / AGENDA_PAGE_SIZE),
-  );
-  const paginatedAgendaRows = useMemo(() => {
-    const start = (agendaCurrentPage - 1) * AGENDA_PAGE_SIZE;
-    return sortedFilteredRows.slice(start, start + AGENDA_PAGE_SIZE);
-  }, [sortedFilteredRows, agendaCurrentPage, AGENDA_PAGE_SIZE]);
+    return filteredRows.slice(start, start + PAGE_SIZE);
+  }, [filteredRows, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-    setAgendaCurrentPage(1);
-    setExpandedAgendaRows({});
-  }, [filters, rows.length, quickFilter]);
+  }, [filters.search, quickFilter, rows.length]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -541,11 +396,69 @@ export default function AdminResearchCenterPage() {
     }
   }, [currentPage, totalPages]);
 
+  const selectedCenterRow = useMemo(() => {
+    if (isScopedCenterChief) return null;
+    if (!filteredRows.length) return null;
+    return (
+      filteredRows.find(
+        (row) =>
+          String(row?.id || "").trim() === String(selectedCenterId).trim(),
+      ) ||
+      filteredRows[0] ||
+      null
+    );
+  }, [filteredRows, isScopedCenterChief, selectedCenterId]);
+
+  const workspaceCenterRow = isScopedCenterChief
+    ? scopedCenterRow
+    : selectedCenterRow;
+
   useEffect(() => {
-    if (agendaCurrentPage > agendaTotalPages) {
-      setAgendaCurrentPage(agendaTotalPages);
+    if (isScopedCenterChief) return;
+    if (!filteredRows.length) {
+      setSelectedCenterId("");
+      setScopedMembers([]);
+      setScopedProjects([]);
+      setScopedLinksError("");
+      setScopedLinksLoading(false);
+      return;
     }
-  }, [agendaCurrentPage, agendaTotalPages]);
+
+    const isCurrentSelectionVisible = filteredRows.some(
+      (row) => String(row?.id || "").trim() === String(selectedCenterId).trim(),
+    );
+
+    if (!isCurrentSelectionVisible) {
+      setSelectedCenterId(String(filteredRows[0]?.id || ""));
+    }
+  }, [filteredRows, isScopedCenterChief, selectedCenterId]);
+
+  const loadWorkspaceLinks = useCallback(async (centerId) => {
+    if (!centerId) return;
+    setScopedLinksLoading(true);
+    setScopedLinksError("");
+    try {
+      const linked = await fetchReferenceLinks({
+        type: "center",
+        id: centerId,
+      });
+      setScopedMembers(Array.isArray(linked?.profiles) ? linked.profiles : []);
+      setScopedProjects(Array.isArray(linked?.projects) ? linked.projects : []);
+    } catch (error) {
+      setScopedMembers([]);
+      setScopedProjects([]);
+      setScopedLinksError(
+        error.message || "Unable to load research center workspace details.",
+      );
+    } finally {
+      setScopedLinksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isScopedCenterChief || !workspaceCenterRow?.id) return;
+    loadWorkspaceLinks(workspaceCenterRow.id);
+  }, [isScopedCenterChief, loadWorkspaceLinks, workspaceCenterRow?.id]);
 
   const scopedDepartmentOptions = useMemo(
     () =>
@@ -621,9 +534,9 @@ export default function AdminResearchCenterPage() {
   const filteredScopedProjects = useMemo(() => {
     const keyword = projectFilters.search.trim().toLowerCase();
     return scopedProjects.filter((project) => {
-      const title = String(project?.title || "").toLowerCase();
+      const title = String(project?.title || project?.name || "").toLowerCase();
       const leadResearcher = String(
-        project?.lead_researcher || "",
+        project?.lead_researcher_name || project?.researcher_name || "",
       ).toLowerCase();
       const status = String(project?.status || "")
         .trim()
@@ -649,8 +562,6 @@ export default function AdminResearchCenterPage() {
     });
   }, [projectFilters, scopedProjects]);
 
-  const MEMBER_PAGE_SIZE = 8;
-  const PROJECT_PAGE_SIZE = 6;
   const memberTotalPages = Math.max(
     1,
     Math.ceil(filteredScopedMembers.length / MEMBER_PAGE_SIZE),
@@ -670,7 +581,7 @@ export default function AdminResearchCenterPage() {
     return filteredScopedProjects.slice(start, start + PROJECT_PAGE_SIZE);
   }, [filteredScopedProjects, projectPage]);
 
-  const scopedSummary = useMemo(() => {
+  const workspaceSummary = useMemo(() => {
     const activeMembers = scopedMembers.filter(
       (member) => member?.is_active !== false,
     );
@@ -678,44 +589,30 @@ export default function AdminResearchCenterPage() {
       totalMembers: scopedMembers.length,
       activeMembers: activeMembers.length,
       linkedProjects: scopedProjects.length,
-      agendas: scopedCenterRow?.agendaCount || 0,
+      totalAgendas: workspaceCenterRow?.agendaCount || 0,
+      totalLinks:
+        (workspaceCenterRow?.profileCount || 0) +
+        (workspaceCenterRow?.projectCount || 0),
     };
-  }, [scopedCenterRow?.agendaCount, scopedMembers, scopedProjects.length]);
+  }, [scopedMembers, scopedProjects.length, workspaceCenterRow]);
+
+  const selectedAgendaNames = useMemo(
+    () => agendaNamesByCenterId[workspaceCenterRow?.id] || [],
+    [agendaNamesByCenterId, workspaceCenterRow?.id],
+  );
 
   const dashboardMetrics = useMemo(() => {
     const totalCenters = rows.length;
-    const totalAffiliates = rows.reduce(
-      (sum, row) => sum + Number(row?.profileCount || 0),
-      0,
-    );
-    const totalProjects = rows.reduce(
-      (sum, row) => sum + Number(row?.projectCount || 0),
-      0,
-    );
-    const totalAgendas = rows.reduce(
-      (sum, row) => sum + Number(row?.agendaCount || 0),
-      0,
-    );
     const totalLinks = rows.reduce(
       (sum, row) => sum + Number(row?.totalLinks || 0),
       0,
     );
-    return {
-      totalCenters,
-      totalAffiliates,
-      totalProjects,
-      totalAgendas,
-      totalLinks,
-    };
+    return { totalCenters, totalLinks };
   }, [rows]);
 
   const quickFilterChips = useMemo(
     () => [
-      {
-        key: "all",
-        label: "All Centers",
-        count: rows.length,
-      },
+      { key: "all", label: "All Centers", count: rows.length },
       {
         key: "with_projects",
         label: "With Projects",
@@ -735,8 +632,28 @@ export default function AdminResearchCenterPage() {
     [rows],
   );
 
-  const hasActiveDirectoryFilters =
-    quickFilter !== "all" || filters.search.trim().length > 0;
+  const workspaceTabs = useMemo(
+    () =>
+      isScopedCenterChief
+        ? [
+            { key: "overview", label: "Overview" },
+            { key: "members", label: "Members" },
+            { key: "projects", label: "Projects" },
+            { key: "agendas", label: "Agendas" },
+          ]
+        : [
+            { key: "overview", label: "Overview" },
+            { key: "members", label: "Members" },
+            { key: "projects", label: "Projects" },
+            { key: "agendas", label: "Agendas" },
+            { key: "settings", label: "Settings" },
+          ],
+    [isScopedCenterChief],
+  );
+
+  useEffect(() => {
+    setActiveWorkspaceTab("overview");
+  }, [workspaceCenterRow?.id]);
 
   useEffect(() => {
     setMemberPage(1);
@@ -758,19 +675,56 @@ export default function AdminResearchCenterPage() {
     }
   }, [projectPage, projectTotalPages]);
 
-  const toggleSort = (key) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
-      }
-      return { key, direction: "asc" };
-    });
-  };
+  const loadEditableCenter = useCallback(async (row) => {
+    if (!row?.id) {
+      setEditing(EMPTY_EDITING);
+      return;
+    }
 
-  const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return "\u2195";
-    return sortConfig.direction === "asc" ? "\u2191" : "\u2193";
-  };
+    setEditLoading(true);
+    setEditErrors({});
+    setEditing(createEditingState(row));
+
+    try {
+      const result = await fetchReferenceLinks({ type: "center", id: row.id });
+      const linkedAgendas = Array.isArray(result?.agendas)
+        ? [
+            ...new Set(
+              result.agendas
+                .map((agenda) => String(agenda?.name || "").trim())
+                .filter(Boolean),
+            ),
+          ]
+        : [];
+      setEditing(createEditingState(row, linkedAgendas));
+    } catch (error) {
+      setActionError(
+        error.message || "Unable to load editable center details.",
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      isScopedCenterChief ||
+      activeWorkspaceTab !== "settings" ||
+      !workspaceCenterRow?.id
+    ) {
+      return;
+    }
+
+    if (editing.id !== workspaceCenterRow.id) {
+      loadEditableCenter(workspaceCenterRow);
+    }
+  }, [
+    activeWorkspaceTab,
+    editing.id,
+    isScopedCenterChief,
+    loadEditableCenter,
+    workspaceCenterRow,
+  ]);
 
   const editValidationErrors = useMemo(
     () =>
@@ -802,48 +756,43 @@ export default function AdminResearchCenterPage() {
   const isEditFormValid = Object.keys(editValidationErrors).length === 0;
   const isCreateFormValid = Object.keys(createValidationErrors).length === 0;
 
-  const startEdit = async (row) => {
-    setActionError("");
-    setActionMessage("");
-    setEditErrors({});
-    setEditModalOpen(true);
-    setEditLoading(true);
-    setEditing({
-      ...EMPTY_EDITING,
-      id: row.id,
-      name: row.name === "-" ? "" : row.name,
-      code: row.code === "-" ? "" : row.code,
-      description: String(row?.description || "").trim(),
-      socialMediaLink: String(row?.socialMediaLink || "").trim(),
-      socialMediaPlatform: getSocialPlatformFromLink(row?.socialMediaLink),
-      centerChiefId: row.centerChiefId || "",
-    });
+  const startInlineEdit = useCallback(
+    async (row) => {
+      setActionError("");
+      setActionMessage("");
+      setActiveWorkspaceTab("settings");
+      await loadEditableCenter(row);
+    },
+    [loadEditableCenter],
+  );
 
-    try {
-      const result = await fetchReferenceLinks({ type: "center", id: row.id });
-      const linkedAgendas = Array.isArray(result?.agendas)
-        ? result.agendas
-            .map((agenda) => String(agenda?.name || "").trim())
-            .filter(Boolean)
-        : [];
-      setEditing((prev) => ({
-        ...prev,
-        researchAgendas: [...new Set(linkedAgendas)],
-      }));
-    } catch (error) {
-      setActionError(
-        error.message || "Unable to load editable center details.",
-      );
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const cancelEdit = () => {
+  const resetInlineEdit = useCallback(async () => {
     if (actionLoading) return;
-    setEditModalOpen(false);
     setEditErrors({});
+    if (workspaceCenterRow) {
+      await loadEditableCenter(workspaceCenterRow);
+      return;
+    }
     setEditing(EMPTY_EDITING);
+  }, [actionLoading, loadEditableCenter, workspaceCenterRow]);
+
+  const updateEditing = (patch) => {
+    setEditing((prev) => ({ ...prev, ...patch }));
+    if (patch.name !== undefined) {
+      setEditErrors((prev) => ({ ...prev, name: "" }));
+    }
+    if (patch.code !== undefined) {
+      setEditErrors((prev) => ({ ...prev, code: "" }));
+    }
+    if (patch.centerChiefId !== undefined) {
+      setEditErrors((prev) => ({ ...prev, centerChiefId: "" }));
+    }
+    if (
+      patch.agendaInput !== undefined ||
+      patch.researchAgendas !== undefined
+    ) {
+      setEditErrors((prev) => ({ ...prev, researchAgendas: "" }));
+    }
   };
 
   const addEditAgenda = () => {
@@ -854,25 +803,21 @@ export default function AdminResearchCenterPage() {
         (item) => item.toLowerCase() === next.toLowerCase(),
       )
     ) {
-      setEditing((prev) => ({ ...prev, agendaInput: "" }));
+      updateEditing({ agendaInput: "" });
       return;
     }
-    setEditing((prev) => ({
-      ...prev,
-      researchAgendas: [...prev.researchAgendas, next],
+    updateEditing({
+      researchAgendas: [...editing.researchAgendas, next],
       agendaInput: "",
-    }));
-    setEditErrors((prev) => ({ ...prev, researchAgendas: "" }));
+    });
   };
 
   const removeEditAgenda = (agendaName) => {
-    setEditing((prev) => ({
-      ...prev,
-      researchAgendas: prev.researchAgendas.filter(
+    updateEditing({
+      researchAgendas: editing.researchAgendas.filter(
         (item) => item !== agendaName,
       ),
-    }));
-    setEditErrors((prev) => ({ ...prev, researchAgendas: "" }));
+    });
   };
 
   const saveEdit = async () => {
@@ -888,11 +833,12 @@ export default function AdminResearchCenterPage() {
     if (!editing.id || Object.keys(errors).length > 0) {
       return;
     }
+
     setActionLoading(true);
     setActionError("");
     setActionMessage("");
 
-    const { error: updateError } = await updateReference({
+    const { error } = await updateReference({
       type: "center",
       id: editing.id,
       name: nextName,
@@ -903,16 +849,24 @@ export default function AdminResearchCenterPage() {
       research_agendas: editing.researchAgendas,
     });
 
-    if (updateError) {
-      setActionError(updateError.message || "Unable to update center.");
+    if (error) {
+      setActionError(error.message || "Unable to update center.");
       setActionLoading(false);
       return;
     }
 
     setActionMessage("Center updated successfully.");
     setActionLoading(false);
-    cancelEdit();
     await loadResearchCenterRows();
+    await loadEditableCenter({
+      ...workspaceCenterRow,
+      id: editing.id,
+      name: nextName,
+      code: nextCode,
+      description: editing.description,
+      socialMediaLink: editing.socialMediaLink,
+      centerChiefId: editing.centerChiefId,
+    });
   };
 
   const confirmDelete = async () => {
@@ -922,14 +876,14 @@ export default function AdminResearchCenterPage() {
     setActionError("");
     setActionMessage("");
 
-    const { error: deleteError } = await deleteReference({
+    const { error } = await deleteReference({
       type: "center",
       id: deletingRow.id,
     });
 
-    if (deleteError) {
+    if (error) {
       setActionError(
-        deleteError.message ||
+        error.message ||
           "Unable to delete center. It may still be referenced by records.",
       );
       setActionLoading(false);
@@ -949,6 +903,33 @@ export default function AdminResearchCenterPage() {
     navigate(`/admin/research-center/${encodeURIComponent(id)}${query}`);
   };
 
+  const updateCreateValues = (patch) => {
+    if (patch.name !== undefined) {
+      setNewResearchCenterName(patch.name);
+      setCreateErrors((prev) => ({ ...prev, name: "" }));
+    }
+    if (patch.code !== undefined) {
+      setNewResearchCenterCode(patch.code);
+      setCreateErrors((prev) => ({ ...prev, code: "" }));
+    }
+    if (patch.description !== undefined) {
+      setNewResearchCenterDescription(patch.description);
+    }
+    if (patch.socialMediaLink !== undefined) {
+      setNewResearchCenterSocialMediaLink(patch.socialMediaLink);
+    }
+    if (patch.socialMediaPlatform !== undefined) {
+      setNewResearchCenterSocialMediaPlatform(patch.socialMediaPlatform);
+    }
+    if (patch.centerChiefId !== undefined) {
+      setNewCenterChiefId(patch.centerChiefId);
+      setCreateErrors((prev) => ({ ...prev, centerChiefId: "" }));
+    }
+    if (patch.agendaInput !== undefined) {
+      setNewAgendaInput(patch.agendaInput);
+    }
+  };
+
   const createResearchCenter = async () => {
     const name = newResearchCenterName.trim();
     const code = newResearchCenterCode.trim();
@@ -962,11 +943,12 @@ export default function AdminResearchCenterPage() {
     if (Object.keys(errors).length > 0) {
       return;
     }
+
     setCreateLoading(true);
     setActionError("");
     setActionMessage("");
 
-    const { error: createError } = await createReference({
+    const { error } = await createReference({
       type: "center",
       name,
       code,
@@ -976,10 +958,8 @@ export default function AdminResearchCenterPage() {
       research_agendas: newResearchAgendas,
     });
 
-    if (createError) {
-      setActionError(
-        createError.message || "Unable to create research center.",
-      );
+    if (error) {
+      setActionError(error.message || "Unable to create research center.");
       setCreateLoading(false);
       return;
     }
@@ -988,8 +968,8 @@ export default function AdminResearchCenterPage() {
     setCreateLoading(false);
     setCreateModalOpen(false);
     setCreateErrors({});
-    setnewResearchCenterName("");
-    setnewResearchCenterCode("");
+    setNewResearchCenterName("");
+    setNewResearchCenterCode("");
     setNewResearchCenterDescription("");
     setNewResearchCenterSocialMediaLink("");
     setNewResearchCenterSocialMediaPlatform("facebook");
@@ -1135,459 +1115,9 @@ export default function AdminResearchCenterPage() {
     }
   };
 
-  if (isScopedCenterChief) {
-    return (
-      <section className="page-stack-lg">
-        <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
-                My Research Center
-              </p>
-              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
-                {scopedCenterRow?.name || "Research Center Workspace"}
-              </h1>
-              <p className="text-sm text-[#1E3A8A]">
-                Review member activity, linked projects, and agenda coverage at
-                a glance.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => goToCenterDetail(scopedCenterRow)}
-                disabled={!scopedCenterRow}
-                aria-label="View center"
-                title="View center"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl border border-blue-200/80 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                Center Code
-              </p>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {scopedCenterRow?.code || "-"}
-              </p>
-              <p className="mt-1 text-xs text-[#1E3A8A]">
-                Chief:{" "}
-                {scopedCenterRow?.centerChiefName || profile?.full_name || "-"}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                Active Members
-              </p>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {scopedSummary.activeMembers}
-              </p>
-              <p className="mt-1 text-xs text-[#1E3A8A]">
-                Total {scopedSummary.totalMembers}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                Linked Projects
-              </p>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {scopedSummary.linkedProjects}
-              </p>
-              <p className="mt-1 text-xs text-[#1E3A8A]">Research pipeline</p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                Agendas
-              </p>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {scopedSummary.agendas}
-              </p>
-              <p className="mt-1 text-xs text-[#1E3A8A]">Active agenda list</p>
-            </div>
-          </div>
-        </div>
-
-        {dataLoading ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-3">
-                <div className="h-4 w-44 rounded-full bg-blue-100/80" />
-                <div className="h-3 w-72 rounded-full bg-blue-100/70" />
-                <div className="h-36 w-full rounded-2xl bg-blue-200/45" />
-              </div>
-            </CardContent>
-          </Card>
-        ) : !scopedCenterRow ? (
-          <Card>
-            <CardContent className="p-6 text-sm text-[#1E3A8A]">
-              Your assigned Research Center could not be loaded.
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Card className="overflow-hidden">
-              <CardHeader className="border-b border-[var(--border)] px-6 py-5 space-y-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold text-[#1E3A8A]">
-                      Research Center Members
-                    </CardTitle>
-                    <CardDescription>
-                      {filteredScopedMembers.length} member(s) matched.
-                    </CardDescription>
-                  </div>
-                  <label className="relative w-full lg:max-w-md">
-                    <span className="sr-only">Search members</span>
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
-                    <Input
-                      className="pl-8"
-                      placeholder="Search name or email"
-                      value={memberFilters.search}
-                      onChange={(event) =>
-                        setMemberFilters((prev) => ({
-                          ...prev,
-                          search: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[10rem_minmax(0,14rem)_10rem]">
-                  <Select
-                    value={memberFilters.role}
-                    onValueChange={(value) =>
-                      setMemberFilters((prev) => ({
-                        ...prev,
-                        role: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All roles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                      <SelectItem value="student">Student</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={memberFilters.department}
-                    onValueChange={(value) =>
-                      setMemberFilters((prev) => ({
-                        ...prev,
-                        department: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
-                      {scopedDepartmentOptions.map((department) => (
-                        <SelectItem key={department} value={department}>
-                          {department}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={memberFilters.status}
-                    onValueChange={(value) =>
-                      setMemberFilters((prev) => ({
-                        ...prev,
-                        status: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setMemberFilters(INITIAL_MEMBER_FILTERS)}
-                  >
-                    Reset
-                  </Button>
-                  <p className="text-sm text-[#1E3A8A]">
-                    Showing{" "}
-                    <span className="font-semibold">
-                      {filteredScopedMembers.length}
-                    </span>{" "}
-                    member(s).
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  {scopedLinksLoading ? (
-                    <div className="p-4">
-                      <div className="animate-pulse space-y-3">
-                        <div className="h-4 w-40 rounded-full bg-blue-100/80" />
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <div
-                            key={`scoped-member-skeleton-${index}`}
-                            className="h-10 w-full rounded-lg bg-blue-100/70"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : scopedLinksError ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">
-                      {scopedLinksError}
-                    </p>
-                  ) : filteredScopedMembers.length === 0 ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">
-                      No members matched the current filters.
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>No.</TableHead>
-                          <TableHead>Full Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Department</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>User ID</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedScopedMembers.map((member, index) => (
-                          <TableRow
-                            key={member.id || `${member.email}-${index}`}
-                          >
-                            <TableCell>
-                              {(memberPage - 1) * MEMBER_PAGE_SIZE + index + 1}
-                            </TableCell>
-                            <TableCell>
-                              {member.full_name || "Unnamed user"}
-                            </TableCell>
-                            <TableCell>{member.email || "-"}</TableCell>
-                            <TableCell className="capitalize">
-                              {member.role || "-"}
-                            </TableCell>
-                            <TableCell>{member.department || "-"}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  member.is_active !== false
-                                    ? "secondary"
-                                    : "destructive"
-                                }
-                              >
-                                {member.is_active !== false
-                                  ? "Active"
-                                  : "Inactive"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <code>{member.id || "-"}</code>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </CardContent>
-              <PaginationControls
-                page={memberPage}
-                totalPages={memberTotalPages}
-                onPageChange={setMemberPage}
-                className="rounded-none border-0 border-t border-[var(--border)]"
-              />
-            </Card>
-
-            <Card className="overflow-hidden">
-              <CardHeader className="border-b border-[var(--border)] px-6 py-5 space-y-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg font-bold text-[#1E3A8A]">
-                      Linked Projects
-                    </CardTitle>
-                    <CardDescription>
-                      {filteredScopedProjects.length} project(s) matched.
-                    </CardDescription>
-                  </div>
-                  <label className="relative w-full lg:max-w-md">
-                    <span className="sr-only">Search projects</span>
-                    <Search
-                      size={14}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#1E3A8A]"
-                    />
-                    <Input
-                      className="pl-8"
-                      placeholder="Search title or lead researcher"
-                      value={projectFilters.search}
-                      onChange={(event) =>
-                        setProjectFilters((prev) => ({
-                          ...prev,
-                          search: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[12rem_minmax(0,14rem)]">
-                  <Select
-                    value={projectFilters.status}
-                    onValueChange={(value) =>
-                      setProjectFilters((prev) => ({
-                        ...prev,
-                        status: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      {scopedProjectStatusOptions.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={projectFilters.department}
-                    onValueChange={(value) =>
-                      setProjectFilters((prev) => ({
-                        ...prev,
-                        department: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
-                      {scopedProjectDepartmentOptions.map((department) => (
-                        <SelectItem key={department} value={department}>
-                          {department}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setProjectFilters(INITIAL_PROJECT_FILTERS)}
-                  >
-                    Reset
-                  </Button>
-                  <p className="text-sm text-[#1E3A8A]">
-                    Showing{" "}
-                    <span className="font-semibold">
-                      {filteredScopedProjects.length}
-                    </span>{" "}
-                    linked project(s).
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  {scopedLinksLoading ? (
-                    <div className="p-4">
-                      <div className="animate-pulse space-y-3">
-                        <div className="h-4 w-44 rounded-full bg-blue-100/80" />
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <div
-                            key={`scoped-project-skeleton-${index}`}
-                            className="h-10 w-full rounded-lg bg-blue-100/70"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : scopedLinksError ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">
-                      {scopedLinksError}
-                    </p>
-                  ) : filteredScopedProjects.length === 0 ? (
-                    <p className="p-4 text-sm text-[#1E3A8A]">
-                      No linked projects matched the current filters.
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>No.</TableHead>
-                          <TableHead>Project Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Year</TableHead>
-                          <TableHead>Lead Researcher</TableHead>
-                          <TableHead>Department</TableHead>
-                          <TableHead>Agendum</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedScopedProjects.map((project, index) => (
-                          <TableRow
-                            key={project.id || `${project.title}-${index}`}
-                          >
-                            <TableCell>
-                              {(projectPage - 1) * PROJECT_PAGE_SIZE +
-                                index +
-                                1}
-                            </TableCell>
-                            <TableCell>{project.title || "-"}</TableCell>
-                            <TableCell className="capitalize">
-                              {project.status || "-"}
-                            </TableCell>
-                            <TableCell>{project.year || "-"}</TableCell>
-                            <TableCell>
-                              {project.lead_researcher || "-"}
-                            </TableCell>
-                            <TableCell>
-                              {project.department_name || "-"}
-                            </TableCell>
-                            <TableCell>{project.agenda_name || "-"}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </CardContent>
-              <PaginationControls
-                page={projectPage}
-                totalPages={projectTotalPages}
-                onPageChange={setProjectPage}
-                className="rounded-none border-0 border-t border-[var(--border)]"
-              />
-            </Card>
-          </>
-        )}
-      </section>
-    );
-  }
-
   const deleteGuard = (() => {
     if (!deletingRow) {
-      return {
-        blocked: false,
-        confirmLabel: "Delete",
-        message: "",
-      };
+      return { blocked: false, confirmLabel: "Delete", message: "" };
     }
 
     const projectCount = Number(deletingRow?.projectCount || 0);
@@ -1603,809 +1133,315 @@ export default function AdminResearchCenterPage() {
 
     const blocked = reasons.length > 0;
     const name = String(deletingRow?.name || "").trim();
-
     return {
       blocked,
       confirmLabel: blocked ? "Close" : "Delete",
       message: blocked
-        ? `Cannot delete "${name}". This research center has ${reasons.join(" and ")}. Remove/reassign them first.`
+        ? `Cannot delete "${name}". This research center has ${reasons.join(
+            " and ",
+          )}. Remove or reassign them first.`
         : `Delete "${name}"? This action cannot be undone.`,
     };
   })();
 
+  const createDialogValues = {
+    name: newResearchCenterName,
+    code: newResearchCenterCode,
+    description: newResearchCenterDescription,
+    socialMediaLink: newResearchCenterSocialMediaLink,
+    socialMediaPlatform: newResearchCenterSocialMediaPlatform,
+    centerChiefId: newCenterChiefId,
+    agendaInput: newAgendaInput,
+    researchAgendas: newResearchAgendas,
+  };
+
+  const workspaceContent = useMemo(() => {
+    if (!workspaceCenterRow) {
+      return (
+        <div className="rounded-[1.7rem] border border-dashed border-blue-200 bg-blue-50/70 p-10 text-center text-sm text-[#1E3A8A]">
+          Select a research center from the directory to open its workspace.
+        </div>
+      );
+    }
+
+    switch (activeWorkspaceTab) {
+      case "members":
+        return (
+          <MembersPanel
+            center={workspaceCenterRow}
+            filters={memberFilters}
+            onFiltersChange={setMemberFilters}
+            departmentOptions={scopedDepartmentOptions}
+            filteredRows={filteredScopedMembers}
+            paginatedRows={paginatedScopedMembers}
+            loading={scopedLinksLoading}
+            error={scopedLinksError}
+            page={memberPage}
+            totalPages={memberTotalPages}
+            onPageChange={setMemberPage}
+          />
+        );
+      case "projects":
+        return (
+          <ProjectsPanel
+            center={workspaceCenterRow}
+            filters={projectFilters}
+            onFiltersChange={setProjectFilters}
+            statusOptions={scopedProjectStatusOptions}
+            departmentOptions={scopedProjectDepartmentOptions}
+            filteredRows={filteredScopedProjects}
+            paginatedRows={paginatedScopedProjects}
+            loading={scopedLinksLoading}
+            error={scopedLinksError}
+            page={projectPage}
+            totalPages={projectTotalPages}
+            onPageChange={setProjectPage}
+          />
+        );
+      case "agendas":
+        return (
+          <AgendasPanel
+            center={workspaceCenterRow}
+            agendaNames={selectedAgendaNames}
+          />
+        );
+      case "settings":
+        return (
+          <SettingsPanel
+            center={workspaceCenterRow}
+            editing={editing}
+            editErrors={editErrors}
+            editLoading={editLoading}
+            actionLoading={actionLoading}
+            isEditFormValid={isEditFormValid}
+            centerChiefUsers={centerChiefUsers}
+            onChange={updateEditing}
+            onAddAgenda={addEditAgenda}
+            onRemoveAgenda={removeEditAgenda}
+            onCancel={resetInlineEdit}
+            onSave={saveEdit}
+            onDelete={() => setDeletingRow(workspaceCenterRow)}
+          />
+        );
+      default:
+        return (
+          <WorkspaceOverview
+            center={workspaceCenterRow}
+            summary={workspaceSummary}
+            agendaNames={selectedAgendaNames}
+            onOpenDetail={() => goToCenterDetail(workspaceCenterRow)}
+            onOpenSettings={() => startInlineEdit(workspaceCenterRow)}
+          />
+        );
+    }
+  }, [
+    activeWorkspaceTab,
+    actionLoading,
+    centerChiefUsers,
+    editErrors,
+    editLoading,
+    editing,
+    filteredScopedMembers,
+    filteredScopedProjects,
+    isEditFormValid,
+    memberFilters,
+    memberPage,
+    memberTotalPages,
+    paginatedScopedMembers,
+    paginatedScopedProjects,
+    projectFilters,
+    projectPage,
+    projectTotalPages,
+    resetInlineEdit,
+    scopedDepartmentOptions,
+    scopedLinksError,
+    scopedLinksLoading,
+    scopedProjectDepartmentOptions,
+    scopedProjectStatusOptions,
+    selectedAgendaNames,
+    startInlineEdit,
+    workspaceCenterRow,
+    workspaceSummary,
+  ]);
+
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
-        <div className="relative">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
-                Admin Workspace
-              </p>
+      <div className="relative overflow-hidden rounded-[2rem] border border-blue-200/80 bg-[linear-gradient(135deg,rgba(239,246,255,0.96),rgba(255,255,255,0.98),rgba(236,253,245,0.86))] p-6 shadow-[0_28px_80px_rgba(30,58,138,0.12)]">
+        <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-blue-200/45 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-3">
+            <Badge className="w-fit border-blue-200 bg-white/80 px-3 py-1 text-[#1E3A8A] hover:bg-white/80">
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              {isScopedCenterChief ? "My Research Center" : "Admin Workspace"}
+            </Badge>
+            <div>
               <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
                 Research Center Workspace
               </h1>
-              <p className="max-w-2xl text-sm text-[#1E3A8A]">
-                Manage center records, monitor affiliations, and track agenda
-                coverage from one control panel.
+              <p className="mt-2 max-w-3xl text-sm text-[#1E3A8A]">
+                {isScopedCenterChief
+                  ? "Review the current state of your assigned research center, including member activity, linked projects, and agenda coverage."
+                  : "Manage the directory from a split-view console. Select a center on the left, then review members, projects, agendas, and settings without leaving the page."}
               </p>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={exporting || filteredRows.length === 0}
-                    className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent
-                  align="end"
-                  className="bg-white border border-blue-200 shadow-md"
-                >
-                  <DropdownMenuItem
-                    className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                    onSelect={() =>
-                      exportRowsAsCsv(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export CSV
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                    onSelect={() =>
-                      exportRowsAsPdf(sortedFilteredRows, "filtered")
-                    }
-                  >
-                    Export PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {!isScopedCenterChief ? (
-                <Button
-                  variant="mono"
-                  onClick={() => {
-                    setCreateErrors({});
-                    setCreateModalOpen(true);
-                  }}
-                >
-                  Create Research Center
-                </Button>
-              ) : null}
-            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-[#1E3A8A]">
-              Center Directory
-            </h2>
-            <p className="text-sm text-[#1E3A8A]">
-              Showing {filteredRows.length} filtered center record(s).
-            </p>
-          </div>
-
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-blue-200/80 bg-blue-50/60 p-1 lg:w-auto">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "grid"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
-              )}
-            >
-              <LayoutGrid size={14} />
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "list"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
-              )}
-            >
-              <List size={14} />
-              List
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="relative w-full xl:max-w-lg">
-            <span className="sr-only">Search research centers</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
-            <Input
-              className="border-blue-200/80 bg-white pl-8"
-              placeholder="Search name, code, chief, agenda, or id"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  search: event.target.value,
-                }))
-              }
-            />
-          </label>
 
           <div className="flex flex-wrap items-center gap-2">
-            {quickFilterChips.map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border-blue-200/80 px-4 text-xs",
-                  quickFilter === chip.key
-                    ? "bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
-                    : "bg-white text-[#1E3A8A] hover:bg-blue-50/60",
-                )}
-                onClick={() => setQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-[#1E3A8A]/10 text-[#1E3A8A]"
-                      : "bg-blue-50 text-[#1E3A8A]",
-                  )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exporting || filteredRows.length === 0}
+                  className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
                 >
-                  {chip.count}
-                </span>
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="border border-blue-200 bg-white shadow-md"
+              >
+                <DropdownMenuItem
+                  className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                  onSelect={() => exportRowsAsCsv(filteredRows, "filtered")}
+                >
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                  onSelect={() => exportRowsAsPdf(filteredRows, "filtered")}
+                >
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {!isScopedCenterChief ? (
+              <Button
+                variant="mono"
+                onClick={() => {
+                  setCreateErrors({});
+                  setCreateModalOpen(true);
+                }}
+              >
+                Create Research Center
               </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
-              onClick={() => {
-                setQuickFilter("all");
-                setFilters(INITIAL_FILTERS);
-              }}
-            >
-              Reset all
-            </Button>
+            ) : null}
           </div>
         </div>
-
-        {hasActiveDirectoryFilters ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-              Active Filters
-            </span>
-            {filters.search.trim() ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: "",
-                  }))
-                }
-              >
-                Search: "{filters.search.trim()}" x
-              </button>
-            ) : null}
-            {quickFilter !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() => setQuickFilter("all")}
-              >
-                {quickFilterChips.find((chip) => chip.key === quickFilter)
-                  ?.label || "Quick filter"}{" "}
-                x
-              </button>
-            ) : null}
-          </div>
-        ) : null}
       </div>
 
-      <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-        <CardContent className="p-4">
-          {dataLoading ? (
-            viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                  (_, index) => (
-                    <Card
-                      key={`center-skeleton-grid-${index}`}
-                      className="rounded-2xl border border-blue-200/80 bg-white/80 p-5 shadow-sm"
-                    >
-                      <div className="animate-pulse space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
-                            <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
-                          </div>
-                          <div className="h-6 w-16 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-blue-100/80" />
-                          <div className="h-6 w-24 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                        </div>
-                      </div>
-                    </Card>
-                  ),
-                )}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm p-4">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-blue-100/70" />
-                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                    (_, index) => (
-                      <div
-                        key={`center-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-blue-100/70"
-                      />
-                    ),
-                  )}
+      <div
+        className={cn(
+          "grid gap-5",
+          isScopedCenterChief ? "" : "xl:grid-cols-[360px_minmax(0,1fr)]",
+        )}
+      >
+        {!isScopedCenterChief ? (
+          <DirectoryPanel
+            rows={filteredRows}
+            paginatedRows={paginatedRows}
+            filters={filters}
+            onSearchChange={(search) => setFilters({ search })}
+            quickFilter={quickFilter}
+            onQuickFilterChange={setQuickFilter}
+            onResetFilters={() => {
+              setQuickFilter("all");
+              setFilters(INITIAL_FILTERS);
+            }}
+            quickFilterChips={quickFilterChips}
+            selectedCenterId={selectedCenterRow?.id}
+            onSelectCenter={setSelectedCenterId}
+            metrics={dashboardMetrics}
+            dataLoading={dataLoading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        ) : null}
+
+        <div className="space-y-4">
+          <Card className="overflow-hidden border-blue-200/80 bg-white/95 shadow-[0_24px_64px_rgba(30,58,138,0.10)]">
+            <CardHeader className="space-y-4 border-b border-blue-100 bg-white px-6 py-5">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#1E3A8A]">
+                    Selected Workspace
+                  </p>
+                  <CardTitle className="text-2xl font-bold text-[#1E3A8A]">
+                    {workspaceCenterRow?.name || "Select a Research Center"}
+                  </CardTitle>
+                  <CardDescription>
+                    {workspaceCenterRow
+                      ? `Work on ${workspaceCenterRow.name} without leaving the broader research center context.`
+                      : "Choose a center from the directory to load its workspace."}
+                  </CardDescription>
                 </div>
+
+                {workspaceCenterRow ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+                      onClick={() => goToCenterDetail(workspaceCenterRow)}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Open
+                    </Button>
+                    {!isScopedCenterChief ? (
+                      <Button
+                        variant="outline"
+                        className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+                        onClick={() => startInlineEdit(workspaceCenterRow)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit Inline
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
-            )
-          ) : null}
-          {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[#1E3A8A]">
-              No research center records found.
-            </div>
-          ) : null}
-          {!dataLoading &&
-            (viewMode === "grid" ? (
-              <div className="grid gap-4 motion-safe:transition-all motion-safe:duration-300 md:grid-cols-2 xl:grid-cols-3">
-                {paginatedRows.map((row, index) => (
-                  <Card
-                    key={`${row.tag}-${row.id}`}
-                    className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50"
+
+              <div className="flex flex-wrap gap-2">
+                {workspaceTabs.map((tab) => (
+                  <Button
+                    key={tab.key}
+                    type="button"
+                    size="sm"
+                    variant={
+                      activeWorkspaceTab === tab.key ? "secondary" : "outline"
+                    }
+                    className={cn(
+                      "rounded-full px-4",
+                      activeWorkspaceTab === tab.key
+                        ? "border-blue-200 bg-blue-100 text-[#1E3A8A]"
+                        : "border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50",
+                    )}
+                    onClick={() => setActiveWorkspaceTab(tab.key)}
+                    disabled={!workspaceCenterRow}
                   >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
-                            #{(currentPage - 1) * PAGE_SIZE + index + 1} ·{" "}
-                            {row.type}
-                          </p>
-                          <h3 className="mt-1 truncate text-base font-bold text-[#1E3A8A]">
-                            {row.name}
-                          </h3>
-                          <p className="mt-1 truncate text-sm text-slate-600">
-                            Center Chief:{" "}
-                            <span className="font-semibold text-[#1E3A8A]">
-                              {row.centerChiefName || "-"}
-                            </span>
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="shrink-0 font-mono">
-                          {row.code}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 text-[#1E3A8A]"
-                        >
-                          Agenda: {row.agendaCount || 0}
-                        </Badge>
-
-                        <Badge
-                          variant="outline"
-                          className="border-blue-200/80 text-[#1E3A8A]"
-                        >
-                          Projects: {row.projectCount || 0}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          className={cn(
-                            "rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left transition-colors",
-                            "hover:bg-blue-50",
-                          )}
-                          onClick={() => goToCenterDetail(row, "affiliates")}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                              Affiliates
-                            </p>
-                            <Users className="h-4 w-4 text-[#1E3A8A]" />
-                          </div>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {row.profileCount}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            Admin {row.memberBreakdown?.adminCount || 0} ·
-                            Editor {row.memberBreakdown?.editorCount || 0} ·
-                            Member {row.memberBreakdown?.memberCount || 0}
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={cn(
-                            "rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left transition-colors",
-                            "hover:bg-blue-50",
-                          )}
-                          onClick={() => goToCenterDetail(row, "projects")}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                              Projects
-                            </p>
-                            <FolderKanban className="h-4 w-4 text-[#1E3A8A]" />
-                          </div>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {row.projectCount}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            Linked research projects.
-                          </p>
-                        </button>
-                      </div>
-
-                      {!isScopedCenterChief ? (
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9"
-                            onClick={() => goToCenterDetail(row)}
-                            aria-label={`View ${row?.name || "research center"}`}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9"
-                            onClick={() => startEdit(row)}
-                            aria-label={`Edit ${row?.name || "research center"}`}
-                            title="Edit"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9 text-[#1E3A8A] hover:bg-blue-50"
-                            onClick={() => setDeletingRow(row)}
-                            aria-label={`Delete ${row?.name || "research center"}`}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9"
-                            onClick={() => goToCenterDetail(row)}
-                            aria-label={`View ${row?.name || "research center"}`}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    {tab.label}
+                  </Button>
                 ))}
               </div>
-            ) : (
-              <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm motion-safe:transition-all motion-safe:duration-300">
-                <div className="max-h-[78vh] overflow-auto">
-                  <Table className="min-w-[980px]">
-                    <TableHeader className="sticky top-0 z-10 bg-blue-50/95 backdrop-blur">
-                      <TableRow>
-                        <TableHead>No.</TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("code")}
-                          >
-                            Code{" "}
-                            <span
-                              className={
-                                sortConfig.key === "code"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("code")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("name")}
-                          >
-                            Research Center{" "}
-                            <span
-                              className={
-                                sortConfig.key === "name"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("name")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("centerChiefName")}
-                          >
-                            Center Chief{" "}
-                            <span
-                              className={
-                                sortConfig.key === "centerChiefName"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("centerChiefName")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("agendaCount")}
-                          >
-                            Agenda{" "}
-                            <span
-                              className={
-                                sortConfig.key === "agendaCount"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("agendaCount")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("profileCount")}
-                          >
-                            Affiliates{" "}
-                            <span
-                              className={
-                                sortConfig.key === "profileCount"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("profileCount")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-0 font-medium text-[#1E3A8A] hover:bg-transparent"
-                            onClick={() => toggleSort("projectCount")}
-                          >
-                            Projects{" "}
-                            <span
-                              className={
-                                sortConfig.key === "projectCount"
-                                  ? "text-[var(--brand)]"
-                                  : "text-[#1E3A8A]"
-                              }
-                            >
-                              {getSortIndicator("projectCount")}
-                            </span>
-                          </Button>
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedRows.map((row, index) => (
-                        <TableRow
-                          key={`${row.tag}-${row.id}`}
-                          className="hover:bg-blue-50/70"
-                        >
-                          <TableCell>
-                            {(currentPage - 1) * PAGE_SIZE + index + 1}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {row.code}
-                          </TableCell>
-                          <TableCell>{row.name}</TableCell>
-                          <TableCell>{row.centerChiefName || "-"}</TableCell>
-                          <TableCell>{row.agendaCount || 0}</TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                              onClick={() =>
-                                goToCenterDetail(row, "affiliates")
-                              }
-                            >
-                              {row.profileCount}
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                              onClick={() => goToCenterDetail(row, "projects")}
-                            >
-                              {row.projectCount}
-                            </Button>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="inline-flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => goToCenterDetail(row)}
-                                aria-label={`View ${row?.name || "research center"}`}
-                                title="View"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {!isScopedCenterChief ? (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => startEdit(row)}
-                                    aria-label={`Edit ${row?.name || "research center"}`}
-                                    title="Edit"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-[#1E3A8A] hover:bg-blue-50"
-                                    onClick={() => setDeletingRow(row)}
-                                    aria-label={`Delete ${row?.name || "research center"}`}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              ) : null}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            ))}
-        </CardContent>
-        <PaginationControls
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          className="rounded-none border-0 border-t border-[var(--border)]"
-        />
-      </Card>
+            </CardHeader>
+          </Card>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] bg-muted/30 px-6 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="space-y-1">
-              <CardTitle className="text-lg font-bold text-[#1E3A8A]">
-                Research Center Agenda
-              </CardTitle>
-              <CardDescription>
-                Browse linked agenda items per center.
-              </CardDescription>
-            </div>
-            <span className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-sm font-semibold text-[#1E3A8A]">
-              {filteredRows.length} centers
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="max-h-[80vh] overflow-auto p-4">
-          {agendaMatrixLoading ? (
-            <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: AGENDA_SKELETON_COUNT }).map((_, index) => (
-                <Card
-                  key={`agenda-skeleton-${index}`}
-                  className="overflow-hidden border-blue-200/80 bg-white shadow-sm"
-                >
-                  <div className="animate-pulse border-b border-blue-200/80 px-5 py-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="w-full space-y-2">
-                        <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                        <div className="h-5 w-2/3 rounded-full bg-blue-100/80" />
-                        <div className="h-3 w-28 rounded-full bg-blue-100/70" />
-                      </div>
-                      <div className="h-8 w-10 rounded-md bg-blue-100/80" />
-                    </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="animate-pulse space-y-2">
-                      <div className="h-8 rounded-md bg-blue-100/70" />
-                      <div className="h-8 rounded-md bg-blue-100/70" />
-                      <div className="h-8 rounded-md bg-blue-100/70" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-sm text-[#1E3A8A]">
-              No research center records found.
+          {dataLoading && !workspaceCenterRow && !isScopedCenterChief ? (
+            <div className="space-y-3">
+              <div className="h-24 animate-pulse rounded-[1.7rem] bg-blue-100/70" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="h-40 animate-pulse rounded-[1.5rem] bg-blue-100/70" />
+                <div className="h-40 animate-pulse rounded-[1.5rem] bg-blue-100/70" />
+              </div>
             </div>
           ) : (
-            <div className="grid items-start gap-4 motion-safe:transition-all motion-safe:duration-300 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedAgendaRows.map((row) => {
-                const agendaNames = agendaNamesByCenterId[row.id] || [];
-                const isExpanded = Boolean(expandedAgendaRows[row.id]);
-                const hasOverflow = agendaNames.length > AGENDA_PREVIEW_COUNT;
-                const visibleAgendaNames = isExpanded
-                  ? agendaNames
-                  : agendaNames.slice(0, AGENDA_PREVIEW_COUNT);
-                const displayAgendas =
-                  agendaNames.length > 0
-                    ? visibleAgendaNames
-                    : ["No agendum linked"];
-
-                return (
-                  <Card
-                    key={`agenda-group-${row.id}`}
-                    className="overflow-hidden border-blue-200/80 bg-white shadow-sm transition-all duration-200"
-                  >
-                    <div className="border-b border-blue-200/80 bg-white px-5 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1E3A8A]">
-                            Research Center
-                          </p>
-                          <h3 className="mt-1 truncate text-lg font-semibold text-[#1E3A8A]">
-                            {row.name || "-"}
-                          </h3>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            Code:{" "}
-                            <span className="font-mono font-semibold text-[#1E3A8A]">
-                              {row.code || "-"}
-                            </span>
-                          </p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1E3A8A]">
-                            Agenda
-                          </p>
-                          <p className="mt-1 text-lg font-semibold text-[#1E3A8A]">
-                            {agendaNames.length}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <CardContent className="p-5">
-                      <div className="space-y-2">
-                        {displayAgendas.map((agendaName) => (
-                          <div
-                            key={`${row.id}-${agendaName}`}
-                            className={cn(
-                              "flex items-center justify-between rounded-md border border-blue-200/80 px-3 py-2 text-xs font-medium text-[#1E3A8A]",
-                              agendaName === "No agendum linked"
-                                ? "bg-blue-50/60 text-[#1E3A8A]"
-                                : "bg-white",
-                            )}
-                            title={agendaName}
-                          >
-                            <span className="min-w-0 truncate">
-                              {agendaName}
-                            </span>
-                            <span
-                              className={cn(
-                                "h-2 w-2 rounded-full",
-                                agendaName === "No agendum linked"
-                                  ? "bg-blue-200"
-                                  : "bg-[#1E3A8A]",
-                              )}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      {hasOverflow ? (
-                        <div className="mt-3 border-t border-blue-200/80 pt-3">
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-strong)] hover:underline"
-                            onClick={() =>
-                              setExpandedAgendaRows((prev) => ({
-                                ...prev,
-                                [row.id]: !isExpanded,
-                              }))
-                            }
-                          >
-                            {isExpanded
-                              ? "Show less"
-                              : `Show ${agendaNames.length - AGENDA_PREVIEW_COUNT} more`}
-                          </button>
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            workspaceContent
           )}
-        </CardContent>
-        <PaginationControls
-          page={agendaCurrentPage}
-          totalPages={agendaTotalPages}
-          onPageChange={setAgendaCurrentPage}
-          className="rounded-none border-0 border-t border-[var(--border)]"
-        />
-      </Card>
+        </div>
+      </div>
 
       <ConfirmActionModal
         open={Boolean(deletingRow)}
@@ -2426,542 +1462,29 @@ export default function AdminResearchCenterPage() {
         onConfirm={
           deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete
         }
-        className="bg-white text-[#1E3A8A] border border-blue-200 shadow-md"
+        className="border border-blue-200 bg-white text-[#1E3A8A] shadow-md"
         cancelButtonClassName="border border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
         confirmButtonClassName="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8] active:bg-[#1E3A8A] disabled:bg-slate-300 disabled:text-slate-500"
       />
 
-      {editModalOpen ? (
-        <Dialog
-          open={editModalOpen}
-          onOpenChange={(open) => !open && cancelEdit()}
-        >
-          <DialogContent
-            className="max-w-3xl bg-white text-[#1E3A8A] border border-blue-200 shadow-lg"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">
-                Edit Research Center
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-600">
-                Update all research center information.
-              </DialogDescription>
-            </DialogHeader>
-
-            {editLoading ? (
-              <p className="mt-4 text-sm text-slate-600">
-                Loading center details...
-              </p>
-            ) : (
-              <>
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Research Center Name *
-                    </label>
-                    <Input
-                      className={`bg-white border ${
-                        editErrors.name ? "border-[#1E3A8A]" : "border-blue-200"
-                      } focus:border-[#1E3A8A]`}
-                      value={editing.name}
-                      onChange={(event) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          name: event.target.value,
-                        }));
-                        setEditErrors((prev) => ({ ...prev, name: "" }));
-                      }}
-                    />
-                    {editErrors.name && (
-                      <p className="text-xs text-slate-800">
-                        {editErrors.name}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Code *
-                    </label>
-                    <Input
-                      className={`bg-white border ${
-                        editErrors.code ? "border-[#1E3A8A]" : "border-blue-200"
-                      } focus:border-[#1E3A8A]`}
-                      value={editing.code}
-                      onChange={(event) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          code: event.target.value
-                            .toUpperCase()
-                            .replace(/\s+/g, "_"),
-                        }));
-                        setEditErrors((prev) => ({ ...prev, code: "" }));
-                      }}
-                    />
-                    {editErrors.code && (
-                      <p className="text-xs text-slate-800">
-                        {editErrors.code}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Center Chief *
-                    </label>
-                    <Select
-                      value={editing.centerChiefId}
-                      onValueChange={(value) => {
-                        setEditing((prev) => ({
-                          ...prev,
-                          centerChiefId: value,
-                        }));
-                        setEditErrors((prev) => ({
-                          ...prev,
-                          centerChiefId: "",
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        className={`bg-white border ${
-                          editErrors.centerChiefId
-                            ? "border-[#1E3A8A]"
-                            : "border-blue-200"
-                        } focus:border-[#1E3A8A]`}
-                      >
-                        <SelectValue placeholder="Select Center Chief" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-blue-200">
-                        {centerChiefUsers.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {editErrors.centerChiefId && (
-                      <p className="text-xs text-slate-800">
-                        {editErrors.centerChiefId}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Social Media
-                    </label>
-
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <Select
-                        value={editing.socialMediaPlatform}
-                        onValueChange={(value) =>
-                          setEditing((prev) => ({
-                            ...prev,
-                            socialMediaPlatform: value,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="bg-white border border-blue-200 focus:border-[#1E3A8A]">
-                          <SelectValue placeholder="Select platform" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-blue-200">
-                          {SOCIAL_MEDIA_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <div className="sm:col-span-2">
-                        <Input
-                          className="bg-white border border-blue-200 focus:border-[#1E3A8A]"
-                          value={editing.socialMediaLink}
-                          placeholder={getSocialPlaceholder(
-                            editing.socialMediaPlatform,
-                          )}
-                          onChange={(event) =>
-                            setEditing((prev) => ({
-                              ...prev,
-                              socialMediaLink: event.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-500">
-                      Optional. Displayed on the center detail page.
-                    </p>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Description
-                    </label>
-                    <Textarea
-                      className="bg-white border border-blue-200 focus:border-[#1E3A8A]"
-                      value={editing.description}
-                      placeholder="Optional short description..."
-                      onChange={(event) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          description: event.target.value,
-                        }))
-                      }
-                      rows={4}
-                    />
-                    <p className="text-xs text-slate-500">
-                      Shown on the research center detail page.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                      Research Agendum *
-                    </label>
-
-                    <div className="flex gap-2">
-                      <Input
-                        className={`bg-white border ${
-                          editErrors.researchAgendas
-                            ? "border-[#1E3A8A]"
-                            : "border-blue-200"
-                        } focus:border-[#1E3A8A]`}
-                        placeholder="Add research agendum"
-                        value={editing.agendaInput}
-                        onChange={(event) =>
-                          setEditing((prev) => ({
-                            ...prev,
-                            agendaInput: event.target.value,
-                          }))
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            addEditAgenda();
-                          }
-                        }}
-                      />
-                      <Button
-                        variant="outline"
-                        className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
-                        type="button"
-                        onClick={addEditAgenda}
-                      >
-                        Add
-                      </Button>
-                    </div>
-
-                    {editing.researchAgendas.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {editing.researchAgendas.map((agenda) => (
-                          <button
-                            key={agenda}
-                            type="button"
-                            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs hover:bg-blue-100"
-                            onClick={() => removeEditAgenda(agenda)}
-                          >
-                            {agenda} ×
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500">
-                        Required. Add at least one research agendum.
-                      </p>
-                    )}
-
-                    {editErrors.researchAgendas && (
-                      <p className="text-xs text-slate-800">
-                        {editErrors.researchAgendas}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
-                onClick={cancelEdit}
-                disabled={actionLoading}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                className="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
-                onClick={saveEdit}
-                disabled={actionLoading || editLoading || !isEditFormValid}
-              >
-                {actionLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
-      {createModalOpen ? (
-        <Dialog
-          open={createModalOpen}
-          onOpenChange={(open) => {
-            if (!open && !createLoading) {
-              setCreateModalOpen(false);
-              setCreateErrors({});
-            }
-          }}
-        >
-          <DialogContent
-            className="max-w-3xl mx-auto bg-white text-[#1E3A8A] border border-blue-200 shadow-lg"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold text-[#1E3A8A]">
-                Create Research Center
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-600">
-                Add a new research center to the research center registry.
-              </DialogDescription>
-              <p className="text-xs text-slate-500 mb-3">
-                Fields marked with <span className="text-[#1E3A8A]">*</span> are
-                required.
-              </p>
-            </DialogHeader>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Research Center Name <span>*</span>
-                </label>
-                <Input
-                  className={`bg-white border ${
-                    createErrors.name ? "border-[#1E3A8A]" : "border-blue-200"
-                  } focus:ring-0 focus:border-[#1E3A8A]`}
-                  placeholder="e.g. Center for Human-Computer Interaction"
-                  value={newResearchCenterName}
-                  onChange={(event) => {
-                    setnewResearchCenterName(event.target.value);
-                    setCreateErrors((prev) => ({ ...prev, name: "" }));
-                  }}
-                  required
-                />
-                {createErrors.name && (
-                  <p className="text-xs text-slate-800">{createErrors.name}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Code <span>*</span>
-                </label>
-                <Input
-                  className={`bg-white border ${
-                    createErrors.code ? "border-[#1E3A8A]" : "border-blue-200"
-                  } focus:border-[#1E3A8A]`}
-                  placeholder="e.g. CHCI"
-                  value={newResearchCenterCode}
-                  onChange={(event) => {
-                    setnewResearchCenterCode(
-                      event.target.value.toUpperCase().replace(/\s+/g, "_"),
-                    );
-                    setCreateErrors((prev) => ({ ...prev, code: "" }));
-                  }}
-                  required
-                />
-                {createErrors.code && (
-                  <p className="text-xs text-slate-800">{createErrors.code}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Center Chief <span>*</span>
-                </label>
-                <Select
-                  value={newCenterChiefId}
-                  onValueChange={(value) => {
-                    setNewCenterChiefId(value);
-                    setCreateErrors((prev) => ({
-                      ...prev,
-                      centerChiefId: "",
-                    }));
-                  }}
-                >
-                  <SelectTrigger
-                    className={`bg-white border ${
-                      createErrors.centerChiefId
-                        ? "border-[#1E3A8A]"
-                        : "border-blue-200"
-                    } focus:border-[#1E3A8A]`}
-                  >
-                    <SelectValue placeholder="Select Center Chief" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-blue-200">
-                    {centerChiefUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {createErrors.centerChiefId && (
-                  <p className="text-xs text-slate-800">
-                    {createErrors.centerChiefId}
-                  </p>
-                )}
-
-                <p className="text-xs text-slate-500">Select from users.</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Social Media
-                </label>
-
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <Select
-                    value={newResearchCenterSocialMediaPlatform}
-                    onValueChange={setNewResearchCenterSocialMediaPlatform}
-                  >
-                    <SelectTrigger className="bg-white border border-blue-200 focus:border-[#1E3A8A]">
-                      <SelectValue placeholder="Select platform" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-blue-200">
-                      {SOCIAL_MEDIA_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <div className="sm:col-span-2">
-                    <Input
-                      className="bg-white border border-blue-200 focus:border-[#1E3A8A]"
-                      value={newResearchCenterSocialMediaLink}
-                      placeholder={getSocialPlaceholder(
-                        newResearchCenterSocialMediaPlatform,
-                      )}
-                      onChange={(event) =>
-                        setNewResearchCenterSocialMediaLink(event.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-500">
-                  Optional. You can add this later in Edit Research Center.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Description <span>*</span>
-                </label>
-                <Textarea
-                  className="bg-white border border-blue-200 focus:border-[#1E3A8A]"
-                  value={newResearchCenterDescription}
-                  placeholder="Optional short description..."
-                  onChange={(event) =>
-                    setNewResearchCenterDescription(event.target.value)
-                  }
-                  rows={4}
-                />
-                <p className="text-xs text-slate-500">
-                  This will appear on the research center detail page.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-                  Research Agendum <span>*</span>
-                </label>
-
-                <div className="flex gap-2">
-                  <Input
-                    className={`bg-white border ${
-                      createErrors.researchAgendas
-                        ? "border-[#1E3A8A]"
-                        : "border-blue-200"
-                    } focus:border-[#1E3A8A]`}
-                    placeholder="Add research agendum"
-                    value={newAgendaInput}
-                    onChange={(event) => setNewAgendaInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        addResearchAgenda();
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
-                    type="button"
-                    onClick={addResearchAgenda}
-                  >
-                    Add
-                  </Button>
-                </div>
-
-                {newResearchAgendas.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {newResearchAgendas.map((agenda) => (
-                      <button
-                        key={agenda}
-                        type="button"
-                        className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs hover:bg-blue-100"
-                        onClick={() => removeResearchAgenda(agenda)}
-                      >
-                        {agenda} ×
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    Required. Add at least one research agendum.
-                  </p>
-                )}
-
-                {createErrors.researchAgendas && (
-                  <p className="text-xs text-slate-800">
-                    {createErrors.researchAgendas}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
-                onClick={() => {
-                  setCreateModalOpen(false);
-                  setCreateErrors({});
-                }}
-                disabled={createLoading}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                className="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
-                onClick={createResearchCenter}
-                disabled={createLoading || !isCreateFormValid}
-              >
-                {createLoading ? "Creating..." : "Create"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      <CreateResearchCenterDialog
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !createLoading) {
+            setCreateModalOpen(false);
+            setCreateErrors({});
+          }
+        }}
+        centerChiefUsers={centerChiefUsers}
+        values={createDialogValues}
+        errors={createErrors}
+        loading={createLoading}
+        isValid={isCreateFormValid}
+        onFieldChange={updateCreateValues}
+        onAddAgenda={addResearchAgenda}
+        onRemoveAgenda={removeResearchAgenda}
+        onSubmit={createResearchCenter}
+      />
     </section>
   );
 }
