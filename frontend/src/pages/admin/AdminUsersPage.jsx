@@ -59,6 +59,8 @@ import {
   UserX,
   Users,
 } from "lucide-react";
+import UsersWorkspaceHero from "./users/components/UsersWorkspaceHero";
+import UsersDirectoryCard from "./users/components/UsersDirectoryCard";
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10;
@@ -466,298 +468,25 @@ export default function AdminUsersPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
-        <div className="relative">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
-                Admin Workspace
-              </p>
-              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
-                User Management
-              </h1>
-              <p className="max-w-2xl text-sm text-[#1E3A8A]">
-                Manage account access, role assignment, password reset, and
-                account-level activity.
-              </p>
-            </div>
+      <UsersWorkspaceHero metrics={metrics} onCreateUser={openCreateModal} />
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="mono" onClick={openCreateModal}>
-                Create User
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
-            {[
-              { label: "Total Users", value: metrics.total, icon: Users },
-              { label: "Active", value: metrics.active, icon: UserCheck },
-              { label: "Inactive", value: metrics.inactive, icon: BadgeCheck },
-              { label: "Faculty", value: metrics.faculty, icon: Briefcase },
-              { label: "Students", value: metrics.students, icon: Users },
-            ].map(({ label, value, icon: Icon }) => (
-              <div
-                key={label}
-                className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                    {label}
-                  </p>
-                  <Icon className="h-4 w-4 text-[#1E3A8A]" />
-                </div>
-                <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
-        <CardHeader className="border-b border-blue-200/70 px-6 py-5">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-[#1E3A8A]">
-                Accounts Directory
-              </CardTitle>
-              <CardDescription className="text-slate-600">
-                Showing {filteredUsers.length} account(s).
-              </CardDescription>
-            </div>
-            <p className="text-sm text-slate-600">
-              {filteredUsers.length} row(s).
-            </p>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-4">
-          <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
-            <label className="relative block w-full md:max-w-xl">
-              <span className="sr-only">Search users</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
-              <Input
-                className="pl-9"
-                placeholder="Search user by name, email, or role"
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-              />
-            </label>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
-                onClick={() => setUserSearch("")}
-                disabled={!hasActiveDirectoryFilters}
-              >
-                Reset all
-              </Button>
-            </div>
-
-            {hasActiveDirectoryFilters ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  Active Filters
-                </span>
-                <button
-                  type="button"
-                  className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                  onClick={() => setUserSearch("")}
-                >
-                  Search: "{String(userSearch || "").trim()}" x
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </CardContent>
-
-        <CardContent className="p-4 pt-0">
-          <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
-            <Table className="min-w-[980px]">
-              <TableHeader className="bg-blue-50/80 text-slate-600">
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="py-10 text-center text-sm text-slate-600"
-                    >
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  pagination.items.map((user, index) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{pagination.start + index + 1}</TableCell>
-                      <TableCell>{user.full_name || "-"}</TableCell>
-                      <TableCell>{user.email || "-"}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={getAssignedRoleKey(user)}
-                          disabled={Boolean(savingUserById[user.id])}
-                          onValueChange={(value) =>
-                            openRoleConfirm(user, value)
-                          }
-                        >
-                          <SelectTrigger className="min-w-32 capitalize">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectableRoles.map((role) => (
-                              <SelectItem
-                                key={role.id || role.key}
-                                value={String(role.key || "").toLowerCase()}
-                                className="capitalize"
-                              >
-                                {role.name || role.key}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const state = !user.is_active
-                            ? "deactivated"
-                            : user.email_verified !== true
-                              ? "pending_verification"
-                              : pendingResetByUserId[user.id]
-                                ? "pending_reset"
-                                : "active";
-                          return (
-                            <Badge
-                              variant={
-                                state === "active"
-                                  ? "secondary"
-                                  : state === "pending_reset" ||
-                                      state === "pending_verification"
-                                    ? "outline"
-                                    : "destructive"
-                              }
-                            >
-                              {state === "active"
-                                ? "Active"
-                                : state === "pending_verification"
-                                  ? "Pending verification"
-                                : state === "pending_reset"
-                                  ? "Pending reset"
-                                  : "Deactivated"}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        {user.created_at
-                          ? new Date(user.created_at).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={
-                              user.is_active
-                                ? "h-8 w-8 text-slate-700 hover:bg-blue-50/60"
-                                : "h-8 w-8 text-slate-700 hover:bg-blue-50/60"
-                            }
-                            disabled={Boolean(savingUserById[user.id])}
-                            onClick={() => openStatusConfirm(user)}
-                            aria-label={
-                              savingUserById[user.id]
-                                ? "Saving status..."
-                                : user.is_active
-                                  ? `Deactivate ${user?.full_name || user?.email || "user"}`
-                                  : `Activate ${user?.full_name || user?.email || "user"}`
-                            }
-                            title={
-                              savingUserById[user.id]
-                                ? "Saving..."
-                                : user.is_active
-                                  ? "Deactivate"
-                                  : "Activate"
-                            }
-                          >
-                            {savingUserById[user.id] ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : user.is_active ? (
-                              <UserX className="h-4 w-4" />
-                            ) : (
-                              <UserCheck className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              user.email_verified !== true
-                                ? openInviteConfirm(user)
-                                : openResetConfirm(user)
-                            }
-                            aria-label={
-                              user.email_verified !== true
-                                ? `Resend setup invite to ${user?.full_name || user?.email || "user"}`
-                                : `Send password reset to ${user?.full_name || user?.email || "user"}`
-                            }
-                            title={
-                              user.email_verified !== true
-                                ? "Resend invite"
-                                : "Send reset"
-                            }
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openUserDetail(user)}
-                            aria-label={`View ${user?.full_name || user?.email || "user"}`}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-              {pagination.totalPages > 1 ? (
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={8} className="px-3 py-3">
-                      <PaginationControls
-                        page={pagination.page}
-                        totalPages={pagination.totalPages}
-                        onPageChange={setCurrentPage}
-                        className="border-0 rounded-none shadow-none bg-transparent"
-                      />
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              ) : null}
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
+      <UsersDirectoryCard
+        filteredUsers={filteredUsers}
+        userSearch={userSearch}
+        setUserSearch={setUserSearch}
+        hasActiveDirectoryFilters={hasActiveDirectoryFilters}
+        pagination={pagination}
+        setCurrentPage={setCurrentPage}
+        getAssignedRoleKey={getAssignedRoleKey}
+        savingUserById={savingUserById}
+        openRoleConfirm={openRoleConfirm}
+        selectableRoles={selectableRoles}
+        pendingResetByUserId={pendingResetByUserId}
+        openStatusConfirm={openStatusConfirm}
+        openInviteConfirm={openInviteConfirm}
+        openResetConfirm={openResetConfirm}
+        openUserDetail={openUserDetail}
+      />
       {createModalOpen ? (
         <Dialog
           open={createModalOpen}
@@ -971,5 +700,3 @@ export default function AdminUsersPage() {
     </section>
   );
 }
-
-
