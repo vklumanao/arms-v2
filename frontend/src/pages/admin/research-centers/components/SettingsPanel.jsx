@@ -40,7 +40,7 @@ export default function SettingsPanel({
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden border-blue-200/80 shadow-[0_22px_54px_rgba(30,58,138,0.12)]">
-        <CardHeader className="space-y-1 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(219,234,254,0.8))] px-6 py-5">
+        <CardHeader className="space-y-1 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(219,234,254,0.8))] px-4 py-4 sm:px-6 sm:py-5">
           <CardTitle className="text-lg font-bold text-[#1E3A8A]">
             Workspace Settings
           </CardTitle>
@@ -49,7 +49,7 @@ export default function SettingsPanel({
             directly to the registry.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           {editLoading || !isReady ? (
             <div className="animate-pulse space-y-4">
               <div className="h-10 rounded-2xl bg-blue-100/70" />
@@ -318,7 +318,7 @@ export default function SettingsPanel({
       </Card>
 
       <Card className="border-red-200 shadow-sm">
-        <CardHeader className="space-y-1 border-b border-red-100 bg-red-50/60 px-6 py-5">
+        <CardHeader className="space-y-1 border-b border-red-100 bg-red-50/60 px-4 py-4 sm:px-6 sm:py-5">
           <CardTitle className="text-lg font-bold text-red-700">
             Danger Zone
           </CardTitle>
@@ -327,7 +327,7 @@ export default function SettingsPanel({
             have been cleared.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+        <CardContent className="flex flex-col gap-4 p-4 sm:p-6 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-slate-600">
             This action is permanent and follows the existing delete safeguards.
           </div>
