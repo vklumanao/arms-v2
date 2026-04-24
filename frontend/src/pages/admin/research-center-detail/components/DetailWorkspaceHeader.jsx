@@ -39,7 +39,7 @@ export default function DetailWorkspaceHeader({
   const SocialIcon = ICON_BY_KEY[socialMeta?.iconKey] || Globe;
 
   return (
-    <div className="sticky top-3 z-30 rounded-2xl border border-blue-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.92))] p-4 shadow-[0_12px_32px_rgba(30,58,138,0.08)] backdrop-blur sm:p-5">
+    <div className="rounded-2xl border border-blue-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.92))] p-4 shadow-[0_12px_32px_rgba(30,58,138,0.08)] backdrop-blur sm:p-5">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!isCenterChief ? (
