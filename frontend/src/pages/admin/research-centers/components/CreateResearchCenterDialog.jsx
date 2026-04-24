@@ -57,6 +57,7 @@ export default function CreateResearchCenterDialog({
                 "border bg-white",
                 errors.name ? "border-[#1E3A8A]" : "border-blue-200",
               )}
+              placeholder="e.g., Center for Data Science and AI"
               value={values.name}
               onChange={(event) => onFieldChange({ name: event.target.value })}
             />
@@ -74,6 +75,7 @@ export default function CreateResearchCenterDialog({
                 "border bg-white",
                 errors.code ? "border-[#1E3A8A]" : "border-blue-200",
               )}
+              placeholder="e.g., CDSAI"
               value={values.code}
               onChange={(event) =>
                 onFieldChange({
@@ -158,6 +160,7 @@ export default function CreateResearchCenterDialog({
             </label>
             <Textarea
               className="border border-blue-200 bg-white"
+              placeholder="Write a short overview, mission, or focus of this research center..."
               value={values.description}
               onChange={(event) =>
                 onFieldChange({ description: event.target.value })
@@ -178,6 +181,7 @@ export default function CreateResearchCenterDialog({
                     ? "border-[#1E3A8A]"
                     : "border-blue-200",
                 )}
+                placeholder="e.g., Smart Agriculture"
                 value={values.agendaInput}
                 onChange={(event) =>
                   onFieldChange({ agendaInput: event.target.value })
