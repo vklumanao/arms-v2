@@ -41,7 +41,7 @@ export default function MembersPanel({
 }) {
   return (
     <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-      <CardHeader className="space-y-4 border-b border-blue-100 bg-blue-50/35 px-6 py-5">
+      <CardHeader className="space-y-4 border-b border-blue-100 bg-blue-50/35 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
             <CardTitle className="text-lg font-bold text-[#1E3A8A]">
@@ -149,7 +149,35 @@ export default function MembersPanel({
               No members matched the current filters.
             </p>
           ) : (
-            <Table>
+            <>
+              <div className="space-y-3 p-3 md:hidden">
+                {paginatedRows.map((member, index) => (
+                  <div
+                    key={member.id || `${member.email}-${index}`}
+                    className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-[#0F172A]">
+                        {(page - 1) * MEMBER_PAGE_SIZE + index + 1}.{" "}
+                        {member.full_name || "Unnamed user"}
+                      </p>
+                      <Badge
+                        variant={
+                          member.is_active !== false ? "secondary" : "destructive"
+                        }
+                      >
+                        {member.is_active !== false ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 space-y-1 text-xs text-slate-600">
+                      <p>Email: {member.email || "-"}</p>
+                      <p className="capitalize">Role: {member.role || "-"}</p>
+                      <p>Department: {member.department || "-"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Table className="hidden md:table">
               <TableHeader>
                 <TableRow>
                   <TableHead>No.</TableHead>
@@ -158,7 +186,6 @@ export default function MembersPanel({
                   <TableHead>Role</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>User ID</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,13 +211,11 @@ export default function MembersPanel({
                         {member.is_active !== false ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <code>{member.id || "-"}</code>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </>
           )}
         </div>
       </CardContent>
