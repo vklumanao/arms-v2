@@ -41,7 +41,7 @@ export default function ProjectsPanel({
 }) {
   return (
     <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-      <CardHeader className="space-y-4 border-b border-blue-100 bg-blue-50/35 px-6 py-5">
+      <CardHeader className="space-y-4 border-b border-blue-100 bg-blue-50/35 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
             <CardTitle className="text-lg font-bold text-[#1E3A8A]">
@@ -133,7 +133,32 @@ export default function ProjectsPanel({
               No projects matched the current filters.
             </p>
           ) : (
-            <Table>
+            <>
+              <div className="space-y-3 p-3 md:hidden">
+                {paginatedRows.map((project, index) => (
+                  <div
+                    key={project.id || project.name || `${project.title}-${index}`}
+                    className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+                  >
+                    <p className="text-sm font-semibold text-[#0F172A]">
+                      {(page - 1) * PROJECT_PAGE_SIZE + index + 1}.{" "}
+                      {project.title || project.name || "-"}
+                    </p>
+                    <div className="mt-3 space-y-1 text-xs text-slate-600">
+                      <p className="capitalize">Status: {project.status || "-"}</p>
+                      <p>Department: {project.department_name || "-"}</p>
+                      <p>Agenda: {project.agenda_name || "-"}</p>
+                      <p>
+                        Lead Researcher:{" "}
+                        {project.lead_researcher_name ||
+                          project.researcher_name ||
+                          "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Table className="hidden md:table">
               <TableHeader>
                 <TableRow>
                   <TableHead>No.</TableHead>
@@ -170,7 +195,8 @@ export default function ProjectsPanel({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </>
           )}
         </div>
       </CardContent>
