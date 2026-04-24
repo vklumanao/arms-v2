@@ -9,7 +9,7 @@ import {
 export default function AgendasPanel({ center, agendaNames }) {
   return (
     <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-      <CardHeader className="space-y-1 border-b border-blue-100 bg-blue-50/35 px-6 py-5">
+      <CardHeader className="space-y-1 border-b border-blue-100 bg-blue-50/35 px-4 py-4 sm:px-6 sm:py-5">
         <CardTitle className="text-lg font-bold text-[#1E3A8A]">
           Linked Agendas
         </CardTitle>
@@ -17,7 +17,7 @@ export default function AgendasPanel({ center, agendaNames }) {
           Review the agenda coverage connected to {center.name}.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         {agendaNames.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {agendaNames.map((agendaName) => (
