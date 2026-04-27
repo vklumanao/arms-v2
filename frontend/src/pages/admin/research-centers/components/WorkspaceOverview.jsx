@@ -37,15 +37,10 @@ export default function WorkspaceOverview({
               <h2 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                 {center.name}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-50/95">
+              <p className="mt-2  text-sm leading-6 text-blue-50/95">
                 {center.description ||
                   "No description has been added for this research center yet. Use Settings to add positioning, summary copy, and public-facing links."}
               </p>
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm text-blue-50/90">
-              <span>Center Chief: {center.centerChiefName || "-"}</span>
-              <span>Center ID: {center.id || "-"}</span>
-              <span>Members Active: {summary.activeMembers}</span>
             </div>
           </div>
         </div>
