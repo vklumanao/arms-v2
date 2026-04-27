@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 import { toDisplayFirstName } from "@/utils/auth";
@@ -111,140 +111,221 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] overflow-hidden px-4 py-8 sm:px-6 sm:py-12">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1050px_480px_at_6%_0%,rgba(14,165,233,0.2),transparent_58%),radial-gradient(900px_440px_at_94%_16%,rgba(30,58,138,0.18),transparent_54%),radial-gradient(980px_500px_at_50%_100%,rgba(16,185,129,0.14),transparent_60%)]" />
-
-      <div className="relative mx-auto w-full max-w-2xl">
-        <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/92 shadow-[0_22px_56px_rgba(15,23,42,0.18)] backdrop-blur">
-          <CardHeader className="border-b border-slate-200/70 bg-gradient-to-r from-[#1E3A8A] via-[#0e7490] to-[#0f766e] px-6 pb-6 pt-7 text-white sm:px-8">
-            <div className="flex items-center gap-3">
-              <img
-                src="icon.svg"
-                alt="ARMS Logo"
-                className="h-11 w-auto rounded-xl bg-white/90 p-1.5"
-              />
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/95">
-                Workspace Access
-              </p>
-            </div>
-            <h1 className="mt-5 font-['Manrope'] text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-              Sign in to ARMS
-            </h1>
-            <p className="mt-2 max-w-lg text-sm text-cyan-100/95">
-              Access your workspace and continue your research workflow.
-            </p>
-          </CardHeader>
-
-          <CardContent className="space-y-5 px-6 py-6 sm:px-8 sm:py-7">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                Use your registered institutional email.
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                Too many attempts trigger a 60-second cooldown.
-              </div>
-            </div>
-
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="login-email"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Email
-                  </label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, email: e.target.value }))
-                    }
-                    className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                    placeholder="name@institution.edu"
-                  />
+    <section className="auth-shell">
+      <div className="auth-shell-inner">
+        <div className="auth-layout">
+          <aside className="auth-spotlight">
+            <div className="auth-spotlight-inner">
+              <div className="auth-spotlight-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-spotlight-logo"
+                />
+                <div>
+                  <p className="auth-spotlight-kicker">Research Workspace</p>
+                  <p className="auth-spotlight-name">CenterPulse</p>
                 </div>
+              </div>
 
-                <div className="mt-4 space-y-2">
-                  <label
-                    htmlFor="login-password"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={form.password}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, password: e.target.value }))
-                      }
-                      className="h-11 rounded-xl border-slate-300 bg-white pr-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                      placeholder="Enter password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </Button>
+              <div className="auth-spotlight-copy">
+                <h1 className="auth-spotlight-title">
+                  Sign in and pick up where your work paused.
+                </h1>
+                <p className="auth-spotlight-text">
+                  Access research submissions, center updates, and role-based
+                  actions from one secure workspace designed for daily use.
+                </p>
+              </div>
+
+              <div className="auth-spotlight-points">
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <Mail size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Use your registered academic email
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Sign in with the same address tied to your CenterPulse
+                      account.
+                    </p>
+                  </div>
+                </div>
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <ShieldCheck size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Protected access with cooldown control
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Repeated failed attempts are throttled to keep accounts
+                      safer.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {error ? (
-                <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  {error}
+              <div className="auth-spotlight-stats">
+                <div className="auth-spotlight-stat">
+                  <p className="auth-spotlight-stat-label">Today&apos;s flow</p>
+                  <p className="auth-spotlight-stat-value">
+                    Sign in, continue your research workflow, and return
+                    directly to your dashboard.
+                  </p>
                 </div>
-              ) : null}
+              </div>
+            </div>
+          </aside>
 
-              {showVerifyHint ? (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
-                  Need a new verification link?{" "}
-                  <Link
-                    to="/verify-email"
-                    className="font-semibold underline hover:text-amber-900"
+          <Card className="auth-card auth-card-wide">
+            <CardHeader className="auth-card-hero">
+              <div className="auth-card-hero-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-card-hero-logo"
+                />
+                <span className="auth-eyebrow">Workspace Access</span>
+              </div>
+              <div className="auth-card-hero-copy">
+                <h2 className="auth-title">Welcome back</h2>
+                <p className="auth-subtitle">
+                  Sign in to continue managing submissions, outputs, and center
+                  activity.
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="auth-card-body space-y-5">
+              <div className="auth-tips-grid auth-tips-grid-2">
+                <div className="auth-tip">
+                  Use your registered institutional email.
+                </div>
+                <div className="auth-tip">
+                  Too many attempts trigger a 60-second cooldown.
+                </div>
+              </div>
+
+              <form className="auth-form-stack" onSubmit={onSubmit}>
+                <div className="auth-panel">
+                  <div className="auth-field-group">
+                    <label htmlFor="login-email" className="auth-label">
+                      Email
+                    </label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, email: e.target.value }))
+                      }
+                      className="auth-input"
+                      placeholder="name@institution.edu"
+                    />
+                  </div>
+
+                  <div className="auth-field-group mt-4">
+                    <label htmlFor="login-password" className="auth-label">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={form.password}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, password: e.target.value }))
+                        }
+                        className="auth-input pr-10"
+                        placeholder="Enter password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {error ? (
+                  <div className="notice notice-error">
+                    <div>
+                      <p className="notice-title">Unable to sign in</p>
+                      <p className="notice-text">{error}</p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {showVerifyHint ? (
+                  <div
+                    className="notice"
+                    style={{
+                      borderColor: "#fcd34d",
+                      background: "#fffbeb",
+                      color: "#92400e",
+                    }}
                   >
-                    Verify email
+                    <div>
+                      <p className="notice-title">Email not verified yet</p>
+                      <p className="notice-text">
+                        Need a new verification link?{" "}
+                        <Link
+                          to="/verify-email"
+                          className="font-semibold underline"
+                        >
+                          Verify email
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="auth-actions-row">
+                  <Link to="/forgot-password" className="auth-link-muted">
+                    Forgot password
                   </Link>
+                  <span>Secure sign-in for research center accounts</span>
                 </div>
-              ) : null}
 
-              <Button
-                disabled={loading || cooldownSeconds > 0}
-                className="h-11 w-full rounded-xl bg-gradient-to-r from-[#1E3A8A] via-[#0e7490] to-[#0f766e] font-semibold text-white shadow-[0_14px_28px_rgba(14,116,144,0.24)] transition hover:from-[#1d4ed8] hover:via-[#0369a1] hover:to-[#0f766e] disabled:cursor-not-allowed disabled:opacity-75"
-              >
-                {loading
-                  ? "Signing in..."
-                  : cooldownSeconds > 0
-                    ? `Retry in ${cooldownSeconds}s`
-                    : "Sign in"}
-              </Button>
-            </form>
-          </CardContent>
+                <Button
+                  disabled={loading || cooldownSeconds > 0}
+                  className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
+                >
+                  {loading
+                    ? "Signing in..."
+                    : cooldownSeconds > 0
+                      ? `Retry in ${cooldownSeconds}s`
+                      : "Sign in to dashboard"}
+                  <ArrowRight size={16} />
+                </Button>
+              </form>
+            </CardContent>
 
-          <CardFooter className="flex items-center justify-between border-t border-slate-200/80 px-6 py-5 text-sm sm:px-8">
-            <Link
-              to="/register"
-              className="font-semibold text-[#1E3A8A] hover:text-[#1d4ed8] hover:underline"
-            >
-              Create account
-            </Link>
-            <Link
-              to="/forgot-password"
-              className="font-semibold text-slate-600 hover:text-slate-900 hover:underline"
-            >
-              Forgot password
-            </Link>
-          </CardFooter>
-        </Card>
+            <CardFooter className="auth-footer-row">
+              <span className="text-slate-600">
+                Need a new workspace account?
+              </span>
+              <Link to="/register" className="auth-inline-link">
+                Create account
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     </section>
   );

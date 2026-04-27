@@ -304,13 +304,18 @@ export function registerAuthRoutes(app, deps) {
         email_verified_at: new Date().toISOString(),
       });
 
+      const latest = (await findUserById(user.id)) || user;
+      const authUser = await resolveCenterChiefContext(latest);
+      const token = signSession(authUser);
+      setSessionCookie(res, token);
+
       await logAuditEvent({
         actorUserId: user.id,
         eventType: "auth.email_verified",
         details: { email: user.email },
       });
 
-      return res.json({ ok: true });
+      return res.json(toAuthPayload(authUser, null));
     } catch (error) {
       return res.status(500).json({
         error: String(error?.message || "Email verification failed."),

@@ -101,6 +101,16 @@ export function AuthProvider({ children }) {
         await syncRolePermissionMapFromServer();
         return payload;
       },
+      completeAuthPayload: async (payload) => {
+        applyAuthPayload(payload);
+        if (payload?.user) {
+          sessionStorage.setItem(SESSION_HINT_KEY, "1");
+          await syncRolePermissionMapFromServer();
+        } else {
+          sessionStorage.removeItem(SESSION_HINT_KEY);
+        }
+        return payload;
+      },
       register: async (payload) => {
         const authPayload = await registerAccount(payload);
         if (!authPayload?.requires_verification) {

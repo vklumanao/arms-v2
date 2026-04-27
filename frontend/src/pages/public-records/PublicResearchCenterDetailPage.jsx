@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -69,11 +68,12 @@ const includesPublicationSignal = (value) => {
 
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
-  if (key === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (key === "ongoing" || key === "active") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (key === "completed") return "border-border bg-muted text-foreground";
+  if (key === "ongoing" || key === "active")
+    return "border-border bg-muted text-foreground";
   if (key === "delayed" || key === "rejected" || key === "cancelled")
-    return "border-red-200 bg-red-50 text-red-700";
-  return "border-blue-200 bg-blue-50 text-blue-700";
+    return "border-border bg-muted text-foreground";
+  return "border-border bg-muted text-foreground";
 };
 
 const getSocialMeta = (url) => {
@@ -103,8 +103,8 @@ function normalizeTab(value) {
   const tab = String(value || "")
     .trim()
     .toLowerCase();
-  if (["overview", "affiliates", "projects"].includes(tab)) return tab;
-  return "overview";
+  if (["affiliates", "projects"].includes(tab)) return tab;
+  return "projects";
 }
 
 export default function PublicResearchCenterDetailPage() {
@@ -119,7 +119,7 @@ export default function PublicResearchCenterDetailPage() {
   const [center, setCenter] = useState(null);
   const [records, setRecords] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("projects");
   const [affiliatesPage, setAffiliatesPage] = useState(1);
   const [projectsPage, setProjectsPage] = useState(1);
   const [projectSearch, setProjectSearch] = useState("");
@@ -373,7 +373,7 @@ export default function PublicResearchCenterDetailPage() {
     return (
       <section className="page-stack-lg">
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600">
+          <CardContent className="p-6 text-sm text-muted-foreground">
             Research center not found.
           </CardContent>
         </Card>
@@ -390,54 +390,60 @@ export default function PublicResearchCenterDetailPage() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-zinc-50 p-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-lg font-bold uppercase text-white shadow-sm">
-                {initials}
-              </div>
-              <div className="space-y-2">
-                <CardTitle className="text-2xl font-bold text-zinc-900">
-                  {center?.name || "Research Center"}
-                </CardTitle>
-
-                <CardDescription className="text-base text-zinc-600">
-                  Code:{" "}
-                  <span className="font-mono font-semibold text-zinc-800">
-                    {center?.code || center?.id || "-"}
-                  </span>{" "}
-                  · Center Chief:{" "}
-                  <span className="font-semibold text-zinc-800">
-                    {center?.center_chief_name || "-"}
-                  </span>
-                </CardDescription>
-
-                <div className="flex flex-wrap gap-3">
-                  <Badge
-                    variant="secondary"
-                    className="gap-2 text-sm px-3 py-1"
-                  >
-                    <Users className="h-5 w-5" />
+      {loading ? (
+        <Card>
+          <CardContent className="p-6 text-base text-muted-foreground">
+            Loading research center...
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <EmptyState title="Unable to load" description={error} />
+      ) : !center ? (
+        <EmptyState
+          title="Research center not found"
+          description="The requested research center could not be found or you do not have access."
+        />
+      ) : (
+        <>
+          <Card className="sticky top-20 z-20 overflow-hidden border border-border bg-card/95 shadow-sm backdrop-blur">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-lg font-bold uppercase text-background shadow-sm">
+                    {initials}
+                  </div>
+                  <div className="space-y-2">
+                    <h1 className="text-2xl font-bold text-foreground">
+                      {center?.name || "Research Center"}
+                    </h1>
+                    <p className="text-base text-muted-foreground">
+                      Code:{" "}
+                      <span className="font-mono font-semibold text-foreground">
+                        {center?.code || center?.id || "-"}
+                      </span>{" "}
+                      | Center Chief:{" "}
+                      <span className="font-semibold text-foreground">
+                        {center?.center_chief_name || "-"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="gap-2 text-sm px-3 py-1">
+                    <Users className="h-4 w-4" />
                     {summary.researcherCount} affiliates
                   </Badge>
-
-                  <Badge
-                    variant="secondary"
-                    className="gap-2 text-sm px-3 py-1"
-                  >
-                    <FolderKanban className="h-5 w-5" />
+                  <Badge variant="secondary" className="gap-2 text-sm px-3 py-1">
+                    <FolderKanban className="h-4 w-4" />
                     {summary.projectCount} projects
                   </Badge>
-
                   <Badge variant="outline" className="gap-2 text-sm px-3 py-1">
-                    <Building2 className="h-5 w-5" />
+                    <Building2 className="h-4 w-4" />
                     {center?.agenda_count || centerInfo.agendas.length} agenda
                   </Badge>
-
                   {socialLink ? (
                     <a
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-border hover:text-foreground"
                       href={socialLink}
                       target="_blank"
                       rel="noreferrer"
@@ -449,168 +455,239 @@ export default function PublicResearchCenterDetailPage() {
                   ) : null}
                 </div>
               </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5 p-6">
-          {loading ? (
-            <p className="text-base text-zinc-600">
-              Loading research center...
-            </p>
-          ) : error ? (
-            <EmptyState title="Unable to load" description={error} />
-          ) : !center ? (
-            <EmptyState
-              title="Research center not found"
-              description="The requested research center could not be found or you do not have access."
-            />
-          ) : (
-            <>
-              <div className="rounded-lg border border-[var(--border)] bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
-                  Description
-                </p>
-                <p className="mt-2 whitespace-pre-wrap text-base text-zinc-700">
-                  {String(center?.description || "").trim() ||
-                    "No description provided."}
-                </p>
-              </div>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
-                  Research Agenda
-                </p>
-                {agendaDisplay.length ? (
-                  <div className="flex flex-wrap gap-3">
-                    {agendaDisplay.map((agenda) => (
-                      <span
-                        key={agenda}
-                        className="inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-base font-semibold text-zinc-700"
-                      >
-                        {agenda}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-base text-zinc-600">No agenda linked.</p>
-                )}
-              </div>
-
-              <Tabs
-                value={normalizeTab(activeTab)}
-                onValueChange={setActiveTab}
-              >
-                <TabsList className="text-base">
-                  <TabsTrigger value="overview" className="text-base">
+          <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+            <aside className="space-y-4">
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+                  <CardTitle className="text-base font-semibold text-foreground">
                     Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="affiliates" className="text-base">
-                    Affiliates
-                  </TabsTrigger>
-                  <TabsTrigger value="projects" className="text-base">
-                    Projects
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview" className="mt-5 space-y-5">
-                  <div className="grid gap-4 md:grid-cols-3">
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      Description
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {String(center?.description || "").trim() ||
+                        "No description provided."}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
                     {[
-                      {
-                        label: "Members",
-                        value: summary.researcherCount,
-                      },
-                      {
-                        label: "Projects",
-                        value: summary.projectCount,
-                      },
-                      {
-                        label: "Agenda",
-                        value: agendaDisplay.length,
-                      },
+                      { label: "Members", value: summary.researcherCount },
+                      { label: "Projects", value: summary.projectCount },
+                      { label: "Agenda", value: agendaDisplay.length },
                     ].map((item) => (
-                      <Card key={item.label} className="bg-muted/30">
-                        <CardContent className="p-5">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">
-                            {item.label}
-                          </p>
-                          <p className="mt-2 text-3xl font-bold text-zinc-900">
-                            {item.value}
-                          </p>
-                          <p className="mt-1 text-sm text-zinc-600">
-                            {item.desc}
-                          </p>
-                        </CardContent>
-                      </Card>
+                      <div
+                        key={item.label}
+                        className="rounded-lg border border-border bg-muted/40 p-3 text-center"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-xl font-bold text-foreground">
+                          {item.value}
+                        </p>
+                      </div>
                     ))}
                   </div>
-                </TabsContent>
+                </CardContent>
+              </Card>
 
-                <TabsContent value="affiliates" className="mt-5 space-y-4">
-                  <Card className="overflow-hidden">
-                    <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                      <div>
-                        <CardTitle className="text-lg font-bold text-zinc-900">
-                          Linked Affiliates
-                        </CardTitle>
-                        <CardDescription className="text-base">
-                          Showing {normalizedAffiliateRows.length} affiliate(s).
-                        </CardDescription>
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Research Agenda
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5">
+                  {agendaDisplay.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {agendaDisplay.map((agenda) => (
+                        <span
+                          key={agenda}
+                          className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold text-muted-foreground"
+                        >
+                          {agenda}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No agenda linked.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </aside>
+
+            <Card className="overflow-hidden">
+              <Tabs value={normalizeTab(activeTab)} onValueChange={setActiveTab}>
+                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
+                  <TabsList className="w-full justify-start gap-2 bg-transparent p-0">
+                    <TabsTrigger value="projects" className="text-base">
+                      Projects
+                    </TabsTrigger>
+                    <TabsTrigger value="affiliates" className="text-base">
+                      Affiliates
+                    </TabsTrigger>
+                  </TabsList>
+                </CardHeader>
+
+                <CardContent className="p-0">
+                  <TabsContent value="projects" className="m-0 space-y-0">
+                    <div className="border-b border-border p-4">
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <Input
+                          placeholder="Search project or lead researcher"
+                          value={projectSearch}
+                          onChange={(event) => setProjectSearch(event.target.value)}
+                        />
+                        <Select value={projectStatus} onValueChange={setProjectStatus}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All status</SelectItem>
+                            <SelectItem value="ongoing">Ongoing</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="delayed">Delayed</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={projectYear} onValueChange={setProjectYear}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All years</SelectItem>
+                            {projectYearOptions.map((year) => (
+                              <SelectItem key={year} value={year}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </CardHeader>
+                    </div>
 
+                    {filteredProjects.length === 0 ? (
+                      <div className="p-6">
+                        <EmptyState
+                          title="No projects"
+                          description="No linked projects found for this research center."
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="overflow-x-auto">
+                          <Table className="min-w-[980px] text-base">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-sm">No.</TableHead>
+                                <TableHead className="text-sm">Project</TableHead>
+                                <TableHead className="text-sm">Status</TableHead>
+                                <TableHead className="text-sm">Year</TableHead>
+                                <TableHead className="text-sm">
+                                  Lead Researcher
+                                </TableHead>
+                                <TableHead className="text-sm text-right">
+                                  Action
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {paginatedProjects.map((record, idx) => (
+                                <TableRow key={record.id}>
+                                  <TableCell>
+                                    {(projectsPage - 1) * PAGE_SIZE + idx + 1}
+                                  </TableCell>
+                                  <TableCell className="font-medium text-foreground">
+                                    {record.title || "Untitled project"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-sm ${statusBadgeClass(record.status)}`}
+                                    >
+                                      {formatStatusLabel(record.status) || "-"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{record.year || "-"}</TableCell>
+                                  <TableCell>
+                                    {record.lead_researcher || "-"}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-9 w-9"
+                                      onClick={() => openDetails(record.id)}
+                                    >
+                                      <Eye className="h-5 w-5" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <PaginationControls
+                          page={projectsPage}
+                          totalPages={projectsTotalPages}
+                          onPageChange={setProjectsPage}
+                          className="border-t"
+                        />
+                      </>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="affiliates" className="m-0 space-y-0">
                     {normalizedAffiliateRows.length === 0 ? (
-                      <CardContent className="p-6">
+                      <div className="p-6">
                         <EmptyState
                           title="No affiliates"
                           description="No linked affiliates found for this research center."
                         />
-                      </CardContent>
+                      </div>
                     ) : (
                       <>
-                        <CardContent className="p-0">
-                          <div className="overflow-x-auto">
-                            <Table className="min-w-[980px] text-base">
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-sm">No.</TableHead>
-                                  <TableHead className="text-sm">
-                                    Full Name
-                                  </TableHead>
-                                  <TableHead className="text-sm">
-                                    Email
-                                  </TableHead>
-                                  <TableHead className="text-sm">
-                                    Role
-                                  </TableHead>
-                                  <TableHead className="text-sm">
-                                    Department
-                                  </TableHead>
+                        <div className="overflow-x-auto">
+                          <Table className="min-w-[980px] text-base">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-sm">No.</TableHead>
+                                <TableHead className="text-sm">Full Name</TableHead>
+                                <TableHead className="text-sm">Email</TableHead>
+                                <TableHead className="text-sm">Role</TableHead>
+                                <TableHead className="text-sm">Department</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {paginatedAffiliates.map((row, idx) => (
+                                <TableRow key={row.id || `${idx}`}>
+                                  <TableCell>
+                                    {(affiliatesPage - 1) * PAGE_SIZE + idx + 1}
+                                  </TableCell>
+                                  <TableCell className="font-medium text-foreground">
+                                    {row?.full_name || "-"}
+                                  </TableCell>
+                                  <TableCell>{row?.email || "-"}</TableCell>
+                                  <TableCell className="capitalize">
+                                    {row?.role || "-"}
+                                  </TableCell>
+                                  <TableCell>{row?.department || "-"}</TableCell>
                                 </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {paginatedAffiliates.map((row, idx) => (
-                                  <TableRow key={row.id || `${idx}`}>
-                                    <TableCell>
-                                      {(affiliatesPage - 1) * PAGE_SIZE +
-                                        idx +
-                                        1}
-                                    </TableCell>
-                                    <TableCell className="font-medium text-zinc-900">
-                                      {row?.full_name || "-"}
-                                    </TableCell>
-                                    <TableCell>{row?.email || "-"}</TableCell>
-                                    <TableCell className="capitalize">
-                                      {row?.role || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                      {row?.department || "-"}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CardContent>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                         <PaginationControls
                           page={affiliatesPage}
                           totalPages={affiliatesTotalPages}
@@ -619,97 +696,13 @@ export default function PublicResearchCenterDetailPage() {
                         />
                       </>
                     )}
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="projects" className="mt-5 space-y-4">
-                  {filteredProjects.length === 0 ? (
-                    <EmptyState
-                      title="No projects"
-                      description="No linked projects found for this research center."
-                    />
-                  ) : (
-                    <Card className="overflow-hidden">
-                      <CardHeader className="border-b border-[var(--border)] px-6 py-5">
-                        <div className="space-y-2">
-                          <CardTitle className="text-lg font-bold text-zinc-900">
-                            Linked Projects
-                          </CardTitle>
-                          <CardDescription className="text-base">
-                            Showing {filteredProjects.length} project(s).
-                          </CardDescription>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="p-0">
-                        <Table className="min-w-[980px] text-base">
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-sm">No.</TableHead>
-                              <TableHead className="text-sm">Project</TableHead>
-                              <TableHead className="text-sm">Status</TableHead>
-                              <TableHead className="text-sm">Year</TableHead>
-                              <TableHead className="text-sm">
-                                Lead Researcher
-                              </TableHead>
-                              <TableHead className="text-sm text-right">
-                                Action
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-
-                          <TableBody>
-                            {paginatedProjects.map((record, idx) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {(projectsPage - 1) * PAGE_SIZE + idx + 1}
-                                </TableCell>
-                                <TableCell className="font-medium text-zinc-900">
-                                  {record.title || "Untitled project"}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-sm ${statusBadgeClass(record.status)}`}
-                                  >
-                                    {formatStatusLabel(record.status) || "-"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{record.year || "-"}</TableCell>
-                                <TableCell>
-                                  {record.lead_researcher || "-"}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-9 w-9"
-                                    onClick={() => openDetails(record.id)}
-                                  >
-                                    <Eye className="h-5 w-5" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-
-                      <PaginationControls
-                        page={projectsPage}
-                        totalPages={projectsTotalPages}
-                        onPageChange={setProjectsPage}
-                        className="border-t"
-                      />
-                    </Card>
-                  )}
-                </TabsContent>
+                  </TabsContent>
+                </CardContent>
               </Tabs>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </Card>
+          </div>
+        </>
+      )}
     </section>
   );
 }

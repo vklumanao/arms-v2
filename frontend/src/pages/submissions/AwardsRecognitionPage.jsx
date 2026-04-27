@@ -34,6 +34,7 @@ import {
   listAwardRecognitionRecords,
   listCenterChiefAwardRecognitionRecords,
   fetchAllProjects,
+  fetchCenterChiefProjects,
   fetchUserProjects,
 } from "@/services/submissions";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
@@ -216,7 +217,9 @@ export default function AwardsRecognitionPage() {
       setLoadingProjects(true);
       const response = isAdmin
         ? await fetchAllProjects()
-        : await fetchUserProjects({ userId: profile?.id });
+        : isCenterChief
+          ? await fetchCenterChiefProjects()
+          : await fetchUserProjects({ userId: profile?.id });
       if (cancelled) return;
       if (response?.error) {
         setProjectOptions([]);
@@ -231,7 +234,7 @@ export default function AwardsRecognitionPage() {
     return () => {
       cancelled = true;
     };
-  }, [isAdmin, profile?.id]);
+  }, [isAdmin, isCenterChief, profile?.id]);
 
   const baseSearchRows = useMemo(() => {
     const query = String(searchTerm || "")

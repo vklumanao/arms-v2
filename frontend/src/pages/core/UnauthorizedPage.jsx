@@ -21,7 +21,9 @@ export default function UnauthorizedPage() {
   const requestedPath = `${location.pathname}${location.search || ""}${
     location.hash || ""
   }`;
-  const showRequestAccess = Boolean(user && profile && !isAdminLikeProfile(profile));
+  const showRequestAccess = Boolean(
+    user && profile && !isAdminLikeProfile(profile),
+  );
   const requestAccessHref = `mailto:?subject=${encodeURIComponent(
     "ARMS Access Request",
   )}&body=${encodeURIComponent(
@@ -51,7 +53,8 @@ export default function UnauthorizedPage() {
               a page you can access.
             </p>
             <p className="mx-auto mt-3 max-w-xl rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E3A8A] sm:text-sm">
-              Requested page: <span className="font-semibold">{requestedPath}</span>
+              Requested page:{" "}
+              <span className="font-semibold">{requestedPath}</span>
             </p>
 
             <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">

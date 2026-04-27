@@ -244,8 +244,6 @@ export default function ResearchOutputsPage() {
               "[ResearchOutputs] Missing output_type in API rows:",
               missingOutputType.slice(0, 5),
             );
-          } else {
-            console.info("[ResearchOutputs] output_type present for all rows.");
           }
         }
         if (!cancelled) {

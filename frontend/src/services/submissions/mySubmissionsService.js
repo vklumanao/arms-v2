@@ -36,37 +36,10 @@ export async function fetchLinkedProjects() {
 
 export async function fetchAllProjects() {
   try {
-    // Backend does not expose /submissions/projects.
-    // Use available scoped endpoints to avoid 404 noise in the client.
-    const minePayload = await apiFetch("/submissions/mine/projects");
-    const mineData = Array.isArray(minePayload?.data) ? minePayload.data : [];
-    if (mineData.length > 0) {
-      return { data: mineData, error: null };
-    }
-
-    const centerChiefPayload = await apiFetch(
-      "/submissions/center-chief/projects",
-    );
-    return {
-      data: Array.isArray(centerChiefPayload?.data)
-        ? centerChiefPayload.data
-        : [],
-      error: null,
-    };
-  } catch (mineError) {
-    try {
-      const centerChiefPayload = await apiFetch(
-        "/submissions/center-chief/projects",
-      );
-      return {
-        data: Array.isArray(centerChiefPayload?.data)
-          ? centerChiefPayload.data
-          : [],
-        error: null,
-      };
-    } catch (centerChiefError) {
-      return { data: [], error: mineError || centerChiefError };
-    }
+    const payload = await apiFetch("/submissions/mine/projects");
+    return { data: payload?.data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
   }
 }
 

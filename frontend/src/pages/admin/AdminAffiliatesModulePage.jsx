@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Download,
-  Eye,
   LayoutGrid,
   List,
-  Pencil,
+  MoreHorizontal,
+  RefreshCw,
   Search,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/cn";
 import {
   DropdownMenu,
@@ -35,15 +34,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import PaginationControls from "@/components/navigation/PaginationControls";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useReferenceData } from "@/hooks/useReferenceData";
@@ -61,6 +57,7 @@ import {
   updateAffiliateProfile,
 } from "@/services/admin";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
+import AffiliatesDirectoryContent from "./affiliates-module/components/AffiliatesDirectoryContent";
 
 export default function AdminAffiliatesModulePage() {
   const navigate = useNavigate();
@@ -84,6 +81,9 @@ export default function AdminAffiliatesModulePage() {
   const [editForm, setEditForm] = useState(createAffiliateEditForm({}));
   const [savingEdit, setSavingEdit] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileFilterSheetOpen, setMobileFilterSheetOpen] = useState(false);
   const { profile } = useAuth();
   const roleKeys = Array.isArray(profile?.roles)
     ? profile.roles.map((entry) => entry?.key)
@@ -113,18 +113,19 @@ export default function AdminAffiliatesModulePage() {
     if (message) toast.success("Action completed", message);
   }, [message, toast]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async ({ silent = false } = {}) => {
     setError("");
     setMessage("");
-    setDataLoading(true);
+    if (!silent) setDataLoading(true);
     try {
       const payload = await fetchAffiliateRegistry();
       setRows(payload?.rows || []);
       setCenters(payload?.centers || []);
+      setLastSyncedAt(new Date());
     } catch (loadError) {
       setError(loadError.message || "Unable to load affiliate data.");
     } finally {
-      setDataLoading(false);
+      if (!silent) setDataLoading(false);
     }
   }, []);
 
@@ -133,8 +134,23 @@ export default function AdminAffiliatesModulePage() {
   }, [loadData]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleViewportChange = () => setIsMobile(mediaQuery.matches);
+    handleViewportChange();
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => mediaQuery.removeEventListener("change", handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && viewMode === "grid") {
+      setViewMode("list");
+    }
+  }, [isMobile, viewMode]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
-      loadData();
+      loadData({ silent: true });
     }, 15000);
     return () => clearInterval(timer);
   }, [loadData]);
@@ -145,13 +161,28 @@ export default function AdminAffiliatesModulePage() {
   const affiliateMetrics = useMemo(() => {
     const total = rows.length;
     const active = rows.filter((row) => row.is_active).length;
+    const faculty = rows.filter(
+      (row) =>
+        String(row.role || "")
+          .trim()
+          .toLowerCase() === "faculty",
+    ).length;
     const gsFaculty = rows.filter((row) => row.is_gs_faculty).length;
     return {
       total,
       active,
+      faculty,
       gsFaculty,
     };
   }, [rows]);
+
+  const syncLabel = useMemo(() => {
+    if (!lastSyncedAt) return "Not synced yet";
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(lastSyncedAt);
+  }, [lastSyncedAt]);
 
   const quickFilterChips = useMemo(
     () => [
@@ -195,6 +226,57 @@ export default function AdminAffiliatesModulePage() {
     String(filters.sortBy || "").trim() !== "name_asc" ||
     String(filters.centerId || "").trim() !== "all" ||
     String(filters.department || "").trim() !== "all";
+
+  const activeFilterPills = useMemo(() => {
+    const pills = [];
+    if (filters.search.trim()) {
+      pills.push({
+        key: "search",
+        label: `Search: "${filters.search.trim()}"`,
+        onRemove: () =>
+          setFilters((prev) => ({
+            ...prev,
+            search: "",
+          })),
+      });
+    }
+    if (quickFilter !== "all") {
+      pills.push({
+        key: "quickFilter",
+        label:
+          quickFilterChips.find((chip) => chip.key === quickFilter)?.label ||
+          "Quick filter",
+        onRemove: () => setQuickFilter("all"),
+      });
+    }
+    if (String(filters.centerId || "").trim() !== "all") {
+      pills.push({
+        key: "center",
+        label: "Center",
+        onRemove: () =>
+          setFilters((prev) => ({
+            ...prev,
+            centerId: "all",
+          })),
+      });
+    }
+    if (String(filters.department || "").trim() !== "all") {
+      pills.push({
+        key: "department",
+        label: "Department",
+        onRemove: () =>
+          setFilters((prev) => ({
+            ...prev,
+            department: "all",
+          })),
+      });
+    }
+    return pills;
+  }, [filters, quickFilter, quickFilterChips]);
+
+  const visibleMobilePills = activeFilterPills.slice(0, 2);
+  const hiddenMobilePillCount = Math.max(activeFilterPills.length - 2, 0);
+  const effectiveViewMode = isMobile ? "list" : viewMode;
   const departmentOptions = useMemo(() => {
     const seen = new Set();
     const options = [];
@@ -487,653 +569,668 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-sky-50 p-5 shadow-sm md:p-6">
         <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
-        <div className="relative">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-200/45 blur-3xl" />
+        <div className="relative flex flex-col gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1E3A8A]">
+            Admin Workspace
+          </p>
+          <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
+            Affiliate Directory
+          </h1>
+          <p className="max-w-3xl text-sm text-[#1E3A8A]">
+            Find, filter, review, and update affiliate records from a unified
+            responsive workspace.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              Total
+            </p>
+            <Users className="h-4 w-4 text-[#1E3A8A]" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            {affiliateMetrics.total}
+          </p>
+        </article>
+        <article className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              Active
+            </p>
+            <Users className="h-4 w-4 text-[#1E3A8A]" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            {affiliateMetrics.active}
+          </p>
+        </article>
+        <article className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:block">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              Faculty
+            </p>
+            <Users className="h-4 w-4 text-[#1E3A8A]" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            {affiliateMetrics.faculty}
+          </p>
+        </article>
+        <article className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:block">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              GS Faculty
+            </p>
+            <Users className="h-4 w-4 text-[#1E3A8A]" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            {affiliateMetrics.gsFaculty}
+          </p>
+        </article>
+      </div>
+      <details className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:hidden">
+        <summary className="cursor-pointer text-sm font-semibold text-[#1E3A8A]">
+          More stats
+        </summary>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              Faculty
+            </p>
+            <p className="mt-1 text-xl font-bold text-[#1E3A8A]">
+              {affiliateMetrics.faculty}
+            </p>
+          </div>
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              GS Faculty
+            </p>
+            <p className="mt-1 text-xl font-bold text-[#1E3A8A]">
+              {affiliateMetrics.gsFaculty}
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
+        <aside className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm xl:sticky xl:top-3 xl:block">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-[#1E3A8A]">Filters</h2>
+            <p className="text-xs text-slate-500">
+              Refine affiliates by search, role, center, and department.
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <label className="relative block">
+              <span className="sr-only">Search affiliates</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+              <Input
+                className="border-blue-200/80 bg-white pl-8"
+                placeholder="Search affiliates"
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
-                Admin Workspace
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                Quick Filter
               </p>
-              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
-                Affiliate Workspace
-              </h1>
-              <p className="max-w-2xl text-sm text-[#1E3A8A]">
-                Manage affiliate records, review membership status, and export
-                directory reports from one panel.
-              </p>
+              <div className="grid gap-2">
+                {quickFilterChips.map((chip) => (
+                  <Button
+                    key={chip.key}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-between rounded-xl border-blue-200/80 text-left text-xs",
+                      quickFilter === chip.key
+                        ? "bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
+                        : "bg-white text-[#1E3A8A] hover:bg-blue-50",
+                    )}
+                    onClick={() => setQuickFilter(chip.key)}
+                  >
+                    <span>{chip.label}</span>
+                    <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold">
+                      {chip.count}
+                    </span>
+                  </Button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {canExportAffiliates ? (
+            {isAdmin ? (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                  Research Center
+                </p>
+                <Select
+                  value={filters.centerId}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      centerId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-10 border-blue-200/80 bg-white text-xs">
+                    <SelectValue placeholder="Research Center" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Research Center</SelectItem>
+                    {centers.map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                Department
+              </p>
+              <Select
+                value={filters.department}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    department: value,
+                  }))
+                }
+              >
+                <SelectTrigger className="h-10 border-blue-200/80 bg-white text-xs">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Department</SelectItem>
+                  {departmentOptions.map((department) => (
+                    <SelectItem
+                      key={department.id}
+                      value={String(department.name || "").trim()}
+                    >
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 w-full border border-dashed border-blue-200/80 text-xs text-[#1E3A8A] hover:bg-blue-50"
+              onClick={() => {
+                setQuickFilter("all");
+                setFilters(createAffiliateModuleFilters());
+              }}
+            >
+              Reset all
+            </Button>
+          </div>
+
+          {hasActiveDirectoryFilters ? (
+            <div className="mt-4 border-t border-blue-100 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                Active Filters
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {activeFilterPills.map((pill) => (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                    onClick={pill.onRemove}
+                  >
+                    {pill.label} x
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </aside>
+
+        <div className="min-w-0 space-y-4">
+          <div className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm xl:hidden">
+            <div className="space-y-3">
+              <label className="relative block">
+                <span className="sr-only">Search affiliates</span>
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+                <Input
+                  className="border-blue-200/80 bg-white pl-8"
+                  placeholder="Search affiliates"
+                  value={filters.search}
+                  onChange={(event) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <div className="grid grid-cols-[minmax(0,1fr)_150px_auto] gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-blue-200/80 text-xs text-[#1E3A8A]"
+                  onClick={() => setMobileFilterSheetOpen(true)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters ({activeFilterPills.length})
+                </Button>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      sortBy: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-9 border-blue-200/80 bg-white px-2 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name_asc">Name A-Z</SelectItem>
+                    <SelectItem value="name_desc">Name Z-A</SelectItem>
+                    <SelectItem value="recent_desc">Recent</SelectItem>
+                    <SelectItem value="recent_asc">Oldest</SelectItem>
+                  </SelectContent>
+                </Select>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={!filteredRows.length || Boolean(exportingType)}
-                      className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
+                      size="icon"
+                      className="h-9 w-9 border-blue-200/80 text-[#1E3A8A]"
+                      aria-label="More actions"
                     >
-                      <Download className="h-4 w-4" />
-                      Export
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="bg-white border border-blue-200 shadow-md"
+                    className="border border-blue-200 bg-white shadow-md"
                   >
                     <DropdownMenuItem
                       className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                      onSelect={exportAsCsv}
-                      disabled={!filteredRows.length || Boolean(exportingType)}
+                      onSelect={() => loadData()}
+                      disabled={dataLoading}
                     >
-                      {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                      Refresh
                     </DropdownMenuItem>
+                    {canExportAffiliates ? (
+                      <>
+                        <DropdownMenuItem
+                          className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                          onSelect={exportAsCsv}
+                          disabled={
+                            !filteredRows.length || Boolean(exportingType)
+                          }
+                        >
+                          {exportingType === "csv"
+                            ? "Exporting..."
+                            : "Export CSV"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                          onSelect={exportAsPdf}
+                          disabled={
+                            !filteredRows.length || Boolean(exportingType)
+                          }
+                        >
+                          {exportingType === "pdf"
+                            ? "Exporting..."
+                            : "Export PDF"}
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
                     <DropdownMenuItem
                       className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
-                      onSelect={exportAsPdf}
-                      disabled={!filteredRows.length || Boolean(exportingType)}
+                      onSelect={() => setViewMode("list")}
                     >
-                      {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                      View: List
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  Affiliates
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
               </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.total}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  Active
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.active}
-              </p>
-            </div>
-            <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                  GS Faculty
-                </p>
-                <Users className="h-4 w-4 text-[#1E3A8A]" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                {affiliateMetrics.gsFaculty}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-[#1E3A8A]">
-              Affiliate Directory
-            </h2>
-            <p className="text-sm text-[#1E3A8A]">
-              Showing {filteredRows.length} filtered affiliate record(s).
-            </p>
-          </div>
-
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-blue-200/80 bg-blue-50/60 p-1 lg:w-auto">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "grid"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
-              )}
-            >
-              <LayoutGrid size={14} />
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "list"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
-              )}
-            >
-              <List size={14} />
-              List
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_14rem] xl:items-center xl:justify-between">
-          <label className="relative w-full">
-            <span className="sr-only">Search affiliates</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
-            <Input
-              className="border-blue-200/80 bg-white pl-8"
-              placeholder="Search name, email, role, department, or id"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  search: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <Select
-            value={filters.sortBy}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                sortBy: value,
-              }))
-            }
-          >
-            <SelectTrigger className="border-blue-200/80 bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
-              <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
-              <SelectItem value="recent_desc">
-                Sort: Recently updated
-              </SelectItem>
-              <SelectItem value="recent_asc">
-                Sort: Least recently updated
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {quickFilterChips.map((chip) => (
-            <Button
-              key={chip.key}
-              type="button"
-              size="sm"
-              variant="outline"
-              className={cn(
-                "rounded-full border-blue-200/80 px-4 text-xs",
-                quickFilter === chip.key
-                  ? "bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
-                  : "bg-white text-[#1E3A8A] hover:bg-blue-50/60",
-              )}
-              onClick={() => setQuickFilter(chip.key)}
-            >
-              {chip.label}
-              <span
-                className={cn(
-                  "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                  quickFilter === chip.key
-                    ? "bg-[#1E3A8A]/10 text-[#1E3A8A]"
-                    : "bg-blue-50 text-[#1E3A8A]",
-                )}
-              >
-                {chip.count}
-              </span>
-            </Button>
-          ))}
-
-          {isAdmin ? (
-            <Select
-              value={filters.centerId}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  centerId: value,
-                }))
-              }
-            >
-              <SelectTrigger className="h-8 w-[160px] rounded-full border-blue-200/80 bg-white px-4 text-xs">
-                <SelectValue placeholder="Research Center" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Research Center</SelectItem>
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    {center.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-
-          <Select
-            value={filters.department}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                department: value,
-              }))
-            }
-          >
-            <SelectTrigger className="h-8 w-[160px] rounded-full border-blue-200/80 bg-white px-4 text-xs">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Department</SelectItem>
-              {departmentOptions.map((department) => (
-                <SelectItem
-                  key={department.id}
-                  value={String(department.name || "").trim()}
-                >
-                  {department.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
-            onClick={() => {
-              setQuickFilter("all");
-              setFilters(createAffiliateModuleFilters());
-            }}
-          >
-            Reset all
-          </Button>
-        </div>
-
-        {hasActiveDirectoryFilters ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-              Active Filters
-            </span>
-            {filters.search.trim() ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: "",
-                  }))
-                }
-              >
-                Search: "{filters.search.trim()}" x
-              </button>
-            ) : null}
-            {quickFilter !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() => setQuickFilter("all")}
-              >
-                {quickFilterChips.find((chip) => chip.key === quickFilter)
-                  ?.label || "Quick filter"}{" "}
-                x
-              </button>
-            ) : null}
-            {String(filters.centerId || "").trim() !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    centerId: "all",
-                  }))
-                }
-              >
-                Center x
-              </button>
-            ) : null}
-            {String(filters.department || "").trim() !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    department: "all",
-                  }))
-                }
-              >
-                Department x
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-        <CardContent className="p-4">
-          {dataLoading ? (
-            viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                  (_, index) => (
-                    <Card
-                      key={`affiliate-skeleton-grid-${index}`}
-                      className="rounded-2xl border border-blue-200/80 bg-white/80 p-5 shadow-sm"
-                    >
-                      <div className="animate-pulse space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="w-full space-y-2">
-                            <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                            <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
-                            <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
-                          </div>
-                          <div className="h-6 w-16 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-6 w-20 rounded-full bg-blue-100/80" />
-                          <div className="h-6 w-24 rounded-full bg-blue-100/80" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                          <div className="h-24 rounded-lg bg-blue-100/70" />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                          <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                        </div>
-                      </div>
-                    </Card>
-                  ),
-                )}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm p-4">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-8 w-full rounded-lg bg-blue-100/70" />
-                  {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
-                    (_, index) => (
-                      <div
-                        key={`affiliate-skeleton-list-${index}`}
-                        className="h-12 w-full rounded-lg bg-blue-100/70"
-                      />
+              {hasActiveDirectoryFilters ? (
+                <div className="flex flex-wrap items-center gap-2 border-t border-blue-100 pt-3">
+                  {(isMobile ? visibleMobilePills : activeFilterPills).map(
+                    (pill) => (
+                      <button
+                        key={pill.key}
+                        type="button"
+                        className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                        onClick={pill.onRemove}
+                      >
+                        {pill.label} x
+                      </button>
                     ),
                   )}
-                </div>
-              </div>
-            )
-          ) : null}
-
-          {!dataLoading && filteredRows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
-              No affiliate records found.
-            </div>
-          ) : null}
-
-          {!dataLoading && viewMode === "grid" && filteredRows.length > 0 ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {pagination.items.map((row, index) => (
-                  <Card
-                    key={row.id || `${row.email}-${index}`}
-                    className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
-                            #{pagination.start + index + 1} ·{" "}
-                            {String(row.role || "affiliate")}
-                          </p>
-                          <h3 className="mt-1 truncate text-base font-bold text-[#1E3A8A]">
-                            {row.full_name || "-"}
-                          </h3>
-                          <p className="mt-1 truncate text-sm text-[#1E3A8A]">
-                            {row.email || "-"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 text-[#1E3A8A]"
-                        >
-                          Dept: {row.department || "-"}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="border-blue-200/80 text-[#1E3A8A]"
-                        >
-                          Center:{" "}
-                          {row.ckan_org_id
-                            ? centerNameById[row.ckan_org_id] || "-"
-                            : "-"}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 text-[#1E3A8A]"
-                        >
-                          GS: {row.is_gs_faculty ? "Yes" : "No"}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                            Projects
-                          </p>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {Number(row.research_project_count || 0)}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            Publications {Number(row.publication_count || 0)}
-                          </p>
-                        </div>
-
-                        <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
-                            Outputs
-                          </p>
-                          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
-                            {Number(row.awards_count || 0)}
-                          </p>
-                          <p className="mt-1 text-xs text-[#1E3A8A]">
-                            IPs {Number(row.ip_count || 0)} · Works{" "}
-                            {Number(row.creative_work_count || 0)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => goToAffiliateDetail(row)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-
-                        {canEditAffiliates ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9"
-                            disabled={row.source === "ckan_only"}
-                            onClick={() => openEditModal(row)}
-                            title={
-                              row.source === "ckan_only"
-                                ? "Edit disabled (CKAN only)"
-                                : "Edit"
-                            }
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        ) : null}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {pagination.totalPages > 1 ? (
-                <div className="mt-3">
-                  <PaginationControls
-                    page={currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={setCurrentPage}
-                    className="border-0 rounded-none shadow-none bg-transparent"
-                  />
+                  {isMobile && hiddenMobilePillCount > 0 ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-blue-200/80 bg-white px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                      onClick={() => setMobileFilterSheetOpen(true)}
+                    >
+                      +{hiddenMobilePillCount} more
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
-            </>
-          ) : null}
-
-          {!dataLoading && viewMode === "list" && filteredRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
-              <Table>
-                <TableHeader className="bg-blue-50/80">
-                  <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>GS Faculty</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Awards</TableHead>
-                    <TableHead>Publications</TableHead>
-                    <TableHead>IPs</TableHead>
-                    <TableHead>Creative Works</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pagination.items.map((row, index) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="text-slate-600">
-                        {pagination.start + index + 1}
-                      </TableCell>
-
-                      <TableCell>
-                        <p className="font-semibold text-[#1E3A8A]">
-                          {row.full_name || "-"}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {row.email || "-"}
-                        </p>
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.ckan_org_id
-                          ? centerNameById[row.ckan_org_id] || "-"
-                          : "-"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.department || "-"}
-                      </TableCell>
-
-                      <TableCell className="capitalize text-slate-700">
-                        {row.role || "-"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {row.is_gs_faculty ? "Yes" : "No"}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.research_project_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.awards_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.publication_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.ip_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-slate-700">
-                        {Number(row.creative_work_count || 0)}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => goToAffiliateDetail(row)}
-                            aria-label={`View ${row?.full_name || "affiliate"}`}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-
-                          {canEditAffiliates ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              disabled={row.source === "ckan_only"}
-                              onClick={() => openEditModal(row)}
-                              aria-label={`Edit ${row?.full_name || "affiliate"}`}
-                              title={
-                                row.source === "ckan_only"
-                                  ? "Edit disabled (CKAN only)"
-                                  : "Edit"
-                              }
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {pagination.totalPages > 1 ? (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={12} className="px-3 py-3">
-                        <PaginationControls
-                          page={currentPage}
-                          totalPages={pagination.totalPages}
-                          onPageChange={setCurrentPage}
-                          className="border-0 rounded-none shadow-none bg-transparent"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                ) : null}
-              </Table>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
+          </div>
 
+          <div className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-[#1E3A8A]">
+                  Affiliate Directory
+                </h2>
+                <p className="text-sm text-[#1E3A8A]">
+                  Showing {filteredRows.length} filtered affiliate record(s).
+                </p>
+                <p className="text-xs text-slate-500">
+                  Last synced: {syncLabel}
+                </p>
+              </div>
+              <div className="hidden flex-wrap items-center gap-2 xl:flex">
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      sortBy: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-9 w-[170px] border-blue-200/80 bg-white text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
+                    <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
+                    <SelectItem value="recent_desc">
+                      Sort: Recently updated
+                    </SelectItem>
+                    <SelectItem value="recent_asc">
+                      Sort: Least recently updated
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-blue-200/80 bg-white text-[#1E3A8A] hover:bg-blue-50"
+                  onClick={() => loadData()}
+                  disabled={dataLoading}
+                >
+                  <RefreshCw
+                    className={cn("h-4 w-4", dataLoading && "animate-spin")}
+                  />
+                  Refresh
+                </Button>
+                {canExportAffiliates ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          !filteredRows.length || Boolean(exportingType)
+                        }
+                        className="h-9 border-blue-200/80 bg-white text-[#1E3A8A] hover:bg-blue-50"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="border border-blue-200 bg-white shadow-md"
+                    >
+                      <DropdownMenuItem
+                        className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                        onSelect={exportAsCsv}
+                        disabled={
+                          !filteredRows.length || Boolean(exportingType)
+                        }
+                      >
+                        {exportingType === "csv"
+                          ? "Exporting..."
+                          : "Export CSV"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                        onSelect={exportAsPdf}
+                        disabled={
+                          !filteredRows.length || Boolean(exportingType)
+                        }
+                      >
+                        {exportingType === "pdf"
+                          ? "Exporting..."
+                          : "Export PDF"}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+                <div className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50/70 p-1">
+                  <Button
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    type="button"
+                    className={cn(
+                      "h-8 rounded-full px-3 text-xs",
+                      viewMode === "grid"
+                        ? "bg-white text-[#1E3A8A] shadow-sm"
+                        : "text-[#1E3A8A]",
+                    )}
+                    disabled={isMobile}
+                  >
+                    <LayoutGrid size={14} />
+                    Grid
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    type="button"
+                    className={cn(
+                      "h-8 rounded-full px-3 text-xs",
+                      viewMode === "list"
+                        ? "bg-white text-[#1E3A8A] shadow-sm"
+                        : "text-[#1E3A8A]",
+                    )}
+                  >
+                    <List size={14} />
+                    List
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AffiliatesDirectoryContent
+            dataLoading={dataLoading}
+            viewMode={effectiveViewMode}
+            directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
+            filteredRows={filteredRows}
+            pagination={pagination}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            centerNameById={centerNameById}
+            canEditAffiliates={canEditAffiliates}
+            goToAffiliateDetail={goToAffiliateDetail}
+            openEditModal={openEditModal}
+          />
+        </div>
+      </div>
+
+      <Sheet
+        open={mobileFilterSheetOpen}
+        onOpenChange={setMobileFilterSheetOpen}
+      >
+        <SheetContent
+          side="bottom"
+          className="max-h-[86vh] overflow-y-auto px-4 xl:hidden"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-[#1E3A8A]">
+              Filter Affiliates
+            </SheetTitle>
+            <SheetDescription>
+              Adjust quick filters, center, and department.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                Quick Filter
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {quickFilterChips.map((chip) => (
+                  <Button
+                    key={`sheet-${chip.key}`}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn(
+                      "rounded-full border-blue-200/80 text-xs",
+                      quickFilter === chip.key
+                        ? "bg-blue-100 text-[#1E3A8A]"
+                        : "bg-white text-[#1E3A8A]",
+                    )}
+                    onClick={() => setQuickFilter(chip.key)}
+                  >
+                    {chip.label} ({chip.count})
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {isAdmin ? (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                  Research Center
+                </p>
+                <Select
+                  value={filters.centerId}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      centerId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-10 border-blue-200/80 bg-white">
+                    <SelectValue placeholder="Research Center" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Research Center</SelectItem>
+                    {centers.map((center) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                Department
+              </p>
+              <Select
+                value={filters.department}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    department: value,
+                  }))
+                }
+              >
+                <SelectTrigger className="h-10 border-blue-200/80 bg-white">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Department</SelectItem>
+                  {departmentOptions.map((department) => (
+                    <SelectItem
+                      key={department.id}
+                      value={String(department.name || "").trim()}
+                    >
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 border-blue-200/80"
+                onClick={() => {
+                  setQuickFilter("all");
+                  setFilters(createAffiliateModuleFilters());
+                }}
+              >
+                Reset all
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => setMobileFilterSheetOpen(false)}
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {!dataLoading ? (
+        <div className="sticky bottom-3 z-10 rounded-2xl border border-blue-200/80 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
+          <div className="flex flex-col gap-1 text-sm text-[#1E3A8A] sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              {isMobile
+                ? `${filteredRows.length} results | Page ${pagination.page}/${pagination.totalPages}`
+                : filteredRows.length
+                ? `Showing ${pagination.start + 1}-${pagination.end} of ${filteredRows.length} filtered affiliate record(s).`
+                : "Showing 0 records."}
+            </p>
+            {!isMobile ? (
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Page {pagination.page} of {pagination.totalPages}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {editingAffiliate && canEditAffiliates ? (
         <Dialog
           open={Boolean(editingAffiliate)}
@@ -1180,7 +1277,9 @@ export default function AdminAffiliatesModulePage() {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold text-slate-700">Last name</span>
+                  <span className="font-semibold text-slate-700">
+                    Last name
+                  </span>
                   <Input
                     value={editForm.last_name || ""}
                     onChange={(event) =>
@@ -1248,7 +1347,9 @@ export default function AdminAffiliatesModulePage() {
                 </Select>
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Designation</span>
+                <span className="font-semibold text-slate-700">
+                  Designation
+                </span>
                 <Input
                   placeholder="e.g. Associate Professor"
                   value={editForm.designation}
@@ -1421,5 +1522,3 @@ export default function AdminAffiliatesModulePage() {
     </section>
   );
 }
-
-

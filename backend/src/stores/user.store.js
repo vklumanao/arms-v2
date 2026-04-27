@@ -13,6 +13,31 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+async function syncUserRoleAssignment(userId, roleKey) {
+  const normalizedUserId = String(userId || "").trim();
+  const normalizedRoleKey = String(roleKey || "student")
+    .trim()
+    .toLowerCase();
+  if (!normalizedUserId || !normalizedRoleKey) return;
+
+  const roleResult = await query(
+    `SELECT id FROM roles WHERE key = $1 LIMIT 1`,
+    [normalizedRoleKey],
+  );
+  const roleId = roleResult.rows?.[0]?.id || null;
+  if (!roleId) return;
+
+  await query(`DELETE FROM user_roles WHERE user_id = $1`, [normalizedUserId]);
+  await query(
+    `
+    INSERT INTO user_roles (user_id, role_id)
+    VALUES ($1, $2)
+    ON CONFLICT (user_id, role_id) DO NOTHING
+    `,
+    [normalizedUserId, roleId],
+  );
+}
+
 /**
  * Produces compact auth-safe user payload for session responses.
  *
@@ -265,8 +290,10 @@ export async function createUser(input) {
     ],
   );
 
+  await syncUserRoleAssignment(user.id, user.role);
+
   // Return canonical in-memory shape (includes decrypted token field if present).
-  return mapUserRow(result.rows?.[0] || null);
+  return findUserById(user.id);
 }
 
 /**
@@ -365,7 +392,13 @@ export async function updateUser(id, patch) {
     values,
   );
 
-  return mapUserRow(result.rows?.[0] || null);
+  const updated = mapUserRow(result.rows?.[0] || null);
+  if (updated && Object.prototype.hasOwnProperty.call(patch || {}, "role")) {
+    await syncUserRoleAssignment(updated.id, updated.role);
+    return findUserById(updated.id);
+  }
+
+  return updated;
 }
 
 /**

@@ -60,6 +60,22 @@ function getInitials(value) {
   return letters.join("") || "U";
 }
 
+function getProfileRoleKeys(profile) {
+  const roleKeys = Array.isArray(profile?.roles)
+    ? profile.roles
+        .map((entry) =>
+          String(entry?.key || "")
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(Boolean)
+    : [];
+  if (roleKeys.length > 0) return roleKeys;
+  return String(profile?.role || "")
+    .trim()
+    .toLowerCase();
+}
+
 export default function AppShell() {
   const { user, profile, profileLoading, signOut } = useAuth();
   const location = useLocation();
@@ -175,8 +191,7 @@ export default function AppShell() {
   );
 
   const workspaceCoreLinks = useMemo(() => {
-    const roleKeys =
-      profile?.roles?.map((entry) => entry?.key) || profile?.role;
+    const roleKeys = getProfileRoleKeys(profile);
     const isAdmin = hasPermission(
       roleKeys,
       PERMISSIONS.ADMIN_CONTROLS_MANAGE,
@@ -273,12 +288,12 @@ export default function AppShell() {
 
     if (
       hasPermission(
-        profile?.roles?.map((entry) => entry?.key) || profile?.role,
+        getProfileRoleKeys(profile),
         PERMISSIONS.ADMIN_CONTROLS_MANAGE,
         profile?.permissions,
       ) ||
       hasPermission(
-        profile?.roles?.map((entry) => entry?.key) || profile?.role,
+        getProfileRoleKeys(profile),
         PERMISSIONS.ADMIN_RBAC_MANAGE,
         profile?.permissions,
       )

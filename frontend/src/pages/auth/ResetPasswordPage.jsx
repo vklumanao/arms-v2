@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { validatePasswordStrength } from "@/utils/validation";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
@@ -67,166 +68,203 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] overflow-hidden px-4 py-8 sm:px-6 sm:py-12">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1100px_500px_at_6%_0%,rgba(14,165,233,0.24),transparent_60%),radial-gradient(900px_460px_at_94%_16%,rgba(14,116,144,0.18),transparent_55%),radial-gradient(980px_520px_at_50%_100%,rgba(30,58,138,0.16),transparent_58%)]" />
-
-      <div className="relative mx-auto w-full max-w-3xl">
-        <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_22px_56px_rgba(15,23,42,0.18)] backdrop-blur">
-          <CardHeader className="border-b border-slate-200/70 bg-gradient-to-r from-[#0f766e] via-[#1E3A8A] to-[#0e7490] px-6 pb-6 pt-7 text-white sm:px-8">
-            <div className="flex items-center gap-3">
-              <img
-                src="icon.svg"
-                alt="ARMS Logo"
-                className="h-11 w-auto rounded-xl bg-white/90 p-1.5"
-              />
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/95">
-                Security Reset
-              </p>
-            </div>
-            <h1 className="mt-5 font-['Manrope'] text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-              Reset access to your account
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-cyan-100/95">
-              Choose a new password below. We will verify your token and then
-              redirect you to login.
-            </p>
-          </CardHeader>
-
-          <CardContent className="space-y-5 px-6 py-6 sm:px-8 sm:py-7">
-            <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                8+ characters minimum
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                Include uppercase and lowercase
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                Add at least one number
-              </div>
-            </div>
-
-            <form className="space-y-4" onSubmit={submit}>
-              {!resetToken ? (
-                <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  Reset token is missing. Please open the full password reset
-                  link.
+    <section className="auth-shell">
+      <div className="auth-shell-inner">
+        <div className="auth-layout">
+          <aside className="auth-spotlight">
+            <div className="auth-spotlight-inner">
+              <div className="auth-spotlight-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-spotlight-logo"
+                />
+                <div>
+                  <p className="auth-spotlight-kicker">Security Reset</p>
+                  <p className="auth-spotlight-name">CenterPulse</p>
                 </div>
-              ) : null}
+              </div>
 
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="new-password"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    New password
-                  </label>
-                  <Input
-                    id="new-password"
-                    className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                    placeholder="Enter your new password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+              <div className="auth-spotlight-copy">
+                <h1 className="auth-spotlight-title">
+                  Set a stronger password and get back in.
+                </h1>
+                <p className="auth-spotlight-text">
+                  Create a new password that is easy for you to manage and hard
+                  for others to guess.
+                </p>
+              </div>
+
+              <div className="auth-spotlight-points">
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <ShieldCheck size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Token verification happens automatically
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Use the full link from your email so the reset token stays
+                      valid.
+                    </p>
+                  </div>
                 </div>
+                <div className="auth-spotlight-point">
+                  <span className="auth-spotlight-point-icon">
+                    <KeyRound size={16} />
+                  </span>
+                  <div>
+                    <p className="auth-spotlight-point-title">
+                      Choose a password you won&apos;t reuse elsewhere
+                    </p>
+                    <p className="auth-spotlight-point-copy">
+                      Stronger, unique passwords reduce account recovery issues
+                      later.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
 
-                {passwordValue ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                    <span
-                      className={`rounded-lg border px-2 py-1.5 ${
-                        passwordChecks.length
-                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-white text-slate-500"
-                      }`}
-                    >
-                      8+ chars
-                    </span>
-                    <span
-                      className={`rounded-lg border px-2 py-1.5 ${
-                        passwordChecks.uppercase
-                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-white text-slate-500"
-                      }`}
-                    >
-                      Uppercase
-                    </span>
-                    <span
-                      className={`rounded-lg border px-2 py-1.5 ${
-                        passwordChecks.lowercase
-                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-white text-slate-500"
-                      }`}
-                    >
-                      Lowercase
-                    </span>
-                    <span
-                      className={`rounded-lg border px-2 py-1.5 ${
-                        passwordChecks.number
-                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-white text-slate-500"
-                      }`}
-                    >
-                      Number
-                    </span>
+          <Card className="auth-card auth-card-wide">
+            <CardHeader className="auth-card-hero is-alt">
+              <div className="auth-card-hero-brand">
+                <img
+                  src="icon.svg"
+                  alt="CenterPulse Logo"
+                  className="auth-card-hero-logo"
+                />
+                <span className="auth-eyebrow">Update Credentials</span>
+              </div>
+              <div className="auth-card-hero-copy">
+                <h2 className="auth-title">Reset access to your account</h2>
+                <p className="auth-subtitle">
+                  Choose a new password below. We&apos;ll verify your token and
+                  then redirect you to login.
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="auth-card-body space-y-5">
+              <div className="auth-tips-grid auth-tips-grid-3">
+                <div className="auth-tip">8+ characters minimum</div>
+                <div className="auth-tip">Include uppercase and lowercase</div>
+                <div className="auth-tip">Add at least one number</div>
+              </div>
+
+              <form className="auth-form-stack" onSubmit={submit}>
+                {!resetToken ? (
+                  <div className="notice notice-error">
+                    <div>
+                      <p className="notice-title">Reset link incomplete</p>
+                      <p className="notice-text">
+                        Reset token is missing. Please open the full password
+                        reset link.
+                      </p>
+                    </div>
                   </div>
                 ) : null}
-              </div>
 
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="confirm-password"
-                    className="text-sm font-semibold text-slate-700"
-                  >
-                    Confirm new password
-                  </label>
-                  <Input
-                    id="confirm-password"
-                    className="h-11 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/35"
-                    placeholder="Re-enter your new password"
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                <div className="auth-panel">
+                  <div className="auth-field-group">
+                    <label htmlFor="new-password" className="auth-label">
+                      New password
+                    </label>
+                    <Input
+                      id="new-password"
+                      className="auth-input"
+                      placeholder="Enter your new password"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+
+                  {passwordValue ? (
+                    <div className="auth-password-grid mt-3">
+                      <span
+                        className={`auth-password-chip ${passwordChecks.length ? "is-valid" : ""}`}
+                      >
+                        8+ chars
+                      </span>
+                      <span
+                        className={`auth-password-chip ${passwordChecks.uppercase ? "is-valid" : ""}`}
+                      >
+                        Uppercase
+                      </span>
+                      <span
+                        className={`auth-password-chip ${passwordChecks.lowercase ? "is-valid" : ""}`}
+                      >
+                        Lowercase
+                      </span>
+                      <span
+                        className={`auth-password-chip ${passwordChecks.number ? "is-valid" : ""}`}
+                      >
+                        Number
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
-                {confirmPassword ? (
-                  <p
-                    className={`mt-2 text-xs font-semibold ${
-                      passwordsMatch ? "text-emerald-700" : "text-rose-600"
-                    }`}
-                  >
-                    {passwordsMatch
-                      ? "Passwords match."
-                      : "Passwords do not match yet."}
-                  </p>
+
+                <div className="auth-panel">
+                  <div className="auth-field-group">
+                    <label htmlFor="confirm-password" className="auth-label">
+                      Confirm new password
+                    </label>
+                    <Input
+                      id="confirm-password"
+                      className="auth-input"
+                      placeholder="Re-enter your new password"
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                  {confirmPassword ? (
+                    <p
+                      className={`auth-password-hint ${passwordsMatch ? "is-valid" : "is-invalid"}`}
+                    >
+                      {passwordsMatch
+                        ? "Passwords match."
+                        : "Passwords do not match yet."}
+                    </p>
+                  ) : null}
+                </div>
+
+                {error ? (
+                  <div className="notice notice-error">
+                    <div>
+                      <p className="notice-title">Password not updated</p>
+                      <p className="notice-text">{error}</p>
+                    </div>
+                  </div>
                 ) : null}
-              </div>
 
-              {error ? (
-                <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  {error}
-                </div>
-              ) : null}
+                {message ? (
+                  <div className="notice notice-success">
+                    <div>
+                      <p className="notice-title">Password updated</p>
+                      <p className="notice-text">{message}</p>
+                    </div>
+                  </div>
+                ) : null}
 
-              {message ? (
-                <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {message}
-                </div>
-              ) : null}
-
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="h-11 w-full rounded-xl bg-gradient-to-r from-[#1E3A8A] via-[#0f766e] to-[#0e7490] font-semibold text-white shadow-[0_14px_28px_rgba(14,116,144,0.24)] transition hover:from-[#1d4ed8] hover:via-[#0f766e] hover:to-[#0369a1] disabled:cursor-not-allowed disabled:opacity-75"
-              >
-                {submitting ? "Updating..." : "Update password"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
+                >
+                  {submitting ? "Updating..." : "Update password"}
+                  <ArrowRight size={16} />
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <ConfirmActionModal

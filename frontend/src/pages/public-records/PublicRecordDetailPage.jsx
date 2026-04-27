@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   fetchPublicRecordTimeline,
@@ -83,18 +83,18 @@ const getStatusBadgeStyle = (value) => {
     .trim()
     .toLowerCase();
   if (key === "completed" || key === "complete" || key === "approved") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+    return "border-border bg-muted text-muted-foreground";
   }
   if (key === "ongoing" || key === "in progress" || key === "active") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+    return "border-border bg-muted text-muted-foreground";
   }
   if (key === "proposal" || key === "proposed" || key === "pending") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+    return "border-border bg-muted text-muted-foreground";
   }
   if (key === "rejected" || key === "cancelled" || key === "canceled") {
-    return "border-zinc-200 bg-zinc-50 text-zinc-700";
+    return "border-border bg-muted text-muted-foreground";
   }
-  return "border-zinc-200 bg-zinc-50 text-zinc-700";
+  return "border-border bg-muted text-muted-foreground";
 };
 
 export default function PublicRecordDetailPage() {
@@ -337,10 +337,10 @@ export default function PublicRecordDetailPage() {
           </Button>
         ) : null}
       </div>
-      <div className="rounded-2xl border border-zinc-200/70 bg-white from-zinc-50 via-white to-zinc-50 p-6 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card from-muted via-card to-muted p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-zinc-900 md:text-3xl">
+            <h1 className="text-2xl font-bold text-foreground md:text-3xl">
               {record?.title || "Research Project"}
             </h1>
           </div>
@@ -355,15 +355,15 @@ export default function PublicRecordDetailPage() {
             {record?.status || "Published"}
           </span>
 
-          <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs font-semibold text-zinc-700">
+          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
             {record?.public_visible ? "Public" : "Private"}
           </span>
 
-          <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs font-semibold text-zinc-700">
+          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
             {formatProjectDuration(record?.start_date, record?.end_date)}
           </span>
 
-          <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs font-semibold text-zinc-700">
+          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
             {selectedCenter}
           </span>
         </div>
@@ -373,7 +373,7 @@ export default function PublicRecordDetailPage() {
         <CardHeader className="border-b border-[var(--border)] px-6 py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-zinc-900">
+              <CardTitle className="text-base font-semibold text-foreground">
                 Project Details
               </CardTitle>
             </div>
@@ -381,11 +381,11 @@ export default function PublicRecordDetailPage() {
         </CardHeader>
         <CardContent className="space-y-5 p-6">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-zinc-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-muted-foreground">
               Loading record...
             </div>
           ) : !record ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-zinc-600">
+            <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-8 text-center text-base text-muted-foreground">
               Record not found. The public record you are looking for is
               unavailable.
             </div>
@@ -393,131 +393,131 @@ export default function PublicRecordDetailPage() {
             <>
               <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Overview
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-muted-foreground sm:grid-cols-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Research Center
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {selectedCenter}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Submitted
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {formatDate(record?.submitted_at)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Submitted By
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.submitted_by_name || "Unknown user"}
                         </p>
                         {record?.submitted_by_email ? (
-                          <p className="text-sm text-zinc-500">
+                          <p className="text-sm text-muted-foreground">
                             {record.submitted_by_email}
                           </p>
                         ) : null}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Visibility
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.public_visible ? "Public" : "Private"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Year
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.year || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Status
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900 capitalize">
+                        <p className="mt-1 text-base font-semibold text-foreground capitalize">
                           {record?.status || "-"}
                         </p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Classification
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-muted-foreground sm:grid-cols-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Department
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {selectedDepartment}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Research Agenda
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {agendaLabel}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Classification
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {normalizeLabel(record?.classification)}
                         </p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         People
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-muted-foreground sm:grid-cols-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Lead Researcher
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.lead_researcher || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Faculty Team
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.faculty_team || "-"}
                         </p>
                       </div>
                       <div className="sm:col-span-2">
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Student Team
                         </p>
-                        <p className="mt-1 whitespace-pre-line text-base text-zinc-900">
+                        <p className="mt-1 whitespace-pre-line text-base text-foreground">
                           {record?.student_team || "-"}
                         </p>
                       </div>
@@ -526,91 +526,91 @@ export default function PublicRecordDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Summary
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-5 text-base text-zinc-700">
-                      <p className="whitespace-pre-line text-base font-semibold text-zinc-900">
+                    <CardContent className="p-5 text-base text-muted-foreground">
+                      <p className="whitespace-pre-line text-base font-semibold text-foreground">
                         {record?.abstract || "No abstract available."}
                       </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Funding
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-muted-foreground sm:grid-cols-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Industry/Agency Partner
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.industry_partner || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Funding Type
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {normalizeLabel(record?.funding_type)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Funding Source
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {record?.funding_source || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Funding Amount
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {formatCurrencyPHP(record?.funding_amount)}
                         </p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-zinc-200/70 shadow-sm">
+                  <Card className="overflow-hidden rounded-2xl border border-border shadow-sm">
                     <CardHeader className="border-b border-[var(--border)] px-6 py-4">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Timeline & MOA
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-5 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5 text-base text-muted-foreground sm:grid-cols-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Start Date
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {formatDate(record?.start_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           End Date
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
+                        <p className="mt-1 text-base font-semibold text-foreground">
                           {formatDate(record?.end_date)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Supporting MOV Link
                         </p>
                         {record?.supporting_mov_link ? (
                           <a
-                            className="mt-1 inline-flex items-center text-base font-semibold text-zinc-900 underline-offset-4 hover:underline"
+                            className="mt-1 inline-flex items-center text-base font-semibold text-foreground underline-offset-4 hover:underline"
                             href={record.supporting_mov_link}
                             target="_blank"
                             rel="noreferrer"
@@ -618,13 +618,13 @@ export default function PublicRecordDetailPage() {
                             {record.supporting_mov_link}
                           </a>
                         ) : (
-                          <p className="mt-1 whitespace-pre-line text-base text-zinc-900">
+                          <p className="mt-1 whitespace-pre-line text-base text-foreground">
                             -
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           {" "}
                           Signed MOA
                         </p>
@@ -635,7 +635,7 @@ export default function PublicRecordDetailPage() {
                           if (isHttpUrl(moaReference)) {
                             return (
                               <a
-                                className="mt-1 inline-flex items-center text-base font-semibold text-zinc-900 underline-offset-4 hover:underline"
+                                className="mt-1 inline-flex items-center text-base font-semibold text-foreground underline-offset-4 hover:underline"
                                 href={moaReference}
                                 target="_blank"
                                 rel="noreferrer"
@@ -645,7 +645,7 @@ export default function PublicRecordDetailPage() {
                             );
                           }
                           return (
-                            <p className="mt-1 text-base font-semibold text-zinc-900">
+                            <p className="mt-1 text-base font-semibold text-foreground">
                               {moaReference}
                             </p>
                           );
@@ -674,7 +674,7 @@ export default function PublicRecordDetailPage() {
                 <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Outputs
                       </CardTitle>
                     </div>
@@ -682,19 +682,19 @@ export default function PublicRecordDetailPage() {
                 </CardHeader>
                 <CardContent className="p-6">
                   {!resourcePanel.syncEnabled ? (
-                    <p className="text-base text-zinc-600">
+                    <p className="text-base text-muted-foreground">
                       CKAN sync is disabled in this environment.
                     </p>
                   ) : resourcePanel.loading ? (
-                    <p className="text-base text-zinc-600">
+                    <p className="text-base text-muted-foreground">
                       Loading linked resources...
                     </p>
                   ) : resourcePanel.error ? (
-                    <p className="text-base text-zinc-700">
+                    <p className="text-base text-muted-foreground">
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-zinc-600">
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-muted-foreground">
                       No linked resources found for this project.
                     </div>
                   ) : (
@@ -746,16 +746,16 @@ export default function PublicRecordDetailPage() {
                           return (
                             <Card
                               key={resource.id || resource.url || resource.name}
-                              className="rounded-2xl border border-zinc-200/70 bg-white shadow-sm"
+                              className="rounded-2xl border border-border bg-card shadow-sm"
                             >
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0">
-                                    <p className="truncate text-base font-semibold text-zinc-900">
+                                    <p className="truncate text-base font-semibold text-foreground">
                                       {resource.name || "Unnamed resource"}
                                     </p>
                                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                                      <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-sm font-semibold text-zinc-700">
+                                      <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-sm font-semibold text-muted-foreground">
                                         {outputTypeLabelByValue[
                                           String(
                                             resource.output_type ||
@@ -775,7 +775,7 @@ export default function PublicRecordDetailPage() {
                                         ).trim();
                                       if (rawAuthors) {
                                         return (
-                                          <p className="text-base font-medium text-zinc-800">
+                                          <p className="text-base font-medium text-foreground">
                                             Proponents: {rawAuthors}
                                           </p>
                                         );
@@ -797,30 +797,30 @@ export default function PublicRecordDetailPage() {
                                         .trim();
                                       if (!fromDescription) return null;
                                       return (
-                                        <p className="text-base font-medium text-zinc-800">
+                                        <p className="text-base font-medium text-foreground">
                                           Proponents: {fromDescription}
                                         </p>
                                       );
                                     })()}
-                                    <p className="text-base text-zinc-600">
+                                    <p className="text-base text-muted-foreground">
                                       Format: {resource.format || "-"} | Size:{" "}
                                       {formatBytes(resource.size)}
                                     </p>
                                     {hasLink ? (
-                                      <p className="text-base text-zinc-600">
+                                      <p className="text-base text-muted-foreground">
                                         Output Link:{" "}
                                         <a
                                           href={outputLink}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="text-zinc-600 hover:underline"
+                                          className="text-muted-foreground hover:underline"
                                         >
                                           {outputLink}
                                         </a>
                                       </p>
                                     ) : null}
                                   </div>
-                                  <FileText className="h-5 w-5 text-zinc-400" />
+                                  <FileText className="h-5 w-5 text-muted-foreground" />
                                 </div>
 
                                 {resource.id && hasFile ? (
@@ -837,7 +837,7 @@ export default function PublicRecordDetailPage() {
                                     </Button>
                                   </div>
                                 ) : hasLink ? null : (
-                                  <p className="mt-2 text-base text-zinc-500">
+                                  <p className="mt-2 text-base text-muted-foreground">
                                     No file attached yet.
                                   </p>
                                 )}
@@ -853,7 +853,7 @@ export default function PublicRecordDetailPage() {
                 <CardHeader className="border-b border-[var(--border)] px-6 py-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                      <CardTitle className="text-base font-semibold text-foreground">
                         Awards &amp; Recognition
                       </CardTitle>
                       <CardDescription>
@@ -864,15 +864,15 @@ export default function PublicRecordDetailPage() {
                 </CardHeader>
                 <CardContent className="p-6">
                   {awardsPanel.loading ? (
-                    <p className="text-base text-zinc-600">
+                    <p className="text-base text-muted-foreground">
                       Loading linked awards...
                     </p>
                   ) : awardsPanel.error ? (
-                    <p className="text-base text-zinc-700">
+                    <p className="text-base text-muted-foreground">
                       {awardsPanel.error}
                     </p>
                   ) : awardsPanel.rows.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-zinc-600">
+                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-base text-muted-foreground">
                       No awards linked to this project yet.
                     </div>
                   ) : (
@@ -887,12 +887,12 @@ export default function PublicRecordDetailPage() {
                         return (
                           <Card
                             key={row.id || row.award_recognition}
-                            className="rounded-2xl border border-zinc-200/70 bg-white shadow-sm"
+                            className="rounded-2xl border border-border bg-card shadow-sm"
                           >
                             <CardContent className="p-4">
                               <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="text-base font-semibold text-zinc-900">
+                                  <p className="text-base font-semibold text-foreground">
                                     {row.award_recognition || "Award"}
                                   </p>
                                   <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -905,14 +905,14 @@ export default function PublicRecordDetailPage() {
                                       </Badge>
                                     ) : null}
                                   </div>
-                                  <p className="mt-2 text-base text-zinc-700">
+                                  <p className="mt-2 text-base text-muted-foreground">
                                     Awarding body: {row.awarding_body || "-"}
                                   </p>
-                                  <p className="text-base text-zinc-700">
+                                  <p className="text-base text-muted-foreground">
                                     Recipients: {row.recipients || "-"}
                                   </p>
                                 </div>
-                                <Trophy className="h-5 w-5 text-zinc-500" />
+                                <Trophy className="h-5 w-5 text-muted-foreground" />
                               </div>
                               {downloadUrl || fallbackLink ? (
                                 <div className="mt-3 flex flex-wrap gap-2">
@@ -943,3 +943,4 @@ export default function PublicRecordDetailPage() {
     </section>
   );
 }
+
