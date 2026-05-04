@@ -39,9 +39,9 @@ export default function SettingsPanel({
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden border-blue-200/80 shadow-[0_22px_54px_rgba(30,58,138,0.12)]">
-        <CardHeader className="space-y-1 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(219,234,254,0.8))] px-4 py-4 sm:px-6 sm:py-5">
-          <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+      <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
+          <CardTitle className="text-lg font-bold text-slate-700">
             Workspace Settings
           </CardTitle>
           <CardDescription>
@@ -52,18 +52,18 @@ export default function SettingsPanel({
         <CardContent className="p-4 sm:p-6">
           {editLoading || !isReady ? (
             <div className="animate-pulse space-y-4">
-              <div className="h-10 rounded-2xl bg-blue-100/70" />
+              <div className="h-10 rounded-2xl bg-slate-200" />
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="h-32 rounded-[1.3rem] bg-blue-100/70" />
-                <div className="h-32 rounded-[1.3rem] bg-blue-100/70" />
+                <div className="h-32 rounded-[1.3rem] bg-slate-200" />
+                <div className="h-32 rounded-[1.3rem] bg-slate-200" />
               </div>
-              <div className="h-32 rounded-[1.3rem] bg-blue-100/70" />
+              <div className="h-32 rounded-[1.3rem] bg-slate-200" />
             </div>
           ) : (
             <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.35rem] border border-blue-100 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1E3A8A]">
+                <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                     Identity
                   </p>
                   <div className="mt-4 space-y-4">
@@ -76,7 +76,7 @@ export default function SettingsPanel({
                           "h-11 rounded-2xl border bg-white",
                           editErrors.name
                             ? "border-[#1E3A8A]"
-                            : "border-blue-200",
+                            : "border-slate-300",
                         )}
                         value={editing.name}
                         onChange={(event) =>
@@ -98,7 +98,7 @@ export default function SettingsPanel({
                           "h-11 rounded-2xl border bg-white",
                           editErrors.code
                             ? "border-[#1E3A8A]"
-                            : "border-blue-200",
+                            : "border-slate-300",
                         )}
                         value={editing.code}
                         onChange={(event) =>
@@ -130,12 +130,12 @@ export default function SettingsPanel({
                             "h-11 rounded-2xl border bg-white",
                             editErrors.centerChiefId
                               ? "border-[#1E3A8A]"
-                              : "border-blue-200",
+                              : "border-slate-300",
                           )}
                         >
                           <SelectValue placeholder="Select Center Chief" />
                         </SelectTrigger>
-                        <SelectContent className="border border-blue-200 bg-white">
+                        <SelectContent className="border border-slate-300 bg-white">
                           {centerChiefUsers.map((user) => (
                             <SelectItem key={user.id} value={user.id}>
                               {user.name}
@@ -152,8 +152,8 @@ export default function SettingsPanel({
                   </div>
                 </div>
 
-                <div className="rounded-[1.35rem] border border-blue-100 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1E3A8A]">
+                <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                     Public Presence
                   </p>
                   <div className="mt-4 space-y-4">
@@ -168,10 +168,10 @@ export default function SettingsPanel({
                             onChange({ socialMediaPlatform: value })
                           }
                         >
-                          <SelectTrigger className="h-11 rounded-2xl border border-blue-200 bg-white">
+                          <SelectTrigger className="h-11 rounded-2xl border border-slate-300 bg-white">
                             <SelectValue placeholder="Select platform" />
                           </SelectTrigger>
-                          <SelectContent className="border border-blue-200 bg-white">
+                          <SelectContent className="border border-slate-300 bg-white">
                             {SOCIAL_MEDIA_OPTIONS.map((option) => (
                               <SelectItem
                                 key={option.value}
@@ -184,7 +184,7 @@ export default function SettingsPanel({
                         </Select>
                         <div className="sm:col-span-2">
                           <Input
-                            className="h-11 rounded-2xl border border-blue-200 bg-white"
+                            className="h-11 rounded-2xl border border-slate-300 bg-white"
                             value={editing.socialMediaLink}
                             placeholder={getSocialPlaceholder(
                               editing.socialMediaPlatform,
@@ -205,7 +205,7 @@ export default function SettingsPanel({
                         Description
                       </label>
                       <Textarea
-                        className="min-h-[180px] rounded-[1.1rem] border border-blue-200 bg-white"
+                        className="min-h-[180px] rounded-[1.1rem] border border-slate-300 bg-white"
                         value={editing.description}
                         placeholder="Add a positioning statement, mission, or quick summary..."
                         onChange={(event) =>
@@ -221,8 +221,8 @@ export default function SettingsPanel({
                 </div>
               </div>
 
-              <div className="rounded-[1.35rem] border border-blue-100 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1E3A8A]">
+              <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                   Research Agendas
                 </p>
                 <div className="mt-4 space-y-3">
@@ -232,7 +232,7 @@ export default function SettingsPanel({
                         "h-11 rounded-2xl border bg-white",
                         editErrors.researchAgendas
                           ? "border-[#1E3A8A]"
-                          : "border-blue-200",
+                          : "border-slate-300",
                       )}
                       placeholder="Add research agendum"
                       value={editing.agendaInput}
@@ -249,7 +249,7 @@ export default function SettingsPanel({
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
                       onClick={onAddAgenda}
                     >
                       Add Agenda
@@ -262,7 +262,7 @@ export default function SettingsPanel({
                         <button
                           key={agenda}
                           type="button"
-                          className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-[#1E3A8A] hover:bg-blue-100"
+                          className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
                           onClick={() => onRemoveAgenda(agenda)}
                         >
                           {agenda} ×
@@ -284,9 +284,9 @@ export default function SettingsPanel({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 rounded-[1.35rem] border border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.92),rgba(255,255,255,0.98),rgba(236,253,245,0.86))] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-[1.35rem] border border-slate-100 bg-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-[#1E3A8A]">
+                  <p className="text-sm font-semibold text-slate-700">
                     Inline changes are ready to save.
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
@@ -297,7 +297,7 @@ export default function SettingsPanel({
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
                     onClick={onCancel}
                     disabled={actionLoading}
                   >
@@ -344,3 +344,5 @@ export default function SettingsPanel({
     </div>
   );
 }
+
+
