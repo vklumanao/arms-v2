@@ -1,0 +1,503 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  aboutPillars,
+  audienceCards,
+  benefitsCards,
+  brandPromiseCards,
+  governanceCards,
+  heroHighlights,
+  heroSidebarCards,
+  indicatorCards,
+  moduleCards,
+  roleCards,
+  systemFramingCards,
+  workflowSteps,
+} from "./content";
+
+function SectionIntro({ eyebrow, title, subtitle, inverted = false }) {
+  const eyebrowClass = inverted ? "text-zinc-200" : "text-zinc-500";
+  const titleClass = inverted ? "text-white" : "text-zinc-900";
+  const subtitleClass = inverted ? "text-zinc-200" : "text-zinc-600";
+
+  return (
+    <div>
+      <p
+        className={`text-xs font-semibold uppercase tracking-[0.14em] ${eyebrowClass}`}
+      >
+        {eyebrow}
+      </p>
+      <h2
+        className={`mt-2 text-2xl font-black leading-tight sm:text-3xl ${titleClass}`}
+      >
+        {title}
+      </h2>
+      {subtitle ? (
+        <p
+          className={`mt-2 max-w-3xl text-sm leading-6 sm:text-base ${subtitleClass}`}
+        >
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function HeroSection() {
+  return (
+    <section id="home" className="scroll-mt-28">
+      <div className="relative overflow-hidden rounded-3xl border border-zinc-100 bg-white p-6 sm:p-10">
+
+        <div className="relative z-10 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+          <div className="page-stack-lg">
+            <Card className="w-full shadow-none">
+              <CardContent className="p-4">
+                <img
+                  src="/arms-logo-v2.svg"
+                  alt="ARMS Logo"
+                  className="h-auto w-full object-contain"
+                />
+              </CardContent>
+            </Card>
+
+            <h1 className="max-w-4xl text-3xl font-black leading-tight text-zinc-900 sm:text-4xl lg:text-5xl">
+              One Academic Platform for Affiliation, Review, Documentation, and
+              Research Visibility
+            </h1>
+
+            <p className="max-w-3xl text-sm leading-6 text-zinc-700 sm:text-base">
+              ARMS streamlines research administration with structured
+              submissions, role-based evaluation, MOV evidence management, and
+              publication-ready records for institutional transparency.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900"
+                to="/projects"
+              >
+                Start Submission
+              </Link>
+              <Link
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100"
+                to="/dashboard"
+              >
+                Open Dashboard
+              </Link>
+              <Link
+                className="rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                to="/public-records"
+              >
+                View Public Records
+              </Link>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {heroHighlights.map((item) => (
+                <Card
+                  key={item.title}
+                  className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-zinc-900">
+                      {item.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            {heroSidebarCards.map((item) => (
+              <Card
+                key={item.title}
+                className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <CardContent className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    {item.title}
+                  </p>
+                  <h2 className="mt-2 text-lg font-black text-zinc-900">
+                    {item.heading}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">
+                    {item.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function SystemFramingSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Institutional Context"
+        title="Why ARMS Is Essential for Academic Operations"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {systemFramingCards.map((item) => (
+          <Card key={item.title} className="bg-muted/30 shadow-none">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700">
+                {item.title}
+              </p>
+              <h2 className="mt-2 text-lg font-black text-zinc-900">
+                {item.heading}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-700">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function AudienceSection() {
+  return (
+    <section className="grid gap-4 md:grid-cols-3">
+      {audienceCards.map((item, idx) => (
+        <Card
+          key={item.heading}
+          className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <CardContent className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700">
+              Audience {idx + 1}
+            </p>
+            <h2 className="mt-2 text-lg font-black text-zinc-900">
+              {item.heading}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
+              {item.description}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </section>
+  );
+}
+
+export function WorkflowSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <SectionIntro
+          eyebrow="Academic Workflow"
+          title="Standardized Process from Submission to Public Output"
+        />
+        <Button asChild>
+          <Link to="/projects">Open Research Projects</Link>
+        </Button>
+      </div>
+
+      <ol className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {workflowSteps.map((item, index) => {
+          const isLast = index === workflowSteps.length - 1;
+          return (
+            <li key={item.step} className="relative">
+              <Card className="h-full shadow-none transition hover:-translate-y-0.5 hover:shadow-md">
+                <CardContent className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-zinc-700">
+                      Step {item.step}
+                    </span>
+                    <ShieldCheck size={16} className="text-zinc-600" />
+                  </div>
+                  <p className="text-base font-black text-zinc-900">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    {item.description}
+                  </p>
+                </CardContent>
+              </Card>
+              {!isLast ? (
+                <span
+                  className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-1 text-zinc-600 xl:inline-flex"
+                  aria-hidden="true"
+                >
+                  <ArrowRight size={14} />
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+export function BenefitsSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Institutional Benefits"
+        title="Value Beyond Basic Process Automation"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {benefitsCards.map((item) => (
+          <Card key={item.heading} className="bg-muted/30 shadow-none">
+            <CardContent className="p-5">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function BrandPromiseSection() {
+  return (
+    <section className="rounded-3xl border bg-zinc-900 p-6 text-white sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+        <SectionIntro
+          eyebrow="Brand Promise"
+          title="From Fragmented Tracking to Trusted, Data-Informed Research Governance"
+          subtitle="ARMS unifies faculty, students, and administrators in one transparent platform built for academic rigor and institutional accountability."
+          inverted
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {brandPromiseCards.map((item) => (
+            <article
+              key={item.title}
+              className="rounded-xl border border-white/20 bg-white/10 p-4"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-100">
+                {item.title}
+              </p>
+              <p className="mt-1 text-sm font-bold text-white">
+                {item.description}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function ModulesSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Core Modules"
+        title="Built for Affiliation Management and Research Accountability"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {moduleCards.map((item) => (
+          <Card key={item.heading} className="bg-muted/30 shadow-none">
+            <CardContent className="p-4">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function RolesSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Role Responsibilities"
+        title="Clear Accountability Across the Academic Community"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {roleCards.map((item) => (
+          <Card
+            key={item.heading}
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <CardContent className="p-5">
+              <h3 className="text-lg font-black text-zinc-900">
+                {item.heading}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function GovernanceSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Governance Principles"
+        title="Designed for Academic Integrity and Compliance"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {governanceCards.map((item) => (
+          <Card
+            key={item.heading}
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <CardContent className="p-5">
+              <h3 className="font-bold text-zinc-900">{item.heading}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function SuccessIndicatorsSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <SectionIntro
+        eyebrow="Success Indicators"
+        title="What Effective ARMS Adoption Looks Like"
+      />
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {indicatorCards.map((item) => (
+          <Card
+            key={item.title}
+            className="shadow-none transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-700">
+                {item.title}
+              </p>
+              <p className="mt-2 text-sm font-bold text-zinc-900">
+                {item.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function VisionSection() {
+  return (
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-center">
+        <SectionIntro
+          eyebrow="Institutional Vision"
+          title="A Research Culture Supported by Shared Systems and Standards"
+          subtitle="ARMS enables better planning and better outcomes by making records, status, and workflows visible to the right stakeholders."
+        />
+        <Card className="bg-muted/30 shadow-none">
+          <CardContent className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Core Message
+            </p>
+            <p className="mt-2 text-lg font-black leading-snug text-zinc-900">
+              One platform. One process. One trusted source of research truth.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+export function AboutSection() {
+  return (
+    <section id="about" className="scroll-mt-28">
+      <div className="rounded-3xl border bg-zinc-900 p-6 text-white sm:p-8">
+        <SectionIntro
+          eyebrow="About ARMS"
+          title="A Modern Academic Platform for Affiliation and Research Management"
+          subtitle="ARMS supports governance, operational clarity, and evidence-driven monitoring by aligning processes with institutional responsibilities."
+          inverted
+        />
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {aboutPillars.map((item) => (
+            <article
+              key={item.heading}
+              className="rounded-xl border border-white/20 bg-white/5 p-4"
+            >
+              <h3 className="font-bold">{item.heading}</h3>
+              <p className="mt-1 text-sm text-zinc-200">{item.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-5">
+          <h3 className="text-xl font-black">Expected Institutional Impact</h3>
+          <p className="mt-2 text-sm leading-6 text-zinc-200">
+            By centralizing data and process controls, ARMS reduces
+            administrative friction, improves inter-unit coordination, and
+            strengthens evidence for planning and accreditation.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function FinalCtaSection() {
+  return (
+    <section className="rounded-3xl border bg-zinc-800 p-6 text-white sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-100">
+            Next Action
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-white">
+            Start Managing Affiliation and Research Records with Structure
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-100">
+            Transition from manual tracking to a consistent, role-based research
+            workflow for your unit.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3 lg:justify-end">
+          <Link
+            to="/projects"
+            className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-zinc-900 transition hover:bg-zinc-50"
+          >
+            Research Projects
+          </Link>
+          <Link
+            to="/login"
+            className="rounded-lg border border-white/40 bg-transparent px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+          >
+            Login
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+
+
+
+
+
+

@@ -1,10 +1,10 @@
-FROM nginx:stable-alpine
+FROM nginx:stable
 
 ENV NGINX_DIR=/etc/nginx
 
-RUN apk update --no-cache && \
-    apk upgrade --no-cache && \
-    apk add --no-cache openssl
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY setup/nginx.conf ${NGINX_DIR}/nginx.conf
 COPY setup/index.html /usr/share/nginx/html/index.html

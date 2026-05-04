@@ -8,7 +8,6 @@ volumes:
   home_dir:
 
 services:
-
   ckan-dev:
     build:
       context: ckan/
@@ -49,6 +48,8 @@ services:
   db:
     build:
       context: postgresql/
+    ports:
+      - "${POSTGRES_PORT_HOST}:5432"
     environment:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
@@ -63,8 +64,9 @@ services:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
-     
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+
   solr:
     image: ckan/ckan-solr:${SOLR_IMAGE_VERSION}
     volumes:

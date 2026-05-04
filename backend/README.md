@@ -71,3 +71,18 @@ On login, backend will:
 - On first run, backend will auto-create the `users` table and import legacy records from `backend/data/users.json` if the table is empty.
 - Keep `.env` out of git; only commit `.env.example`.
 - Backend now includes: request validation (`zod`), rate-limiting on auth endpoints, audit logs, and reset-password token storage.
+
+## CI smoke test
+
+This repo includes a minimal CI smoke check that boots the backend and verifies `GET /api/health`.
+
+Run locally (requires a reachable Postgres DB):
+
+```bash
+cd backend
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/arms_test \
+ARMS_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+CKAN_BASE_URL=https://example.invalid \
+CKAN_API_KEY=ci-smoke \
+node scripts/ci-smoke.mjs
+```

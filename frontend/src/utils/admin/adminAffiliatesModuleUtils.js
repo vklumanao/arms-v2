@@ -1,0 +1,207 @@
+export function createAffiliateModuleFilters() {
+  return {
+    search: "",
+    centerId: "all",
+    department: "all",
+    sortBy: "name_asc",
+  };
+}
+
+export function buildCenterNameById(centers) {
+  return (centers || []).reduce((acc, center) => {
+    acc[center.id] = center.name;
+    return acc;
+  }, {});
+}
+
+export function listAffiliateDepartments(rows) {
+  const set = new Set();
+  (rows || []).forEach((row) => {
+    if (row.department) set.add(row.department);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+export function filterAndSortAffiliates(rows, filters) {
+  const keyword = String(filters.search || "")
+    .trim()
+    .toLowerCase();
+  const centerFilter = String(filters.centerId || "all").trim().toLowerCase();
+  const departmentFilter = String(filters.department || "all")
+    .trim()
+    .toLowerCase();
+
+  const filtered = (rows || []).filter((row) => {
+    if (keyword) {
+      const target =
+        `${row.full_name || ""} ${row.email || ""} ${row.role || ""} ${row.department || ""} ${row.id || ""} ${row.ckan_org_id || ""} ${row.is_active ? "active" : "inactive"}`.toLowerCase();
+      if (!target.includes(keyword)) return false;
+    }
+    if (centerFilter !== "all") {
+      const orgId = String(row.ckan_org_id || "").trim().toLowerCase();
+      if (!orgId || orgId !== centerFilter) return false;
+    }
+    if (departmentFilter !== "all") {
+      const dept = String(row.department || "").trim().toLowerCase();
+      if (!dept || dept !== departmentFilter) return false;
+    }
+    return true;
+  });
+
+  const sorted = [...filtered];
+  sorted.sort((a, b) => {
+    if (filters.sortBy === "name_desc") {
+      return String(b.full_name || "").localeCompare(String(a.full_name || ""));
+    }
+    if (filters.sortBy === "recent_desc") {
+      return (
+        new Date(b.updated_at || b.created_at || 0) -
+        new Date(a.updated_at || a.created_at || 0)
+      );
+    }
+    if (filters.sortBy === "recent_asc") {
+      return (
+        new Date(a.updated_at || a.created_at || 0) -
+        new Date(b.updated_at || b.created_at || 0)
+      );
+    }
+    return String(a.full_name || "").localeCompare(String(b.full_name || ""));
+  });
+
+  return sorted;
+}
+
+export function filterAffiliateRelatedDatasets(datasets, affiliate) {
+  const userId = String(affiliate?.ckan_user_id || "")
+    .trim()
+    .toLowerCase();
+  const username = String(affiliate?.ckan_username || "")
+    .trim()
+    .toLowerCase();
+  const email = String(affiliate?.email || "")
+    .trim()
+    .toLowerCase();
+  const fullName = String(affiliate?.full_name || "")
+    .trim()
+    .toLowerCase();
+
+  return (datasets || [])
+    .filter((dataset) => {
+      const creatorId = String(dataset?.creator_user_id || "")
+        .trim()
+        .toLowerCase();
+      const author = String(dataset?.author || "")
+        .trim()
+        .toLowerCase();
+      const maintainer = String(dataset?.maintainer || "")
+        .trim()
+        .toLowerCase();
+      const maintainerEmail = String(dataset?.maintainer_email || "")
+        .trim()
+        .toLowerCase();
+
+      if (userId && creatorId && creatorId === userId) return true;
+      if (username && author && author.includes(username)) return true;
+      if (username && maintainer && maintainer.includes(username)) return true;
+      if (email && maintainerEmail && maintainerEmail === email) return true;
+      if (fullName && author && author.includes(fullName)) return true;
+      if (fullName && maintainer && maintainer.includes(fullName)) return true;
+      return false;
+    })
+    .map((dataset, index) => {
+      const createdAt = dataset?.metadata_created || "";
+      const year = createdAt ? new Date(createdAt).getFullYear() : "-";
+      const status = String(dataset?.state || "active").trim();
+      return {
+        id: dataset?.id || dataset?.name || `dataset-${index}`,
+        title: dataset?.title || dataset?.name || "Untitled dataset",
+        status,
+        year: Number.isFinite(year) ? year : "-",
+        organization:
+          dataset?.organization?.title ||
+          dataset?.organization?.display_name ||
+          dataset?.organization?.name ||
+          "-",
+        updatedAt: dataset?.metadata_modified || dataset?.metadata_created || null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime(),
+    );
+}
+
+function parseNameParts(fullName = "") {
+  const raw = String(fullName || "").trim();
+  if (!raw) return { first_name: "", middle_initial: "", last_name: "" };
+
+  if (raw.includes(",")) {
+    const [lastPart = "", givenPart = ""] = raw.split(",", 2);
+    const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
+    const first = givenTokens[0] || "";
+    const middleToken = givenTokens[1] || "";
+    const middle = middleToken.replace(/\./g, "").charAt(0) || "";
+    return {
+      first_name: first,
+      middle_initial: middle,
+      last_name: lastPart.trim(),
+    };
+  }
+
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length === 1) {
+    return { first_name: tokens[0], middle_initial: "", last_name: "" };
+  }
+  const first = tokens[0];
+  const middleCandidate = tokens[1] || "";
+  const isMiddleInitial = /^[A-Za-z](\.)?$/.test(middleCandidate);
+  const middle = isMiddleInitial
+    ? middleCandidate.replace(/\./g, "").charAt(0)
+    : "";
+  const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(" ");
+  return {
+    first_name: first,
+    middle_initial: middle,
+    last_name: last,
+  };
+}
+
+export function createAffiliateEditForm(row) {
+  const nameParts = parseNameParts(row.full_name || "");
+  return {
+    first_name: nameParts.first_name || "",
+    middle_initial: nameParts.middle_initial || "",
+    last_name: nameParts.last_name || "",
+    department: row.department || "",
+    ckan_group_id: row.ckan_group_id || "",
+    ckan_org_id: row.ckan_org_id || "",
+    designation: row.designation || "",
+    employment_status: row.employment_status || "",
+    google_scholar_link: row.google_scholar_link || "",
+    is_gs_faculty: Boolean(row.is_gs_faculty),
+    publication_count: Number(row.publication_count || 0),
+    research_project_count: Number(row.research_project_count || 0),
+    creative_work_count: Number(row.creative_work_count || 0),
+    awards_count: Number(row.awards_count || 0),
+    ip_count: Number(row.ip_count || 0),
+  };
+}
+
+export function buildAffiliateExportRows(rows, centerNameById) {
+  return (rows || []).map((row, index) => ({
+    no: index + 1,
+    name: row.full_name || "-",
+    email: row.email || "-",
+    role: row.role || "-",
+    department: row.department || "-",
+    center: row.ckan_org_id ? centerNameById[row.ckan_org_id] || "-" : "-",
+    status: row.is_active ? "Active" : "Inactive",
+    gs: row.is_gs_faculty ? "Yes" : "No",
+    publications: Number(row.publication_count || 0),
+    projects: Number(row.research_project_count || 0),
+    creativeWorks: Number(row.creative_work_count || 0),
+    awards: Number(row.awards_count || 0),
+    ips: Number(row.ip_count || 0),
+  }));
+}

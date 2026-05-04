@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d arms_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arms_test
+      DB_SSL: "false"
+      PORT: "4000"
+      CKAN_BASE_URL: https://example.invalid
+      CKAN_API_KEY: ci-smoke
+      CKAN_VERIFY_TLS: "false"
+      ARMS_JWT_SECRET: ci-smoke-not-a-secret-change-me
+      ARMS_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      ARMS_EXPOSE_RESET_TOKEN_IN_RESPONSE: "false"
+      NODE_ENV: test
+      SMOKE_TIMEOUT_MS: "30000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+
+      - name: Backend smoke (/api/health)
+        working-directory: backend
+        run: node scripts/ci-smoke.mjs

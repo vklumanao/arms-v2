@@ -1,0 +1,191 @@
+services:
+  arms-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: arms_user
+      POSTGRES_PASSWORD: arms_password
+      POSTGRES_DB: arms_v3
+    volumes:
+      - arms_pg_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arms_user -d arms_v3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  ckan:
+    build:
+      context: ckan/
+      dockerfile: Dockerfile.dev
+      args:
+        - TZ=${TZ}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      solr:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:${CKAN_PORT_HOST}:5000"
+    volumes:
+      - ckan_storage:/var/lib/ckan
+      - ./src:/srv/app/src_extensions
+      - pip_cache:/root/.cache/pip
+      - site_packages:/usr/local/lib/python3.10/site-packages
+      - local_bin:/usr/local/bin
+      - home_dir:/srv/app/
+    networks:
+      - ckannet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5000"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  datapusher:
+    image: ckan/ckan-base-datapusher:${DATAPUSHER_VERSION}
+    networks:
+      - ckannet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:8800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  db:
+    build:
+      context: postgresql/
+    ports: []
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - CKAN_DB_USER
+      - CKAN_DB_PASSWORD
+      - CKAN_DB
+      - DATASTORE_READONLY_USER
+      - DATASTORE_READONLY_PASSWORD
+      - DATASTORE_DB
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - ckannet
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+
+  solr:
+    image: ckan/ckan-solr:${SOLR_IMAGE_VERSION}
+    volumes:
+      - solr_data:/var/solr
+    networks:
+      - ckannet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:8983/solr/"]
+
+  redis:
+    image: redis:${REDIS_VERSION}
+    networks:
+      - ckannet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-e", "QUIT"]
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+      args:
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - NO_PROXY
+    env_file:
+      - ../backend/.env
+    working_dir: /app
+    command: npm run dev
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://arms_user:arms_password@arms-db:5432/arms_v3
+      DB_SSL: "false"
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://${LAN_HOST:-localhost}:5173
+      ARMS_PUBLIC_APP_URL: http://${LAN_HOST:-localhost}:5173
+      CKAN_BASE_URL: http://ckan:5000
+      CKAN_VERIFY_TLS: "false"
+      ARMS_JWT_EXPIRES_IN: 12h
+    volumes:
+      - ../backend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      ckan:
+        condition: service_healthy
+      arms-db:
+        condition: service_healthy
+    ports:
+      - "4010:4000"
+    healthcheck:
+      test:
+        ["CMD", "wget", "-qO", "/dev/null", "http://localhost:4000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ckannet
+      - default
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+      args:
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - NO_PROXY
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_BASE_URL: http://${LAN_HOST:-localhost}:4010/api
+      VITE_UI_PREVIEW_MODE: "false"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "300"
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+      NPM_CONFIG_FETCH_RETRIES: "5"
+      NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: "20000"
+      NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: "120000"
+      NPM_CONFIG_AUDIT: "false"
+    volumes:
+      - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+volumes:
+  arms_pg_data:
+  backend_node_modules:
+  frontend_node_modules:
+  ckan_storage:
+  pg_data:
+  solr_data:
+  pip_cache:
+  site_packages:
+  local_bin:
+  home_dir:
+
+networks:
+  ckannet:
+    driver: bridge
