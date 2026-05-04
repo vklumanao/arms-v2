@@ -54,7 +54,7 @@ const statusBadgeClass = (status) => {
   if (key === "ongoing" || key === "active") return "border-amber-200 bg-amber-50 text-amber-700";
   if (key === "delayed" || key === "rejected" || key === "cancelled")
     return "border-red-200 bg-red-50 text-red-700";
-  return "border-blue-200 bg-blue-50 text-blue-700";
+  return "border-slate-300 bg-slate-50 text-blue-700";
 };
 
 const classificationBadgeClass = (classification) => {
@@ -795,3 +795,4 @@ export default function PublicRecordsPage() {
     </section>
   );
 }
+
