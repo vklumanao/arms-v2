@@ -23,14 +23,14 @@ export default function PermissionsMatrixPanel({
   onResetDraft,
 }) {
   return (
-    <Card className="xl:col-span-12 border-blue-200/70">
-      <CardHeader className="space-y-2 border-b border-blue-200/70 bg-blue-50/25 p-4">
-        <CardTitle className="text-base text-[#1E3A8A]">
+    <Card className="xl:col-span-12 border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-2 border-b border-slate-200 bg-slate-50/60 p-4">
+        <CardTitle className="text-base text-slate-900">
           Permissions Matrix
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200/70 bg-blue-50/30 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           <p className="text-xs text-slate-600">
             Use row and column checkboxes for fast assignment.
           </p>
@@ -61,11 +61,11 @@ export default function PermissionsMatrixPanel({
           </div>
         </div>
 
-        <div className="overflow-auto rounded-lg border border-blue-200/70 bg-white">
+        <div className="overflow-auto rounded-lg border border-slate-200 bg-white">
           <table className="w-full min-w-[820px] border-collapse text-sm">
-            <thead className="bg-blue-100/70">
+            <thead className="bg-slate-100">
               <tr>
-                <th className="border-b border-blue-200/70 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                <th className="border-b border-slate-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Module
                 </th>
                 {actionColumns.map((action) => {
@@ -76,9 +76,9 @@ export default function PermissionsMatrixPanel({
                   return (
                     <th
                       key={action}
-                      className="min-w-[120px] border-b border-blue-200/70 px-3 py-2 text-center"
+                      className="min-w-[120px] border-b border-slate-200 px-3 py-2 text-center"
                     >
-                      <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                      <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                         <input
                           type="checkbox"
                           checked={checked}
@@ -111,8 +111,8 @@ export default function PermissionsMatrixPanel({
                   rowPermissionKeys.length > 0 &&
                   rowPermissionKeys.every((key) => draftPermissionSet.has(key));
                 return (
-                  <tr key={row.moduleName} className="hover:bg-blue-50/80">
-                    <td className="border-b border-blue-100 px-3 py-2">
+                  <tr key={row.moduleName} className="hover:bg-slate-50">
+                    <td className="border-b border-slate-100 px-3 py-2">
                       <label className="inline-flex cursor-pointer items-center gap-2 text-slate-800">
                         <input
                           type="checkbox"
@@ -142,7 +142,7 @@ export default function PermissionsMatrixPanel({
                       return (
                         <td
                           key={`${row.moduleName}-${action}`}
-                          className="border-b border-blue-100 px-3 py-2 text-center"
+                            className="border-b border-slate-100 px-3 py-2 text-center"
                         >
                           {keys.length > 0 ? (
                             <label className="inline-flex cursor-pointer items-center justify-center px-2 py-1">
