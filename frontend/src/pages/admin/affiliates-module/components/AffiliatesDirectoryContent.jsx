@@ -27,7 +27,7 @@ export default function AffiliatesDirectoryContent({
   openEditModal,
 }) {
   return (
-    <Card className="overflow-hidden border-blue-200/80 shadow-sm">
+    <Card className="overflow-hidden border-slate-200 shadow-sm">
       <CardContent className="p-4">
         {dataLoading ? (
           viewMode === "grid" ? (
@@ -36,28 +36,28 @@ export default function AffiliatesDirectoryContent({
                 (_, index) => (
                   <Card
                     key={`affiliate-skeleton-grid-${index}`}
-                    className="rounded-2xl border border-blue-200/80 bg-white/80 p-5 shadow-sm"
+                    className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm"
                   >
                     <div className="animate-pulse space-y-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="w-full space-y-2">
                           <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                          <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
-                          <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
+                          <div className="h-5 w-3/4 rounded-full bg-slate-200" />
+                          <div className="h-3 w-1/2 rounded-full bg-slate-200" />
                         </div>
-                        <div className="h-6 w-16 rounded-full bg-blue-100/80" />
+                        <div className="h-6 w-16 rounded-full bg-slate-200" />
                       </div>
                       <div className="flex gap-2">
-                        <div className="h-6 w-20 rounded-full bg-blue-100/80" />
-                        <div className="h-6 w-24 rounded-full bg-blue-100/80" />
+                        <div className="h-6 w-20 rounded-full bg-slate-200" />
+                        <div className="h-6 w-24 rounded-full bg-slate-200" />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="h-24 rounded-lg bg-blue-100/70" />
-                        <div className="h-24 rounded-lg bg-blue-100/70" />
+                        <div className="h-24 rounded-lg bg-slate-200" />
+                        <div className="h-24 rounded-lg bg-slate-200" />
                       </div>
                       <div className="flex gap-2">
-                        <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                        <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                        <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                        <div className="h-9 w-9 rounded-lg bg-slate-200" />
                       </div>
                     </div>
                   </Card>
@@ -65,14 +65,14 @@ export default function AffiliatesDirectoryContent({
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
               <div className="animate-pulse space-y-3">
-                <div className="h-8 w-full rounded-lg bg-blue-100/70" />
+                <div className="h-8 w-full rounded-lg bg-slate-200" />
                 {Array.from({ length: directorySkeletonCount }).map(
                   (_, index) => (
                     <div
                       key={`affiliate-skeleton-list-${index}`}
-                      className="h-12 w-full rounded-lg bg-blue-100/70"
+                      className="h-12 w-full rounded-lg bg-slate-200"
                     />
                   ),
                 )}
@@ -82,7 +82,7 @@ export default function AffiliatesDirectoryContent({
         ) : null}
 
         {!dataLoading && filteredRows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
             No affiliate records found.
           </div>
         ) : null}
@@ -93,19 +93,19 @@ export default function AffiliatesDirectoryContent({
               {pagination.items.map((row, index) => (
                 <Card
                   key={row.id || `${row.email}-${index}`}
-                  className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="group rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
                           #{pagination.start + index + 1} -{" "}
                           {String(row.role || "affiliate")}
                         </p>
-                        <h3 className="mt-1 truncate text-base font-bold text-[#1E3A8A]">
+                        <h3 className="mt-1 truncate text-base font-bold text-slate-700">
                           {row.full_name || "-"}
                         </h3>
-                        <p className="mt-1 truncate text-sm text-[#1E3A8A]">
+                        <p className="mt-1 truncate text-sm text-slate-700">
                           {row.email || "-"}
                         </p>
                       </div>
@@ -114,13 +114,13 @@ export default function AffiliatesDirectoryContent({
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Badge
                         variant="secondary"
-                        className="bg-blue-50 text-[#1E3A8A]"
+                        className="bg-slate-50 text-slate-700"
                       >
                         Dept: {row.department || "-"}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className="border-blue-200/80 text-[#1E3A8A]"
+                        className="border-slate-200 text-slate-700"
                       >
                         Center:{" "}
                         {row.ckan_org_id
@@ -129,33 +129,33 @@ export default function AffiliatesDirectoryContent({
                       </Badge>
                       <Badge
                         variant="secondary"
-                        className="bg-blue-50 text-[#1E3A8A]"
+                        className="bg-slate-50 text-slate-700"
                       >
                         GS: {row.is_gs_faculty ? "Yes" : "No"}
                       </Badge>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                      <div className="rounded-lg border border-slate-200 bg-slate-200 p-3 text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
                           Projects
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+                        <p className="mt-2 text-2xl font-bold text-slate-700">
                           {Number(row.research_project_count || 0)}
                         </p>
-                        <p className="mt-1 text-xs text-[#1E3A8A]">
+                        <p className="mt-1 text-xs text-slate-700">
                           Publications {Number(row.publication_count || 0)}
                         </p>
                       </div>
 
-                      <div className="rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                      <div className="rounded-lg border border-slate-200 bg-slate-200 p-3 text-left">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
                           Outputs
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+                        <p className="mt-2 text-2xl font-bold text-slate-700">
                           {Number(row.awards_count || 0)}
                         </p>
-                        <p className="mt-1 text-xs text-[#1E3A8A]">
+                        <p className="mt-1 text-xs text-slate-700">
                           IPs {Number(row.ip_count || 0)} - Works{" "}
                           {Number(row.creative_work_count || 0)}
                         </p>
@@ -215,14 +215,14 @@ export default function AffiliatesDirectoryContent({
               {pagination.items.map((row, index) => (
                 <Card
                   key={row.id || `${row.email}-${index}`}
-                  className="rounded-2xl border border-blue-200/80 bg-white shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-white shadow-sm"
                 >
                   <CardContent className="p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
                       #{pagination.start + index + 1} -{" "}
                       {String(row.role || "affiliate")}
                     </p>
-                    <h3 className="mt-1 text-base font-bold text-[#1E3A8A]">
+                    <h3 className="mt-1 text-base font-bold text-slate-700">
                       {row.full_name || "-"}
                     </h3>
                     <p className="truncate text-sm text-slate-600">
@@ -231,13 +231,13 @@ export default function AffiliatesDirectoryContent({
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Badge
                         variant="secondary"
-                        className="bg-blue-50 text-[#1E3A8A]"
+                        className="bg-slate-50 text-slate-700"
                       >
                         {row.department || "-"}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className="border-blue-200/80 text-[#1E3A8A]"
+                        className="border-slate-200 text-slate-700"
                       >
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
@@ -245,27 +245,27 @@ export default function AffiliatesDirectoryContent({
                       </Badge>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-700">
                           Pubs
                         </p>
-                        <p className="text-sm font-bold text-[#1E3A8A]">
+                        <p className="text-sm font-bold text-slate-700">
                           {Number(row.publication_count || 0)}
                         </p>
                       </div>
-                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-700">
                           Projects
                         </p>
-                        <p className="text-sm font-bold text-[#1E3A8A]">
+                        <p className="text-sm font-bold text-slate-700">
                           {Number(row.research_project_count || 0)}
                         </p>
                       </div>
-                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-700">
                           Awards
                         </p>
-                        <p className="text-sm font-bold text-[#1E3A8A]">
+                        <p className="text-sm font-bold text-slate-700">
                           {Number(row.awards_count || 0)}
                         </p>
                       </div>
@@ -275,7 +275,7 @@ export default function AffiliatesDirectoryContent({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-blue-200/80 text-[#1E3A8A]"
+                        className="flex-1 border-slate-200 text-slate-700"
                         onClick={() => goToAffiliateDetail(row)}
                       >
                         <Eye className="h-4 w-4" />
@@ -286,7 +286,7 @@ export default function AffiliatesDirectoryContent({
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="flex-1 border-blue-200/80 text-[#1E3A8A]"
+                          className="flex-1 border-slate-200 text-slate-700"
                           disabled={row.source === "ckan_only"}
                           onClick={() => openEditModal(row)}
                           title={
@@ -313,9 +313,9 @@ export default function AffiliatesDirectoryContent({
               ) : null}
             </div>
 
-            <div className="hidden overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm md:block">
+            <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
               <Table>
-                <TableHeader className="bg-blue-50/80">
+                <TableHeader className="bg-slate-50">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Name</TableHead>
@@ -338,7 +338,7 @@ export default function AffiliatesDirectoryContent({
                         {pagination.start + index + 1}
                       </TableCell>
                       <TableCell>
-                        <p className="font-semibold text-[#1E3A8A]">
+                        <p className="font-semibold text-slate-700">
                           {row.full_name || "-"}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -433,3 +433,4 @@ export default function AffiliatesDirectoryContent({
     </Card>
   );
 }
+
