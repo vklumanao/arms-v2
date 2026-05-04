@@ -33,10 +33,10 @@ export default function DirectoryPanel({
   useWindowedScroll = true,
 }) {
   return (
-    <Card className="overflow-hidden border-blue-200/80 bg-white/95 shadow-[0_24px_64px_rgba(30,58,138,0.10)] backdrop-blur">
-      <CardHeader className="space-y-4 border-b border-blue-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.96),rgba(236,253,245,0.88))] px-4 py-4 sm:px-5 sm:py-5">
+    <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+          <CardTitle className="text-lg font-bold text-slate-900">
             Research Center Directory
           </CardTitle>
           <CardDescription>
@@ -47,9 +47,9 @@ export default function DirectoryPanel({
 
         <label className="relative">
           <span className="sr-only">Search research centers</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <Input
-            className="h-11 rounded-2xl border-blue-200 bg-white pl-9 shadow-sm"
+            className="h-11 rounded-2xl border-slate-300 bg-white pl-9 shadow-sm"
             placeholder="Search name, code, chief, agenda, or id"
             value={filters.search}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -82,8 +82,8 @@ export default function DirectoryPanel({
               className={cn(
                 "rounded-full border px-3 text-xs shadow-sm",
                 quickFilter === chip.key
-                  ? "border-blue-300 bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
-                  : "border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50",
+                  ? "border-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-100"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
               )}
               onClick={() => onQuickFilterChange(chip.key)}
             >
@@ -98,7 +98,7 @@ export default function DirectoryPanel({
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-[#1E3A8A] hover:bg-blue-100/80"
+              className="rounded-full text-xs text-slate-700 hover:bg-slate-100"
               onClick={onResetFilters}
             >
               Reset all filters
@@ -120,13 +120,13 @@ export default function DirectoryPanel({
                 (_, index) => (
                   <div
                     key={`directory-skeleton-${index}`}
-                    className="h-28 animate-pulse rounded-[1.4rem] bg-blue-100/70"
+                    className="h-28 animate-pulse rounded-[1.4rem] bg-slate-200"
                   />
                 ),
               )}
             </div>
           ) : rows.length === 0 ? (
-            <div className="rounded-[1.4rem] border border-dashed border-blue-200 bg-blue-50/70 p-8 text-center text-sm text-[#1E3A8A]">
+            <div className="rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
               No research center records matched the current filters.
             </div>
           ) : (
@@ -141,14 +141,14 @@ export default function DirectoryPanel({
                     className={cn(
                       "w-full overflow-hidden rounded-[1.45rem] border p-4 text-left transition-all duration-200",
                       isSelected
-                        ? "border-[#1E3A8A] bg-[linear-gradient(135deg,rgba(239,246,255,0.98),rgba(255,255,255,0.96),rgba(219,234,254,0.82))] shadow-[0_18px_42px_rgba(30,58,138,0.14)]"
-                        : "border-blue-100 bg-white hover:border-blue-200 hover:bg-blue-50/60 hover:shadow-sm",
+                        ? "border-slate-400 bg-slate-50 shadow-sm"
+                        : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm",
                     )}
                     onClick={() => onSelectCenter(row.id)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1E3A8A]">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                           {row.code || "No Code"}
                         </p>
                         <h3 className="mt-1 truncate text-base font-bold text-[#0F172A]">
@@ -159,25 +159,10 @@ export default function DirectoryPanel({
                         </p>
                       </div>
                       {isSelected ? (
-                        <Badge className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-white">
+                        <Badge className="border-slate-300 bg-white text-slate-700 hover:bg-white">
                           Pinned
                         </Badge>
                       ) : null}
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
-                      <div className="rounded-2xl bg-blue-100/75 px-2 py-2 text-center text-[#1E3A8A]">
-                        <div className="font-bold">{row.profileCount}</div>
-                        <div>Members</div>
-                      </div>
-                      <div className="rounded-2xl bg-emerald-100/75 px-2 py-2 text-center text-emerald-700">
-                        <div className="font-bold">{row.projectCount}</div>
-                        <div>Projects</div>
-                      </div>
-                      <div className="rounded-2xl bg-amber-100/80 px-2 py-2 text-center text-amber-700">
-                        <div className="font-bold">{row.agendaCount}</div>
-                        <div>Agendas</div>
-                      </div>
                     </div>
                   </button>
                 );
