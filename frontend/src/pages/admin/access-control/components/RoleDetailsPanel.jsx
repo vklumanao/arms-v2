@@ -13,9 +13,9 @@ export default function RoleDetailsPanel({
   onDeleteRole,
 }) {
   return (
-    <Card className="xl:col-span-6 border-blue-200/70">
-      <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 p-4">
-        <CardTitle className="text-base text-[#1E3A8A]">Role Details</CardTitle>
+    <Card className="xl:col-span-6 border-slate-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-200 bg-slate-50/60 p-4">
+        <CardTitle className="text-base text-slate-900">Role Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
         {selectedRole ? (
