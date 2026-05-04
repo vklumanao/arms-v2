@@ -569,17 +569,15 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-sky-50 p-5 shadow-sm md:p-6">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-200/45 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
         <div className="relative flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1E3A8A]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Admin Workspace
           </p>
-          <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
+          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
             Affiliate Directory
           </h1>
-          <p className="max-w-3xl text-sm text-[#1E3A8A]">
+          <p className="max-w-3xl text-sm text-slate-600">
             Find, filter, review, and update affiliate records from a unified
             responsive workspace.
           </p>
@@ -587,69 +585,69 @@ export default function AdminAffiliatesModulePage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
               Total
             </p>
-            <Users className="h-4 w-4 text-[#1E3A8A]" />
+            <Users className="h-4 w-4 text-slate-700" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+          <p className="mt-2 text-2xl font-bold text-slate-700">
             {affiliateMetrics.total}
           </p>
         </article>
-        <article className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
               Active
             </p>
-            <Users className="h-4 w-4 text-[#1E3A8A]" />
+            <Users className="h-4 w-4 text-slate-700" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+          <p className="mt-2 text-2xl font-bold text-slate-700">
             {affiliateMetrics.active}
           </p>
         </article>
-        <article className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:block">
+        <article className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:block">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
               Faculty
             </p>
-            <Users className="h-4 w-4 text-[#1E3A8A]" />
+            <Users className="h-4 w-4 text-slate-700" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+          <p className="mt-2 text-2xl font-bold text-slate-700">
             {affiliateMetrics.faculty}
           </p>
         </article>
-        <article className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:block">
+        <article className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:block">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
               GS Faculty
             </p>
-            <Users className="h-4 w-4 text-[#1E3A8A]" />
+            <Users className="h-4 w-4 text-slate-700" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+          <p className="mt-2 text-2xl font-bold text-slate-700">
             {affiliateMetrics.gsFaculty}
           </p>
         </article>
       </div>
-      <details className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm sm:hidden">
-        <summary className="cursor-pointer text-sm font-semibold text-[#1E3A8A]">
+      <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-700">
           More stats
         </summary>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
               Faculty
             </p>
-            <p className="mt-1 text-xl font-bold text-[#1E3A8A]">
+            <p className="mt-1 text-xl font-bold text-slate-700">
               {affiliateMetrics.faculty}
             </p>
           </div>
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
               GS Faculty
             </p>
-            <p className="mt-1 text-xl font-bold text-[#1E3A8A]">
+            <p className="mt-1 text-xl font-bold text-slate-700">
               {affiliateMetrics.gsFaculty}
             </p>
           </div>
@@ -657,9 +655,9 @@ export default function AdminAffiliatesModulePage() {
       </details>
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
-        <aside className="hidden rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm xl:sticky xl:top-3 xl:block">
+        <aside className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:sticky xl:top-3 xl:block">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-[#1E3A8A]">Filters</h2>
+            <h2 className="text-base font-semibold text-slate-700">Filters</h2>
             <p className="text-xs text-slate-500">
               Refine affiliates by search, role, center, and department.
             </p>
@@ -668,9 +666,9 @@ export default function AdminAffiliatesModulePage() {
           <div className="mt-4 space-y-3">
             <label className="relative block">
               <span className="sr-only">Search affiliates</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
               <Input
-                className="border-blue-200/80 bg-white pl-8"
+                className="border-slate-200 bg-white pl-8"
                 placeholder="Search affiliates"
                 value={filters.search}
                 onChange={(event) =>
@@ -683,7 +681,7 @@ export default function AdminAffiliatesModulePage() {
             </label>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 Quick Filter
               </p>
               <div className="grid gap-2">
@@ -694,10 +692,10 @@ export default function AdminAffiliatesModulePage() {
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "justify-between rounded-xl border-blue-200/80 text-left text-xs",
+                      "justify-between rounded-xl border-slate-200 text-left text-xs",
                       quickFilter === chip.key
-                        ? "bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
-                        : "bg-white text-[#1E3A8A] hover:bg-blue-50",
+                        ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
+                        : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setQuickFilter(chip.key)}
                   >
@@ -712,7 +710,7 @@ export default function AdminAffiliatesModulePage() {
 
             {isAdmin ? (
               <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Research Center
                 </p>
                 <Select
@@ -724,7 +722,7 @@ export default function AdminAffiliatesModulePage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="h-10 border-blue-200/80 bg-white text-xs">
+                  <SelectTrigger className="h-10 border-slate-200 bg-white text-xs">
                     <SelectValue placeholder="Research Center" />
                   </SelectTrigger>
                   <SelectContent>
@@ -740,7 +738,7 @@ export default function AdminAffiliatesModulePage() {
             ) : null}
 
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 Department
               </p>
               <Select
@@ -752,7 +750,7 @@ export default function AdminAffiliatesModulePage() {
                   }))
                 }
               >
-                <SelectTrigger className="h-10 border-blue-200/80 bg-white text-xs">
+                <SelectTrigger className="h-10 border-slate-200 bg-white text-xs">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -772,7 +770,7 @@ export default function AdminAffiliatesModulePage() {
             <Button
               type="button"
               variant="ghost"
-              className="h-9 w-full border border-dashed border-blue-200/80 text-xs text-[#1E3A8A] hover:bg-blue-50"
+              className="h-9 w-full border border-dashed border-slate-200 text-xs text-slate-700 hover:bg-slate-50"
               onClick={() => {
                 setQuickFilter("all");
                 setFilters(createAffiliateModuleFilters());
@@ -783,8 +781,8 @@ export default function AdminAffiliatesModulePage() {
           </div>
 
           {hasActiveDirectoryFilters ? (
-            <div className="mt-4 border-t border-blue-100 pt-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 Active Filters
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -792,7 +790,7 @@ export default function AdminAffiliatesModulePage() {
                   <button
                     key={pill.key}
                     type="button"
-                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                     onClick={pill.onRemove}
                   >
                     {pill.label} x
@@ -804,13 +802,13 @@ export default function AdminAffiliatesModulePage() {
         </aside>
 
         <div className="min-w-0 space-y-4">
-          <div className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm xl:hidden">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:hidden">
             <div className="space-y-3">
               <label className="relative block">
                 <span className="sr-only">Search affiliates</span>
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
                 <Input
-                  className="border-blue-200/80 bg-white pl-8"
+                  className="border-slate-200 bg-white pl-8"
                   placeholder="Search affiliates"
                   value={filters.search}
                   onChange={(event) =>
@@ -827,7 +825,7 @@ export default function AdminAffiliatesModulePage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 border-blue-200/80 text-xs text-[#1E3A8A]"
+                  className="h-9 border-slate-200 text-xs text-slate-700"
                   onClick={() => setMobileFilterSheetOpen(true)}
                 >
                   <SlidersHorizontal className="h-4 w-4" />
@@ -842,7 +840,7 @@ export default function AdminAffiliatesModulePage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="h-9 border-blue-200/80 bg-white px-2 text-xs">
+                  <SelectTrigger className="h-9 border-slate-200 bg-white px-2 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -858,7 +856,7 @@ export default function AdminAffiliatesModulePage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9 border-blue-200/80 text-[#1E3A8A]"
+                      className="h-9 w-9 border-slate-200 text-slate-700"
                       aria-label="More actions"
                     >
                       <MoreHorizontal className="h-4 w-4" />
@@ -866,10 +864,10 @@ export default function AdminAffiliatesModulePage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="border border-blue-200 bg-white shadow-md"
+                    className="border border-slate-300 bg-white shadow-md"
                   >
                     <DropdownMenuItem
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                       onSelect={() => loadData()}
                       disabled={dataLoading}
                     >
@@ -878,7 +876,7 @@ export default function AdminAffiliatesModulePage() {
                     {canExportAffiliates ? (
                       <>
                         <DropdownMenuItem
-                          className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                          className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                           onSelect={exportAsCsv}
                           disabled={
                             !filteredRows.length || Boolean(exportingType)
@@ -889,7 +887,7 @@ export default function AdminAffiliatesModulePage() {
                             : "Export CSV"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                          className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                           onSelect={exportAsPdf}
                           disabled={
                             !filteredRows.length || Boolean(exportingType)
@@ -902,7 +900,7 @@ export default function AdminAffiliatesModulePage() {
                       </>
                     ) : null}
                     <DropdownMenuItem
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                       onSelect={() => setViewMode("list")}
                     >
                       View: List
@@ -912,13 +910,13 @@ export default function AdminAffiliatesModulePage() {
               </div>
 
               {hasActiveDirectoryFilters ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-blue-100 pt-3">
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                   {(isMobile ? visibleMobilePills : activeFilterPills).map(
                     (pill) => (
                       <button
                         key={pill.key}
                         type="button"
-                        className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                         onClick={pill.onRemove}
                       >
                         {pill.label} x
@@ -928,7 +926,7 @@ export default function AdminAffiliatesModulePage() {
                   {isMobile && hiddenMobilePillCount > 0 ? (
                     <button
                       type="button"
-                      className="rounded-full border border-blue-200/80 bg-white px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
                       onClick={() => setMobileFilterSheetOpen(true)}
                     >
                       +{hiddenMobilePillCount} more
@@ -939,13 +937,13 @@ export default function AdminAffiliatesModulePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-1">
-                <h2 className="text-base font-semibold text-[#1E3A8A]">
+                <h2 className="text-base font-semibold text-slate-700">
                   Affiliate Directory
                 </h2>
-                <p className="text-sm text-[#1E3A8A]">
+                <p className="text-sm text-slate-700">
                   Showing {filteredRows.length} filtered affiliate record(s).
                 </p>
                 <p className="text-xs text-slate-500">
@@ -962,7 +960,7 @@ export default function AdminAffiliatesModulePage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="h-9 w-[170px] border-blue-200/80 bg-white text-xs">
+                  <SelectTrigger className="h-9 w-[170px] border-slate-200 bg-white text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -980,7 +978,7 @@ export default function AdminAffiliatesModulePage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 border-blue-200/80 bg-white text-[#1E3A8A] hover:bg-blue-50"
+                  className="h-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                   onClick={() => loadData()}
                   disabled={dataLoading}
                 >
@@ -999,7 +997,7 @@ export default function AdminAffiliatesModulePage() {
                         disabled={
                           !filteredRows.length || Boolean(exportingType)
                         }
-                        className="h-9 border-blue-200/80 bg-white text-[#1E3A8A] hover:bg-blue-50"
+                        className="h-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                       >
                         <Download className="h-4 w-4" />
                         Export
@@ -1007,10 +1005,10 @@ export default function AdminAffiliatesModulePage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="border border-blue-200 bg-white shadow-md"
+                      className="border border-slate-300 bg-white shadow-md"
                     >
                       <DropdownMenuItem
-                        className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                        className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                         onSelect={exportAsCsv}
                         disabled={
                           !filteredRows.length || Boolean(exportingType)
@@ -1021,7 +1019,7 @@ export default function AdminAffiliatesModulePage() {
                           : "Export CSV"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                        className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                         onSelect={exportAsPdf}
                         disabled={
                           !filteredRows.length || Boolean(exportingType)
@@ -1034,7 +1032,7 @@ export default function AdminAffiliatesModulePage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : null}
-                <div className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50/70 p-1">
+                <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
                   <Button
                     variant={viewMode === "grid" ? "secondary" : "ghost"}
                     size="sm"
@@ -1043,8 +1041,8 @@ export default function AdminAffiliatesModulePage() {
                     className={cn(
                       "h-8 rounded-full px-3 text-xs",
                       viewMode === "grid"
-                        ? "bg-white text-[#1E3A8A] shadow-sm"
-                        : "text-[#1E3A8A]",
+                        ? "bg-white text-slate-700 shadow-sm"
+                        : "text-slate-700",
                     )}
                     disabled={isMobile}
                   >
@@ -1059,8 +1057,8 @@ export default function AdminAffiliatesModulePage() {
                     className={cn(
                       "h-8 rounded-full px-3 text-xs",
                       viewMode === "list"
-                        ? "bg-white text-[#1E3A8A] shadow-sm"
-                        : "text-[#1E3A8A]",
+                        ? "bg-white text-slate-700 shadow-sm"
+                        : "text-slate-700",
                     )}
                   >
                     <List size={14} />
@@ -1096,7 +1094,7 @@ export default function AdminAffiliatesModulePage() {
           className="max-h-[86vh] overflow-y-auto px-4 xl:hidden"
         >
           <SheetHeader>
-            <SheetTitle className="text-[#1E3A8A]">
+            <SheetTitle className="text-slate-700">
               Filter Affiliates
             </SheetTitle>
             <SheetDescription>
@@ -1106,7 +1104,7 @@ export default function AdminAffiliatesModulePage() {
 
           <div className="mt-4 space-y-4">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 Quick Filter
               </p>
               <div className="flex flex-wrap gap-2">
@@ -1117,10 +1115,10 @@ export default function AdminAffiliatesModulePage() {
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "rounded-full border-blue-200/80 text-xs",
+                      "rounded-full border-slate-200 text-xs",
                       quickFilter === chip.key
-                        ? "bg-blue-100 text-[#1E3A8A]"
-                        : "bg-white text-[#1E3A8A]",
+                        ? "bg-slate-100 text-slate-700"
+                        : "bg-white text-slate-700",
                     )}
                     onClick={() => setQuickFilter(chip.key)}
                   >
@@ -1132,7 +1130,7 @@ export default function AdminAffiliatesModulePage() {
 
             {isAdmin ? (
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Research Center
                 </p>
                 <Select
@@ -1144,7 +1142,7 @@ export default function AdminAffiliatesModulePage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="h-10 border-blue-200/80 bg-white">
+                  <SelectTrigger className="h-10 border-slate-200 bg-white">
                     <SelectValue placeholder="Research Center" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1160,7 +1158,7 @@ export default function AdminAffiliatesModulePage() {
             ) : null}
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 Department
               </p>
               <Select
@@ -1172,7 +1170,7 @@ export default function AdminAffiliatesModulePage() {
                   }))
                 }
               >
-                <SelectTrigger className="h-10 border-blue-200/80 bg-white">
+                <SelectTrigger className="h-10 border-slate-200 bg-white">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1193,7 +1191,7 @@ export default function AdminAffiliatesModulePage() {
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 border-blue-200/80"
+                className="flex-1 border-slate-200"
                 onClick={() => {
                   setQuickFilter("all");
                   setFilters(createAffiliateModuleFilters());
@@ -1214,8 +1212,8 @@ export default function AdminAffiliatesModulePage() {
       </Sheet>
 
       {!dataLoading ? (
-        <div className="sticky bottom-3 z-10 rounded-2xl border border-blue-200/80 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
-          <div className="flex flex-col gap-1 text-sm text-[#1E3A8A] sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
+          <div className="flex flex-col gap-1 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
             <p>
               {isMobile
                 ? `${filteredRows.length} results | Page ${pagination.page}/${pagination.totalPages}`
@@ -1522,3 +1520,5 @@ export default function AdminAffiliatesModulePage() {
     </section>
   );
 }
+
+
