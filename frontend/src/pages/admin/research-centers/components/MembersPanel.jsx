@@ -40,11 +40,11 @@ export default function MembersPanel({
   onPageChange,
 }) {
   return (
-    <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-      <CardHeader className="space-y-4 border-b border-blue-100 bg-blue-50/35 px-4 py-4 sm:px-6 sm:py-5">
+    <Card className="overflow-hidden border-slate-200 shadow-sm">
+      <CardHeader className="space-y-4 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+            <CardTitle className="text-lg font-bold text-slate-700">
               Research Center Members
             </CardTitle>
             <CardDescription>
@@ -53,9 +53,9 @@ export default function MembersPanel({
           </div>
           <label className="relative w-full lg:max-w-md">
             <span className="sr-only">Search members</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
             <Input
-              className="border-blue-200 bg-white pl-8"
+              className="border-slate-300 bg-white pl-8"
               placeholder="Search name or email"
               value={filters.search}
               onChange={(event) =>
@@ -77,7 +77,7 @@ export default function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-blue-200 bg-white">
+            <SelectTrigger className="border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -96,7 +96,7 @@ export default function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-blue-200 bg-white">
+            <SelectTrigger className="border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -117,7 +117,7 @@ export default function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-blue-200 bg-white">
+            <SelectTrigger className="border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -133,19 +133,19 @@ export default function MembersPanel({
           {loading ? (
             <div className="p-4">
               <div className="animate-pulse space-y-3">
-                <div className="h-4 w-40 rounded-full bg-blue-100/80" />
+                <div className="h-4 w-40 rounded-full bg-slate-200" />
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
                     key={`member-skeleton-${index}`}
-                    className="h-10 w-full rounded-lg bg-blue-100/70"
+                    className="h-10 w-full rounded-lg bg-slate-200"
                   />
                 ))}
               </div>
             </div>
           ) : error ? (
-            <p className="p-4 text-sm text-[#1E3A8A]">{error}</p>
+            <p className="p-4 text-sm text-slate-700">{error}</p>
           ) : filteredRows.length === 0 ? (
-            <p className="p-4 text-sm text-[#1E3A8A]">
+            <p className="p-4 text-sm text-slate-700">
               No members matched the current filters.
             </p>
           ) : (
@@ -154,7 +154,7 @@ export default function MembersPanel({
                 {paginatedRows.map((member, index) => (
                   <div
                     key={member.id || `${member.email}-${index}`}
-                    className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold text-[#0F172A]">
@@ -228,3 +228,4 @@ export default function MembersPanel({
     </Card>
   );
 }
+
