@@ -559,24 +559,22 @@ export default function AwardsRecognitionPage() {
   if (missingAffiliation) {
     return (
       <section className="page-stack-lg">
-        <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-          <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="relative space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Awards and Recognition
             </p>
-            <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Complete Your Profile First
             </h1>
-            <p className="max-w-2xl text-sm text-[#1E3A8A]">
+            <p className="max-w-2xl text-sm text-slate-600">
               Add your organization (research center) before reviewing awards
               and recognition records.
             </p>
           </div>
         </div>
 
-        <Card className="overflow-hidden rounded-2xl border border-blue-200/80 bg-white shadow-sm">
+        <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardContent className="space-y-3 p-5">
             <p className="text-sm text-slate-900">
               Please set your Organization (Research Center) in My Profile first
@@ -585,7 +583,7 @@ export default function AwardsRecognitionPage() {
             <Button
               asChild
               variant="outline"
-              className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50"
+              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
             >
               <Link to="/profile">Go to My Profile</Link>
             </Button>
@@ -597,19 +595,17 @@ export default function AwardsRecognitionPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                 Submissions Workspace
               </p>
-              <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
+              <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
                 Awards and Recognition
               </h1>
-              <p className="max-w-2xl text-sm text-[#1E3A8A]">
+              <p className="max-w-2xl text-sm text-slate-600">
                 Track awards, recognitions, and related references linked to
                 your research projects.
               </p>
@@ -622,7 +618,7 @@ export default function AwardsRecognitionPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
+                      className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                       disabled={!filteredRows.length || Boolean(exportingType)}
                     >
                       <Download className="h-4 w-4" />
@@ -631,17 +627,17 @@ export default function AwardsRecognitionPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="bg-white border border-blue-200 shadow-md"
+                    className="bg-white border border-slate-300 shadow-md"
                   >
                     <DropdownMenuItem
                       onSelect={exportAsCsv}
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                     >
                       {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={exportAsPdf}
-                      className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                     >
                       {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
                     </DropdownMenuItem>
@@ -676,15 +672,15 @@ export default function AwardsRecognitionPage() {
             ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm"
+                className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                     {label}
                   </p>
-                  <Icon className="h-4 w-4 text-[#1E3A8A]" />
+                  <Icon className="h-4 w-4 text-slate-700" />
                 </div>
-                <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">{value}</p>
+                <p className="mt-2 text-2xl font-bold text-slate-700">{value}</p>
               </div>
             ))}
           </div>
@@ -692,11 +688,11 @@ export default function AwardsRecognitionPage() {
       </div>
 
       {isCenterChief ? (
-        <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
-          <CardHeader className="border-b border-blue-200/70 px-6 py-5">
+        <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-slate-200 px-6 py-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-[#1E3A8A]">
+                <CardTitle className="text-base font-semibold text-slate-700">
                   Managed Center Awards and Recognition
                 </CardTitle>
                 <CardDescription className="text-slate-600">
@@ -710,10 +706,10 @@ export default function AwardsRecognitionPage() {
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
               <label className="relative block w-full md:max-w-xl">
                 <span className="sr-only">Search managed center awards</span>
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
                 <Input
                   value={centerChiefSearch}
                   onChange={(event) => setCenterChiefSearch(event.target.value)}
@@ -771,10 +767,10 @@ export default function AwardsRecognitionPage() {
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "rounded-full border-blue-200/80 px-4 text-xs",
+                      "rounded-full border-slate-200 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
                         ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
-                        : "bg-white text-[#1E3A8A] hover:bg-blue-50",
+                        : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
                   >
@@ -784,7 +780,7 @@ export default function AwardsRecognitionPage() {
                         "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         centerChiefQuickFilter === chip.key
                           ? "bg-white/20 text-white"
-                          : "bg-blue-50 text-[#1E3A8A]",
+                          : "bg-slate-50 text-slate-700",
                       )}
                     >
                       {chip.count}
@@ -795,7 +791,7 @@ export default function AwardsRecognitionPage() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
+                  className="rounded-full text-xs text-slate-700 hover:text-slate-700"
                   onClick={resetCenterChiefFilters}
                 >
                   Reset all
@@ -804,13 +800,13 @@ export default function AwardsRecognitionPage() {
 
               {hasActiveCenterChiefFilters ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                     Active Filters
                   </span>
                   {String(centerChiefSearch || "").trim() ? (
                     <button
                       type="button"
-                      className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                       onClick={() => setCenterChiefSearch("")}
                     >
                       Search: "{String(centerChiefSearch || "").trim()}" x
@@ -819,7 +815,7 @@ export default function AwardsRecognitionPage() {
                   {centerChiefQuickFilter !== "all" ? (
                     <button
                       type="button"
-                      className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                       onClick={() => setCenterChiefQuickFilter("all")}
                     >
                       {centerChiefQuickFilter} x
@@ -831,34 +827,34 @@ export default function AwardsRecognitionPage() {
           </CardContent>
           {centerChiefLoading ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
                 Loading managed center awards...
               </div>
             </CardContent>
           ) : centerChiefError ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-blue-200/70 bg-blue-50/60 p-6 text-center text-sm text-slate-800">
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-800">
                 {centerChiefError}
               </div>
             </CardContent>
           ) : sortedCenterChiefRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
                 No awards and recognition records found for your managed
                 research center.
               </div>
             </CardContent>
           ) : centerChiefFilteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-6 text-center text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
                 No managed center awards match your search.
               </div>
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <Table className="min-w-[980px]">
-                  <TableHeader className="bg-blue-50/80 text-slate-600">
+                  <TableHeader className="bg-slate-50 text-slate-600">
                     <TableRow>
                       <TableHead>No.</TableHead>
                       <TableHead>Title of Research/Creative Work</TableHead>
@@ -890,7 +886,7 @@ export default function AwardsRecognitionPage() {
                                 href={row.supporting_movs}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#1E3A8A] transition hover:bg-blue-100"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
                               >
                                 <ExternalLink className="h-3.5 w-3.5" />
                                 View Reference
@@ -907,7 +903,7 @@ export default function AwardsRecognitionPage() {
                                   row.supporting_mov_file_name ||
                                   "Download MOV file"
                                 }
-                                className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-white px-2.5 py-1 text-xs font-medium text-[#1E3A8A] transition hover:bg-blue-50"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                               >
                                 <Download className="h-3.5 w-3.5" />
                                 Download MOV
@@ -927,7 +923,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
+                                className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
                                 asChild
                               >
                                 <Link
@@ -945,7 +941,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
+                                className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
                                 onClick={() => openEdit(row)}
                                 aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                                 title="Edit"
@@ -957,7 +953,7 @@ export default function AwardsRecognitionPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
+                                className="h-8 w-8 text-slate-700 hover:bg-slate-50"
                                 onClick={() => setDeleteTarget(row)}
                                 aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                                 title="Delete"
@@ -991,11 +987,11 @@ export default function AwardsRecognitionPage() {
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
-        <CardHeader className="border-b border-blue-200/70 px-6 py-5">
+      <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-[#1E3A8A]">
+              <CardTitle className="text-base font-semibold text-slate-700">
                 Awards and Recognition Records
               </CardTitle>
               <CardDescription className="text-slate-600">
@@ -1009,10 +1005,10 @@ export default function AwardsRecognitionPage() {
         </CardHeader>
 
         <CardContent className="p-4">
-          <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
+          <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
             <label className="relative block w-full md:max-w-xl">
               <span className="sr-only">Search awards and recognitions</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -1070,10 +1066,10 @@ export default function AwardsRecognitionPage() {
                   size="sm"
                   variant="outline"
                   className={cn(
-                    "rounded-full border-blue-200/80 px-4 text-xs",
+                    "rounded-full border-slate-200 px-4 text-xs",
                     recordsQuickFilter === chip.key
                       ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
-                      : "bg-white text-[#1E3A8A] hover:bg-blue-50",
+                      : "bg-white text-slate-700 hover:bg-slate-50",
                   )}
                   onClick={() => setRecordsQuickFilter(chip.key)}
                 >
@@ -1083,7 +1079,7 @@ export default function AwardsRecognitionPage() {
                       "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       recordsQuickFilter === chip.key
                         ? "bg-white/20 text-white"
-                        : "bg-blue-50 text-[#1E3A8A]",
+                        : "bg-slate-50 text-slate-700",
                     )}
                   >
                     {chip.count}
@@ -1094,7 +1090,7 @@ export default function AwardsRecognitionPage() {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
+                className="rounded-full text-xs text-slate-700 hover:text-slate-700"
                 onClick={resetRecordsFilters}
               >
                 Reset all
@@ -1103,13 +1099,13 @@ export default function AwardsRecognitionPage() {
 
             {hasActiveRecordsFilters ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Active Filters
                 </span>
                 {String(searchTerm || "").trim() ? (
                   <button
                     type="button"
-                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                     onClick={() => setSearchTerm("")}
                   >
                     Search: "{String(searchTerm || "").trim()}" x
@@ -1118,7 +1114,7 @@ export default function AwardsRecognitionPage() {
                 {recordsQuickFilter !== "all" ? (
                   <button
                     type="button"
-                    className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                     onClick={() => setRecordsQuickFilter("all")}
                   >
                     {recordsQuickFilter} x
@@ -1130,7 +1126,7 @@ export default function AwardsRecognitionPage() {
         </CardContent>
         {filteredRows.length === 0 ? (
           <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
               {canLoadOwnAwards && loading
                 ? "Loading award records..."
                 : loadError ||
@@ -1139,9 +1135,9 @@ export default function AwardsRecognitionPage() {
           </CardContent>
         ) : (
           <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
               <Table className="min-w-[980px]">
-                <TableHeader className="bg-blue-50/80 text-slate-600">
+                <TableHeader className="bg-slate-50 text-slate-600">
                   <TableRow>
                     <TableHead>No.</TableHead>
                     <TableHead>Title of Research/Creative Work</TableHead>
@@ -1173,7 +1169,7 @@ export default function AwardsRecognitionPage() {
                               href={row.supporting_movs}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#1E3A8A] transition hover:bg-blue-100"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                               Open Link
@@ -1190,7 +1186,7 @@ export default function AwardsRecognitionPage() {
                                 row.supporting_mov_file_name ||
                                 "Download MOV file"
                               }
-                              className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-white px-2.5 py-1 text-xs font-medium text-[#1E3A8A] transition hover:bg-blue-50"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                             >
                               <Download className="h-3.5 w-3.5" />
                               Download MOV
@@ -1227,7 +1223,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
+                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
                                     asChild
                                   >
                                     <Link
@@ -1245,7 +1241,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-blue-50 hover:text-[#1E3A8A]"
+                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
                                     onClick={() => openEdit(row)}
                                     aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
                                     title="Edit"
@@ -1257,7 +1253,7 @@ export default function AwardsRecognitionPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
+                                    className="h-8 w-8 text-slate-700 hover:bg-slate-50"
                                     onClick={() => setDeleteTarget(row)}
                                     aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
                                     title="Delete"
@@ -1305,5 +1301,7 @@ export default function AwardsRecognitionPage() {
     </section>
   );
 }
+
+
 
 
