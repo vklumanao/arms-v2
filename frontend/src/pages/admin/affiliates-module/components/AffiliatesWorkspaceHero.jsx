@@ -16,19 +16,17 @@ export default function AffiliatesWorkspaceHero({
   onExportPdf,
 }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 shadow-sm">
-      <div className="pointer-events-none absolute -right-20 -top-16 h-52 w-52 rounded-full bg-blue-200/45 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-blue-200/50 blur-3xl" />
-      <div className="relative">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#1E3A8A]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Admin Workspace
             </p>
-            <h1 className="text-2xl font-bold text-[#1E3A8A] md:text-3xl">
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Affiliate Workspace
             </h1>
-            <p className="max-w-2xl text-sm text-[#1E3A8A]">
+            <p className="max-w-2xl text-sm text-slate-600">
               Manage affiliate records, review membership status, and export
               directory reports from one panel.
             </p>
@@ -42,7 +40,7 @@ export default function AffiliatesWorkspaceHero({
                     type="button"
                     variant="outline"
                     disabled={!filteredCount || Boolean(exportingType)}
-                    className="border-blue-200 bg-white text-[#1E3A8A] hover:bg-blue-50 active:bg-blue-100"
+                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -50,17 +48,17 @@ export default function AffiliatesWorkspaceHero({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="bg-white border border-blue-200 shadow-md"
+                  className="border border-slate-200 bg-white shadow-md"
                 >
                   <DropdownMenuItem
-                    className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                    className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                     onSelect={onExportCsv}
                     disabled={!filteredCount || Boolean(exportingType)}
                   >
                     {exportingType === "csv" ? "Exporting..." : "Export CSV"}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-[#1E3A8A] hover:bg-blue-50 focus:bg-blue-50"
+                    className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
                     onSelect={onExportPdf}
                     disabled={!filteredCount || Boolean(exportingType)}
                   >
@@ -73,36 +71,36 @@ export default function AffiliatesWorkspaceHero({
         </div>
 
         <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
-          <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Affiliates
               </p>
-              <Users className="h-4 w-4 text-[#1E3A8A]" />
+              <Users className="h-4 w-4 text-slate-600" />
             </div>
-            <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {affiliateMetrics.total}
             </p>
           </div>
-          <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Active
               </p>
-              <Users className="h-4 w-4 text-[#1E3A8A]" />
+              <Users className="h-4 w-4 text-slate-600" />
             </div>
-            <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {affiliateMetrics.active}
             </p>
           </div>
-          <div className="rounded-xl border border-blue-200/80 bg-white/90 p-4 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 GS Faculty
               </p>
-              <Users className="h-4 w-4 text-[#1E3A8A]" />
+              <Users className="h-4 w-4 text-slate-600" />
             </div>
-            <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">
+            <p className="mt-2 text-2xl font-bold text-slate-900">
               {affiliateMetrics.gsFaculty}
             </p>
           </div>
