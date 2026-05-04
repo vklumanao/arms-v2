@@ -4,7 +4,7 @@ import { FolderKanban, Users } from "lucide-react";
 
 export default function DepartmentHeroHeader({ department, initials, usage }) {
   return (
-    <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-gradient-to-r from-white via-white to-blue-50 p-5 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-lg font-bold uppercase text-white shadow-sm">
           {initials}
