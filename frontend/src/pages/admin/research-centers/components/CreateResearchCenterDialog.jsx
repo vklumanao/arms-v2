@@ -35,11 +35,11 @@ export default function CreateResearchCenterDialog({
   return open ? (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="mx-auto max-w-3xl border border-blue-200 bg-white text-[#1E3A8A] shadow-lg"
+        className="mx-auto max-w-3xl border border-slate-300 bg-white text-slate-700 shadow-lg"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-[#1E3A8A]">
+          <DialogTitle className="text-lg font-semibold text-slate-700">
             Create Research Center
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-600">
@@ -55,7 +55,7 @@ export default function CreateResearchCenterDialog({
             <Input
               className={cn(
                 "border bg-white",
-                errors.name ? "border-[#1E3A8A]" : "border-blue-200",
+                errors.name ? "border-[#1E3A8A]" : "border-slate-300",
               )}
               placeholder="e.g., Center for Data Science and AI"
               value={values.name}
@@ -73,7 +73,7 @@ export default function CreateResearchCenterDialog({
             <Input
               className={cn(
                 "border bg-white",
-                errors.code ? "border-[#1E3A8A]" : "border-blue-200",
+                errors.code ? "border-[#1E3A8A]" : "border-slate-300",
               )}
               placeholder="e.g., CDSAI"
               value={values.code}
@@ -101,12 +101,12 @@ export default function CreateResearchCenterDialog({
                   "border bg-white",
                   errors.centerChiefId
                     ? "border-[#1E3A8A]"
-                    : "border-blue-200",
+                    : "border-slate-300",
                 )}
               >
                 <SelectValue placeholder="Select Center Chief" />
               </SelectTrigger>
-              <SelectContent className="border border-blue-200 bg-white">
+              <SelectContent className="border border-slate-300 bg-white">
                 {centerChiefUsers.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
@@ -130,10 +130,10 @@ export default function CreateResearchCenterDialog({
                   onFieldChange({ socialMediaPlatform: value })
                 }
               >
-                <SelectTrigger className="border border-blue-200 bg-white">
+                <SelectTrigger className="border border-slate-300 bg-white">
                   <SelectValue placeholder="Select platform" />
                 </SelectTrigger>
-                <SelectContent className="border border-blue-200 bg-white">
+                <SelectContent className="border border-slate-300 bg-white">
                   {SOCIAL_MEDIA_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -143,7 +143,7 @@ export default function CreateResearchCenterDialog({
               </Select>
               <div className="sm:col-span-2">
                 <Input
-                  className="border border-blue-200 bg-white"
+                  className="border border-slate-300 bg-white"
                   value={values.socialMediaLink}
                   placeholder={getSocialPlaceholder(values.socialMediaPlatform)}
                   onChange={(event) =>
@@ -159,7 +159,7 @@ export default function CreateResearchCenterDialog({
               Description
             </label>
             <Textarea
-              className="border border-blue-200 bg-white"
+              className="border border-slate-300 bg-white"
               placeholder="Write a short overview, mission, or focus of this research center..."
               value={values.description}
               onChange={(event) =>
@@ -179,7 +179,7 @@ export default function CreateResearchCenterDialog({
                   "border bg-white",
                   errors.researchAgendas
                     ? "border-[#1E3A8A]"
-                    : "border-blue-200",
+                    : "border-slate-300",
                 )}
                 placeholder="e.g., Smart Agriculture"
                 value={values.agendaInput}
@@ -196,7 +196,7 @@ export default function CreateResearchCenterDialog({
               <Button
                 type="button"
                 variant="outline"
-                className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+                className="border-slate-300 text-slate-700 hover:bg-slate-50"
                 onClick={onAddAgenda}
               >
                 Add
@@ -208,7 +208,7 @@ export default function CreateResearchCenterDialog({
                   <button
                     key={agenda}
                     type="button"
-                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs hover:bg-blue-100"
+                    className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs hover:bg-slate-100"
                     onClick={() => onRemoveAgenda(agenda)}
                   >
                     {agenda} ×
@@ -231,7 +231,7 @@ export default function CreateResearchCenterDialog({
         <div className="mt-6 flex justify-end gap-2">
           <Button
             variant="outline"
-            className="border-blue-200 text-[#1E3A8A] hover:bg-blue-50"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
@@ -249,3 +249,4 @@ export default function CreateResearchCenterDialog({
     </Dialog>
   ) : null;
 }
+
