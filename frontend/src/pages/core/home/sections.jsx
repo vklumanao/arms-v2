@@ -48,9 +48,7 @@ function SectionIntro({ eyebrow, title, subtitle, inverted = false }) {
 export function HeroSection() {
   return (
     <section id="home" className="scroll-mt-28">
-      <div className="relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br from-zinc-50 via-white to-zinc-50 p-6 sm:p-10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-zinc-200/45 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-zinc-200/35 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-zinc-100 bg-white p-6 sm:p-10">
 
         <div className="relative z-10 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
           <div className="page-stack-lg">
@@ -269,7 +267,7 @@ export function BenefitsSection() {
 
 export function BrandPromiseSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-r from-zinc-900 to-zinc-800 p-6 text-white sm:p-8">
+    <section className="rounded-3xl border bg-zinc-900 p-6 text-white sm:p-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
         <SectionIntro
           eyebrow="Brand Promise"
@@ -350,7 +348,7 @@ export function RolesSection() {
 
 export function GovernanceSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-br from-white to-zinc-50 p-6 sm:p-8">
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
       <SectionIntro
         eyebrow="Governance Principles"
         title="Designed for Academic Integrity and Compliance"
@@ -376,7 +374,7 @@ export function GovernanceSection() {
 
 export function SuccessIndicatorsSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-br from-white via-zinc-50 to-zinc-50 p-6 sm:p-8">
+    <section className="rounded-3xl border bg-white p-6 sm:p-8">
       <SectionIntro
         eyebrow="Success Indicators"
         title="What Effective ARMS Adoption Looks Like"
@@ -429,7 +427,7 @@ export function VisionSection() {
 export function AboutSection() {
   return (
     <section id="about" className="scroll-mt-28">
-      <div className="rounded-3xl border bg-gradient-to-r from-zinc-900 to-zinc-800 p-6 text-white sm:p-8">
+      <div className="rounded-3xl border bg-zinc-900 p-6 text-white sm:p-8">
         <SectionIntro
           eyebrow="About ARMS"
           title="A Modern Academic Platform for Affiliation and Research Management"
@@ -463,7 +461,7 @@ export function AboutSection() {
 
 export function FinalCtaSection() {
   return (
-    <section className="rounded-3xl border bg-gradient-to-r from-zinc-800 to-zinc-700 p-6 text-white sm:p-8">
+    <section className="rounded-3xl border bg-zinc-800 p-6 text-white sm:p-8">
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-100">
@@ -495,6 +493,8 @@ export function FinalCtaSection() {
     </section>
   );
 }
+
+
 
 
 
