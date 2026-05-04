@@ -8,9 +8,9 @@ import {
 
 export default function AgendasPanel({ center, agendaNames }) {
   return (
-    <Card className="overflow-hidden border-blue-200/80 shadow-sm">
-      <CardHeader className="space-y-1 border-b border-blue-100 bg-blue-50/35 px-4 py-4 sm:px-6 sm:py-5">
-        <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+    <Card className="overflow-hidden border-slate-200 shadow-sm">
+      <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
+        <CardTitle className="text-lg font-bold text-slate-700">
           Linked Agendas
         </CardTitle>
         <CardDescription>
@@ -23,9 +23,9 @@ export default function AgendasPanel({ center, agendaNames }) {
             {agendaNames.map((agendaName) => (
               <div
                 key={`${center.id}-${agendaName}`}
-                className="rounded-[1.35rem] border border-blue-200 bg-[linear-gradient(135deg,rgba(255,255,255,1),rgba(239,246,255,0.82),rgba(219,234,254,0.65))] p-4 shadow-sm"
+                className="rounded-[1.35rem] border border-slate-300 bg-white p-4 shadow-sm"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1E3A8A]">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                   Research Agenda
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[#0F172A]">
@@ -35,7 +35,7 @@ export default function AgendasPanel({ center, agendaNames }) {
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.35rem] border border-dashed border-blue-200 bg-blue-50/70 p-8 text-center text-sm text-[#1E3A8A]">
+          <div className="rounded-[1.35rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-700">
             No agendas linked to this center yet.
           </div>
         )}
@@ -43,3 +43,5 @@ export default function AgendasPanel({ center, agendaNames }) {
     </Card>
   );
 }
+
+
