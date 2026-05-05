@@ -443,12 +443,14 @@ export default function AppShell() {
       >
         {({ isActive }) => (
           <>
-            {!collapsed ? (
-              <span
-                className={cn("sidebar-nav-rail", isActive && "is-active")}
-                aria-hidden="true"
-              />
-            ) : null}
+            <span
+              className={cn(
+                "sidebar-nav-rail",
+                collapsed && "is-hidden",
+                isActive && "is-active",
+              )}
+              aria-hidden="true"
+            />
             <span className="sidebar-nav-icon">
               <Icon className={cn("h-4 w-4", collapsed && "h-5 w-5")} />
             </span>

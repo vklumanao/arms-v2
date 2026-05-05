@@ -713,9 +713,9 @@ h4 {
 }
 
 .sidebar-nav-item.is-collapsed {
-  grid-template-columns: 1fr;
-  justify-items: center;
-  padding: 0.42rem 0.5rem;
+  grid-template-columns: 2.15rem minmax(0, 1fr);
+  justify-items: stretch;
+  padding: 0.5rem 0.5rem;
 }
 
 .sidebar-nav-icon {
@@ -750,7 +750,10 @@ h4 {
 }
 
 .sidebar-nav-label.is-hidden {
-  display: none;
+  visibility: hidden;
+  opacity: 0;
+  width: 0;
+  pointer-events: none;
 }
 
 .sidebar-nav-rail {
@@ -771,6 +774,10 @@ h4 {
 
 .sidebar-nav-rail.is-active {
   background: var(--success);
+}
+
+.sidebar-nav-rail.is-hidden {
+  opacity: 0;
 }
 
 .input-error {
