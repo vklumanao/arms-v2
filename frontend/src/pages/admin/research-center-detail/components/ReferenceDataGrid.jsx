@@ -32,9 +32,9 @@ export default function ReferenceDataGrid({
   minWidthClass = "min-w-[980px]",
 }) {
   return (
-    <Card className="overflow-hidden border border-blue-200/70 bg-white">
-      <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
-        <CardTitle className="text-base font-bold text-[#1E3A8A]">
+    <Card className="overflow-hidden border border-slate-200 bg-white">
+      <CardHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
+        <CardTitle className="text-base font-bold text-[#1E293B]">
           {title}
         </CardTitle>
         <CardDescription className="text-sm text-slate-600">
@@ -56,7 +56,7 @@ export default function ReferenceDataGrid({
             <div className="overflow-x-auto">
               <Table className={minWidthClass}>
                 <TableHeader>
-                  <TableRow className="bg-blue-100/70">
+                  <TableRow className="bg-slate-100">
                     {columns.map((column) => (
                       <TableHead
                         key={column.key}
@@ -72,7 +72,7 @@ export default function ReferenceDataGrid({
                   {rows.map((row, index) => (
                     <TableRow
                       key={rowKey(row, index)}
-                      className="hover:bg-blue-50/80"
+                      className="hover:bg-slate-50"
                     >
                       {columns.map((column) => (
                         <TableCell
