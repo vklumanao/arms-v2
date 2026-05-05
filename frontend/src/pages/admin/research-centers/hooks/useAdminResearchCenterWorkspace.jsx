@@ -617,13 +617,13 @@ export default function useAdminResearchCenterWorkspace() {
       isScopedCenterChief
         ? [
             { key: "overview", label: "Overview" },
-            { key: "affiliates", label: "Affiliates" },
+            { key: "members", label: "Members" },
             { key: "projects", label: "Projects" },
             { key: "agendas", label: "Agendas" },
           ]
         : [
             { key: "overview", label: "Overview" },
-            { key: "affiliates", label: "Affiliates" },
+            { key: "members", label: "Members" },
             { key: "projects", label: "Projects" },
             { key: "agendas", label: "Agendas" },
             { key: "settings", label: "Settings" },
