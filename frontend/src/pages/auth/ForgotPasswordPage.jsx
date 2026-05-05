@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
                 />
                 <div>
                   <p className="auth-spotlight-kicker">Account Recovery</p>
-                  <p className="auth-spotlight-name">CenterPulse</p>
+                  <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
             <CardContent className="auth-card-body space-y-5">
               <div className="auth-tips-grid auth-tips-grid-2">
                 <div className="auth-tip">
-                  Use the email linked to your CenterPulse account.
+                  Use the email linked to your CenterPULSE account.
                 </div>
                 <div className="auth-tip">
                   Check spam or junk if mail does not appear.

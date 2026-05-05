@@ -230,7 +230,7 @@ export default function RegisterPage() {
                 />
                 <div>
                   <p className="auth-spotlight-kicker">Join The Workspace</p>
-                  <p className="auth-spotlight-name">CenterPulse</p>
+                  <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
