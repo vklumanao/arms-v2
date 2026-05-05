@@ -1333,7 +1333,7 @@ export default function ResearchOutputsPage() {
                     className={cn(
                       "rounded-full border-slate-200 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
                         : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
@@ -1641,7 +1641,7 @@ export default function ResearchOutputsPage() {
                       className={cn(
                         "rounded-full border-slate-200 px-4 text-xs",
                         recordsQuickFilter === chip.key
-                          ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
                           : "bg-white text-slate-700 hover:bg-slate-50",
                       )}
                       onClick={() => setRecordsQuickFilter(chip.key)}
@@ -2008,7 +2008,7 @@ export default function ResearchOutputsPage() {
             <label className="space-y-2 text-sm">
               <span className="font-semibold text-slate-700">Notes</span>
               <textarea
-                className="flex min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                className="flex min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100"
                 value={addOutputForm.notes}
                 onChange={(event) =>
                   setAddOutputForm((prev) => ({
@@ -2088,7 +2088,7 @@ export default function ResearchOutputsPage() {
                     file_name: event.target.value,
                   }))
                 }
-                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-blue-200"
+                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-emerald-100"
               />
             </label>
 
@@ -2104,7 +2104,7 @@ export default function ResearchOutputsPage() {
                     notes: event.target.value,
                   }))
                 }
-                className="flex min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                className="flex min-h-[90px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100"
               />
             </label>
 
@@ -2137,7 +2137,7 @@ export default function ResearchOutputsPage() {
                       mime_type: event.target.value,
                     }))
                   }
-                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-blue-200"
+                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-emerald-100"
                 />
               </label>
 
@@ -2155,7 +2155,7 @@ export default function ResearchOutputsPage() {
                       file_size: event.target.value,
                     }))
                   }
-                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-blue-200"
+                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 focus-visible:ring-emerald-100"
                 />
               </label>
             </div>
@@ -2214,7 +2214,7 @@ export default function ResearchOutputsPage() {
               variant="destructive"
               disabled={Boolean(deletingByResource[deleteTarget?.resourceId])}
               onClick={() => handleDeleteResource(deleteTarget)}
-              className="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
+              className="bg-[#F97316] text-white hover:bg-[#EA580C]"
             >
               {deletingByResource[deleteTarget?.resourceId]
                 ? "Deleting..."
