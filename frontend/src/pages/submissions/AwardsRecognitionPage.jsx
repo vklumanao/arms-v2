@@ -769,7 +769,7 @@ export default function AwardsRecognitionPage() {
                     className={cn(
                       "rounded-full border-slate-200 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
                         : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
@@ -1068,7 +1068,7 @@ export default function AwardsRecognitionPage() {
                   className={cn(
                     "rounded-full border-slate-200 px-4 text-xs",
                     recordsQuickFilter === chip.key
-                      ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                      ? "bg-[#10B981] text-white hover:bg-[#059669]"
                       : "bg-white text-slate-700 hover:bg-slate-50",
                   )}
                   onClick={() => setRecordsQuickFilter(chip.key)}
