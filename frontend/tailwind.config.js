@@ -5,6 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        slateui: {
+          primary: "#1e293b",
+          primaryStrong: "#0f172a",
+          secondary: "#10b981",
+          secondaryStrong: "#059669",
+          accent: "#f97316",
+          accentStrong: "#ea580c",
+          bg: "#f8fafc",
+          border: "#e2e8f0",
+          muted: "#64748b",
+        },
         border: "hsl(var(--color-border))",
         input: "hsl(var(--color-input))",
         ring: "hsl(var(--color-ring))",
@@ -47,9 +58,14 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "var(--radius-lg)",
+        md: "var(--radius-sm)",
+        sm: "var(--radius-sm)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
     },
   },
