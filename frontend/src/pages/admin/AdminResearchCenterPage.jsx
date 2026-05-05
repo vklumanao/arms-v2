@@ -207,7 +207,7 @@ export default function AdminResearchCenterPage() {
                       </Badge>
                     </div>
                   ) : null}
-                  <CardTitle className="text-2xl font-bold text-slate-900">
+                  <CardTitle className="text-5xl font-bold text-slate-900">
                     {workspaceCenterRow?.name || "Select a Research Center"}
                   </CardTitle>
                   <CardDescription className="text-slate-600">
@@ -217,14 +217,10 @@ export default function AdminResearchCenterPage() {
                       : "Choose a center from the directory to load its workspace."}
                   </CardDescription>
                   {workspaceCenterRow ? (
-                    <div className="flex flex-wrap gap-4 pt-2 text-sm text-slate-600">
+                    <div className="flex flex-wrap gap-4 pt-2 text-lg font-bold text-slate-600">
                       <span>
                         Center Chief:{" "}
                         {workspaceCenterRow.centerChiefName || "-"}
-                      </span>
-                      <span>Center ID: {workspaceCenterRow.id || "-"}</span>
-                      <span>
-                        Members Active: {workspaceCenterRow.profileCount || 0}
                       </span>
                     </div>
                   ) : null}
@@ -264,7 +260,7 @@ export default function AdminResearchCenterPage() {
                       activeWorkspaceTab === tab.key ? "secondary" : "outline"
                     }
                     className={cn(
-                      "min-h-11 shrink-0 rounded-full px-4",
+                      "min-h-7 shrink-0 rounded-full px-4",
                       activeWorkspaceTab === tab.key
                         ? "border-slate-300 bg-slate-100 text-slate-700"
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
