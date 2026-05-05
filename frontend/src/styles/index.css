@@ -713,9 +713,12 @@ h4 {
 }
 
 .sidebar-nav-item.is-collapsed {
-  grid-template-columns: 2.15rem minmax(0, 1fr);
-  justify-items: stretch;
-  padding: 0.5rem 0.5rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  place-items: center;
+  padding: 0.56rem 0.5rem;
+  text-align: center;
+  min-height: 2.6rem;
 }
 
 .sidebar-nav-icon {
@@ -750,10 +753,11 @@ h4 {
 }
 
 .sidebar-nav-label.is-hidden {
-  visibility: hidden;
-  opacity: 0;
-  width: 0;
-  pointer-events: none;
+  display: none;
+}
+
+.sidebar-nav-item.is-collapsed .sidebar-nav-icon {
+  margin-inline: auto;
 }
 
 .sidebar-nav-rail {

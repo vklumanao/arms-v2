@@ -683,7 +683,7 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-              <div className={cn("space-y-2", collapsed && "space-y-1")}>
+              <div className="space-y-2">
                 {visibleGroups
                   .flatMap((group) => group.items)
                   .map((item) => (
