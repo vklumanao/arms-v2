@@ -75,7 +75,7 @@ export default function SettingsPanel({
                         className={cn(
                           "h-11 rounded-2xl border bg-white",
                           editErrors.name
-                            ? "border-[#1E3A8A]"
+                            ? "border-[#F97316]"
                             : "border-slate-300",
                         )}
                         value={editing.name}
@@ -97,7 +97,7 @@ export default function SettingsPanel({
                         className={cn(
                           "h-11 rounded-2xl border bg-white",
                           editErrors.code
-                            ? "border-[#1E3A8A]"
+                            ? "border-[#F97316]"
                             : "border-slate-300",
                         )}
                         value={editing.code}
@@ -129,7 +129,7 @@ export default function SettingsPanel({
                           className={cn(
                             "h-11 rounded-2xl border bg-white",
                             editErrors.centerChiefId
-                              ? "border-[#1E3A8A]"
+                              ? "border-[#F97316]"
                               : "border-slate-300",
                           )}
                         >
@@ -231,7 +231,7 @@ export default function SettingsPanel({
                       className={cn(
                         "h-11 rounded-2xl border bg-white",
                         editErrors.researchAgendas
-                          ? "border-[#1E3A8A]"
+                          ? "border-[#F97316]"
                           : "border-slate-300",
                       )}
                       placeholder="Add research agendum"
@@ -304,7 +304,7 @@ export default function SettingsPanel({
                     Reset Form
                   </Button>
                   <Button
-                    className="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
+                    className="bg-[#10B981] text-white hover:bg-[#059669]"
                     onClick={onSave}
                     disabled={actionLoading || !isEditFormValid}
                   >
@@ -317,9 +317,9 @@ export default function SettingsPanel({
         </CardContent>
       </Card>
 
-      <Card className="border-red-200 shadow-sm">
-        <CardHeader className="space-y-1 border-b border-red-100 bg-red-50/60 px-4 py-4 sm:px-6 sm:py-5">
-          <CardTitle className="text-lg font-bold text-red-700">
+      <Card className="border-orange-200 shadow-sm">
+        <CardHeader className="space-y-1 border-b border-orange-100 bg-orange-50/60 px-4 py-4 sm:px-6 sm:py-5">
+          <CardTitle className="text-lg font-bold text-orange-700">
             Danger Zone
           </CardTitle>
           <CardDescription>
@@ -333,7 +333,7 @@ export default function SettingsPanel({
           </div>
           <Button
             variant="outline"
-            className="border-red-200 text-red-700 hover:bg-red-50"
+            className="border-orange-200 text-orange-700 hover:bg-orange-50"
             onClick={onDelete}
           >
             <Trash2 className="h-4 w-4" />
