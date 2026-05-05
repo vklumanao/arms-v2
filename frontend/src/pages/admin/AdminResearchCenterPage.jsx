@@ -356,7 +356,11 @@ export default function AdminResearchCenterPage() {
         }
         className="border border-slate-300 bg-white text-slate-700 shadow-md"
         cancelButtonClassName="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-        confirmButtonClassName="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8] active:bg-[#1E3A8A] disabled:bg-slate-300 disabled:text-slate-500"
+        confirmButtonClassName={
+          deleteGuard.blocked
+            ? "bg-[#10B981] text-white hover:bg-[#059669] active:bg-[#047857] disabled:bg-slate-300 disabled:text-slate-500"
+            : "bg-[#F97316] text-white hover:bg-[#EA580C] active:bg-[#C2410C] disabled:bg-slate-300 disabled:text-slate-500"
+        }
       />
 
       <CreateResearchCenterDialog

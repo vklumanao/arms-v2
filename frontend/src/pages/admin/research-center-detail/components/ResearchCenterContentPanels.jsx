@@ -62,14 +62,14 @@ export default function ResearchCenterContentPanels({
   return (
     <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <aside className="space-y-4">
-        <div className="rounded-lg border border-blue-200/70 bg-blue-50/25 p-5">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Description</p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
             {String(center?.description || "").trim() || "No description provided."}
           </p>
         </div>
 
-        <div className="space-y-3 rounded-lg border border-blue-200/70 bg-white p-5">
+        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">Research Agenda</p>
           {center.agendaNames.length ? (
             <div className="flex flex-wrap gap-3">
@@ -77,7 +77,7 @@ export default function ResearchCenterContentPanels({
                 <button
                   key={agenda}
                   type="button"
-                  className="inline-flex items-center rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-blue-50"
+                  className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1E293B] transition hover:bg-slate-50"
                   onClick={() => applyAgendaFilter(agenda)}
                   title="Filter linked projects by this agenda"
                 >
@@ -93,25 +93,25 @@ export default function ResearchCenterContentPanels({
 
       <div className="space-y-4">
         <Tabs value={activeTab} onValueChange={setTab}>
-          <TabsList className="text-sm border border-blue-200 bg-white">
+          <TabsList className="text-sm border border-slate-200 bg-white">
             <TabsTrigger
               value="projects"
-              className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
+              className="text-sm data-[state=active]:bg-emerald-50 data-[state=active]:text-[#1E293B]"
             >
               Projects
             </TabsTrigger>
             <TabsTrigger
               value="affiliates"
-              className="text-sm data-[state=active]:bg-blue-100 data-[state=active]:text-[#1E3A8A]"
+              className="text-sm data-[state=active]:bg-emerald-50 data-[state=active]:text-[#1E293B]"
             >
               Affiliates
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="affiliates" className="mt-4 space-y-3">
-            <Card className="overflow-hidden border border-blue-200/70 bg-white">
-              <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
-                <CardTitle className="text-base font-bold text-[#1E3A8A]">Linked Affiliates</CardTitle>
+            <Card className="overflow-hidden border border-slate-200 bg-white">
+              <CardHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                <CardTitle className="text-base font-bold text-[#1E293B]">Linked Affiliates</CardTitle>
                 <CardDescription className="text-sm text-slate-600">
                   Showing {links.profiles.length} affiliate(s).
                 </CardDescription>
@@ -130,7 +130,7 @@ export default function ResearchCenterContentPanels({
                     <div className="overflow-x-auto">
                       <Table className="min-w-[980px]">
                         <TableHeader>
-                          <TableRow className="bg-blue-100/70">
+                          <TableRow className="bg-slate-100">
                             <TableHead>No.</TableHead>
                             <TableHead>Full Name</TableHead>
                             <TableHead>Email</TableHead>
@@ -147,7 +147,7 @@ export default function ResearchCenterContentPanels({
                             const isChief = rowId && centerChiefId && rowId === centerChiefId;
 
                             return (
-                              <TableRow key={row?.id || `${idx}`} className="hover:bg-blue-50/80">
+                              <TableRow key={row?.id || `${idx}`} className="hover:bg-slate-50">
                                 <TableCell>{(affiliatesPage - 1) * pageSize + idx + 1}</TableCell>
                                 <TableCell className="font-medium text-slate-900">
                                   {row?.full_name || row?.name || "-"}
@@ -160,7 +160,7 @@ export default function ResearchCenterContentPanels({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-blue-50"
+                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50"
                                     disabled={isChief}
                                     onClick={() => setUnlinkTarget(row)}
                                   >
@@ -193,9 +193,9 @@ export default function ResearchCenterContentPanels({
                 description="No linked projects found for this research center."
               />
             ) : (
-              <Card className="overflow-hidden border border-blue-200/70 bg-white">
-                <CardHeader className="border-b border-blue-200/70 bg-blue-50/25 px-6 py-5">
-                  <CardTitle className="text-base font-bold text-[#1E3A8A]">Linked Projects</CardTitle>
+              <Card className="overflow-hidden border border-slate-200 bg-white">
+                <CardHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                  <CardTitle className="text-base font-bold text-[#1E293B]">Linked Projects</CardTitle>
                   <CardDescription className="text-sm text-slate-600">
                     Showing {filteredProjects.length} project(s).
                   </CardDescription>
@@ -206,7 +206,7 @@ export default function ResearchCenterContentPanels({
                         Agenda: {agendaFilter}
                       </span>
                       <button
-                        className="text-xs font-semibold text-slate-500 hover:text-[#1E3A8A]"
+                        className="text-xs font-semibold text-slate-500 hover:text-[#1E293B]"
                         onClick={() => setAgendaFilter("")}
                       >
                         Clear agenda
@@ -216,14 +216,14 @@ export default function ResearchCenterContentPanels({
 
                   <div className="flex flex-wrap items-center gap-2 mt-4">
                     <Input
-                      className="w-[180px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0"
+                      className="w-[180px] h-7 px-2 text-xs border-slate-300 focus:border-emerald-500 focus:ring-0"
                       placeholder="Search projects"
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
                     />
 
                     <Select value={projectStatus} onValueChange={setProjectStatus}>
-                      <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
+                      <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-slate-300 focus:border-emerald-500 focus:ring-0">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -236,7 +236,7 @@ export default function ResearchCenterContentPanels({
                     </Select>
 
                     <Select value={projectYear} onValueChange={setProjectYear}>
-                      <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-slate-300 focus:border-blue-400 focus:ring-0">
+                      <SelectTrigger className="w-[120px] h-7 px-2 text-xs border-slate-300 focus:border-emerald-500 focus:ring-0">
                         <SelectValue placeholder="Year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -250,7 +250,7 @@ export default function ResearchCenterContentPanels({
 
                     <Button
                       variant="outline"
-                      className="h-7 px-2.5 text-xs border-slate-300 text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A] transition"
+                      className="h-7 px-2.5 text-xs border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-[#1E293B] transition"
                       onClick={() => {
                         setProjectSearch("");
                         setProjectStatus("all");
@@ -267,7 +267,7 @@ export default function ResearchCenterContentPanels({
                   <div className="overflow-x-auto">
                     <Table className="min-w-[980px]">
                       <TableHeader>
-                        <TableRow className="bg-blue-100/70">
+                        <TableRow className="bg-slate-100">
                           <TableHead>No.</TableHead>
                           <TableHead>Project Title</TableHead>
                           <TableHead>Status</TableHead>
@@ -281,7 +281,7 @@ export default function ResearchCenterContentPanels({
 
                       <TableBody>
                         {paginatedProjects.map((row, idx) => (
-                          <TableRow key={row?.id || `${idx}`} className="hover:bg-blue-50/80">
+                          <TableRow key={row?.id || `${idx}`} className="hover:bg-slate-50">
                             <TableCell>{(projectsPage - 1) * pageSize + idx + 1}</TableCell>
                             <TableCell className="font-medium text-slate-900">{row?.title || "-"}</TableCell>
                             <TableCell>
@@ -300,7 +300,7 @@ export default function ResearchCenterContentPanels({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-600 hover:bg-blue-50"
+                                className="h-8 w-8 text-slate-600 hover:bg-slate-50"
                                 onClick={() => goToProject(row)}
                               >
                                 <Eye className="h-4 w-4" />

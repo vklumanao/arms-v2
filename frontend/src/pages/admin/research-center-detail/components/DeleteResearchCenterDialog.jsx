@@ -25,7 +25,7 @@ export default function DeleteResearchCenterDialog({
     <Dialog open={open} onOpenChange={(next) => !deleting && onOpenChange(next)}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-[#1E3A8A]">Delete Research Center</DialogTitle>
+          <DialogTitle className="text-[#1E293B]">Delete Research Center</DialogTitle>
           <DialogDescription>
             {blocked
               ? "Deletion is blocked because this center still has linked records."
@@ -65,7 +65,7 @@ export default function DeleteResearchCenterDialog({
           </Button>
           <Button
             type="button"
-            className="w-full bg-red-600 text-white hover:bg-red-700 sm:w-auto"
+            className="w-full bg-orange-600 text-white hover:bg-orange-700 sm:w-auto"
             disabled={deleting || blocked}
             onClick={onDelete}
           >

@@ -68,12 +68,12 @@ const includesPublicationSignal = (value) => {
 
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
-  if (key === "completed") return "border-border bg-muted text-foreground";
+  if (key === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (key === "ongoing" || key === "active")
-    return "border-border bg-muted text-foreground";
+    return "border-amber-200 bg-amber-50 text-amber-700";
   if (key === "delayed" || key === "rejected" || key === "cancelled")
-    return "border-border bg-muted text-foreground";
-  return "border-border bg-muted text-foreground";
+    return "border-orange-200 bg-orange-50 text-orange-700";
+  return "border-slate-200 bg-slate-50 text-slate-700";
 };
 
 const getSocialMeta = (url) => {

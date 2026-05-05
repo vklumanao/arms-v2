@@ -641,8 +641,8 @@ export default function ResearchProjectsPage() {
     if (normalized === "ongoing")
       return "border-amber-200 bg-amber-50 text-amber-700";
     if (normalized === "delayed" || normalized === "rejected")
-      return "border-red-200 bg-red-50 text-red-700";
-    return "border-slate-300 bg-slate-50 text-blue-700";
+      return "border-orange-200 bg-orange-50 text-orange-700";
+    return "border-slate-300 bg-slate-50 text-slate-700";
   };
 
   const getVisibilityBadgeClass = (isPrivate) =>
@@ -1029,7 +1029,7 @@ export default function ResearchProjectsPage() {
                     className={cn(
                       "rounded-full border-slate-200 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
                         : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
@@ -1434,7 +1434,7 @@ export default function ResearchProjectsPage() {
                       className={cn(
                         "rounded-full border-slate-200 px-4 text-xs",
                         quickFilter === chip.key
-                          ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
                           : "bg-white text-slate-700 hover:bg-slate-50",
                       )}
                       onClick={() => setQuickFilter(chip.key)}
@@ -2037,7 +2037,7 @@ export default function ResearchProjectsPage() {
                   className={cn(
                     "rounded-full border-slate-200 px-4 text-xs",
                     linkedProjectsQuickFilter === chip.key
-                      ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                      ? "bg-[#10B981] text-white hover:bg-[#059669]"
                       : "bg-white text-slate-700 hover:bg-slate-50",
                   )}
                   onClick={() => setLinkedProjectsQuickFilter(chip.key)}

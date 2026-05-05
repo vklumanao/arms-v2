@@ -810,7 +810,7 @@ export default function AdminDepartmentPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
-                      ? "bg-[#1E3A8A]/10 text-slate-700"
+                      ? "bg-[#F1F5F9] text-slate-700"
                       : "bg-slate-50 text-slate-700",
                   )}
                 >
