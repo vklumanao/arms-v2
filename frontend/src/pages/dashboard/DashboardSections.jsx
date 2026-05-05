@@ -61,23 +61,23 @@ import { Input } from "@/components/ui/input";
 import { normalizeStatus } from "@/utils/status";
 
 const CHART_COLORS = [
-  "#1f77b4",
-  "#ff7f0e",
-  "#2ca02c",
-  "#d62728",
-  "#9467bd",
-  "#8c564b",
-  "#e377c2",
-  "#7f7f7f",
-  "#bcbd22",
-  "#17becf",
+  "#1e293b",
+  "#10b981",
+  "#f97316",
+  "#f59e0b",
+  "#3b82f6",
+  "#64748b",
+  "#059669",
+  "#ea580c",
+  "#0f172a",
+  "#94a3b8",
 ];
 
 const STATUS_COLOR_MAP = {
-  Completed: CHART_COLORS[2],
-  Ongoing: CHART_COLORS[0],
-  Proposal: CHART_COLORS[1],
-  Rejected: CHART_COLORS[3],
+  Completed: "#10b981",
+  Ongoing: "#1e293b",
+  Proposal: "#f59e0b",
+  Rejected: "#f97316",
 };
 
 const tintColor = (hex, amount) => {
