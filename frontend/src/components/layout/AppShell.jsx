@@ -159,8 +159,8 @@ export default function AppShell() {
       (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
     return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
       isActive
-        ? "bg-[#1E3A8A] text-white"
-        : "text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A]"
+        ? "bg-[#10B981] text-white"
+        : "text-slate-700 hover:bg-slate-50 hover:text-[#1E293B]"
     }`;
   };
 
@@ -513,12 +513,12 @@ export default function AppShell() {
               aria-label="Account menu"
               className={cn(
                 "w-full rounded-lg shadow-black/5",
-                "hover:border-[#93C5FD] hover:bg-blue-50",
-                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
+                "hover:border-[#10B981] hover:bg-slate-50",
+                "data-[state=open]:border-[#10B981] data-[state=open]:bg-slate-50 data-[state=open]:shadow-md",
               )}
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -529,13 +529,13 @@ export default function AppShell() {
               variant="ghost"
               className={cn(
                 "group w-full justify-between gap-3 rounded-lg px-3 py-2.5 text-left shadow-sm shadow-black/5",
-                "hover:border-[#93C5FD] hover:bg-blue-50",
-                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
+                "hover:border-[#10B981] hover:bg-slate-50",
+                "data-[state=open]:border-[#10B981] data-[state=open]:bg-slate-50 data-[state=open]:shadow-md",
               )}
             >
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                  <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -560,7 +560,7 @@ export default function AppShell() {
           <DropdownMenuLabel className="px-2 py-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -582,14 +582,14 @@ export default function AppShell() {
                 onClick={onNavigate}
                 className="flex w-full items-center gap-2"
               >
-                <User className="h-4 w-4 text-[#1E3A8A]" />
+                <User className="h-4 w-4 text-[#1E293B]" />
                 <span className="min-w-0 flex-1 truncate">My Profile</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-slate-700 focus:bg-blue-50 focus:text-[#1E3A8A] flex w-full items-center gap-2"
+            className="text-slate-700 focus:bg-slate-50 focus:text-[#1E293B] flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
@@ -712,7 +712,7 @@ export default function AppShell() {
             <div className="flex items-center gap-5">
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
+                className="shrink-0 text-lg font-bold text-[#1E293B]"
               >
                 CenterPulse
               </Link>
@@ -813,7 +813,7 @@ export default function AppShell() {
             {isLandingPage && !user ? (
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
+                className="shrink-0 text-lg font-bold text-[#1E293B]"
               >
                 CenterPulse
               </Link>

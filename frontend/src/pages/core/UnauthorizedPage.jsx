@@ -34,10 +34,10 @@ export default function UnauthorizedPage() {
 
   return (
     <section className="mx-auto flex min-h-[calc(100vh-14rem)] w-full max-w-4xl items-center justify-center px-4 py-10 sm:px-6">
-      <Card className="w-full border-[#DBEAFE] bg-gradient-to-br from-white via-[#F9FAFB] to-[#EFF6FF] shadow-sm">
+      <Card className="w-full border-slate-200 bg-white shadow-sm">
         <CardContent className="p-8 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#DBEAFE] text-[#1E3A8A]">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#DBEAFE] text-slate-700">
               <ShieldAlert className="h-8 w-8" />
             </div>
 
@@ -52,7 +52,7 @@ export default function UnauthorizedPage() {
               believe this is incorrect, contact your administrator or return to
               a page you can access.
             </p>
-            <p className="mx-auto mt-3 max-w-xl rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E3A8A] sm:text-sm">
+            <p className="mx-auto mt-3 max-w-xl rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-slate-700 sm:text-sm">
               Requested page:{" "}
               <span className="font-semibold">{requestedPath}</span>
             </p>
@@ -61,7 +61,7 @@ export default function UnauthorizedPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-[#BFDBFE] text-[#1E3A8A] hover:bg-[#EFF6FF] sm:w-auto"
+                className="w-full border-[#BFDBFE] text-slate-700 hover:bg-[#EFF6FF] sm:w-auto"
                 onClick={() => navigate(-1)}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -70,7 +70,7 @@ export default function UnauthorizedPage() {
 
               <Button
                 asChild
-                className="w-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] sm:w-auto"
+                className="w-full bg-[#10B981] text-white hover:bg-[#059669] sm:w-auto"
               >
                 <Link to={fallbackTarget.to}>
                   <Compass className="mr-2 h-4 w-4" />
@@ -82,7 +82,7 @@ export default function UnauthorizedPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="w-full border-[#BFDBFE] text-[#1E3A8A] hover:bg-[#EFF6FF] sm:w-auto"
+                  className="w-full border-[#BFDBFE] text-slate-700 hover:bg-[#EFF6FF] sm:w-auto"
                 >
                   <a href={requestAccessHref}>
                     <Mail className="mr-2 h-4 w-4" />
@@ -97,3 +97,4 @@ export default function UnauthorizedPage() {
     </section>
   );
 }
+

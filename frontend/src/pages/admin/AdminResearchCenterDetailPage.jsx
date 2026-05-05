@@ -92,7 +92,7 @@ export default function AdminResearchCenterDetailPage() {
 
       <div className="space-y-5">
         {loading ? (
-          <div className="rounded-xl border border-blue-200 bg-white p-6 text-sm text-slate-600">
+          <div className="rounded-xl border border-slate-300 bg-white p-6 text-sm text-slate-600">
             Loading research center...
           </div>
         ) : error ? (
@@ -197,3 +197,4 @@ export default function AdminResearchCenterDetailPage() {
     </section>
   );
 }
+

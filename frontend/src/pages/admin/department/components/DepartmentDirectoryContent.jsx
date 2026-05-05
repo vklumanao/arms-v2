@@ -31,45 +31,45 @@ export default function DepartmentDirectoryContent({
   getSortIndicator,
 }) {
   return (
-    <Card className="overflow-hidden border-blue-200/80 shadow-sm">
+    <Card className="overflow-hidden border-slate-200 shadow-sm">
       <CardContent className="p-4">
         {dataLoading ? (
           viewMode === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: directorySkeletonCount }).map((_, index) => (
-                <Card key={`department-skeleton-grid-${index}`} className="rounded-2xl border border-blue-200/80 bg-white/80 p-5 shadow-sm">
+                <Card key={`department-skeleton-grid-${index}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="animate-pulse space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="w-full space-y-2">
                         <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                        <div className="h-5 w-3/4 rounded-full bg-blue-100/80" />
-                        <div className="h-3 w-1/2 rounded-full bg-blue-100/70" />
+                        <div className="h-5 w-3/4 rounded-full bg-slate-200" />
+                        <div className="h-3 w-1/2 rounded-full bg-slate-200" />
                       </div>
-                      <div className="h-6 w-16 rounded-full bg-blue-100/80" />
+                      <div className="h-6 w-16 rounded-full bg-slate-200" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-6 w-20 rounded-full bg-blue-100/80" />
-                      <div className="h-6 w-24 rounded-full bg-blue-100/80" />
+                      <div className="h-6 w-20 rounded-full bg-slate-200" />
+                      <div className="h-6 w-24 rounded-full bg-slate-200" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="h-24 rounded-lg bg-blue-100/70" />
-                      <div className="h-24 rounded-lg bg-blue-100/70" />
+                      <div className="h-24 rounded-lg bg-slate-200" />
+                      <div className="h-24 rounded-lg bg-slate-200" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                      <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
-                      <div className="h-9 w-9 rounded-lg bg-blue-100/80" />
+                      <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                      <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                      <div className="h-9 w-9 rounded-lg bg-slate-200" />
                     </div>
                   </div>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="animate-pulse space-y-3">
-                <div className="h-8 w-full rounded-lg bg-blue-100/70" />
+                <div className="h-8 w-full rounded-lg bg-slate-200" />
                 {Array.from({ length: directorySkeletonCount }).map((_, index) => (
-                  <div key={`department-skeleton-list-${index}`} className="h-12 w-full rounded-lg bg-blue-100/70" />
+                  <div key={`department-skeleton-list-${index}`} className="h-12 w-full rounded-lg bg-slate-200" />
                 ))}
               </div>
             </div>
@@ -77,7 +77,7 @@ export default function DepartmentDirectoryContent({
         ) : null}
 
         {!dataLoading && filteredRows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm text-slate-600">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
             No department records found.
           </div>
         ) : null}
@@ -86,16 +86,16 @@ export default function DepartmentDirectoryContent({
           <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedRows.map((row, index) => (
-                <Card key={`${row.tag}-${row.id}`} className="group rounded-2xl border border-blue-200/80 bg-gradient-to-b from-white to-blue-50/50">
+                <Card key={`${row.tag}-${row.id}`} className="group rounded-2xl border border-slate-200 bg-white">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#1E3A8A]">
+                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                           #{(currentPage - 1) * pageSize + index + 1} - {row.type}
                         </p>
-                        <h3 className="mt-1 truncate text-base font-bold text-[#1E3A8A]">{row.name}</h3>
-                        <p className="mt-1 truncate text-sm text-[#1E3A8A]">
-                          Chairperson: <span className="font-semibold text-[#1E3A8A]">{row.chairpersonName || "-"}</span>
+                        <h3 className="mt-1 truncate text-base font-bold text-slate-900">{row.name}</h3>
+                        <p className="mt-1 truncate text-sm text-slate-600">
+                          Chairperson: <span className="font-semibold text-slate-800">{row.chairpersonName || "-"}</span>
                         </p>
                       </div>
 
@@ -105,13 +105,13 @@ export default function DepartmentDirectoryContent({
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge variant="secondary" className="bg-blue-50 text-[#1E3A8A]">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
                         Links: {row.totalLinks || 0}
                       </Badge>
-                      <Badge variant="secondary" className="bg-blue-50 text-[#1E3A8A]">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
                         Affiliates: {row.profileCount || 0}
                       </Badge>
-                      <Badge variant="outline" className="border-blue-200/80 text-[#1E3A8A]">
+                      <Badge variant="outline" className="border-slate-300 text-slate-700">
                         Projects: {row.projectCount || 0}
                       </Badge>
                     </div>
@@ -120,17 +120,17 @@ export default function DepartmentDirectoryContent({
                       <button
                         type="button"
                         className={cn(
-                          "rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left transition-colors",
-                          "hover:bg-blue-50",
+                          "rounded-lg border border-slate-200 bg-slate-50 p-3 text-left transition-colors",
+                          "hover:bg-slate-100",
                         )}
                         onClick={() => goToDepartmentDetail(row, "affiliates")}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">Affiliates</p>
-                          <Users className="h-4 w-4 text-[#1E3A8A]" />
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">Affiliates</p>
+                          <Users className="h-4 w-4 text-slate-600" />
                         </div>
-                        <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">{row.profileCount}</p>
-                        <p className="mt-1 text-xs text-[#1E3A8A]">
+                        <p className="mt-2 text-2xl font-bold text-slate-900">{row.profileCount}</p>
+                        <p className="mt-1 text-xs text-slate-500">
                           Admin {row.memberBreakdown?.adminCount || 0} - Editor {row.memberBreakdown?.editorCount || 0} - Member {row.memberBreakdown?.memberCount || 0}
                         </p>
                       </button>
@@ -138,17 +138,17 @@ export default function DepartmentDirectoryContent({
                       <button
                         type="button"
                         className={cn(
-                          "rounded-lg border border-blue-200/80 bg-blue-100/70 p-3 text-left transition-colors",
-                          "hover:bg-blue-50",
+                          "rounded-lg border border-slate-200 bg-slate-50 p-3 text-left transition-colors",
+                          "hover:bg-slate-100",
                         )}
                         onClick={() => goToDepartmentDetail(row, "projects")}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">Projects</p>
-                          <FolderKanban className="h-4 w-4 text-[#1E3A8A]" />
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">Projects</p>
+                          <FolderKanban className="h-4 w-4 text-slate-600" />
                         </div>
-                        <p className="mt-2 text-2xl font-bold text-[#1E3A8A]">{row.projectCount}</p>
-                        <p className="mt-1 text-xs text-[#1E3A8A]">Linked research projects.</p>
+                        <p className="mt-2 text-2xl font-bold text-slate-900">{row.projectCount}</p>
+                        <p className="mt-1 text-xs text-slate-500">Linked research projects.</p>
                       </button>
                     </div>
 
@@ -162,7 +162,7 @@ export default function DepartmentDirectoryContent({
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-9 w-9 text-[#1E3A8A] hover:bg-blue-50"
+                        className="h-9 w-9 text-slate-700 hover:bg-slate-100"
                         onClick={() => setDeletingRow(row)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -185,9 +185,9 @@ export default function DepartmentDirectoryContent({
             ) : null}
           </>
         ) : !dataLoading ? (
-          <div className="rounded-2xl border border-blue-200/70 bg-white shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <Table className="min-w-[980px]">
-              <TableHeader className="bg-blue-50/60">
+              <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead>No.</TableHead>
                   <TableHead>

@@ -52,7 +52,7 @@ export default function AffiliatesPanel({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-600 hover:bg-blue-50"
+              className="h-8 w-8 text-slate-600 hover:bg-slate-50"
               disabled={isChief}
               onClick={() => onUnlink(row)}
             >

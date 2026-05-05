@@ -728,18 +728,18 @@ export default function AdminDepartmentPage() {
           setCreateModalOpen(true);
         }}
       />
-      <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
+      <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-[#1E3A8A]">
+            <h2 className="text-base font-semibold text-slate-700">
               Department Directory
             </h2>
-            <p className="text-sm text-[#1E3A8A]">
+            <p className="text-sm text-slate-700">
               Showing {filteredRows.length} filtered department record(s).
             </p>
           </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-blue-200/80 bg-blue-50/60 p-1 lg:w-auto">
+          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:w-auto">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="sm"
@@ -748,8 +748,8 @@ export default function AdminDepartmentPage() {
               className={cn(
                 "rounded-full",
                 viewMode === "grid"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
+                  ? "bg-white text-slate-700 shadow-sm"
+                  : "text-slate-700",
               )}
             >
               <LayoutGrid size={14} />
@@ -763,8 +763,8 @@ export default function AdminDepartmentPage() {
               className={cn(
                 "rounded-full",
                 viewMode === "list"
-                  ? "bg-white text-[#1E3A8A] shadow-sm"
-                  : "text-[#1E3A8A]",
+                  ? "bg-white text-slate-700 shadow-sm"
+                  : "text-slate-700",
               )}
             >
               <List size={14} />
@@ -776,9 +776,9 @@ export default function AdminDepartmentPage() {
         <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <label className="relative w-full xl:max-w-lg">
             <span className="sr-only">Search departments</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1E3A8A]" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
             <Input
-              className="border-blue-200/80 bg-white pl-8"
+              className="border-slate-200 bg-white pl-8"
               placeholder="Search name, code, chairperson, or id"
               value={filters.search}
               onChange={(event) =>
@@ -798,10 +798,10 @@ export default function AdminDepartmentPage() {
                 size="sm"
                 variant="outline"
                 className={cn(
-                  "rounded-full border-blue-200/80 px-4 text-xs",
+                  "rounded-full border-slate-200 px-4 text-xs",
                   quickFilter === chip.key
-                    ? "bg-blue-100 text-[#1E3A8A] hover:bg-blue-100"
-                    : "bg-white text-[#1E3A8A] hover:bg-blue-50/60",
+                    ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
+                    : "bg-white text-slate-700 hover:bg-slate-50",
                 )}
                 onClick={() => setQuickFilter(chip.key)}
               >
@@ -810,8 +810,8 @@ export default function AdminDepartmentPage() {
                   className={cn(
                     "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                     quickFilter === chip.key
-                      ? "bg-[#1E3A8A]/10 text-[#1E3A8A]"
-                      : "bg-blue-50 text-[#1E3A8A]",
+                      ? "bg-[#F1F5F9] text-slate-700"
+                      : "bg-slate-50 text-slate-700",
                   )}
                 >
                   {chip.count}
@@ -822,7 +822,7 @@ export default function AdminDepartmentPage() {
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
+              className="rounded-full text-xs text-slate-700 hover:text-slate-700"
               onClick={() => {
                 setQuickFilter("all");
                 setFilters(INITIAL_FILTERS);
@@ -835,13 +835,13 @@ export default function AdminDepartmentPage() {
 
         {hasActiveDirectoryFilters ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
               Active Filters
             </span>
             {filters.search.trim() ? (
               <button
                 type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                 onClick={() =>
                   setFilters((prev) => ({
                     ...prev,
@@ -855,7 +855,7 @@ export default function AdminDepartmentPage() {
             {quickFilter !== "all" ? (
               <button
                 type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                 onClick={() => setQuickFilter("all")}
               >
                 {quickFilterChips.find((chip) => chip.key === quickFilter)

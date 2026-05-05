@@ -6,9 +6,7 @@ import { aboutPillars } from "./home/content";
 export default function AboutPage() {
   return (
     <section className="page-stack-xl">
-      <header className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-6 sm:p-10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
+      <header className="relative overflow-hidden rounded-3xl border border-border bg-white p-6 sm:p-10">
 
         <div className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
@@ -81,7 +79,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-gradient-to-r from-primary to-secondary p-6 text-primary-foreground sm:p-8">
+      <section className="rounded-3xl border border-border bg-zinc-900 p-6 text-primary-foreground sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/85">
@@ -122,3 +120,4 @@ export default function AboutPage() {
     </section>
   );
 }
+

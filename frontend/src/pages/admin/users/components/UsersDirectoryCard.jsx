@@ -45,11 +45,11 @@ export default function UsersDirectoryCard({
   openUserDetail,
 }) {
   return (
-    <Card className="overflow-hidden border border-blue-200/80 bg-white shadow-sm">
-      <CardHeader className="border-b border-blue-200/70 px-6 py-5">
+    <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-200 px-6 py-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-base font-semibold text-[#1E3A8A]">Accounts Directory</CardTitle>
+            <CardTitle className="text-base font-semibold text-slate-900">Accounts Directory</CardTitle>
             <CardDescription className="text-slate-600">
               Showing {filteredUsers.length} account(s).
             </CardDescription>
@@ -59,7 +59,7 @@ export default function UsersDirectoryCard({
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="rounded-2xl border border-blue-200/80 bg-white/95 p-4 shadow-sm backdrop-blur">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <label className="relative block w-full md:max-w-xl">
             <span className="sr-only">Search users</span>
             <Input
@@ -75,7 +75,7 @@ export default function UsersDirectoryCard({
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-[#1E3A8A] hover:text-[#1E3A8A]"
+              className="rounded-full text-xs text-slate-700 hover:text-slate-900"
               onClick={() => setUserSearch("")}
               disabled={!hasActiveDirectoryFilters}
             >
@@ -85,12 +85,12 @@ export default function UsersDirectoryCard({
 
           {hasActiveDirectoryFilters ? (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#1E3A8A]">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
                 Active Filters
               </span>
               <button
                 type="button"
-                className="rounded-full border border-blue-200/80 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#1E3A8A]"
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                 onClick={() => setUserSearch("")}
               >
                 Search: "{String(userSearch || "").trim()}" x
@@ -101,9 +101,9 @@ export default function UsersDirectoryCard({
       </CardContent>
 
       <CardContent className="p-4 pt-0">
-        <div className="overflow-x-auto rounded-2xl border border-blue-200/70 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
           <Table className="min-w-[980px]">
-            <TableHeader className="bg-blue-50/80 text-slate-600">
+            <TableHeader className="bg-slate-50 text-slate-600">
               <TableRow>
                 <TableHead>No.</TableHead>
                 <TableHead>Name</TableHead>
@@ -187,7 +187,7 @@ export default function UsersDirectoryCard({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-slate-700 hover:bg-blue-50/60"
+                          className="h-8 w-8 text-slate-700 hover:bg-slate-100"
                           disabled={Boolean(savingUserById[user.id])}
                           onClick={() => openStatusConfirm(user)}
                           aria-label={

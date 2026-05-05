@@ -132,7 +132,7 @@ export default function ProjectsPanel({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-600 hover:bg-blue-50"
+                className="h-8 w-8 text-slate-600 hover:bg-slate-50"
                 onClick={() => goToProject(row)}
               >
                 <Eye className="h-4 w-4" />

@@ -39,13 +39,13 @@ export default function DetailWorkspaceHeader({
   const SocialIcon = ICON_BY_KEY[socialMeta?.iconKey] || Globe;
 
   return (
-    <div className="rounded-2xl border border-blue-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.92))] p-4 shadow-[0_12px_32px_rgba(30,58,138,0.08)] backdrop-blur sm:p-5">
+    <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.96))] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!isCenterChief ? (
             <Button
               variant="outline"
-              className="min-h-10 w-full border-slate-300 bg-white text-slate-900 hover:bg-blue-50 sm:w-auto"
+              className="min-h-10 w-full border-slate-300 bg-white text-slate-900 hover:bg-slate-50 sm:w-auto"
               onClick={onBack}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -58,7 +58,7 @@ export default function DetailWorkspaceHeader({
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button
               variant="outline"
-              className="min-h-10 border-slate-300 bg-white text-slate-900 hover:bg-blue-50"
+              className="min-h-10 border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
               disabled={loading || !center}
               onClick={onEdit}
             >
@@ -66,8 +66,8 @@ export default function DetailWorkspaceHeader({
               Edit
             </Button>
             <Button
-              variant="mono"
-              className="min-h-10 bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
+              variant="destructive"
+              className="min-h-10 bg-[#F97316] text-white hover:bg-[#EA580C]"
               disabled={loading || !center}
               onClick={onDelete}
             >
@@ -77,16 +77,16 @@ export default function DetailWorkspaceHeader({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-blue-200/70 bg-white/80 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
           <div className="flex items-start gap-3 sm:gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A] text-lg font-bold text-white">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#10B981] text-lg font-bold text-white">
               {initials}
             </div>
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Research Center
               </p>
-              <h1 className="break-words text-lg font-bold leading-tight text-[#1E3A8A] sm:text-2xl">
+              <h1 className="break-words text-lg font-bold leading-tight text-[#1E293B] sm:text-2xl">
                 {center?.name || "Research Center"}
               </h1>
               <p className="text-sm text-slate-600">
@@ -103,11 +103,11 @@ export default function DetailWorkspaceHeader({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            <Badge className="gap-1.5 border border-blue-200 bg-white text-[#1E3A8A]">
+            <Badge className="gap-1.5 border border-slate-200 bg-white text-[#1E293B]">
               <Users className="h-4 w-4" />
               {usage.profileCount} affiliates
             </Badge>
-            <Badge className="gap-1.5 border border-blue-200 bg-white text-[#1E3A8A]">
+            <Badge className="gap-1.5 border border-slate-200 bg-white text-[#1E293B]">
               <FolderKanban className="h-4 w-4" />
               {usage.projectCount} projects
             </Badge>
@@ -118,7 +118,7 @@ export default function DetailWorkspaceHeader({
 
             {socialLink ? (
               <a
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-blue-50 hover:text-[#1E3A8A]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 hover:text-[#1E293B]"
                 href={socialLink}
                 target="_blank"
                 rel="noreferrer"

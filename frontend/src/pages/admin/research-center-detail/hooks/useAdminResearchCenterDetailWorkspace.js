@@ -548,9 +548,9 @@ export default function useAdminResearchCenterDetailWorkspace() {
       return "border border-amber-200 bg-amber-50 text-amber-700";
     }
     if (key === "delayed" || key === "rejected" || key === "cancelled") {
-      return "border border-red-200 bg-red-50 text-red-700";
+      return "border border-orange-200 bg-orange-50 text-orange-700";
     }
-    return "border border-blue-200 bg-blue-50 text-blue-700";
+    return "border border-slate-200 bg-slate-50 text-slate-700";
   };
 
   const deleteCenter = async () => {

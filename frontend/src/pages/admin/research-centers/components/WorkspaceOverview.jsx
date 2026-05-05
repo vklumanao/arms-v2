@@ -1,8 +1,4 @@
-import {
-  FolderKanban,
-  Layers3,
-  Users,
-} from "lucide-react";
+import { FolderKanban, Layers3, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -13,11 +9,7 @@ import {
 } from "@/components/ui/card";
 import MetricCard from "./MetricCard";
 
-export default function WorkspaceOverview({
-  center,
-  summary,
-  agendaNames,
-}) {
+export default function WorkspaceOverview({ center, summary, agendaNames }) {
   return (
     <div className="space-y-5">
       <div className="relative overflow-hidden rounded-[1.4rem] border border-blue-200/70 bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_38%,#0f766e_100%)] p-4 text-white shadow-[0_28px_68px_rgba(15,23,42,0.24)] sm:rounded-[1.8rem] sm:p-6">
@@ -70,9 +62,9 @@ export default function WorkspaceOverview({
       </div>
 
       <div className="grid gap-4">
-        <Card className="border-blue-200/80 shadow-sm">
-          <CardHeader className="space-y-1 border-b border-blue-100 bg-blue-50/40 px-4 py-4 sm:px-6 sm:py-5">
-            <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
+            <CardTitle className="text-lg font-bold text-slate-700">
               Agenda Highlights
             </CardTitle>
             <CardDescription>
@@ -86,7 +78,7 @@ export default function WorkspaceOverview({
                   <Badge
                     key={`${center.id}-${agendaName}`}
                     variant="secondary"
-                    className="rounded-full bg-blue-50 px-3 py-1 text-[#1E3A8A]"
+                    className="rounded-full bg-slate-50 px-3 py-1 text-slate-700"
                   >
                     {agendaName}
                   </Badge>

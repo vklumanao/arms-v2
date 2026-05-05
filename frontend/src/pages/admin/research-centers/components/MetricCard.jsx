@@ -8,7 +8,7 @@ export default function MetricCard({
   tone = "blue",
 }) {
   const toneClasses = {
-    blue: "from-blue-50 via-white to-blue-100/70 border-blue-200/80 text-[#1E3A8A]",
+    blue: "bg-white border-slate-200 text-slate-700",
     emerald:
       "from-emerald-50 via-white to-emerald-100/70 border-emerald-200/80 text-emerald-700",
     amber:
@@ -18,7 +18,7 @@ export default function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-[1.4rem] border bg-gradient-to-br p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
+        "rounded-[1.4rem] border bg-white p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
         toneClasses[tone],
       )}
     >
@@ -37,3 +37,4 @@ export default function MetricCard({
     </div>
   );
 }
+

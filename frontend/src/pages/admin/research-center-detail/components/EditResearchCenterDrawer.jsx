@@ -34,16 +34,16 @@ export default function EditResearchCenterDrawer({
     <Sheet open={open} onOpenChange={(next) => !editSaving && onOpenChange(next)}>
       <SheetContent
         side="right"
-        className="w-full overflow-y-auto border-l border-blue-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-0 sm:max-w-2xl"
+        className="w-full overflow-y-auto border-l border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-0 sm:max-w-2xl"
       >
         <div className="flex h-full flex-col">
-          <SheetHeader className="border-b border-blue-100 px-5 py-4 sm:px-6 sm:py-5">
+          <SheetHeader className="border-b border-slate-200 px-5 py-4 sm:px-6 sm:py-5">
             <SheetTitle>Edit Research Center</SheetTitle>
             <SheetDescription>Update research center information.</SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
-            <div className="space-y-4 rounded-xl border border-blue-100 bg-white p-4 sm:p-5">
+            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Basic Information
               </p>
@@ -108,7 +108,7 @@ export default function EditResearchCenterDrawer({
               </label>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-blue-100 bg-white p-4 text-sm sm:p-5">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 text-sm sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Research Agendas
               </p>
@@ -152,7 +152,7 @@ export default function EditResearchCenterDrawer({
             </div>
           </div>
 
-          <div className="sticky bottom-0 border-t border-blue-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-6">
+          <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:px-6">
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"

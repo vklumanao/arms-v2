@@ -176,7 +176,7 @@ export default function DepartmentDetailTabs({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-[var(--danger)] hover:bg-blue-50/60"
+                              className="h-8 w-8 text-[var(--danger)] hover:bg-slate-50"
                               onClick={() => setUnlinkTarget(row)}
                               aria-label={`Unlink ${row?.full_name || "affiliate"}`}
                               title="Unlink"

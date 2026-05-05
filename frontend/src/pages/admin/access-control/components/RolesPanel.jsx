@@ -12,10 +12,10 @@ export default function RolesPanel({
   onAddRole,
 }) {
   return (
-    <Card className="xl:col-span-6 border-blue-200/70">
-      <CardHeader className="space-y-2 border-b border-blue-200/70 bg-blue-50/25 p-4">
+    <Card className="xl:col-span-6 border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-2 border-b border-slate-200 bg-slate-50/60 p-4">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base text-[#1E3A8A]">Roles</CardTitle>
+          <CardTitle className="text-base text-slate-900">Roles</CardTitle>
           <Button size="sm" onClick={onAddRole}>
             Add Role
           </Button>
@@ -37,8 +37,8 @@ export default function RolesPanel({
               className={[
                 "w-full rounded-lg border px-3 py-2 text-left transition",
                 selected
-                  ? "border-[#1E3A8A] bg-blue-100/70 ring-1 ring-blue-200"
-                  : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40",
+                  ? "border-slate-400 bg-slate-100 ring-1 ring-slate-200"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
               ].join(" ")}
             >
               <div className="flex items-center justify-between gap-2">
