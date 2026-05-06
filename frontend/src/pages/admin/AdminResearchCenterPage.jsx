@@ -84,7 +84,7 @@ export default function AdminResearchCenterPage() {
               {isScopedCenterChief ? "My Research Center" : "Admin Workspace"}
             </p>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 sm:text-2xl md:text-3xl">
+              <h1 className="text-2xl font-bold text-slate-900 md:text-3xl lg:text-4xl">
                 Research Center Workspace
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
@@ -95,13 +95,13 @@ export default function AdminResearchCenterPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   disabled={exporting || filteredRows.length === 0}
-                  className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                  className="w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
                 >
                   <Download className="h-4 w-4" />
                   Export
@@ -129,7 +129,7 @@ export default function AdminResearchCenterPage() {
             {!isScopedCenterChief ? (
               <Button
                 variant="mono"
-                className="min-h-11"
+                className="min-h-11 w-full sm:w-auto"
                 onClick={() => {
                   setCreateErrors({});
                   setCreateModalOpen(true);
@@ -207,7 +207,7 @@ export default function AdminResearchCenterPage() {
                       </Badge>
                     </div>
                   ) : null}
-                  <CardTitle className="text-5xl font-bold text-slate-900">
+                  <CardTitle className="text-2xl font-bold text-slate-900 sm:text-3xl lg:text-4xl">
                     {workspaceCenterRow?.name || "Select a Research Center"}
                   </CardTitle>
                   <CardDescription className="text-slate-600">
