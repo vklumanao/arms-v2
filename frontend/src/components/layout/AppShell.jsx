@@ -649,6 +649,7 @@ export default function AppShell() {
                     alt="CenterPulse"
                     className="h-8 w-auto sm:h-9 lg:h-10"
                     draggable="false"
+                    decoding="async"
                   />
                 </div>
               ) : (
@@ -657,6 +658,7 @@ export default function AppShell() {
                   alt="CenterPulse"
                   className="h-8 w-auto"
                   draggable="false"
+                  decoding="async"
                 />
               )}
             </Link>
