@@ -1,4 +1,5 @@
-﻿import { Link, useLocation } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const SEGMENT_LABELS = {
   dashboard: "Dashboard",
@@ -26,7 +27,6 @@ function toLabel(segment, prevSegment) {
   const label = SEGMENT_LABELS[segment];
   if (label) return label;
 
-  // Avoid exposing raw ids in breadcrumb labels.
   const isUuid =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       segment,
@@ -58,11 +58,11 @@ function toLabel(segment, prevSegment) {
 
 export default function Breadcrumbs() {
   const location = useLocation();
+  const navigate = useNavigate();
   const segments = location.pathname.split("/").filter(Boolean);
   const normalizedSegments =
     segments[0] === "home" ? segments.slice(1) : segments;
 
-  // Don't render breadcrumbs on the home route; a lone "Home" crumb is visual noise.
   if (normalizedSegments.length === 0) return null;
 
   const crumbs = [{ label: "Home", to: "/home" }];
@@ -77,29 +77,45 @@ export default function Breadcrumbs() {
     });
   });
 
+  const currentCrumb = crumbs[crumbs.length - 1];
+
   return (
-    <nav aria-label="Breadcrumb" className="breadcrumbs-shell">
-      <ol className="breadcrumbs-list">
-        {crumbs.map((crumb, index) => {
-          const isLast = index === crumbs.length - 1;
-          return (
-            <li key={crumb.to} className="breadcrumbs-item">
-              {isLast ? (
-                <span aria-current="page" className="breadcrumbs-current">
-                  {crumb.label}
-                </span>
-              ) : (
-                <Link to={crumb.to} className="breadcrumbs-link">
-                  {crumb.label}
-                </Link>
-              )}
-              {!isLast ? (
-                <span className="breadcrumbs-separator">/</span>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <div className="breadcrumbs-shell">
+      <div className="flex items-center gap-2 sm:hidden">
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center gap-1 rounded-md border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--brand)] transition hover:bg-[var(--surface-muted)]"
+          onClick={() => navigate(-1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <span className="breadcrumbs-current">{currentCrumb?.label}</span>
+      </div>
+
+      <nav aria-label="Breadcrumb" className="hidden sm:block">
+        <ol className="breadcrumbs-list">
+          {crumbs.map((crumb, index) => {
+            const isLast = index === crumbs.length - 1;
+            return (
+              <li key={crumb.to} className="breadcrumbs-item">
+                {isLast ? (
+                  <span aria-current="page" className="breadcrumbs-current">
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <Link to={crumb.to} className="breadcrumbs-link">
+                    {crumb.label}
+                  </Link>
+                )}
+                {!isLast ? (
+                  <span className="breadcrumbs-separator">/</span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    </div>
   );
 }
