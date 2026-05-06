@@ -34,8 +34,6 @@ import {
   Award,
   Building2,
   ChartNoAxesColumn,
-  ChevronsLeft,
-  ChevronsRight,
   ChevronDown,
   Database,
   FolderOpen,
@@ -49,7 +47,7 @@ import {
   Users,
 } from "lucide-react";
 
-const DESKTOP_SIDEBAR_BREAKPOINT = 1100;
+const DESKTOP_SIDEBAR_BREAKPOINT = 1024;
 const SIDEBAR_COLLAPSE_STORAGE_KEY = "arms:desktopSidebarCollapsed";
 
 function getInitials(value) {
@@ -95,7 +93,7 @@ export default function AppShell() {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
-    if (stored === null) return true;
+    if (stored === null) return false;
     return stored === "true";
   });
   const [hoverExpanded, setHoverExpanded] = useState(false);
@@ -649,7 +647,7 @@ export default function AppShell() {
                   <img
                     src="/full-logo.svg"
                     alt="CenterPulse"
-                    className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                    className="h-8 w-auto sm:h-9 lg:h-10"
                     draggable="false"
                   />
                 </div>
@@ -657,7 +655,7 @@ export default function AppShell() {
                 <img
                   src="/icon.svg"
                   alt="CenterPulse"
-                  className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                  className="h-8 w-auto"
                   draggable="false"
                 />
               )}
@@ -826,7 +824,9 @@ export default function AppShell() {
                 type="button"
                 aria-label="Open navigation"
                 variant="outline"
+                size="icon"
                 onClick={handleNavToggle}
+                className="lg:hidden"
               >
                 <Menu size={16} />
               </Button>
@@ -879,7 +879,7 @@ export default function AppShell() {
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetContent
             side="left"
-            className="flex h-full w-[min(22rem,92vw)] flex-col bg-background p-4 sm:p-5"
+            className="flex h-full w-screen max-w-none flex-col bg-background p-4 sm:w-[24rem] sm:max-w-[24rem] sm:p-5"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Workspace navigation</SheetTitle>
