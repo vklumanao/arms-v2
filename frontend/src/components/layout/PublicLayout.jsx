@@ -1,6 +1,15 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { useState } from "react";
 import AppFooter from "@/components/layout/AppFooter";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const landingLinks = [
   { to: "/home", label: "Home" },
@@ -9,6 +18,7 @@ const landingLinks = [
 
 export default function PublicLayout() {
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const isActive = (to) => {
     if (to === "/home") {
@@ -19,17 +29,21 @@ export default function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="public-layout-header px-4 py-3 sm:px-6 sm:py-4">
-        <div className="public-layout-inner flex items-center justify-between gap-4">
-          <Link to="/home">
+      <header className="public-layout-header sticky top-0 z-40 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="public-layout-inner flex items-center justify-between gap-3 sm:gap-4">
+          <Link
+            to="/home"
+            className="flex min-w-0 items-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+          >
             <img
               src="/full-logo.svg"
               alt="CenterPulse"
-              className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+              className="h-7 w-auto sm:h-8 md:h-10 lg:h-12"
               draggable="false"
+              decoding="async"
             />
           </Link>
-          <nav className="hidden items-center gap-2 sm:flex">
+          <nav className="hidden items-center gap-2 lg:flex">
             {landingLinks.map((item) => (
               <NavLink
                 key={item.to}
@@ -40,22 +54,23 @@ export default function PublicLayout() {
               </NavLink>
             ))}
           </nav>
-          <Button asChild>
-            <Link to="/login" className="px-4 py-2 font-semibold">
-              Login
-            </Link>
-          </Button>
-        </div>
-        <div className="public-layout-inner mt-3 flex flex-wrap items-center gap-1 sm:hidden">
-          {landingLinks.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={`public-nav-link ${isActive(item.to) ? "is-active" : ""}`}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation"
             >
-              {item.label}
-            </NavLink>
-          ))}
+              <Menu className="h-4.5 w-4.5" />
+            </Button>
+            <Button asChild className="hidden lg:inline-flex">
+              <Link to="/login" className="font-semibold">
+                Login
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -64,6 +79,35 @@ export default function PublicLayout() {
       </main>
 
       <AppFooter />
+
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent side="right" className="w-screen max-w-none sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>Navigation</SheetTitle>
+            <SheetDescription>
+              Move between public pages and sign in to continue into the
+              workspace.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 grid gap-3">
+            {landingLinks.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileNavOpen(false)}
+                className={`public-nav-link public-nav-link-mobile ${isActive(item.to) ? "is-active" : ""}`}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+            <Button asChild className="mt-3 w-full">
+              <Link to="/login" onClick={() => setMobileNavOpen(false)}>
+                Login
+              </Link>
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
