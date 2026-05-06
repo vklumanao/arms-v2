@@ -34,8 +34,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { normalizeStatus } from "@/utils/status";
-import { Eye, FolderKanban, Users, FileText } from "lucide-react";
+import {
+  Eye,
+  FileText,
+  FolderKanban,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
 const normalizeLabel = (value) => {
@@ -80,6 +93,7 @@ export default function PublicRecordsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(INITIAL_PUBLIC_RECORD_FILTERS);
   const [activePreset, setActivePreset] = useState("all");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -368,6 +382,146 @@ export default function PublicRecordsPage() {
     navigate(`/public-research-centers/${encodeURIComponent(centerId)}`);
   };
 
+  const renderFilterControls = () => (
+    <>
+      <Input
+        placeholder="Search title or abstract (supports year:2025 status:completed)"
+        value={filters.search}
+        onChange={(event) =>
+          setFilters((prev) => ({
+            ...prev,
+            search: event.target.value,
+          }))
+        }
+      />
+
+      <Select
+        value={filters.status || NONE_SELECT_VALUE}
+        onValueChange={(value) =>
+          setFilters((prev) => ({
+            ...prev,
+            status: value === NONE_SELECT_VALUE ? "" : value,
+          }))
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="All status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
+          <SelectItem value="ongoing">Ongoing</SelectItem>
+          <SelectItem value="completed">Completed</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={filters.classification || NONE_SELECT_VALUE}
+        onValueChange={(value) =>
+          setFilters((prev) => ({
+            ...prev,
+            classification: value === NONE_SELECT_VALUE ? "" : value,
+          }))
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="All classification" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NONE_SELECT_VALUE}>All classification</SelectItem>
+          <SelectItem value="academic">Academic</SelectItem>
+          <SelectItem value="industry">Industry</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Input
+        placeholder="Year"
+        value={filters.year}
+        onChange={(event) =>
+          setFilters((prev) => ({ ...prev, year: event.target.value }))
+        }
+      />
+
+      <Select
+        value={filters.center || NONE_SELECT_VALUE}
+        onValueChange={(value) =>
+          setFilters((prev) => ({
+            ...prev,
+            center: value === NONE_SELECT_VALUE ? "" : value,
+          }))
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="All centers" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
+          {centers.map((center) => (
+            <SelectItem key={center.id} value={center.name}>
+              {center.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={filters.department || NONE_SELECT_VALUE}
+        onValueChange={(value) =>
+          setFilters((prev) => ({
+            ...prev,
+            department: value === NONE_SELECT_VALUE ? "" : value,
+          }))
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="All departments" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NONE_SELECT_VALUE}>All departments</SelectItem>
+          {departments.map((department) => (
+            <SelectItem key={department.id} value={department.name}>
+              {department.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
+          setActivePreset("all");
+        }}
+      >
+        Reset Filters
+      </Button>
+
+      <div className="space-y-2 pt-2">
+        <p className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">
+          Presets
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PUBLIC_RECORD_PRESETS.map((preset) => (
+            <Button
+              key={preset.id}
+              type="button"
+              variant="outline"
+              size="sm"
+              className={
+                activePreset === preset.id
+                  ? "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-700"
+                  : ""
+              }
+              onClick={() => applyPreset(preset.id)}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
   const renderCenterCard = (center) => (
     <div
       role="button"
@@ -406,7 +560,7 @@ export default function PublicRecordsPage() {
         <CardContent className="flex flex-col flex-1">
           <div className="flex-1" />
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-zinc-200 bg-white p-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
@@ -490,8 +644,25 @@ export default function PublicRecordsPage() {
         )}
       </section>
 
+      <div className="lg:hidden">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-between"
+          onClick={() => setMobileFiltersOpen(true)}
+        >
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+          </span>
+          <span className="text-xs text-slate-500">
+            {filtered.rows.length} result{filtered.rows.length === 1 ? "" : "s"}
+          </span>
+        </Button>
+      </div>
+
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
-        <aside className="public-records-filter h-fit">
+        <aside className="public-records-filter hidden h-fit lg:block">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-500">
@@ -499,152 +670,14 @@ export default function PublicRecordsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-              <Input
-                placeholder="Search title or abstract (supports year:2025 status:completed)"
-                value={filters.search}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: event.target.value,
-                  }))
-                }
-              />
-
-              <Select
-                value={filters.status || NONE_SELECT_VALUE}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    status: value === NONE_SELECT_VALUE ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
-                  <SelectItem value="ongoing">Ongoing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filters.classification || NONE_SELECT_VALUE}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    classification: value === NONE_SELECT_VALUE ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All classification" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_SELECT_VALUE}>
-                    All classification
-                  </SelectItem>
-                  <SelectItem value="academic">Academic</SelectItem>
-                  <SelectItem value="industry">Industry</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Input
-                placeholder="Year"
-                value={filters.year}
-                onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, year: event.target.value }))
-                }
-              />
-
-              <Select
-                value={filters.center || NONE_SELECT_VALUE}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    center: value === NONE_SELECT_VALUE ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All centers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.name}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filters.department || NONE_SELECT_VALUE}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    department: value === NONE_SELECT_VALUE ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_SELECT_VALUE}>
-                    All departments
-                  </SelectItem>
-                  {departments.map((department) => (
-                    <SelectItem key={department.id} value={department.name}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
-                  setActivePreset("all");
-                }}
-              >
-                Reset Filters
-              </Button>
-
-              <div className="space-y-2 pt-2">
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">
-                  Presets
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {PUBLIC_RECORD_PRESETS.map((preset) => (
-                    <Button
-                      key={preset.id}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className={
-                        activePreset === preset.id
-                          ? "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-700"
-                          : ""
-                      }
-                      onClick={() => applyPreset(preset.id)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              {renderFilterControls()}
             </CardContent>
           </Card>
         </aside>
 
         <div className="space-y-4">
           <Card>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">
                   Scholarly Catalog
@@ -656,7 +689,7 @@ export default function PublicRecordsPage() {
                 </p>
               </div>
 
-              <div className="min-w-48">
+              <div className="w-full sm:min-w-48 sm:w-auto">
                 <Select
                   value={filters.sort || "most_recent"}
                   onValueChange={(value) =>
@@ -792,6 +825,19 @@ export default function PublicRecordsPage() {
           ) : null}
         </div>
       </section>
+
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+        <SheetContent side="left" className="w-screen max-w-none sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Refine Search</SheetTitle>
+            <SheetDescription>
+              Filter public records by status, classification, year, center,
+              and department.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 grid gap-3">{renderFilterControls()}</div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }
