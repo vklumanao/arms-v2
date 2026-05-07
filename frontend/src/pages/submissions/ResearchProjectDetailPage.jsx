@@ -346,377 +346,367 @@ export default function ResearchProjectDetailPage() {
 
   if (!projectId) return <Navigate to="/projects" replace />;
 
+  const centerName = project?.research_center_id
+    ? centerById[project.research_center_id] || "-"
+    : project?.project_ckan_org_id
+      ? centerById[project.project_ckan_org_id] || "-"
+      : project?.ckan_org_id
+        ? centerById[project.ckan_org_id] || "-"
+        : project?.research_center || "-";
+  const departmentName = project?.department_id
+    ? departmentById[project.department_id] || "-"
+    : "-";
+  const agendaName = project?.research_agenda_id
+    ? agendaById[project.research_agenda_id] || "-"
+    : "-";
+  const visibilityLabel = project?.project_public_visible
+    ? "Public"
+    : "Private";
+  const durationLabel = formatProjectDuration(
+    project?.start_date,
+    project?.end_date,
+  );
+  const facultySummary =
+    facultyTeamUsers.join(", ") ||
+    String(project?.faculty_team || "").trim() ||
+    "-";
+  const studentSummary = String(project?.student_team || "").trim() || "-";
+  const expectedOutputSummary =
+    String(project?.expected_outputs || "").trim() || "-";
+
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-black/20 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
-              Submissions Workspace
-            </p>
-            <h1 className="text-2xl font-bold text-black md:text-3xl">
-              {project?.title || "Research Project"}
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              asChild
-              variant="outline"
-              className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
-            >
-              <Link to="/projects">
-                <ChevronLeft className="h-4 w-4" />
-                Back to Projects
-              </Link>
-            </Button>
-            {canEdit ? (
-              <Button
-                variant="outline"
-                className="border-zinc-300 bg-white text-black hover:bg-zinc-100 active:bg-zinc-200"
-                onClick={() =>
-                  navigate(
-                    `/projects/submit?edit=${encodeURIComponent(
-                      String(
-                        project?.ckan_dataset_id || projectId || "",
-                      ).trim(),
-                    )}`,
-                  )
-                }
-              >
-                <Pencil className="h-4 w-4" />
-                Edit
+      <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,1))]" />
+        <div className="relative flex flex-col gap-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-700">
+                Project Workspace
+              </p>
+              <div className="space-y-2">
+                <h1 className="text-slate-900">
+                  {project?.title || "Research Project"}
+                </h1>
+                <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
+                  Review the project summary, team details, timeline,
+                  deliverables, and linked scholarly outputs from one
+                  mobile-first detail page.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+              <Button asChild variant="outline">
+                <Link to="/projects">
+                  <ChevronLeft className="h-4 w-4" />
+                  Back to Projects
+                </Link>
               </Button>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${getStatusBadgeStyle(
-              project?.status || "Published",
-            )}`}
-          >
-            {project?.status || "Published"}
-          </span>
-
-          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
-            {project?.project_public_visible ? "Public" : "Private"}
-          </span>
-
-          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
-            {formatProjectDuration(project?.start_date, project?.end_date)}
-          </span>
-
-          <span className="rounded-full border border-black/20 bg-white/80 px-2 py-0.5 text-xs font-semibold text-black">
-            {project?.research_center_id
-              ? centerById[project.research_center_id] || "-"
-              : project?.project_ckan_org_id
-                ? centerById[project.project_ckan_org_id] || "-"
-                : project?.ckan_org_id
-                  ? centerById[project.ckan_org_id] || "-"
-                  : project?.research_center || "-"}
-          </span>
-        </div>
-      </div>
-
-      <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-        <CardHeader className="border-b border-zinc-200 px-6 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-black">
-                Project Details
-              </CardTitle>
+              {canEdit ? (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigate(
+                      `/projects/submit?edit=${encodeURIComponent(
+                        String(
+                          project?.ckan_dataset_id || projectId || "",
+                        ).trim(),
+                      )}`,
+                    )
+                  }
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit Project
+                </Button>
+              ) : null}
+              {resourceDatasetId ? (
+                <Button asChild>
+                  <Link
+                    to={`/awards/new?project_id=${encodeURIComponent(
+                      resourceDatasetId,
+                    )}`}
+                  >
+                    <Trophy className="h-4 w-4" />
+                    Add Award
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-5 p-5">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-base text-zinc-600">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
               Loading project...
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-8 text-center text-base text-zinc-800">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-700">
               Unable to load. {error}
             </div>
           ) : !project ? (
-            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-base text-zinc-600">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
               Project not found. This project is not available in your scope.
             </div>
           ) : (
             <>
-              <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getStatusBadgeStyle(
+                    project?.status || "published",
+                  )}`}
+                >
+                  {project?.status || "Published"}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {visibilityLabel}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {durationLabel}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {centerName}
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    label: "Lead Researcher",
+                    value: project?.lead_researcher || "-",
+                  },
+                  { label: "Research Center", value: centerName },
+                  { label: "Department", value: departmentName },
+                  { label: "Project Year", value: project?.year || "-" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="border-b border-slate-100 px-5 py-4">
+                      <CardTitle className="text-lg font-bold text-slate-900">
                         Overview
                       </CardTitle>
+                      <CardDescription>
+                        Core narrative and submission context for this project.
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="space-y-5 p-5">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Research Center
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Project Summary
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.research_center_id
-                            ? centerById[project.research_center_id] || "-"
-                            : project?.project_ckan_org_id
-                              ? centerById[project.project_ckan_org_id] || "-"
-                              : project?.ckan_org_id
-                                ? centerById[project.ckan_org_id] || "-"
-                                : project?.research_center || "-"}
+                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">
+                          {String(project?.abstract || "").trim() ||
+                            "No abstract provided yet."}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Submitted
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Expected Outputs
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {formatDate(project?.submitted_at)}
+                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">
+                          {expectedOutputSummary}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Submitted By
+                    </CardContent>
+                  </Card>
+
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="border-b border-slate-100 px-5 py-4">
+                      <CardTitle className="text-lg font-bold text-slate-900">
+                        Team
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Lead Researcher
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.submitted_by_name || "Unknown user"}
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {project?.lead_researcher || "-"}
                         </p>
-                        {project?.submitted_by_email ? (
-                          <p className="text-sm text-zinc-500">
-                            {project.submitted_by_email}
+                        {leadResearcherUser ? (
+                          <p className="mt-1 text-sm text-slate-600">
+                            Linked user: {leadResearcherUser}
                           </p>
                         ) : null}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Visibility
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.project_public_visible
-                            ? "Public"
-                            : "Private"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Project Year
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.year || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Status
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900 capitalize">
-                          {project?.status || "-"}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
-                        Classification
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-base text-zinc-700 sm:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Department
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.department_id
-                            ? departmentById[project.department_id] || "-"
-                            : "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Research Agenda
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.research_agenda_id
-                            ? agendaById[project.research_agenda_id] || "-"
-                            : "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Classification
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {normalizeLabel(project?.classification)}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
-                        People
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-base text-zinc-700 sm:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Lead Researcher
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.lead_researcher || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Faculty Team
                         </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.faculty_team || "-"}
+                        <p className="mt-2 text-sm leading-7 text-slate-700">
+                          {facultySummary}
                         </p>
                       </div>
-                      <div className="sm:col-span-2">
-                        <p className="text-sm font-semibold text-zinc-500">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Student Team
                         </p>
-                        <p className="mt-1 whitespace-pre-line text-base text-zinc-900">
-                          {project?.student_team || "-"}
+                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">
+                          {studentSummary}
                         </p>
                       </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="border-b border-slate-100 px-5 py-4">
+                      <CardTitle className="text-lg font-bold text-slate-900">
+                        Funding and Timeline
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
+                      {[
+                        [
+                          "Industry/Agency Partner",
+                          project?.industry_partner || "-",
+                        ],
+                        ["Funding Type", normalizeLabel(project?.funding_type)],
+                        ["Funding Source", project?.funding_source || "-"],
+                        [
+                          "Funding Amount",
+                          formatCurrencyPHP(project?.funding_amount),
+                        ],
+                        ["Start Date", formatDate(project?.start_date)],
+                        ["End Date", formatDate(project?.end_date)],
+                      ].map(([label, value]) => (
+                        <div
+                          key={label}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                            {label}
+                          </p>
+                          <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
+                            {value}
+                          </p>
+                        </div>
+                      ))}
                     </CardContent>
                   </Card>
                 </div>
 
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
-                        Summary
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm xl:sticky xl:top-5">
+                    <CardHeader className="border-b border-slate-100 px-5 py-4">
+                      <CardTitle className="text-lg font-bold text-slate-900">
+                        Project Facts
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 text-base text-zinc-700">
-                      <p className="whitespace-pre-line text-base font-semibold text-zinc-900">
-                        {project?.abstract || "-"}
-                      </p>
+                    <CardContent className="grid gap-4 p-5">
+                      {[
+                        ["Status", normalizeLabel(project?.status)],
+                        ["Visibility", visibilityLabel],
+                        ["Research Agenda", agendaName],
+                        [
+                          "Classification",
+                          normalizeLabel(project?.classification),
+                        ],
+                        ["Submitted", formatDate(project?.submitted_at)],
+                        [
+                          "Submitted By",
+                          project?.submitted_by_name || "Unknown user",
+                        ],
+                      ].map(([label, value]) => (
+                        <div key={label}>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                            {label}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">
+                            {value}
+                          </p>
+                        </div>
+                      ))}
+                      {project?.submitted_by_email ? (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                            Submitter Email
+                          </p>
+                          <p className="mt-1 text-sm text-slate-700">
+                            {project.submitted_by_email}
+                          </p>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
-                        Funding
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="border-b border-slate-100 px-5 py-4">
+                      <CardTitle className="text-lg font-bold text-slate-900">
+                        Supporting Links
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-base text-zinc-700 sm:grid-cols-2">
+                    <CardContent className="grid gap-4 p-5">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Industry/Agency Partner
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.industry_partner || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Funding Type
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {normalizeLabel(project?.funding_type)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Funding Source
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {project?.funding_source || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Funding Amount
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {formatCurrencyPHP(project?.funding_amount)}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="overflow-hidden rounded-2xl border border-black/20 bg-white shadow-sm">
-                    <CardHeader className="border-b border-zinc-200 px-5 py-3">
-                      <CardTitle className="text-base font-semibold text-zinc-900">
-                        Timeline & MOA
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 p-4 text-base text-zinc-700 sm:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          Start Date
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {formatDate(project?.start_date)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
-                          End Date
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-zinc-900">
-                          {formatDate(project?.end_date)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Supporting MOV Link
                         </p>
                         {project?.supporting_mov_link ? (
                           <a
-                            className="mt-1 inline-flex items-center text-base font-semibold text-zinc-900 underline-offset-4 hover:underline"
+                            className="mt-2 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
                             href={project.supporting_mov_link}
                             target="_blank"
                             rel="noreferrer"
                           >
                             {project.supporting_mov_link}
+                            <ExternalLink className="ml-2 h-4 w-4" />
                           </a>
                         ) : (
-                          <p className="mt-1 whitespace-pre-line text-base text-zinc-900">
-                            -
+                          <p className="mt-2 text-sm text-slate-600">
+                            No supporting MOV link added yet.
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-500">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Signed MOA
                         </p>
                         {(() => {
                           const moaReference = String(
                             project?.signed_moa_reference || "",
                           ).trim();
+                          if (!moaReference) {
+                            return (
+                              <p className="mt-2 text-sm text-slate-600">
+                                No signed MOA reference available.
+                              </p>
+                            );
+                          }
                           if (isHttpUrl(moaReference)) {
                             return (
                               <a
-                                className="mt-1 inline-flex items-center text-base font-semibold text-zinc-900 underline-offset-4 hover:underline"
+                                className="mt-2 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
                                 href={moaReference}
                                 target="_blank"
                                 rel="noreferrer"
                               >
                                 {moaReference}
+                                <ExternalLink className="ml-2 h-4 w-4" />
                               </a>
                             );
                           }
                           return (
-                            <p className="mt-1 text-base font-semibold text-zinc-900">
+                            <p className="mt-2 text-sm font-semibold text-slate-900">
                               {moaReference}
                             </p>
                           );
                         })()}
                         {moaDownloadUrl ? (
-                          <div className="mt-2 flex flex-wrap gap-2">
+                          <div className="mt-3">
                             <Button asChild variant="outline" size="sm">
                               <a
                                 href={moaDownloadUrl}
@@ -732,6 +722,38 @@ export default function ResearchProjectDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {expectedOutputItems.length > 0 ? (
+                    <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                      <CardHeader className="border-b border-slate-100 px-5 py-4">
+                        <CardTitle className="text-lg font-bold text-slate-900">
+                          Output Targets
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-3 p-5">
+                        {expectedOutputItems.map((item, index) => {
+                          const typeKey = String(item?.type || "")
+                            .trim()
+                            .toLowerCase();
+                          return (
+                            <div
+                              key={`${typeKey}-${index}`}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                            >
+                              <p className="text-sm font-semibold text-slate-900">
+                                {outputTypeLabelByValue[typeKey] ||
+                                  OUTPUT_TYPE_LABELS[typeKey] ||
+                                  normalizeLabel(item?.type)}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-600">
+                                Target: {item?.target || item?.count || "-"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  ) : null}
                 </div>
               </div>
 
@@ -942,18 +964,6 @@ export default function ResearchProjectDetailPage() {
                         Awards linked to this project.
                       </CardDescription>
                     </div>
-                    {resourceDatasetId ? (
-                      <Button asChild variant="outline" size="sm" className="border-zinc-300 bg-white text-black hover:bg-zinc-100">
-                        <Link
-                          to={`/awards/new?project_id=${encodeURIComponent(
-                            resourceDatasetId,
-                          )}`}
-                        >
-                          <Trophy className="h-4 w-4" />
-                          Add Award
-                        </Link>
-                      </Button>
-                    ) : null}
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -1035,9 +1045,8 @@ export default function ResearchProjectDetailPage() {
               </Card>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </section>
   );
 }
-
