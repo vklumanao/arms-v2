@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Navigate,
+  Link,
   useNavigate,
   useParams,
   useSearchParams,
@@ -40,8 +41,6 @@ import {
 } from "@/utils/admin";
 import { fetchAffiliateRegistry } from "@/services/admin";
 import { ChevronLeft, FolderKanban, Search, Users } from "lucide-react";
-import AffiliateProfileCard from "./affiliate-detail/components/AffiliateProfileCard";
-import AffiliateProjectsPanel from "./affiliate-detail/components/AffiliateProjectsPanel";
 
 export default function AdminAffiliateDetailPage() {
   const toast = useToast();
@@ -105,6 +104,51 @@ export default function AdminAffiliateDetailPage() {
     if (email) return email[0].toUpperCase();
     return "A";
   }, [affiliate]);
+
+  const centerLabel = useMemo(() => {
+    if (!affiliate) return "-";
+    return affiliate?.ckan_org_id
+      ? centerNameById[affiliate.ckan_org_id] || "-"
+      : "-";
+  }, [affiliate, centerNameById]);
+
+  const profileFacts = useMemo(
+    () => [
+      ["Email", affiliate?.email || "-"],
+      ["Research Center", centerLabel],
+      ["Department", departmentLabel],
+      ["Designation", affiliate?.designation || "-"],
+      ["Employment Status", affiliate?.employment_status || "-"],
+      ["GS Faculty", affiliate?.is_gs_faculty ? "Yes" : "No"],
+    ],
+    [affiliate, centerLabel, departmentLabel],
+  );
+
+  const activityCards = useMemo(
+    () => [
+      {
+        label: "Projects",
+        value: Number(affiliate?.research_project_count || 0),
+        icon: FolderKanban,
+      },
+      {
+        label: "Publications",
+        value: Number(affiliate?.publication_count || 0),
+        icon: Users,
+      },
+      {
+        label: "Awards",
+        value: Number(affiliate?.awards_count || 0),
+        icon: FolderKanban,
+      },
+      {
+        label: "IPs",
+        value: Number(affiliate?.ip_count || 0),
+        icon: FolderKanban,
+      },
+    ],
+    [affiliate],
+  );
 
   useEffect(() => {
     const nextSearch = String(searchParams.get("projectSearch") || "").trim();
@@ -273,21 +317,10 @@ export default function AdminAffiliateDetailPage() {
 
   return (
     <section className="page-stack-xl">
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={() => {
-            clearProjectFilters();
-            navigate("/admin/affiliates");
-          }}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Affiliates
-        </Button>
-      </div>
-
       {loading ? (
-        <p className="text-sm text-zinc-600">Loading affiliate...</p>
+        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+          Loading affiliate...
+        </div>
       ) : error ? (
         <EmptyState title="Unable to load" description={error} />
       ) : !affiliate ? (
@@ -296,27 +329,415 @@ export default function AdminAffiliateDetailPage() {
           description="The requested affiliate could not be found."
         />
       ) : (
-        <>
-          <AffiliateProfileCard
-            affiliate={affiliate}
-            initials={initials}
-            centerNameById={centerNameById}
-            departmentLabel={departmentLabel}
-          />
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,1))]" />
+          <div className="relative flex flex-col gap-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-700">
+                  Affiliate Workspace
+                </p>
+                <div className="space-y-2">
+                  <h1 className="text-slate-900">
+                    {affiliate?.full_name || "Affiliate Profile"}
+                  </h1>
+                  <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
+                    Review affiliate identity, affiliations, account standing,
+                    and related research activity from one mobile-first admin
+                    page.
+                  </p>
+                </div>
+              </div>
 
-          <AffiliateProjectsPanel
-            affiliate={affiliate}
-            filteredProjects={filteredProjects}
-            projectSearch={projectSearch}
-            setProjectSearch={setProjectSearch}
-            projectStatus={projectStatus}
-            setProjectStatus={setProjectStatus}
-            projectYear={projectYear}
-            setProjectYear={setProjectYear}
-            projectStatusOptions={projectStatusOptions}
-            projectYearOptions={projectYearOptions}
-          />
-        </>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    clearProjectFilters();
+                    navigate("/admin/affiliates");
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back to Affiliates
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 capitalize">
+                {affiliate?.role || "Affiliate"}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                {affiliate?.is_active ? "Active" : "Inactive"}
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {activityCards.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Icon className="h-4 w-4" />
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em]">
+                        {item.label}
+                      </p>
+                    </div>
+                    <p className="mt-3 text-3xl font-bold leading-none text-slate-900">
+                      {item.value}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+              <div className="space-y-4">
+                <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="border-b border-slate-100 px-5 py-4">
+                    <CardTitle className="text-lg font-bold text-slate-900">
+                      Profile Overview
+                    </CardTitle>
+                    <CardDescription>
+                      Core identity and affiliation details for this affiliate.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5 p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xl font-bold uppercase text-white shadow">
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-lg font-bold text-slate-900">
+                          {affiliate?.full_name || "-"}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600 break-all">
+                          {affiliate?.email || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {profileFacts.map(([label, value]) => (
+                        <div
+                          key={label}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                            {label}
+                          </p>
+                          <p className="mt-2 text-sm font-semibold leading-6 text-slate-900 break-words">
+                            {value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm xl:sticky xl:top-5">
+                  <CardHeader className="border-b border-slate-100 px-5 py-4">
+                    <CardTitle className="text-lg font-bold text-slate-900">
+                      Administrative Context
+                    </CardTitle>
+                    <CardDescription>
+                      Compact account context for administrative review.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 p-5">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                        Record ID
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {affiliate?.id || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                        Role
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900 capitalize">
+                        {affiliate?.role || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                        Account Status
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {affiliate?.is_active ? "Active" : "Inactive"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                        Directory Scope
+                      </p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Managed under the affiliates registry and linked project
+                        catalog.
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                        Navigation
+                      </p>
+                      <Link
+                        className="mt-2 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
+                        to="/admin/affiliates"
+                      >
+                        Return to all affiliates
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
+              <CardHeader className="border-b border-zinc-200 px-6 py-5">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base font-semibold text-black">
+                      Related Projects
+                    </CardTitle>
+                    <CardDescription className="text-zinc-600">
+                      Projects linked to this affiliate.
+                    </CardDescription>
+                  </div>
+                  <p className="text-sm text-zinc-600">
+                    {filteredProjects.length} row(s).
+                  </p>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-4">
+                <div className="rounded-2xl border border-black/20 bg-white/95 p-4 shadow-sm backdrop-blur">
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                    <label className="relative w-full lg:max-w-md">
+                      <span className="sr-only">Search projects</span>
+                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black" />
+                      <Input
+                        className="pl-9"
+                        placeholder="Search projects"
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                      />
+                    </label>
+
+                    <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
+                      <Select
+                        value={projectStatus}
+                        onValueChange={setProjectStatus}
+                      >
+                        <SelectTrigger className="w-full sm:w-[160px] capitalize">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent className="border border-zinc-300 bg-white shadow-md">
+                          {projectStatusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status === "all" ? "All statuses" : status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={projectYear}
+                        onValueChange={setProjectYear}
+                      >
+                        <SelectTrigger className="w-full sm:w-[140px]">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent className="border border-zinc-300 bg-white shadow-md">
+                          {projectYearOptions.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year === "all" ? "All years" : year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full text-xs text-black hover:text-black"
+                        onClick={() => {
+                          setProjectSearch("");
+                          setProjectStatus("all");
+                          setProjectYear("all");
+                        }}
+                      >
+                        Reset all
+                      </Button>
+                    </div>
+                  </div>
+
+                  {projectSearch ||
+                  projectStatus !== "all" ||
+                  projectYear !== "all" ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                        Active Filters
+                      </span>
+                      {projectSearch ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                          onClick={() => setProjectSearch("")}
+                        >
+                          Search: "{projectSearch}" x
+                        </button>
+                      ) : null}
+                      {projectStatus !== "all" ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                          onClick={() => setProjectStatus("all")}
+                        >
+                          Status: {projectStatus} x
+                        </button>
+                      ) : null}
+                      {projectYear !== "all" ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-black/20 bg-zinc-100 px-3 py-1 text-xs font-semibold text-black"
+                          onClick={() => setProjectYear("all")}
+                        >
+                          Year: {projectYear} x
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </CardContent>
+
+              <CardContent className="md:hidden p-4 pt-0">
+                {projectsPanel.loading ? (
+                  <p className="text-sm text-zinc-600">
+                    Loading related projects...
+                  </p>
+                ) : projectsPanel.error ? (
+                  <p className="text-sm text-zinc-700">{projectsPanel.error}</p>
+                ) : filteredProjects.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+                    No related projects found for this affiliate.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredProjects.map((project, index) => (
+                      <div
+                        key={project.id || index}
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-base font-semibold text-zinc-900">
+                              {project.title || "-"}
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-600">
+                              {project.organization || "-"}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="capitalize">
+                            {project.status || "-"}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+                              Year
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-900">
+                              {project.year || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+                              Updated
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-700">
+                              {project.updatedAt
+                                ? new Date(project.updatedAt).toLocaleString()
+                                : "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+
+              <CardContent className="hidden p-0 md:block">
+                {projectsPanel.loading ? (
+                  <div className="p-4 text-sm text-zinc-600">
+                    Loading related projects...
+                  </div>
+                ) : projectsPanel.error ? (
+                  <div className="p-4 text-sm text-zinc-700">
+                    {projectsPanel.error}
+                  </div>
+                ) : (
+                  <div className="max-h-[420px] overflow-auto">
+                    <Table>
+                      <TableHeader className="bg-zinc-50/80 text-zinc-600">
+                        <TableRow>
+                          <TableHead>No.</TableHead>
+                          <TableHead>Project Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Year</TableHead>
+                          <TableHead>Organization</TableHead>
+                          <TableHead>Updated</TableHead>
+                        </TableRow>
+                      </TableHeader>
+
+                      <TableBody>
+                        {filteredProjects.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="py-8 text-center text-sm text-zinc-600"
+                            >
+                              No related projects found for this affiliate.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredProjects.map((project, index) => (
+                            <TableRow key={project.id || index}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell className="font-medium">
+                                {project.title || "-"}
+                              </TableCell>
+                              <TableCell className="capitalize">
+                                {project.status || "-"}
+                              </TableCell>
+                              <TableCell>{project.year || "-"}</TableCell>
+                              <TableCell>
+                                {project.organization || "-"}
+                              </TableCell>
+                              <TableCell>
+                                {project.updatedAt
+                                  ? new Date(project.updatedAt).toLocaleString()
+                                  : "-"}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
     </section>
   );
