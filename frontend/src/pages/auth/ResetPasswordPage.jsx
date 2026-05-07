@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
                 />
                 <div>
                   <p className="auth-spotlight-kicker">Security Reset</p>
-                  <p className="auth-spotlight-name">CenterPulse</p>
+                  <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 

@@ -1,53 +1,84 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import PublicLayout from "@/components/layout/PublicLayout";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
 import AdminOrManagedCenterRoute from "@/components/guards/AdminOrManagedCenterRoute";
 import PermissionRoute from "@/components/guards/PermissionRoute";
+import AppLoading from "@/components/feedback/AppLoading";
 import RouteErrorBoundary from "@/components/feedback/RouteErrorBoundary";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
 import { useAuth } from "@/components/providers/AuthProvider";
-import {
-  AboutPage,
-  HomePage,
-  NotFoundPage,
-  UnauthorizedPage,
-} from "@/pages/core";
-import {
-  ForgotPasswordPage,
-  LoginPage,
-  RegisterPage,
-  ResetPasswordPage,
-  VerifyEmailPage,
-} from "@/pages/auth";
-import {
-  PublicRecordDetailPage,
-  PublicRecordsPage,
-  PublicResearchCenterDetailPage,
-} from "@/pages/public-records";
-import { DashboardPage } from "@/pages/dashboard";
-import {
-  AffiliateProfilePage,
-  AwardsRecognitionPage,
-  ResearchProjectDetailPage,
-  ResearchOutputsPage,
-  ResearchProjectsPage,
-  SubmitProjectPage,
-  SubmitAwardRecognitionPage,
-} from "@/pages/submissions";
-import {
-  AdminAffiliateDetailPage,
-  AdminAffiliatesModulePage,
-  AdminAccessControlPage,
-  AdminDepartmentDetailPage,
-  AdminDepartmentPage,
-  AdminResearchCenterDetailPage,
-  AdminResearchCenterPage,
-  AdminUsersPage,
-} from "@/pages/admin";
+
+const HomePage = lazy(() => import("@/pages/core/HomePage"));
+const AboutPage = lazy(() => import("@/pages/core/AboutPage"));
+const NotFoundPage = lazy(() => import("@/pages/core/NotFoundPage"));
+const UnauthorizedPage = lazy(() => import("@/pages/core/UnauthorizedPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"));
+const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
+const VerifyEmailPage = lazy(() => import("@/pages/auth/VerifyEmailPage"));
+const PublicRecordDetailPage = lazy(() =>
+  import("@/pages/public-records/PublicRecordDetailPage"),
+);
+const PublicRecordsPage = lazy(() =>
+  import("@/pages/public-records/PublicRecordsPage"),
+);
+const PublicResearchCenterDetailPage = lazy(() =>
+  import("@/pages/public-records/PublicResearchCenterDetailPage"),
+);
+const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage"));
+const AffiliateProfilePage = lazy(() =>
+  import("@/pages/submissions/AffiliateProfilePage"),
+);
+const AwardsRecognitionPage = lazy(() =>
+  import("@/pages/submissions/AwardsRecognitionPage"),
+);
+const ResearchProjectDetailPage = lazy(() =>
+  import("@/pages/submissions/ResearchProjectDetailPage"),
+);
+const ResearchOutputsPage = lazy(() =>
+  import("@/pages/submissions/ResearchOutputsPage"),
+);
+const ResearchProjectsPage = lazy(() =>
+  import("@/pages/submissions/ResearchProjectsPage"),
+);
+const SubmitProjectPage = lazy(() =>
+  import("@/pages/submissions/SubmitProjectPage"),
+);
+const SubmitAwardRecognitionPage = lazy(() =>
+  import("@/pages/submissions/SubmitAwardRecognitionPage"),
+);
+const AdminAffiliateDetailPage = lazy(() =>
+  import("@/pages/admin/AdminAffiliateDetailPage"),
+);
+const AdminAffiliatesModulePage = lazy(() =>
+  import("@/pages/admin/AdminAffiliatesModulePage"),
+);
+const AdminAccessControlPage = lazy(() =>
+  import("@/pages/admin/AdminAccessControlPage"),
+);
+const AdminDepartmentDetailPage = lazy(() =>
+  import("@/pages/admin/AdminDepartmentDetailPage"),
+);
+const AdminDepartmentPage = lazy(() =>
+  import("@/pages/admin/AdminDepartmentPage"),
+);
+const AdminResearchCenterDetailPage = lazy(() =>
+  import("@/pages/admin/AdminResearchCenterDetailPage"),
+);
+const AdminResearchCenterPage = lazy(() =>
+  import("@/pages/admin/AdminResearchCenterPage"),
+);
+const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
 
 const withBoundary = (element) => (
-  <RouteErrorBoundary>{element}</RouteErrorBoundary>
+  <RouteErrorBoundary>
+    <Suspense fallback={<AppLoading label="Loading page..." />}>
+      {element}
+    </Suspense>
+  </RouteErrorBoundary>
 );
 const withPermission = (permission, element) =>
   withBoundary(
@@ -99,10 +130,10 @@ export default function AppRoutes() {
       <Route element={<HomeLayoutSwitch />}>
         <Route path="/" element={withBoundary(<HomePage />)} />
         <Route path="/home" element={withBoundary(<HomePage />)} />
+        <Route path="/about" element={withBoundary(<AboutPage />)} />
       </Route>
 
       <Route element={<PublicLayout />}>
-        <Route path="/about" element={withBoundary(<AboutPage />)} />
         <Route
           path="/public-records"
           element={withBoundary(<PublicRecordsPage />)}

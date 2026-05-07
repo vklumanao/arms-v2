@@ -27,7 +27,7 @@ export function buildVerificationEmailHtml({ fullName, link }) {
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
                 <tr>
                   <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
-                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">CCIS - ARMS</div>
+                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">CenterPULSE</div>
                     <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Verify your email</div>
                     <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Activate your account in seconds</div>
                   </td>
@@ -36,7 +36,7 @@ export function buildVerificationEmailHtml({ fullName, link }) {
                   <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
                     <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
                     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
-                      Welcome to CCIS - ARMS. Please confirm your email to activate your account and start managing your research workflows.
+                      Welcome to CenterPULSE. Please confirm your email to activate your account and start managing your research workflows.
                     </p>
                     <p style="margin:0 0 20px 0;">
                       <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
@@ -61,7 +61,7 @@ export function buildVerificationEmailHtml({ fullName, link }) {
                 </tr>
               </table>
               <div style="font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;margin-top:12px;">
-                ARMS Platform
+                CenterPULSE Platform
               </div>
             </td>
           </tr>
@@ -80,7 +80,7 @@ export function buildResetPasswordEmailHtml({ fullName, link }) {
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
                 <tr>
                   <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
-                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">ARMS</div>
+                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">CenterPULSE</div>
                     <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Reset your password</div>
                     <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Secure access to your account</div>
                   </td>
@@ -89,7 +89,7 @@ export function buildResetPasswordEmailHtml({ fullName, link }) {
                   <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
                     <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
                     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
-                      We received a request to reset your ARMS password. Click below to set a new one.
+                      We received a request to reset your CenterPULSE password. Click below to set a new one.
                     </p>
                     <p style="margin:0 0 20px 0;">
                       <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
@@ -114,7 +114,7 @@ export function buildResetPasswordEmailHtml({ fullName, link }) {
                 </tr>
               </table>
               <div style="font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;margin-top:12px;">
-                ARMS Platform
+                CenterPULSE Platform
               </div>
             </td>
           </tr>
@@ -128,7 +128,7 @@ export function buildResetPasswordEmailText({ fullName, link }) {
   return [
     `Hi ${safeName},`,
     "",
-    "We received a request to reset your ARMS password.",
+    "We received a request to reset your CenterPULSE password.",
     "Use the link below to set a new one:",
     link,
     "",
@@ -147,7 +147,7 @@ export function buildInviteSetPasswordEmailHtml({ fullName, link }) {
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:94%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
                 <tr>
                   <td style="padding:20px 24px;background:linear-gradient(135deg,#0f4c81 0%,#2f7bbd 55%,#36b7a6 100%);color:#ffffff;">
-                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">ARMS</div>
+                    <div style="font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;opacity:0.9;">CenterPULSE</div>
                     <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;margin-top:6px;">Complete your account setup</div>
                     <div style="font-family:Arial,sans-serif;font-size:13px;opacity:0.9;margin-top:6px;">Set your password to activate access</div>
                   </td>
@@ -156,7 +156,7 @@ export function buildInviteSetPasswordEmailHtml({ fullName, link }) {
                   <td style="padding:28px 24px 12px 24px;font-family:Arial,sans-serif;color:#0f172a;">
                     <p style="margin:0 0 12px 0;font-size:16px;">Hi ${safeName},</p>
                     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.5;">
-                      Your ARMS account has been created by an administrator. Please set your password using the button below to complete account setup.
+                      Your CenterPULSE account has been created by an administrator. Please set your password using the button below to complete account setup.
                     </p>
                     <p style="margin:0 0 20px 0;">
                       <a href="${link}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#0ea5e9;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">
@@ -176,7 +176,7 @@ export function buildInviteSetPasswordEmailHtml({ fullName, link }) {
                 </tr>
               </table>
               <div style="font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;margin-top:12px;">
-                ARMS Platform
+                CenterPULSE Platform
               </div>
             </td>
           </tr>
@@ -190,7 +190,7 @@ export function buildInviteSetPasswordEmailText({ fullName, link }) {
   return [
     `Hi ${safeName},`,
     "",
-    "Your ARMS account has been created by an administrator.",
+    "Your CenterPULSE account has been created by an administrator.",
     "Use this link to set your password and complete account setup:",
     link,
     "",

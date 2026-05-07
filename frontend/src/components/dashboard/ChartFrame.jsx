@@ -4,7 +4,7 @@ function toCssSize(value) {
 }
 
 export default function ChartFrame({
-  height = 300,
+  height = "clamp(240px, 52vw, 320px)",
   minHeight,
   className = "",
   style = {},
