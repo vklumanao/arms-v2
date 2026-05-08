@@ -750,7 +750,12 @@ export default function AppShell() {
             ))}
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+        <main
+          className={cn(
+            "mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6",
+            "flex items-center py-4 sm:py-6",
+          )}
+        >
           <Outlet />
         </main>
         {shouldShowPublicFooter ? <AppFooter /> : null}
