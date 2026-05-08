@@ -934,9 +934,9 @@ export default function PublicRecordsPage() {
                 and institutional output categories.
               </h1>
               <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
-                Browse public-facing records from the ARMS catalog, search for
-                titles and abstracts, and explore research centers with visible
-                project activity and publication signals.
+                Browse public-facing records from the CenterPULSE catalog,
+                search for titles and abstracts, and explore research centers
+                with visible project activity and publication signals.
               </p>
             </div>
 
