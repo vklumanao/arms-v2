@@ -85,7 +85,7 @@ export default function VerifyEmailPage() {
                 />
                 <div>
                   <p className="auth-spotlight-kicker">Account Verification</p>
-                  <p className="auth-spotlight-name">CenterPulse</p>
+                  <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
@@ -94,7 +94,7 @@ export default function VerifyEmailPage() {
                   Finish verification and enter the workspace automatically.
                 </h1>
                 <p className="auth-spotlight-text">
-                  Once your email is confirmed, CenterPulse signs you in and
+                  Once your email is confirmed, CenterPULSE signs you in and
                   sends you straight to your dashboard.
                 </p>
               </div>
@@ -145,7 +145,7 @@ export default function VerifyEmailPage() {
               <div className="auth-card-hero-copy">
                 <h2 className="auth-title">Verify your email</h2>
                 <p className="auth-subtitle">
-                  Confirming your email activates your CenterPulse account and
+                  Confirming your email activates your CenterPULSE account and
                   signs you in automatically.
                 </p>
               </div>

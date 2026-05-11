@@ -105,7 +105,7 @@ export default function StepReview({
                 />
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">
-                <span className="font-semibold text-zinc-700">Abstract</span>
+                <span className="font-semibold text-zinc-700">Project Summary</span>
                 <Textarea
                   className="min-h-24"
                   value={normalizePlain(form.abstract)}

@@ -6,7 +6,7 @@ export default function DashboardPanel({
   action = null,
   children,
   className = "",
-  bodyClassName = "p-5",
+  bodyClassName = "p-4 sm:p-5",
   cardClassName = "",
   headerClassName = "",
 }) {
@@ -14,9 +14,9 @@ export default function DashboardPanel({
     <section className={className}>
       <Card className={cn("overflow-hidden", cardClassName)}>
         <CardHeader
-          className={cn("border-b px-5 py-4", headerClassName)}
+          className={cn("border-b px-4 py-4 sm:px-5", headerClassName)}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <CardTitle className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-500">
               {title}
             </CardTitle>

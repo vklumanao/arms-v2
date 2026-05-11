@@ -13,15 +13,16 @@ export default function PaginationControls({
 
   return (
     <Card className={cn(className)}>
-      <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+      <CardContent className="flex flex-col gap-3 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
         <p className="min-w-0 text-slate-600">
           Page {page} of {totalPages}
         </p>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
           <Button
             type="button"
             variant="outline"
             size="sm"
+            className="flex-1 sm:flex-none"
             disabled={page <= 1}
             onClick={() => onPageChange(Math.max(1, page - 1))}
           >
@@ -31,6 +32,7 @@ export default function PaginationControls({
             type="button"
             variant="outline"
             size="sm"
+            className="flex-1 sm:flex-none"
             disabled={page >= totalPages}
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
           >

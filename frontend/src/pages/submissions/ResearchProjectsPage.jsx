@@ -113,13 +113,21 @@ export default function ResearchProjectsPage() {
   const [centerChiefQuickFilter, setCenterChiefQuickFilter] = useState("all");
   const [linkedProjectsQuickFilter, setLinkedProjectsQuickFilter] =
     useState("all");
-  const [linkedViewMode, setLinkedViewMode] = useState("list");
+  const [linkedViewMode, setLinkedViewMode] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+      ? "grid"
+      : "list",
+  );
   const [filters, setFilters] = useState({
     search: "",
     sortBy: "submitted_desc",
   });
   const [quickFilter, setQuickFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("list");
+  const [viewMode, setViewMode] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+      ? "grid"
+      : "list",
+  );
   const [dataLoading, setDataLoading] = useState(true);
   const DIRECTORY_SKELETON_COUNT = 6;
   const [deletingProjectId, setDeletingProjectId] = useState("");
@@ -173,6 +181,20 @@ export default function ResearchProjectsPage() {
   useEffect(() => {
     if (error) toast.error("Action failed", error);
   }, [error, toast]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia("(max-width: 767px)");
+    const syncMobileView = (event) => {
+      if (event.matches) {
+        setViewMode("grid");
+        setLinkedViewMode("grid");
+      }
+    };
+    syncMobileView(media);
+    media.addEventListener("change", syncMobileView);
+    return () => media.removeEventListener("change", syncMobileView);
+  }, []);
 
   useEffect(() => {
     if (message) toast.success("Action completed", message);
@@ -641,8 +663,8 @@ export default function ResearchProjectsPage() {
     if (normalized === "ongoing")
       return "border-amber-200 bg-amber-50 text-amber-700";
     if (normalized === "delayed" || normalized === "rejected")
-      return "border-red-200 bg-red-50 text-red-700";
-    return "border-slate-300 bg-slate-50 text-blue-700";
+      return "border-orange-200 bg-orange-50 text-orange-700";
+    return "border-slate-300 bg-slate-50 text-slate-700";
   };
 
   const getVisibilityBadgeClass = (isPrivate) =>
@@ -784,7 +806,7 @@ export default function ResearchProjectsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -800,14 +822,14 @@ export default function ResearchProjectsPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
               {canExportProjects ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                      className="w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
                       disabled={
                         !filteredProjects.length || Boolean(exportingType)
                       }
@@ -837,14 +859,14 @@ export default function ResearchProjectsPage() {
               ) : null}
 
               {canSubmit ? (
-                <Button asChild variant="mono">
+                <Button asChild variant="mono" className="w-full sm:w-auto">
                   <Link to="/projects/submit">Submit Research Project</Link>
                 </Button>
               ) : (
                 <Button
                   type="button"
                   disabled
-                  className="bg-white text-slate-500 border border-slate-300"
+                  className="w-full border border-slate-300 bg-white text-slate-500 sm:w-auto"
                   title="Set your Organization (Research Center) in My Profile to submit."
                 >
                   Submit Research Project
@@ -867,7 +889,7 @@ export default function ResearchProjectsPage() {
             </div>
           ) : null}
 
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             <div className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm">
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                 <FileText size={14} />
@@ -1029,7 +1051,7 @@ export default function ResearchProjectsPage() {
                     className={cn(
                       "rounded-full border-slate-200 px-4 text-xs",
                       centerChiefQuickFilter === chip.key
-                        ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
                         : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
                     onClick={() => setCenterChiefQuickFilter(chip.key)}
@@ -1434,7 +1456,7 @@ export default function ResearchProjectsPage() {
                       className={cn(
                         "rounded-full border-slate-200 px-4 text-xs",
                         quickFilter === chip.key
-                          ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
                           : "bg-white text-slate-700 hover:bg-slate-50",
                       )}
                       onClick={() => setQuickFilter(chip.key)}
@@ -2037,7 +2059,7 @@ export default function ResearchProjectsPage() {
                   className={cn(
                     "rounded-full border-slate-200 px-4 text-xs",
                     linkedProjectsQuickFilter === chip.key
-                      ? "bg-[#1E3A8A] text-white hover:bg-[#1E3A8A]"
+                      ? "bg-[#10B981] text-white hover:bg-[#059669]"
                       : "bg-white text-slate-700 hover:bg-slate-50",
                   )}
                   onClick={() => setLinkedProjectsQuickFilter(chip.key)}

@@ -55,7 +55,7 @@ export default function CreateResearchCenterDialog({
             <Input
               className={cn(
                 "border bg-white",
-                errors.name ? "border-[#1E3A8A]" : "border-slate-300",
+                errors.name ? "border-[#F97316]" : "border-slate-300",
               )}
               placeholder="e.g., Center for Data Science and AI"
               value={values.name}
@@ -73,7 +73,7 @@ export default function CreateResearchCenterDialog({
             <Input
               className={cn(
                 "border bg-white",
-                errors.code ? "border-[#1E3A8A]" : "border-slate-300",
+                errors.code ? "border-[#F97316]" : "border-slate-300",
               )}
               placeholder="e.g., CDSAI"
               value={values.code}
@@ -100,7 +100,7 @@ export default function CreateResearchCenterDialog({
                 className={cn(
                   "border bg-white",
                   errors.centerChiefId
-                    ? "border-[#1E3A8A]"
+                    ? "border-[#F97316]"
                     : "border-slate-300",
                 )}
               >
@@ -178,7 +178,7 @@ export default function CreateResearchCenterDialog({
                 className={cn(
                   "border bg-white",
                   errors.researchAgendas
-                    ? "border-[#1E3A8A]"
+                    ? "border-[#F97316]"
                     : "border-slate-300",
                 )}
                 placeholder="e.g., Smart Agriculture"
@@ -238,7 +238,7 @@ export default function CreateResearchCenterDialog({
             Cancel
           </Button>
           <Button
-            className="bg-[#1E3A8A] text-white hover:bg-[#1D4ED8]"
+            className="bg-[#10B981] text-white hover:bg-[#059669]"
             onClick={onSubmit}
             disabled={loading || !isValid}
           >

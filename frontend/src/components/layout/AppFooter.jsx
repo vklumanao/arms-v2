@@ -3,7 +3,7 @@ export default function AppFooter() {
     <footer className="app-footer">
       <div className="app-footer-bottom text-center">
         <p className="text-sm text-zinc-500">
-          &copy; {new Date().getFullYear()} ARMS. All rights reserved.
+          &copy; {new Date().getFullYear()} CenterPULSE. All rights reserved.
         </p>
 
         <p className="text-xs text-zinc-400 mt-1">

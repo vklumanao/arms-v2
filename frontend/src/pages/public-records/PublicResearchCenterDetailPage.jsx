@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -35,7 +36,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatStatusLabel, normalizeStatus } from "@/utils/status";
 import {
+  ArrowUpRight,
   Building2,
+  CalendarRange,
   ChevronLeft,
   Eye,
   Facebook,
@@ -43,6 +46,8 @@ import {
   Globe,
   Instagram,
   Linkedin,
+  Search,
+  Sparkles,
   Twitter,
   Users,
   Youtube,
@@ -56,6 +61,17 @@ const toTokens = (value) =>
     .map((token) => token.trim())
     .filter(Boolean);
 
+const formatDisplayDate = (value) => {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+};
+
 const includesPublicationSignal = (value) => {
   const text = String(value || "").toLowerCase();
   return (
@@ -68,12 +84,16 @@ const includesPublicationSignal = (value) => {
 
 const statusBadgeClass = (status) => {
   const key = normalizeStatus(status);
-  if (key === "completed") return "border-border bg-muted text-foreground";
-  if (key === "ongoing" || key === "active")
-    return "border-border bg-muted text-foreground";
-  if (key === "delayed" || key === "rejected" || key === "cancelled")
-    return "border-border bg-muted text-foreground";
-  return "border-border bg-muted text-foreground";
+  if (key === "completed") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+  if (key === "ongoing" || key === "active") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+  if (key === "delayed" || key === "rejected" || key === "cancelled") {
+    return "border-orange-200 bg-orange-50 text-orange-700";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
 };
 
 const getSocialMeta = (url) => {
@@ -263,7 +283,7 @@ export default function PublicResearchCenterDetailPage() {
       }));
     }
     return [];
-  }, [affiliateRows, centerInfo.affiliates]);
+  }, [affiliateRows]);
 
   const summary = useMemo(() => {
     let publications = 0;
@@ -288,6 +308,7 @@ export default function PublicResearchCenterDetailPage() {
     }
     return centerInfo.agendas;
   })();
+
   const socialLink = String(center?.social_media_link || "").trim();
   const socialMeta = getSocialMeta(socialLink);
   const SocialIcon = socialMeta?.icon || Globe;
@@ -381,9 +402,36 @@ export default function PublicResearchCenterDetailPage() {
     );
   }
 
+  const snapshotItems = [
+    {
+      label: "Active public projects",
+      value: summary.projectCount,
+      icon: FolderKanban,
+      tone: "from-emerald-500/15 to-emerald-500/5 text-emerald-700",
+    },
+    {
+      label: "Listed affiliates",
+      value: summary.researcherCount,
+      icon: Users,
+      tone: "from-slate-900/10 to-slate-900/5 text-slate-700",
+    },
+    {
+      label: "Publication signals",
+      value: summary.publicationCount,
+      icon: Sparkles,
+      tone: "from-amber-500/15 to-amber-500/5 text-amber-700",
+    },
+    {
+      label: "Coverage years",
+      value: centerInfo.yearSpan,
+      icon: CalendarRange,
+      tone: "from-sky-500/15 to-sky-500/5 text-sky-700",
+    },
+  ];
+
   return (
     <section className="page-stack-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="outline" onClick={() => navigate("/public-records")}>
           <ChevronLeft className="h-4 w-4" />
           Back to Public Records
@@ -391,8 +439,8 @@ export default function PublicResearchCenterDetailPage() {
       </div>
 
       {loading ? (
-        <Card>
-          <CardContent className="p-6 text-base text-muted-foreground">
+        <Card className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-8 text-base text-slate-600">
             Loading research center...
           </CardContent>
         </Card>
@@ -405,103 +453,144 @@ export default function PublicResearchCenterDetailPage() {
         />
       ) : (
         <>
-          <Card className="sticky top-20 z-20 overflow-hidden border border-border bg-card/95 shadow-sm backdrop-blur">
-            <CardContent className="p-5">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-lg font-bold uppercase text-background shadow-sm">
-                    {initials}
-                  </div>
-                  <div className="space-y-2">
-                    <h1 className="text-2xl font-bold text-foreground">
-                      {center?.name || "Research Center"}
-                    </h1>
-                    <p className="text-base text-muted-foreground">
-                      Code:{" "}
-                      <span className="font-mono font-semibold text-foreground">
-                        {center?.code || center?.id || "-"}
-                      </span>{" "}
-                      | Center Chief:{" "}
-                      <span className="font-semibold text-foreground">
-                        {center?.center_chief_name || "-"}
-                      </span>
+          <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_24%),radial-gradient(circle_at_left_center,rgba(15,23,42,0.06),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,1))]" />
+            <div className="relative p-5 sm:p-7 lg:p-8">
+              <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="max-w-4xl space-y-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-700">
+                      Public Research Center
                     </p>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-slate-900 text-xl font-bold uppercase text-white shadow-lg shadow-slate-900/10">
+                        {initials}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <h1 className="text-slate-900">
+                            {center?.name || "Research Center"}
+                          </h1>
+                          <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
+                            {String(center?.description || "").trim() ||
+                              "Discover the center's public-facing research activity, active agenda coverage, and the affiliates contributing to its scholarly work."}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                            Code:{" "}
+                            <span className="ml-1 font-mono text-slate-900">
+                              {center?.code || center?.id || "-"}
+                            </span>
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                            Center Chief:{" "}
+                            <span className="ml-1 text-slate-900">
+                              {center?.center_chief_name || "-"}
+                            </span>
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            {agendaDisplay.length} research
+                            {agendaDisplay.length === 1
+                              ? " agenda"
+                              : " agendas"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="gap-2 text-sm px-3 py-1">
-                    <Users className="h-4 w-4" />
-                    {summary.researcherCount} affiliates
-                  </Badge>
-                  <Badge variant="secondary" className="gap-2 text-sm px-3 py-1">
-                    <FolderKanban className="h-4 w-4" />
-                    {summary.projectCount} projects
-                  </Badge>
-                  <Badge variant="outline" className="gap-2 text-sm px-3 py-1">
-                    <Building2 className="h-4 w-4" />
-                    {center?.agenda_count || centerInfo.agendas.length} agenda
-                  </Badge>
-                  {socialLink ? (
-                    <a
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-border hover:text-foreground"
-                      href={socialLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={socialMeta?.label || "Open link"}
-                      aria-label={socialMeta?.label || "Open link"}
-                    >
-                      <SocialIcon className="h-5 w-5" />
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-            <aside className="space-y-4">
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
-                  <CardTitle className="text-base font-semibold text-foreground">
-                    Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 p-5">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      Description
-                    </p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-                      {String(center?.description || "").trim() ||
-                        "No description provided."}
-                    </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:max-w-sm xl:justify-end">
+                    {socialLink ? (
+                      <Button asChild variant="outline">
+                        <a
+                          href={socialLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={socialMeta?.label || "Visit website"}
+                        >
+                          <SocialIcon className="h-4 w-4" />
+                          {socialMeta?.label || "Visit website"}
+                          <ArrowUpRight className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    ) : null}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: "Members", value: summary.researcherCount },
-                      { label: "Projects", value: summary.projectCount },
-                      { label: "Agenda", value: agendaDisplay.length },
-                    ].map((item) => (
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {snapshotItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
                       <div
                         key={item.label}
-                        className="rounded-lg border border-border bg-muted/40 p-3 text-center"
+                        className={`rounded-[1.5rem] border border-slate-200 bg-gradient-to-br ${item.tone} p-4 shadow-sm`}
                       >
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-xl font-bold text-foreground">
-                          {item.value}
-                        </p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className="text-2xl font-bold text-slate-900">
+                              {item.value}
+                            </p>
+                          </div>
+                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-white/80 text-slate-700 shadow-sm">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+              <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                <CardHeader className="border-b border-slate-100 px-5 py-4">
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    Center Snapshot
+                  </CardTitle>
+                  <CardDescription>
+                    A quick public summary of this center&apos;s research
+                    footprint.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 p-5">
+                  {[
+                    ["Lead researchers", centerInfo.leads.length || "-"],
+                    [
+                      "Departments linked",
+                      centerInfo.departments.length || "-",
+                    ],
+                    [
+                      "Latest public submission",
+                      formatDisplayDate(centerInfo.latestSubmittedAt),
+                    ],
+                    ["Project coverage", centerInfo.yearSpan],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        {label}
+                      </p>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
+                        {value}
+                      </p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
 
-              <Card className="overflow-hidden">
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
-                  <CardTitle className="text-base font-semibold text-foreground">
-                    Research Agenda
+              <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                <CardHeader className="border-b border-slate-100 px-5 py-4">
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    Research Agendas
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-5">
@@ -510,44 +599,97 @@ export default function PublicResearchCenterDetailPage() {
                       {agendaDisplay.map((agenda) => (
                         <span
                           key={agenda}
-                          className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold text-muted-foreground"
+                          className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700"
                         >
                           {agenda}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No agenda linked.
+                    <p className="text-sm text-slate-600">No agenda linked.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                <CardHeader className="border-b border-slate-100 px-5 py-4">
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    Departments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5">
+                  {centerInfo.departments.length ? (
+                    <div className="grid gap-2">
+                      {centerInfo.departments.map((department) => (
+                        <div
+                          key={department}
+                          className="rounded-2xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700"
+                        >
+                          {department}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      No departments linked.
                     </p>
                   )}
                 </CardContent>
               </Card>
             </aside>
 
-            <Card className="overflow-hidden">
-              <Tabs value={normalizeTab(activeTab)} onValueChange={setActiveTab}>
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
-                  <TabsList className="w-full justify-start gap-2 bg-transparent p-0">
-                    <TabsTrigger value="projects" className="text-base">
-                      Projects
-                    </TabsTrigger>
-                    <TabsTrigger value="affiliates" className="text-base">
-                      Affiliates
-                    </TabsTrigger>
-                  </TabsList>
+            <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+              <Tabs
+                value={normalizeTab(activeTab)}
+                onValueChange={setActiveTab}
+              >
+                <CardHeader className="border-b border-slate-100 px-5 py-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg font-bold text-slate-900">
+                        Center Activity
+                      </CardTitle>
+                      <CardDescription>
+                        Browse linked public projects and published affiliates
+                        from this research center.
+                      </CardDescription>
+                    </div>
+                    <TabsList className="h-auto w-full justify-start gap-2 rounded-2xl bg-slate-100/80 p-1 sm:w-auto">
+                      <TabsTrigger
+                        value="projects"
+                        className="rounded-xl px-4 py-2 text-sm"
+                      >
+                        Projects
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="affiliates"
+                        className="rounded-xl px-4 py-2 text-sm"
+                      >
+                        Affiliates
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <TabsContent value="projects" className="m-0 space-y-0">
-                    <div className="border-b border-border p-4">
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <Input
-                          placeholder="Search project or lead researcher"
-                          value={projectSearch}
-                          onChange={(event) => setProjectSearch(event.target.value)}
-                        />
-                        <Select value={projectStatus} onValueChange={setProjectStatus}>
+                  <TabsContent value="projects" className="m-0">
+                    <div className="border-b border-slate-100 p-4 sm:p-5">
+                      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_220px_180px]">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <Input
+                            placeholder="Search project title or lead researcher"
+                            value={projectSearch}
+                            onChange={(event) =>
+                              setProjectSearch(event.target.value)
+                            }
+                            className="pl-9"
+                          />
+                        </div>
+                        <Select
+                          value={projectStatus}
+                          onValueChange={setProjectStatus}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Status" />
                           </SelectTrigger>
@@ -560,7 +702,10 @@ export default function PublicResearchCenterDetailPage() {
                             <SelectItem value="cancelled">Cancelled</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Select value={projectYear} onValueChange={setProjectYear}>
+                        <Select
+                          value={projectYear}
+                          onValueChange={setProjectYear}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Year" />
                           </SelectTrigger>
@@ -574,6 +719,16 @@ export default function PublicResearchCenterDetailPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-700">
+                          {filteredProjects.length} matching project
+                          {filteredProjects.length === 1 ? "" : "s"}
+                        </span>
+                        <span>
+                          Explore public records connected to this center&apos;s
+                          agenda and leadership.
+                        </span>
+                      </div>
                     </div>
 
                     {filteredProjects.length === 0 ? (
@@ -585,13 +740,72 @@ export default function PublicResearchCenterDetailPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="overflow-x-auto">
+                        <div className="grid gap-4 p-4 sm:p-5 lg:hidden">
+                          {paginatedProjects.map((record) => (
+                            <Card
+                              key={record.id}
+                              className="rounded-[1.25rem] border border-slate-200 bg-white shadow-sm"
+                            >
+                              <CardContent className="space-y-4 p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="space-y-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${statusBadgeClass(record.status)}`}
+                                    >
+                                      {formatStatusLabel(record.status) || "-"}
+                                    </Badge>
+                                    <h3 className="text-base font-bold text-slate-900">
+                                      {record.title || "Untitled project"}
+                                    </h3>
+                                  </div>
+                                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                    {record.year || "-"}
+                                  </span>
+                                </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                      Lead Researcher
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                                      {record.lead_researcher || "-"}
+                                    </p>
+                                  </div>
+                                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                      Expected Outputs
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                                      {record.expected_outputs || "-"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => openDetails(record.id)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  View project details
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+
+                        <div className="hidden overflow-x-auto lg:block">
                           <Table className="min-w-[980px] text-base">
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="text-sm">No.</TableHead>
-                                <TableHead className="text-sm">Project</TableHead>
-                                <TableHead className="text-sm">Status</TableHead>
+                                <TableHead className="text-sm">
+                                  Project
+                                </TableHead>
+                                <TableHead className="text-sm">
+                                  Status
+                                </TableHead>
                                 <TableHead className="text-sm">Year</TableHead>
                                 <TableHead className="text-sm">
                                   Lead Researcher
@@ -607,8 +821,16 @@ export default function PublicResearchCenterDetailPage() {
                                   <TableCell>
                                     {(projectsPage - 1) * PAGE_SIZE + idx + 1}
                                   </TableCell>
-                                  <TableCell className="font-medium text-foreground">
-                                    {record.title || "Untitled project"}
+                                  <TableCell className="font-medium text-slate-900">
+                                    <div className="space-y-1">
+                                      <p>
+                                        {record.title || "Untitled project"}
+                                      </p>
+                                      <p className="text-sm text-slate-500">
+                                        {record.expected_outputs ||
+                                          "No output summary"}
+                                      </p>
+                                    </div>
                                   </TableCell>
                                   <TableCell>
                                     <Badge
@@ -648,7 +870,7 @@ export default function PublicResearchCenterDetailPage() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="affiliates" className="m-0 space-y-0">
+                  <TabsContent value="affiliates" className="m-0">
                     {normalizedAffiliateRows.length === 0 ? (
                       <div className="p-6">
                         <EmptyState
@@ -658,15 +880,85 @@ export default function PublicResearchCenterDetailPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="overflow-x-auto">
+                        <div className="border-b border-slate-100 p-4 sm:p-5">
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-700">
+                              {normalizedAffiliateRows.length} listed affiliate
+                              {normalizedAffiliateRows.length === 1 ? "" : "s"}
+                            </span>
+                            <span>
+                              People connected to this center&apos;s visible
+                              public research work.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:hidden">
+                          {paginatedAffiliates.map((row) => {
+                            const personName = String(row?.full_name || "-");
+                            const personInitials =
+                              personName
+                                .split(/\s+/)
+                                .filter(Boolean)
+                                .slice(0, 2)
+                                .map((part) => part[0]?.toUpperCase() || "")
+                                .join("") || "A";
+                            return (
+                              <Card
+                                key={row.id || personName}
+                                className="rounded-[1.25rem] border border-slate-200 bg-white shadow-sm"
+                              >
+                                <CardContent className="space-y-4 p-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-sm font-bold text-emerald-700">
+                                      {personInitials}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="truncate text-base font-bold text-slate-900">
+                                        {personName}
+                                      </p>
+                                      <p className="truncate text-sm text-slate-600">
+                                        {row?.role || "-"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="grid gap-3">
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                        Department
+                                      </p>
+                                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                                        {row?.department || "-"}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                                        Email
+                                      </p>
+                                      <p className="mt-1 break-all text-sm font-semibold text-slate-900">
+                                        {row?.email || "-"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+
+                        <div className="hidden overflow-x-auto xl:block">
                           <Table className="min-w-[980px] text-base">
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="text-sm">No.</TableHead>
-                                <TableHead className="text-sm">Full Name</TableHead>
+                                <TableHead className="text-sm">
+                                  Full Name
+                                </TableHead>
                                 <TableHead className="text-sm">Email</TableHead>
                                 <TableHead className="text-sm">Role</TableHead>
-                                <TableHead className="text-sm">Department</TableHead>
+                                <TableHead className="text-sm">
+                                  Department
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -675,14 +967,16 @@ export default function PublicResearchCenterDetailPage() {
                                   <TableCell>
                                     {(affiliatesPage - 1) * PAGE_SIZE + idx + 1}
                                   </TableCell>
-                                  <TableCell className="font-medium text-foreground">
+                                  <TableCell className="font-medium text-slate-900">
                                     {row?.full_name || "-"}
                                   </TableCell>
                                   <TableCell>{row?.email || "-"}</TableCell>
                                   <TableCell className="capitalize">
                                     {row?.role || "-"}
                                   </TableCell>
-                                  <TableCell>{row?.department || "-"}</TableCell>
+                                  <TableCell>
+                                    {row?.department || "-"}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>

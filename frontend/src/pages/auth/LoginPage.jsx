@@ -124,7 +124,7 @@ export default function LoginPage() {
                 />
                 <div>
                   <p className="auth-spotlight-kicker">Research Workspace</p>
-                  <p className="auth-spotlight-name">CenterPulse</p>
+                  <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
@@ -148,7 +148,7 @@ export default function LoginPage() {
                       Use your registered academic email
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Sign in with the same address tied to your CenterPulse
+                      Sign in with the same address tied to your CenterPULSE
                       account.
                     </p>
                   </div>
@@ -201,15 +201,6 @@ export default function LoginPage() {
             </CardHeader>
 
             <CardContent className="auth-card-body space-y-5">
-              <div className="auth-tips-grid auth-tips-grid-2">
-                <div className="auth-tip">
-                  Use your registered institutional email.
-                </div>
-                <div className="auth-tip">
-                  Too many attempts trigger a 60-second cooldown.
-                </div>
-              </div>
-
               <form className="auth-form-stack" onSubmit={onSubmit}>
                 <div className="auth-panel">
                   <div className="auth-field-group">
@@ -225,7 +216,7 @@ export default function LoginPage() {
                         setForm((p) => ({ ...p, email: e.target.value }))
                       }
                       className="auth-input"
-                      placeholder="name@institution.edu"
+                      placeholder="name@carsu.edu.ph"
                     />
                   </div>
 
@@ -299,7 +290,6 @@ export default function LoginPage() {
                   <Link to="/forgot-password" className="auth-link-muted">
                     Forgot password
                   </Link>
-                  <span>Secure sign-in for research center accounts</span>
                 </div>
 
                 <Button

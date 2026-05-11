@@ -58,7 +58,7 @@ export default function NotFoundPage() {
 
               <Button
                 asChild
-                className="w-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] sm:w-auto"
+                className="w-full bg-[#10B981] text-white hover:bg-[#059669] sm:w-auto"
               >
                 <Link to={recoveryTarget.to}>
                   <Compass className="mr-2 h-4 w-4" />

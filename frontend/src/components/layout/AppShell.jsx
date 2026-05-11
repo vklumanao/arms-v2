@@ -34,8 +34,6 @@ import {
   Award,
   Building2,
   ChartNoAxesColumn,
-  ChevronsLeft,
-  ChevronsRight,
   ChevronDown,
   Database,
   FolderOpen,
@@ -49,7 +47,7 @@ import {
   Users,
 } from "lucide-react";
 
-const DESKTOP_SIDEBAR_BREAKPOINT = 1100;
+const DESKTOP_SIDEBAR_BREAKPOINT = 1024;
 const SIDEBAR_COLLAPSE_STORAGE_KEY = "arms:desktopSidebarCollapsed";
 
 function getInitials(value) {
@@ -95,7 +93,7 @@ export default function AppShell() {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
-    if (stored === null) return true;
+    if (stored === null) return false;
     return stored === "true";
   });
   const [hoverExpanded, setHoverExpanded] = useState(false);
@@ -159,8 +157,8 @@ export default function AppShell() {
       (to === "/home" && isHomeActive) || (to === "/about" && isAboutActive);
     return `rounded-md px-3 py-1.5 text-sm font-semibold transition ${
       isActive
-        ? "bg-[#1E3A8A] text-white"
-        : "text-slate-700 hover:bg-blue-50 hover:text-[#1E3A8A]"
+        ? "bg-[#10B981] text-white"
+        : "text-slate-700 hover:bg-slate-50 hover:text-[#1E293B]"
     }`;
   };
 
@@ -443,12 +441,14 @@ export default function AppShell() {
       >
         {({ isActive }) => (
           <>
-            {!collapsed ? (
-              <span
-                className={cn("sidebar-nav-rail", isActive && "is-active")}
-                aria-hidden="true"
-              />
-            ) : null}
+            <span
+              className={cn(
+                "sidebar-nav-rail",
+                collapsed && "is-hidden",
+                isActive && "is-active",
+              )}
+              aria-hidden="true"
+            />
             <span className="sidebar-nav-icon">
               <Icon className={cn("h-4 w-4", collapsed && "h-5 w-5")} />
             </span>
@@ -513,12 +513,12 @@ export default function AppShell() {
               aria-label="Account menu"
               className={cn(
                 "w-full rounded-lg shadow-black/5",
-                "hover:border-[#93C5FD] hover:bg-blue-50",
-                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
+                "hover:border-[#10B981] hover:bg-slate-50",
+                "data-[state=open]:border-[#10B981] data-[state=open]:bg-slate-50 data-[state=open]:shadow-md",
               )}
             >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -529,13 +529,13 @@ export default function AppShell() {
               variant="ghost"
               className={cn(
                 "group w-full justify-between gap-3 rounded-lg px-3 py-2.5 text-left shadow-sm shadow-black/5",
-                "hover:border-[#93C5FD] hover:bg-blue-50",
-                "data-[state=open]:border-[#93C5FD] data-[state=open]:bg-blue-50 data-[state=open]:shadow-md",
+                "hover:border-[#10B981] hover:bg-slate-50",
+                "data-[state=open]:border-[#10B981] data-[state=open]:bg-slate-50 data-[state=open]:shadow-md",
               )}
             >
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                  <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -560,7 +560,7 @@ export default function AppShell() {
           <DropdownMenuLabel className="px-2 py-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-blue-100 text-[#1E3A8A]">
+                <AvatarFallback className="bg-emerald-50 text-[#1E293B]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -582,14 +582,14 @@ export default function AppShell() {
                 onClick={onNavigate}
                 className="flex w-full items-center gap-2"
               >
-                <User className="h-4 w-4 text-[#1E3A8A]" />
+                <User className="h-4 w-4 text-[#1E293B]" />
                 <span className="min-w-0 flex-1 truncate">My Profile</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-slate-700 focus:bg-blue-50 focus:text-[#1E3A8A] flex w-full items-center gap-2"
+            className="text-slate-700 focus:bg-slate-50 focus:text-[#1E293B] flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();
@@ -647,16 +647,18 @@ export default function AppShell() {
                   <img
                     src="/full-logo.svg"
                     alt="CenterPulse"
-                    className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                    className="h-8 w-auto sm:h-9 lg:h-10"
                     draggable="false"
+                    decoding="async"
                   />
                 </div>
               ) : (
                 <img
                   src="/icon.svg"
                   alt="CenterPulse"
-                  className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                  className="h-8 w-auto"
                   draggable="false"
+                  decoding="async"
                 />
               )}
             </Link>
@@ -681,7 +683,7 @@ export default function AppShell() {
                 </p>
               </div>
             ) : (
-              <div className={cn("space-y-2", collapsed && "space-y-1")}>
+              <div className="space-y-2">
                 {visibleGroups
                   .flatMap((group) => group.items)
                   .map((item) => (
@@ -712,7 +714,7 @@ export default function AppShell() {
             <div className="flex items-center gap-5">
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
+                className="shrink-0 text-lg font-bold text-[#1E293B]"
               >
                 CenterPulse
               </Link>
@@ -748,7 +750,12 @@ export default function AppShell() {
             ))}
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+        <main
+          className={cn(
+            "mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6",
+            "flex items-center py-4 sm:py-6",
+          )}
+        >
           <Outlet />
         </main>
         {shouldShowPublicFooter ? <AppFooter /> : null}
@@ -813,7 +820,7 @@ export default function AppShell() {
             {isLandingPage && !user ? (
               <Link
                 to="/home"
-                className="shrink-0 text-lg font-bold text-[#1E3A8A]"
+                className="shrink-0 text-lg font-bold text-[#1E293B]"
               >
                 CenterPulse
               </Link>
@@ -824,7 +831,9 @@ export default function AppShell() {
                 type="button"
                 aria-label="Open navigation"
                 variant="outline"
+                size="icon"
                 onClick={handleNavToggle}
+                className="lg:hidden"
               >
                 <Menu size={16} />
               </Button>
@@ -877,7 +886,7 @@ export default function AppShell() {
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetContent
             side="left"
-            className="flex h-full w-[min(22rem,92vw)] flex-col bg-background p-4 sm:p-5"
+            className="flex h-full w-screen max-w-none flex-col bg-background p-4 sm:w-[24rem] sm:max-w-[24rem] sm:p-5"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Workspace navigation</SheetTitle>

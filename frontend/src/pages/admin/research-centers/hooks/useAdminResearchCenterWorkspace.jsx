@@ -1107,7 +1107,7 @@ export default function useAdminResearchCenterWorkspace() {
   const workspaceContent = useMemo(() => {
     if (!workspaceCenterRow) {
       return (
-        <div className="rounded-[1.7rem] border border-dashed border-blue-200 bg-blue-50/70 p-10 text-center text-sm text-[#1E3A8A]">
+        <div className="rounded-[1.7rem] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-[#1E293B]">
           Select a research center from the directory to open its workspace.
         </div>
       );

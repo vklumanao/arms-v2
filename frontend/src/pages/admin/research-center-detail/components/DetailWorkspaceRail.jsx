@@ -5,7 +5,7 @@ export default function DetailWorkspaceRail({
 }) {
   return (
     <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
-      <div className="rounded-xl border border-blue-200/70 bg-white p-4 sm:p-5">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           Description
         </p>
@@ -15,7 +15,7 @@ export default function DetailWorkspaceRail({
         </p>
       </div>
 
-      <div className="rounded-xl border border-blue-200/70 bg-white p-4 sm:p-5">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           Research Agendas
         </p>
@@ -30,8 +30,8 @@ export default function DetailWorkspaceRail({
                   type="button"
                   className={
                     active
-                      ? "rounded-full border border-blue-300 bg-blue-100 px-3 py-1.5 text-xs font-semibold text-[#1E3A8A]"
-                      : "rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#1E3A8A] hover:bg-blue-50"
+                      ? "rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-[#1E293B]"
+                      : "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#1E293B] hover:bg-slate-50"
                   }
                   onClick={() => onAgendaClick(agenda)}
                 >
