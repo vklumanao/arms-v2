@@ -220,9 +220,9 @@ export default function RegisterPage() {
     <section className="auth-shell">
       <div className="auth-shell-inner">
         <div className="auth-layout auth-layout-register">
-          <aside className="auth-spotlight">
-            <div className="auth-spotlight-inner">
-              <div className="auth-spotlight-brand">
+          <aside className="auth-spotlight auth-register-spotlight">
+            <div className="auth-spotlight-inner auth-register-spotlight-inner">
+              <div className="auth-spotlight-brand auth-register-spotlight-brand">
                 <img
                   src="icon.svg"
                   alt="CenterPulse Logo"
@@ -234,64 +234,70 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="auth-spotlight-copy">
+              <div className="auth-spotlight-copy auth-register-spotlight-copy">
+                <p className="auth-register-spotlight-eyebrow">
+                  Registration guide
+                </p>
                 <h1 className="auth-spotlight-title">
-                  Create a polished research profile in one pass.
+                  Set up your research account with the right details from the
+                  start.
                 </h1>
                 <p className="auth-spotlight-text">
-                  Register once, connect your role, and start working inside the
-                  same system used for submissions, affiliations, and public
-                  records.
+                  Create your profile once, assign your role, and connect the
+                  affiliations that shape how your workspace opens.
                 </p>
               </div>
 
-              <div className="auth-spotlight-points">
-                <div className="auth-spotlight-point">
-                  <span className="auth-spotlight-point-icon">
+              <div className="auth-spotlight-points auth-register-spotlight-points">
+                <div className="auth-spotlight-point auth-register-spotlight-point">
+                  <div className="auth-register-spotlight-step">01</div>
+                  <span className="auth-spotlight-point-icon auth-register-spotlight-point-icon">
                     <Users size={16} />
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Built for students and faculty
+                      Choose the role that fits your work
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Choose your role now so your workspace opens with the
-                      right tools.
+                      Students and faculty members see different tools, so role
+                      selection sets the right starting view.
                     </p>
                   </div>
                 </div>
-                <div className="auth-spotlight-point">
-                  <span className="auth-spotlight-point-icon">
+                <div className="auth-spotlight-point auth-register-spotlight-point">
+                  <div className="auth-register-spotlight-step">02</div>
+                  <span className="auth-spotlight-point-icon auth-register-spotlight-point-icon">
                     <Building2 size={16} />
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Connect to centers and departments
+                      Add center or department affiliations
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Optional affiliations help align your account with the
-                      right research unit.
+                      These details help place your account in the correct
+                      research context without slowing down sign-up.
                     </p>
                   </div>
                 </div>
-                <div className="auth-spotlight-point">
-                  <span className="auth-spotlight-point-icon">
+                <div className="auth-spotlight-point auth-register-spotlight-point">
+                  <div className="auth-register-spotlight-step">03</div>
+                  <span className="auth-spotlight-point-icon auth-register-spotlight-point-icon">
                     <ShieldCheck size={16} />
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Verification signs you in automatically
+                      Confirm your email and continue
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      After email confirmation, you&apos;ll enter the dashboard
-                      without another login step.
+                      Once verification is complete, the system can take you
+                      straight into the workspace.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="auth-spotlight-stats">
-                <div className="auth-spotlight-stat">
+              <div className="auth-spotlight-stats auth-register-spotlight-status">
+                <div className="auth-spotlight-stat auth-register-spotlight-stat">
                   <p className="auth-spotlight-stat-label">
                     Registration status
                   </p>
@@ -308,11 +314,6 @@ export default function RegisterPage() {
           <Card className="auth-card">
             <CardHeader className="auth-card-hero">
               <div className="auth-card-hero-brand">
-                <img
-                  src="icon.svg"
-                  alt="CenterPulse Logo"
-                  className="auth-card-hero-logo"
-                />
                 <span className="auth-eyebrow">Account Registration</span>
               </div>
               <div className="auth-card-hero-copy">
