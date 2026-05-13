@@ -114,9 +114,9 @@ export default function LoginPage() {
     <section className="auth-shell">
       <div className="auth-shell-inner">
         <div className="auth-layout">
-          <aside className="auth-spotlight">
-            <div className="auth-spotlight-inner">
-              <div className="auth-spotlight-brand">
+          <aside className="auth-spotlight auth-login-spotlight">
+            <div className="auth-spotlight-inner auth-login-spotlight-inner">
+              <div className="auth-spotlight-brand auth-login-spotlight-brand">
                 <img
                   src="icon.svg"
                   alt="CenterPulse Logo"
@@ -128,70 +128,67 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="auth-spotlight-copy">
+              <div className="auth-spotlight-copy auth-login-spotlight-copy">
+                <p className="auth-login-spotlight-eyebrow">Sign-in guide</p>
                 <h1 className="auth-spotlight-title">
-                  Sign in and pick up where your work paused.
+                  Return to your workspace without losing context.
                 </h1>
                 <p className="auth-spotlight-text">
-                  Access research submissions, center updates, and role-based
-                  actions from one secure workspace designed for daily use.
+                  Use your registered account to continue reviewing submissions,
+                  checking updates, and moving through daily research tasks.
                 </p>
               </div>
 
-              <div className="auth-spotlight-points">
-                <div className="auth-spotlight-point">
-                  <span className="auth-spotlight-point-icon">
+              <div className="auth-spotlight-points auth-login-spotlight-points">
+                <div className="auth-spotlight-point auth-login-spotlight-point">
+                  <span className="auth-spotlight-point-icon auth-login-spotlight-point-icon">
                     <Mail size={16} />
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Use your registered academic email
+                      Sign in with your registered academic email
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Sign in with the same address tied to your CenterPULSE
-                      account.
+                      Use the same address linked to your CenterPULSE account to
+                      keep your access and records aligned.
                     </p>
                   </div>
                 </div>
-                <div className="auth-spotlight-point">
-                  <span className="auth-spotlight-point-icon">
+                <div className="auth-spotlight-point auth-login-spotlight-point">
+                  <span className="auth-spotlight-point-icon auth-login-spotlight-point-icon">
                     <ShieldCheck size={16} />
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Protected access with cooldown control
+                      Protected access stays deliberately paced
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Repeated failed attempts are throttled to keep accounts
-                      safer.
+                      Repeated failed attempts are temporarily slowed to help
+                      protect account access.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="auth-spotlight-stats">
-                <div className="auth-spotlight-stat">
+              <div className="auth-spotlight-stats auth-login-spotlight-status">
+                <div className="auth-spotlight-stat auth-login-spotlight-stat">
                   <p className="auth-spotlight-stat-label">Today&apos;s flow</p>
                   <p className="auth-spotlight-stat-value">
-                    Sign in, continue your research workflow, and return
-                    directly to your dashboard.
+                    Sign in, continue where you left off, and return directly to
+                    your dashboard.
                   </p>
                 </div>
               </div>
             </div>
           </aside>
 
-          <Card className="auth-card auth-card-wide">
-            <CardHeader className="auth-card-hero">
-              <div className="auth-card-hero-brand">
-                <img
-                  src="icon.svg"
-                  alt="CenterPulse Logo"
-                  className="auth-card-hero-logo"
-                />
+          <Card className="auth-card auth-card-wide auth-login-card">
+            <CardHeader className="auth-card-hero auth-login-card-hero">
+              <div className="auth-login-card-badge-row">
                 <span className="auth-eyebrow">Workspace Access</span>
+                <p className="auth-login-card-kicker">Secure sign-in</p>
               </div>
-              <div className="auth-card-hero-copy">
+              <div className="auth-card-hero-copy auth-login-card-copy">
                 <h2 className="auth-title">Welcome back</h2>
                 <p className="auth-subtitle">
                   Sign in to continue managing submissions, outputs, and center
@@ -200,9 +197,9 @@ export default function LoginPage() {
               </div>
             </CardHeader>
 
-            <CardContent className="auth-card-body space-y-5">
+            <CardContent className="auth-card-body auth-login-card-body space-y-5">
               <form className="auth-form-stack" onSubmit={onSubmit}>
-                <div className="auth-panel">
+                <div className="auth-panel auth-login-panel">
                   <div className="auth-field-group">
                     <label htmlFor="login-email" className="auth-label">
                       Email
@@ -286,7 +283,10 @@ export default function LoginPage() {
                   </div>
                 ) : null}
 
-                <div className="auth-actions-row">
+                <div className="auth-actions-row auth-login-actions-row">
+                  <p className="auth-login-helper">
+                    Use the email connected to your CenterPULSE account.
+                  </p>
                   <Link to="/forgot-password" className="auth-link-muted">
                     Forgot password
                   </Link>
@@ -294,7 +294,7 @@ export default function LoginPage() {
 
                 <Button
                   disabled={loading || cooldownSeconds > 0}
-                  className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
+                  className="auth-primary-button auth-login-submit w-full disabled:cursor-not-allowed disabled:opacity-75"
                 >
                   {loading
                     ? "Signing in..."
@@ -306,8 +306,8 @@ export default function LoginPage() {
               </form>
             </CardContent>
 
-            <CardFooter className="auth-footer-row">
-              <span className="text-slate-600">
+            <CardFooter className="auth-footer-row auth-login-footer">
+              <span className="auth-login-footer-copy">
                 Need a new workspace account?
               </span>
               <Link to="/register" className="auth-inline-link">
