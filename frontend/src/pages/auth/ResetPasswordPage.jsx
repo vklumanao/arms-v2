@@ -80,19 +80,14 @@ export default function ResetPasswordPage() {
                   className="auth-spotlight-logo"
                 />
                 <div>
-                  <p className="auth-spotlight-kicker">Security Reset</p>
+                  <p className="auth-spotlight-kicker">Reset password</p>
                   <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
               <div className="auth-spotlight-copy">
-                <h1 className="auth-spotlight-title">
-                  Set a stronger password and get back in.
-                </h1>
-                <p className="auth-spotlight-text">
-                  Create a new password that is easy for you to manage and hard
-                  for others to guess.
-                </p>
+                <h1 className="auth-spotlight-title">Set a new password.</h1>
+                <p className="auth-spotlight-text">Use one you can remember.</p>
               </div>
 
               <div className="auth-spotlight-points">
@@ -102,11 +97,10 @@ export default function ResetPasswordPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Token verification happens automatically
+                      The link is checked automatically
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Use the full link from your email so the reset token stays
-                      valid.
+                      Open the full link from your email.
                     </p>
                   </div>
                 </div>
@@ -116,11 +110,10 @@ export default function ResetPasswordPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Choose a password you won&apos;t reuse elsewhere
+                      Don&apos;t reuse an old password
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Stronger, unique passwords reduce account recovery issues
-                      later.
+                      A fresh password is better for this account.
                     </p>
                   </div>
                 </div>
@@ -136,33 +129,27 @@ export default function ResetPasswordPage() {
                   alt="CenterPulse Logo"
                   className="auth-card-hero-logo"
                 />
-                <span className="auth-eyebrow">Update Credentials</span>
+                <span className="auth-eyebrow">Reset password</span>
               </div>
               <div className="auth-card-hero-copy">
-                <h2 className="auth-title">Reset access to your account</h2>
-                <p className="auth-subtitle">
-                  Choose a new password below. We&apos;ll verify your token and
-                  then redirect you to login.
-                </p>
+                <h2 className="auth-title">Set a new password</h2>
+                <p className="auth-subtitle">Pick a new password and save it.</p>
               </div>
             </CardHeader>
 
             <CardContent className="auth-card-body space-y-5">
               <div className="auth-tips-grid auth-tips-grid-3">
-                <div className="auth-tip">8+ characters minimum</div>
-                <div className="auth-tip">Include uppercase and lowercase</div>
-                <div className="auth-tip">Add at least one number</div>
+                <div className="auth-tip">8+ characters</div>
+                <div className="auth-tip">Uppercase and lowercase</div>
+                <div className="auth-tip">At least one number</div>
               </div>
 
               <form className="auth-form-stack" onSubmit={submit}>
                 {!resetToken ? (
                   <div className="notice notice-error">
                     <div>
-                      <p className="notice-title">Reset link incomplete</p>
-                      <p className="notice-text">
-                        Reset token is missing. Please open the full password
-                        reset link.
-                      </p>
+                      <p className="notice-title">Reset link missing</p>
+                      <p className="notice-text">Please open the full reset link.</p>
                     </div>
                   </div>
                 ) : null}
@@ -175,7 +162,7 @@ export default function ResetPasswordPage() {
                     <Input
                       id="new-password"
                       className="auth-input"
-                      placeholder="Enter your new password"
+                      placeholder="New password"
                       type="password"
                       required
                       value={password}
@@ -212,12 +199,12 @@ export default function ResetPasswordPage() {
                 <div className="auth-panel">
                   <div className="auth-field-group">
                     <label htmlFor="confirm-password" className="auth-label">
-                      Confirm new password
+                      Confirm password
                     </label>
                     <Input
                       id="confirm-password"
                       className="auth-input"
-                      placeholder="Re-enter your new password"
+                      placeholder="Confirm password"
                       type="password"
                       required
                       value={confirmPassword}
@@ -228,9 +215,7 @@ export default function ResetPasswordPage() {
                     <p
                       className={`auth-password-hint ${passwordsMatch ? "is-valid" : "is-invalid"}`}
                     >
-                      {passwordsMatch
-                        ? "Passwords match."
-                        : "Passwords do not match yet."}
+                      {passwordsMatch ? "Passwords match." : "Passwords do not match."}
                     </p>
                   ) : null}
                 </div>
@@ -238,7 +223,7 @@ export default function ResetPasswordPage() {
                 {error ? (
                   <div className="notice notice-error">
                     <div>
-                      <p className="notice-title">Password not updated</p>
+                      <p className="notice-title">Couldn&apos;t update password</p>
                       <p className="notice-text">{error}</p>
                     </div>
                   </div>
@@ -258,7 +243,7 @@ export default function ResetPasswordPage() {
                   disabled={submitting}
                   className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
                 >
-                  {submitting ? "Updating..." : "Update password"}
+                  {submitting ? "Updating..." : "Save password"}
                   <ArrowRight size={16} />
                 </Button>
               </form>
@@ -269,9 +254,9 @@ export default function ResetPasswordPage() {
 
       <ConfirmActionModal
         open={confirmChange}
-        title="Confirm Password Update"
-        message="Update your password now?"
-        confirmLabel="Update Password"
+        title="Save password"
+        message="Save this new password now?"
+        confirmLabel="Save password"
         loading={submitting}
         onCancel={() => setConfirmChange(false)}
         onConfirm={async () => submit(null, true)}

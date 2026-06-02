@@ -217,7 +217,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="auth-shell">
+    <section>
       <div className="auth-shell-inner">
         <div className="auth-layout auth-layout-register">
           <aside className="auth-spotlight auth-register-spotlight">
@@ -229,22 +229,16 @@ export default function RegisterPage() {
                   className="auth-spotlight-logo"
                 />
                 <div>
-                  <p className="auth-spotlight-kicker">Join The Workspace</p>
+                  <p className="auth-spotlight-kicker">Register</p>
                   <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
               <div className="auth-spotlight-copy auth-register-spotlight-copy">
-                <p className="auth-register-spotlight-eyebrow">
-                  Registration guide
-                </p>
-                <h1 className="auth-spotlight-title">
-                  Set up your research account with the right details from the
-                  start.
-                </h1>
+                <p className="auth-register-spotlight-eyebrow">Sign up</p>
+                <h1 className="auth-spotlight-title">Create your account.</h1>
                 <p className="auth-spotlight-text">
-                  Create your profile once, assign your role, and connect the
-                  affiliations that shape how your workspace opens.
+                  Fill in your details and get started.
                 </p>
               </div>
 
@@ -255,12 +249,9 @@ export default function RegisterPage() {
                     <Users size={16} />
                   </span>
                   <div>
-                    <p className="auth-spotlight-point-title">
-                      Choose the role that fits your work
-                    </p>
+                    <p className="auth-spotlight-point-title">Pick a role</p>
                     <p className="auth-spotlight-point-copy">
-                      Students and faculty members see different tools, so role
-                      selection sets the right starting view.
+                      Student or faculty.
                     </p>
                   </div>
                 </div>
@@ -271,11 +262,10 @@ export default function RegisterPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Add center or department affiliations
+                      Add your center
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      These details help place your account in the correct
-                      research context without slowing down sign-up.
+                      Department is optional.
                     </p>
                   </div>
                 </div>
@@ -286,11 +276,10 @@ export default function RegisterPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Confirm your email and continue
+                      Verify your email
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Once verification is complete, the system can take you
-                      straight into the workspace.
+                      Then you can sign in.
                     </p>
                   </div>
                 </div>
@@ -298,13 +287,11 @@ export default function RegisterPage() {
 
               <div className="auth-spotlight-stats auth-register-spotlight-status">
                 <div className="auth-spotlight-stat auth-register-spotlight-stat">
-                  <p className="auth-spotlight-stat-label">
-                    Registration status
-                  </p>
+                  <p className="auth-spotlight-stat-label">Status</p>
                   <p className="auth-spotlight-stat-value">
                     {ckanLoading || ckanGroupsLoading
-                      ? "Syncing research centers and departments..."
-                      : "Registration options are ready."}
+                      ? "Loading options..."
+                      : "Options are ready."}
                   </p>
                 </div>
               </div>
@@ -314,13 +301,12 @@ export default function RegisterPage() {
           <Card className="auth-card">
             <CardHeader className="auth-card-hero">
               <div className="auth-card-hero-brand">
-                <span className="auth-eyebrow">Account Registration</span>
+                <span className="auth-eyebrow">Register</span>
               </div>
               <div className="auth-card-hero-copy">
-                <h2 className="auth-title">Create your account</h2>
+                <h2 className="auth-title">Create account</h2>
                 <p className="auth-subtitle">
-                  Register as student or faculty and start managing your
-                  research work in one secure workspace.
+                  Use your details to get started.
                 </p>
               </div>
             </CardHeader>
@@ -328,14 +314,14 @@ export default function RegisterPage() {
             <CardContent className="auth-card-body">
               <form onSubmit={onSubmit} className="auth-form-stack">
                 <div className="auth-panel">
-                  <p className="auth-section-heading">Profile details</p>
+                  <p className="auth-section-heading">Profile</p>
 
                   <div className="auth-form-grid auth-form-grid-3">
                     <div className="auth-field-group">
                       <label className="auth-label">First name</label>
                       <Input
                         className="auth-input"
-                        placeholder="Juan"
+                        placeholder="First name"
                         required
                         value={form.first_name}
                         onChange={(e) =>
@@ -364,7 +350,7 @@ export default function RegisterPage() {
                       <label className="auth-label">Last name</label>
                       <Input
                         className="auth-input"
-                        placeholder="Dela Cruz"
+                        placeholder="Last name"
                         required
                         value={form.last_name}
                         onChange={(e) =>
@@ -378,7 +364,7 @@ export default function RegisterPage() {
                     <label className="auth-label">Email address</label>
                     <Input
                       className="auth-input"
-                      placeholder="you@example.com"
+                      placeholder="Email address"
                       type="email"
                       required
                       value={form.email}
@@ -390,7 +376,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="auth-panel">
-                  <p className="auth-section-heading">Security setup</p>
+                  <p className="auth-section-heading">Password</p>
 
                   <div className="auth-form-grid auth-form-grid-2">
                     <div className="auth-field-group">
@@ -399,7 +385,7 @@ export default function RegisterPage() {
                       <div className="relative">
                         <Input
                           className="auth-input pr-10"
-                          placeholder="Create a secure password"
+                          placeholder="Password"
                           type={showPassword ? "text" : "password"}
                           required
                           value={form.password}
@@ -430,7 +416,7 @@ export default function RegisterPage() {
                       <div className="relative">
                         <Input
                           className="auth-input pr-10"
-                          placeholder="Re-enter password"
+                          placeholder="Confirm password"
                           type={showConfirmPassword ? "text" : "password"}
                           required
                           value={form.confirm_password}
@@ -518,7 +504,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="auth-panel">
-                  <p className="auth-section-heading">Workspace setup</p>
+                  <p className="auth-section-heading">Workspace</p>
 
                   <div className="auth-form-grid auth-form-grid-2">
                     <div className="auth-field-group">
@@ -531,7 +517,7 @@ export default function RegisterPage() {
                         }
                       >
                         <SelectTrigger className="auth-select-trigger">
-                          <SelectValue placeholder="Select role" />
+                          <SelectValue placeholder="Role" />
                         </SelectTrigger>
 
                         <SelectContent>
@@ -560,9 +546,7 @@ export default function RegisterPage() {
                         <SelectTrigger className="auth-select-trigger">
                           <SelectValue
                             placeholder={
-                              ckanLoading
-                                ? "Loading centers..."
-                                : "Select research center"
+                              ckanLoading ? "Loading..." : "Research center"
                             }
                           />
                         </SelectTrigger>
@@ -603,9 +587,7 @@ export default function RegisterPage() {
                       <SelectTrigger className="auth-select-trigger">
                         <SelectValue
                           placeholder={
-                            ckanGroupsLoading
-                              ? "Loading departments..."
-                              : "Select department"
+                            ckanGroupsLoading ? "Loading..." : "Department"
                           }
                         />
                       </SelectTrigger>
@@ -634,7 +616,7 @@ export default function RegisterPage() {
                   <div className="notice notice-error">
                     <div>
                       <p className="notice-title">
-                        Registration could not continue
+                        Couldn&apos;t create account
                       </p>
                       <p className="notice-text">{error}</p>
                     </div>
@@ -644,7 +626,7 @@ export default function RegisterPage() {
                 {message ? (
                   <div className="notice notice-success">
                     <div>
-                      <p className="notice-title">Registration successful</p>
+                      <p className="notice-title">Account created</p>
                       <p className="notice-text">{message}</p>
                     </div>
                   </div>
@@ -657,7 +639,7 @@ export default function RegisterPage() {
                   {loading
                     ? "Creating account..."
                     : cooldownSeconds > 0
-                      ? `Retry in ${cooldownSeconds}s`
+                      ? `Try again in ${cooldownSeconds}s`
                       : "Create account"}
                   <ArrowRight size={16} />
                 </Button>
@@ -665,7 +647,7 @@ export default function RegisterPage() {
             </CardContent>
 
             <CardFooter className="auth-footer-row">
-              <span className="text-slate-600">Already have an account?</span>
+              <span className="text-slate-600">Already registered?</span>
               <Link className="auth-inline-link" to="/login">
                 Sign in
               </Link>
