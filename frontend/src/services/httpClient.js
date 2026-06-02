@@ -4,47 +4,61 @@ const UI_PREVIEW_MODE =
   String(import.meta.env.VITE_UI_PREVIEW_MODE || "false").toLowerCase() ===
   "true";
 
+const MOCK_AUTH_STATE = {
+  user: {
+    id: "demo-user-1",
+    email: "demo@arms.local",
+    role: "admin",
+    isAuthenticated: true,
+  },
+  profile: {
+    id: "demo-profile-1",
+    full_name: "Demo Admin",
+    role: "admin",
+    is_active: true,
+    roles: [{ id: "demo-role-admin", key: "admin", name: "Admin" }],
+    permissions: [
+      "dashboard.view",
+      "affiliate_profile.view",
+      "projects.view",
+      "projects.create",
+      "projects.edit",
+      "projects.delete",
+      "outputs.view",
+      "outputs.create",
+      "outputs.edit",
+      "outputs.delete",
+      "awards.view",
+      "awards.create",
+      "awards.edit",
+      "awards.delete",
+      "affiliates.view",
+      "affiliates.edit",
+      "admin.controls.manage",
+      "admin.users.manage",
+      "admin.affiliates.manage",
+      "admin.rbac.manage",
+    ],
+    is_center_chief: false,
+    managed_center_id: null,
+    managed_center_name: null,
+    department: "",
+    ckan_org_id: "",
+    ckan_group_id: "",
+    ckan_username: "",
+    ckan_user_id: "",
+    google_scholar_link: "",
+    employment_status: "",
+    designation: "",
+    is_gs_faculty: false,
+  },
+};
+
 function mockAuthPayload() {
   return {
     token: null,
-    user: {
-      id: "demo-user-1",
-      email: "demo@arms.local",
-      role: "admin",
-      isAuthenticated: true,
-    },
-    profile: {
-      id: "demo-profile-1",
-      full_name: "Demo Admin",
-      role: "admin",
-      is_active: true,
-      roles: [{ id: "demo-role-admin", key: "admin", name: "Admin" }],
-      permissions: [
-        "dashboard.view",
-        "affiliate_profile.view",
-        "projects.view",
-        "projects.create",
-        "projects.edit",
-        "projects.delete",
-        "outputs.view",
-        "outputs.create",
-        "outputs.edit",
-        "outputs.delete",
-        "awards.view",
-        "awards.create",
-        "awards.edit",
-        "awards.delete",
-        "affiliates.view",
-        "affiliates.edit",
-        "admin.controls.manage",
-        "admin.users.manage",
-        "admin.affiliates.manage",
-        "admin.rbac.manage",
-      ],
-      is_center_chief: false,
-      managed_center_id: null,
-      managed_center_name: null,
-    },
+    user: { ...MOCK_AUTH_STATE.user },
+    profile: { ...MOCK_AUTH_STATE.profile },
   };
 }
 
@@ -530,7 +544,62 @@ function mockApiPayload(path, options = {}) {
     };
   }
 
-  if (cleanPath === "/affiliate-profile/me") return { data: null };
+  if (cleanPath === "/affiliate-profile/me") {
+    if (method === "GET") {
+      return { data: { ...MOCK_AUTH_STATE.profile } };
+    }
+    if (method === "PATCH") {
+      let parsed = {};
+      try {
+        parsed = JSON.parse(String(options.body || "{}"));
+      } catch {
+        parsed = {};
+      }
+
+      const nextProfile = {
+        ...MOCK_AUTH_STATE.profile,
+        full_name:
+          [parsed.first_name, parsed.middle_initial, parsed.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim() || MOCK_AUTH_STATE.profile.full_name,
+        department: parsed.department ?? MOCK_AUTH_STATE.profile.department,
+        ckan_org_id: parsed.ckan_org_id ?? MOCK_AUTH_STATE.profile.ckan_org_id,
+        ckan_group_id:
+          parsed.ckan_group_id ?? MOCK_AUTH_STATE.profile.ckan_group_id,
+        google_scholar_link:
+          parsed.google_scholar_link ??
+          MOCK_AUTH_STATE.profile.google_scholar_link,
+        employment_status:
+          parsed.employment_status ??
+          MOCK_AUTH_STATE.profile.employment_status,
+        designation: parsed.designation ?? MOCK_AUTH_STATE.profile.designation,
+        is_gs_faculty:
+          typeof parsed.is_gs_faculty === "boolean"
+            ? parsed.is_gs_faculty
+            : MOCK_AUTH_STATE.profile.is_gs_faculty,
+      };
+
+      MOCK_AUTH_STATE.profile = nextProfile;
+      MOCK_AUTH_STATE.user = {
+        ...MOCK_AUTH_STATE.user,
+        email: MOCK_AUTH_STATE.user.email,
+      };
+
+      return {
+        data: {
+          ...nextProfile,
+          email: MOCK_AUTH_STATE.user.email,
+          role: nextProfile.role,
+          is_active: nextProfile.is_active,
+          ckan_username: nextProfile.ckan_username || "",
+          ckan_user_id: nextProfile.ckan_user_id || "",
+          warnings: [],
+        },
+      };
+    }
+    return { data: null };
+  }
   if (cleanPath === "/awards" && method === "GET") {
     return {
       data: [
