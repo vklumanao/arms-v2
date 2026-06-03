@@ -58,19 +58,14 @@ export default function ForgotPasswordPage() {
                   className="auth-spotlight-logo"
                 />
                 <div>
-                  <p className="auth-spotlight-kicker">Account Recovery</p>
+                  <p className="auth-spotlight-kicker">Recover account</p>
                   <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
               <div className="auth-spotlight-copy">
-                <h1 className="auth-spotlight-title">
-                  Recover access without the guesswork.
-                </h1>
-                <p className="auth-spotlight-text">
-                  We&apos;ll send a reset link to the email tied to your account
-                  so you can set a new password safely.
-                </p>
+                <h1 className="auth-spotlight-title">Reset your password.</h1>
+                <p className="auth-spotlight-text">We&apos;ll send a link to your email.</p>
               </div>
 
               <div className="auth-spotlight-points">
@@ -80,11 +75,10 @@ export default function ForgotPasswordPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Check your inbox and spam folder
+                      Check your inbox
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Verification and reset mail can sometimes land in filtered
-                      folders.
+                      Also check spam or junk.
                     </p>
                   </div>
                 </div>
@@ -94,21 +88,19 @@ export default function ForgotPasswordPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Use the latest reset link only
+                      Use the newest link
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Opening the most recent email helps avoid expired or older
-                      tokens.
+                      Older links may no longer work.
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="auth-spotlight-stat">
-                <p className="auth-spotlight-stat-label">Recovery note</p>
+                <p className="auth-spotlight-stat-label">Note</p>
                 <p className="auth-spotlight-stat-value">
-                  If the account exists, we&apos;ll send a secure reset email to
-                  that address.
+                  If the account exists, we&apos;ll send a reset email.
                 </p>
               </div>
             </div>
@@ -122,36 +114,29 @@ export default function ForgotPasswordPage() {
                   alt="CenterPulse Logo"
                   className="auth-card-hero-logo"
                 />
-                <span className="auth-eyebrow">Password Reset</span>
+                <span className="auth-eyebrow">Reset password</span>
               </div>
               <div className="auth-card-hero-copy">
-                <h2 className="auth-title">Forgot your password?</h2>
-                <p className="auth-subtitle">
-                  Enter your account email and we&apos;ll send a secure reset
-                  link.
-                </p>
+                <h2 className="auth-title">Reset password</h2>
+                <p className="auth-subtitle">Enter your email and we&apos;ll send a link.</p>
               </div>
             </CardHeader>
 
             <CardContent className="auth-card-body space-y-5">
               <div className="auth-tips-grid auth-tips-grid-2">
-                <div className="auth-tip">
-                  Use the email linked to your CenterPULSE account.
-                </div>
-                <div className="auth-tip">
-                  Check spam or junk if mail does not appear.
-                </div>
+                <div className="auth-tip">Use the email on your account.</div>
+                <div className="auth-tip">Check spam or junk if needed.</div>
               </div>
 
               <form className="auth-form-stack" onSubmit={submit}>
                 <div className="auth-panel">
                   <label htmlFor="forgot-email" className="auth-label">
-                    Account email
+                    Email address
                   </label>
                   <Input
                     id="forgot-email"
                     className="auth-input"
-                    placeholder="you@example.com"
+                    placeholder="Email address"
                     type="email"
                     required
                     value={email}
@@ -162,7 +147,7 @@ export default function ForgotPasswordPage() {
                 {error ? (
                   <div className="notice notice-error">
                     <div>
-                      <p className="notice-title">Reset email not sent</p>
+                      <p className="notice-title">Couldn&apos;t send link</p>
                       <p className="notice-text">{error}</p>
                     </div>
                   </div>
@@ -182,7 +167,7 @@ export default function ForgotPasswordPage() {
                   disabled={submitting}
                   className="auth-primary-button w-full disabled:cursor-not-allowed disabled:opacity-75"
                 >
-                  {submitting ? "Sending..." : "Send reset link"}
+                  {submitting ? "Sending..." : "Send link"}
                   <ArrowRight size={16} />
                 </Button>
               </form>
@@ -193,9 +178,9 @@ export default function ForgotPasswordPage() {
 
       <ConfirmActionModal
         open={Boolean(confirmEmail)}
-        title="Confirm Password Reset"
-        message={confirmEmail ? `Send reset link to ${confirmEmail}?` : ""}
-        confirmLabel="Send Reset Link"
+        title="Send reset link"
+        message={confirmEmail ? `Send a reset link to ${confirmEmail}?` : ""}
+        confirmLabel="Send link"
         loading={submitting}
         onCancel={() => setConfirmEmail("")}
         onConfirm={async () => submit(null, true, confirmEmail)}

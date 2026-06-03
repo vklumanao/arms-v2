@@ -111,7 +111,7 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="auth-shell">
+    <section>
       <div className="auth-shell-inner">
         <div className="auth-layout">
           <aside className="auth-spotlight auth-login-spotlight">
@@ -123,19 +123,16 @@ export default function LoginPage() {
                   className="auth-spotlight-logo"
                 />
                 <div>
-                  <p className="auth-spotlight-kicker">Research Workspace</p>
+                  <p className="auth-spotlight-kicker">Workspace</p>
                   <p className="auth-spotlight-name">CenterPULSE</p>
                 </div>
               </div>
 
               <div className="auth-spotlight-copy auth-login-spotlight-copy">
-                <p className="auth-login-spotlight-eyebrow">Sign-in guide</p>
-                <h1 className="auth-spotlight-title">
-                  Return to your workspace without losing context.
-                </h1>
+                <p className="auth-login-spotlight-eyebrow">Login</p>
+                <h1 className="auth-spotlight-title">Sign in to continue.</h1>
                 <p className="auth-spotlight-text">
-                  Use your registered account to continue reviewing submissions,
-                  checking updates, and moving through daily research tasks.
+                  Use your account to keep going in CenterPULSE.
                 </p>
               </div>
 
@@ -145,12 +142,9 @@ export default function LoginPage() {
                     <Mail size={16} />
                   </span>
                   <div>
-                    <p className="auth-spotlight-point-title">
-                      Sign in with your registered academic email
-                    </p>
+                    <p className="auth-spotlight-point-title">Use your email</p>
                     <p className="auth-spotlight-point-copy">
-                      Use the same address linked to your CenterPULSE account to
-                      keep your access and records aligned.
+                      Use the address you signed up with.
                     </p>
                   </div>
                 </div>
@@ -160,11 +154,10 @@ export default function LoginPage() {
                   </span>
                   <div>
                     <p className="auth-spotlight-point-title">
-                      Protected access stays deliberately paced
+                      Too many tries slow down
                     </p>
                     <p className="auth-spotlight-point-copy">
-                      Repeated failed attempts are temporarily slowed to help
-                      protect account access.
+                      That helps keep accounts protected.
                     </p>
                   </div>
                 </div>
@@ -172,10 +165,9 @@ export default function LoginPage() {
 
               <div className="auth-spotlight-stats auth-login-spotlight-status">
                 <div className="auth-spotlight-stat auth-login-spotlight-stat">
-                  <p className="auth-spotlight-stat-label">Today&apos;s flow</p>
+                  <p className="auth-spotlight-stat-label">Note</p>
                   <p className="auth-spotlight-stat-value">
-                    Sign in, continue where you left off, and return directly to
-                    your dashboard.
+                    Sign in and continue.
                   </p>
                 </div>
               </div>
@@ -184,16 +176,10 @@ export default function LoginPage() {
 
           <Card className="auth-card auth-card-wide auth-login-card">
             <CardHeader className="auth-card-hero auth-login-card-hero">
-              <div className="auth-login-card-badge-row">
-                <span className="auth-eyebrow">Workspace Access</span>
-                <p className="auth-login-card-kicker">Secure sign-in</p>
-              </div>
               <div className="auth-card-hero-copy auth-login-card-copy">
-                <h2 className="auth-title">Welcome back</h2>
-                <p className="auth-subtitle">
-                  Sign in to continue managing submissions, outputs, and center
-                  activity.
-                </p>
+                <span className="auth-eyebrow">Login</span>
+                <h2 className="auth-title">Sign in</h2>
+                <p className="auth-subtitle">Use your email and password.</p>
               </div>
             </CardHeader>
 
@@ -208,12 +194,15 @@ export default function LoginPage() {
                       id="login-email"
                       type="email"
                       required
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       value={form.email}
                       onChange={(e) =>
                         setForm((p) => ({ ...p, email: e.target.value }))
                       }
                       className="auth-input"
-                      placeholder="name@carsu.edu.ph"
+                      placeholder="Email address"
                     />
                   </div>
 
@@ -226,18 +215,22 @@ export default function LoginPage() {
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         required
+                        autoComplete="current-password"
                         value={form.password}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, password: e.target.value }))
                         }
                         className="auth-input pr-10"
-                        placeholder="Enter password"
+                        placeholder="Password"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                         onClick={() => setShowPassword((prev) => !prev)}
                       >
                         {showPassword ? (
@@ -253,29 +246,19 @@ export default function LoginPage() {
                 {error ? (
                   <div className="notice notice-error">
                     <div>
-                      <p className="notice-title">Unable to sign in</p>
+                      <p className="notice-title">Couldn&apos;t sign in</p>
                       <p className="notice-text">{error}</p>
                     </div>
                   </div>
                 ) : null}
 
                 {showVerifyHint ? (
-                  <div
-                    className="notice"
-                    style={{
-                      borderColor: "#fcd34d",
-                      background: "#fffbeb",
-                      color: "#92400e",
-                    }}
-                  >
+                  <div className="notice notice-error">
                     <div>
-                      <p className="notice-title">Email not verified yet</p>
+                      <p className="notice-title">Email not verified</p>
                       <p className="notice-text">
-                        Need a new verification link?{" "}
-                        <Link
-                          to="/verify-email"
-                          className="font-semibold underline"
-                        >
+                        Need a new link?{" "}
+                        <Link to="/verify-email" className="font-semibold">
                           Verify email
                         </Link>
                       </p>
@@ -285,7 +268,7 @@ export default function LoginPage() {
 
                 <div className="auth-actions-row auth-login-actions-row">
                   <p className="auth-login-helper">
-                    Use the email connected to your CenterPULSE account.
+                    Use the email on your account.
                   </p>
                   <Link to="/forgot-password" className="auth-link-muted">
                     Forgot password
@@ -299,17 +282,15 @@ export default function LoginPage() {
                   {loading
                     ? "Signing in..."
                     : cooldownSeconds > 0
-                      ? `Retry in ${cooldownSeconds}s`
-                      : "Sign in to dashboard"}
+                      ? `Try again in ${cooldownSeconds}s`
+                      : "Sign in"}
                   <ArrowRight size={16} />
                 </Button>
               </form>
             </CardContent>
 
             <CardFooter className="auth-footer-row auth-login-footer">
-              <span className="auth-login-footer-copy">
-                Need a new workspace account?
-              </span>
+              <span className="auth-login-footer-copy">Need to register?</span>
               <Link to="/register" className="auth-inline-link">
                 Create account
               </Link>
