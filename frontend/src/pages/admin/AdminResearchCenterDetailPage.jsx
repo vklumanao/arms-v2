@@ -5,7 +5,7 @@ import DetailWorkspaceRail from "./research-center-detail/components/DetailWorks
 import DetailWorkspaceTabs from "./research-center-detail/components/DetailWorkspaceTabs";
 import ProjectsPanel from "./research-center-detail/components/ProjectsPanel";
 import AffiliatesPanel from "./research-center-detail/components/AffiliatesPanel";
-import EditResearchCenterDrawer from "./research-center-detail/components/EditResearchCenterDrawer";
+import EditResearchCenterDrawer from "./research-center-detail/components/EditResearchCenterModal";
 import DeleteResearchCenterDialog from "./research-center-detail/components/DeleteResearchCenterDialog";
 import useAdminResearchCenterDetailWorkspace from "./research-center-detail/hooks/useAdminResearchCenterDetailWorkspace";
 import { useNavigate } from "react-router-dom";
