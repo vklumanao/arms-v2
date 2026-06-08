@@ -22,10 +22,15 @@ export default function DeleteResearchCenterDialog({
   const affiliateCount = Number(deleteGuard?.reasons?.nonAdminAffiliates || 0);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !deleting && onOpenChange(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !deleting && onOpenChange(next)}
+    >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-[#1E293B]">Delete Research Center</DialogTitle>
+          <DialogTitle className="text-[#1E293B]">
+            Delete Research Center
+          </DialogTitle>
           <DialogDescription>
             {blocked
               ? "Deletion is blocked because this center still has linked records."
@@ -38,7 +43,12 @@ export default function DeleteResearchCenterDialog({
             {projectCount > 0 ? (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span>{projectCount} linked project(s)</span>
-                <Button type="button" variant="outline" size="sm" onClick={onGoToProjects}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onGoToProjects}
+                >
                   View Projects
                 </Button>
               </div>
@@ -46,7 +56,12 @@ export default function DeleteResearchCenterDialog({
             {affiliateCount > 0 ? (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span>{affiliateCount} linked affiliate(s)</span>
-                <Button type="button" variant="outline" size="sm" onClick={onGoToAffiliates}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onGoToAffiliates}
+                >
                   Manage Affiliates
                 </Button>
               </div>

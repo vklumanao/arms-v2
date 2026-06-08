@@ -30,7 +30,10 @@ TableHeader.displayName = "TableHeader";
 const TableBody = React.forwardRef(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:nth-child(even)]:bg-[#F8FAFC] [&_tr:last-child]:border-0", className)}
+    className={cn(
+      "[&_tr:nth-child(even)]:bg-[#F8FAFC] [&_tr:last-child]:border-0",
+      className,
+    )}
     {...props}
   />
 ));
@@ -39,7 +42,10 @@ TableBody.displayName = "TableBody";
 const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("border-t border-[#E2E8F0] bg-[#F8FAFC] font-medium [&>tr]:last:border-b-0", className)}
+    className={cn(
+      "border-t border-[#E2E8F0] bg-[#F8FAFC] font-medium [&>tr]:last:border-b-0",
+      className,
+    )}
     {...props}
   />
 ));

@@ -163,7 +163,9 @@ export default function MembersPanel({
                       </p>
                       <Badge
                         variant={
-                          member.is_active !== false ? "secondary" : "destructive"
+                          member.is_active !== false
+                            ? "secondary"
+                            : "destructive"
                         }
                       >
                         {member.is_active !== false ? "Active" : "Inactive"}
@@ -178,42 +180,44 @@ export default function MembersPanel({
                 ))}
               </div>
               <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Full Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedRows.map((member, index) => (
-                  <TableRow key={member.id || `${member.email}-${index}`}>
-                    <TableCell>
-                      {(page - 1) * MEMBER_PAGE_SIZE + index + 1}
-                    </TableCell>
-                    <TableCell>{member.full_name || "Unnamed user"}</TableCell>
-                    <TableCell>{member.email || "-"}</TableCell>
-                    <TableCell className="capitalize">
-                      {member.role || "-"}
-                    </TableCell>
-                    <TableCell>{member.department || "-"}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          member.is_active !== false
-                            ? "secondary"
-                            : "destructive"
-                        }
-                      >
-                        {member.is_active !== false ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Full Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
+                </TableHeader>
+                <TableBody>
+                  {paginatedRows.map((member, index) => (
+                    <TableRow key={member.id || `${member.email}-${index}`}>
+                      <TableCell>
+                        {(page - 1) * MEMBER_PAGE_SIZE + index + 1}
+                      </TableCell>
+                      <TableCell>
+                        {member.full_name || "Unnamed user"}
+                      </TableCell>
+                      <TableCell>{member.email || "-"}</TableCell>
+                      <TableCell className="capitalize">
+                        {member.role || "-"}
+                      </TableCell>
+                      <TableCell>{member.department || "-"}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            member.is_active !== false
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {member.is_active !== false ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
               </Table>
             </>
           )}
@@ -228,4 +232,3 @@ export default function MembersPanel({
     </Card>
   );
 }
-

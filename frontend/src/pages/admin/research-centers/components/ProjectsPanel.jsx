@@ -137,7 +137,9 @@ export default function ProjectsPanel({
               <div className="space-y-3 p-3 md:hidden">
                 {paginatedRows.map((project, index) => (
                   <div
-                    key={project.id || project.name || `${project.title}-${index}`}
+                    key={
+                      project.id || project.name || `${project.title}-${index}`
+                    }
                     className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
                   >
                     <p className="text-sm font-semibold text-[#0F172A]">
@@ -145,7 +147,9 @@ export default function ProjectsPanel({
                       {project.title || project.name || "-"}
                     </p>
                     <div className="mt-3 space-y-1 text-xs text-slate-600">
-                      <p className="capitalize">Status: {project.status || "-"}</p>
+                      <p className="capitalize">
+                        Status: {project.status || "-"}
+                      </p>
                       <p>Department: {project.department_name || "-"}</p>
                       <p>Agenda: {project.agenda_name || "-"}</p>
                       <p>
@@ -159,42 +163,44 @@ export default function ProjectsPanel({
                 ))}
               </div>
               <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Agenda</TableHead>
-                  <TableHead>Lead Researcher</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedRows.map((project, index) => (
-                  <TableRow
-                    key={
-                      project.id || project.name || `${project.title}-${index}`
-                    }
-                  >
-                    <TableCell>
-                      {(page - 1) * PROJECT_PAGE_SIZE + index + 1}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {project.title || project.name || "-"}
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      {project.status || "-"}
-                    </TableCell>
-                    <TableCell>{project.department_name || "-"}</TableCell>
-                    <TableCell>{project.agenda_name || "-"}</TableCell>
-                    <TableCell>
-                      {project.lead_researcher_name ||
-                        project.researcher_name ||
-                        "-"}
-                    </TableCell>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Agenda</TableHead>
+                    <TableHead>Lead Researcher</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
+                </TableHeader>
+                <TableBody>
+                  {paginatedRows.map((project, index) => (
+                    <TableRow
+                      key={
+                        project.id ||
+                        project.name ||
+                        `${project.title}-${index}`
+                      }
+                    >
+                      <TableCell>
+                        {(page - 1) * PROJECT_PAGE_SIZE + index + 1}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {project.title || project.name || "-"}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {project.status || "-"}
+                      </TableCell>
+                      <TableCell>{project.department_name || "-"}</TableCell>
+                      <TableCell>{project.agenda_name || "-"}</TableCell>
+                      <TableCell>
+                        {project.lead_researcher_name ||
+                          project.researcher_name ||
+                          "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
               </Table>
             </>
           )}

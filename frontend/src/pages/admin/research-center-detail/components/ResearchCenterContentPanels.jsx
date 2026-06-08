@@ -63,14 +63,19 @@ export default function ResearchCenterContentPanels({
     <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <aside className="space-y-4">
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Description</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Description
+          </p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-            {String(center?.description || "").trim() || "No description provided."}
+            {String(center?.description || "").trim() ||
+              "No description provided."}
           </p>
         </div>
 
         <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">Research Agenda</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Research Agenda
+          </p>
           {center.agendaNames.length ? (
             <div className="flex flex-wrap gap-3">
               {center.agendaNames.map((agenda) => (
@@ -111,7 +116,9 @@ export default function ResearchCenterContentPanels({
           <TabsContent value="affiliates" className="mt-4 space-y-3">
             <Card className="overflow-hidden border border-slate-200 bg-white">
               <CardHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                <CardTitle className="text-base font-bold text-[#1E293B]">Linked Affiliates</CardTitle>
+                <CardTitle className="text-base font-bold text-[#1E293B]">
+                  Linked Affiliates
+                </CardTitle>
                 <CardDescription className="text-sm text-slate-600">
                   Showing {links.profiles.length} affiliate(s).
                 </CardDescription>
@@ -136,25 +143,41 @@ export default function ResearchCenterContentPanels({
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Department</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right">
+                              Actions
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
 
                         <TableBody>
                           {paginatedAffiliates.map((row, idx) => {
                             const rowId = String(row?.id || "").trim();
-                            const centerChiefId = String(center?.centerChiefId || "").trim();
-                            const isChief = rowId && centerChiefId && rowId === centerChiefId;
+                            const centerChiefId = String(
+                              center?.centerChiefId || "",
+                            ).trim();
+                            const isChief =
+                              rowId && centerChiefId && rowId === centerChiefId;
 
                             return (
-                              <TableRow key={row?.id || `${idx}`} className="hover:bg-slate-50">
-                                <TableCell>{(affiliatesPage - 1) * pageSize + idx + 1}</TableCell>
+                              <TableRow
+                                key={row?.id || `${idx}`}
+                                className="hover:bg-slate-50"
+                              >
+                                <TableCell>
+                                  {(affiliatesPage - 1) * pageSize + idx + 1}
+                                </TableCell>
                                 <TableCell className="font-medium text-slate-900">
                                   {row?.full_name || row?.name || "-"}
                                 </TableCell>
-                                <TableCell className="text-slate-700">{row?.email || "-"}</TableCell>
-                                <TableCell className="capitalize text-slate-700">{row?.role || "-"}</TableCell>
-                                <TableCell className="text-slate-700">{row?.department || "-"}</TableCell>
+                                <TableCell className="text-slate-700">
+                                  {row?.email || "-"}
+                                </TableCell>
+                                <TableCell className="capitalize text-slate-700">
+                                  {row?.role || "-"}
+                                </TableCell>
+                                <TableCell className="text-slate-700">
+                                  {row?.department || "-"}
+                                </TableCell>
                                 <TableCell className="text-right">
                                   <Button
                                     type="button"
@@ -195,7 +218,9 @@ export default function ResearchCenterContentPanels({
             ) : (
               <Card className="overflow-hidden border border-slate-200 bg-white">
                 <CardHeader className="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                  <CardTitle className="text-base font-bold text-[#1E293B]">Linked Projects</CardTitle>
+                  <CardTitle className="text-base font-bold text-[#1E293B]">
+                    Linked Projects
+                  </CardTitle>
                   <CardDescription className="text-sm text-slate-600">
                     Showing {filteredProjects.length} project(s).
                   </CardDescription>
@@ -222,7 +247,10 @@ export default function ResearchCenterContentPanels({
                       onChange={(e) => setProjectSearch(e.target.value)}
                     />
 
-                    <Select value={projectStatus} onValueChange={setProjectStatus}>
+                    <Select
+                      value={projectStatus}
+                      onValueChange={setProjectStatus}
+                    >
                       <SelectTrigger className="w-[160px] h-7 px-2 text-xs border-slate-300 focus:border-emerald-500 focus:ring-0">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
@@ -281,9 +309,16 @@ export default function ResearchCenterContentPanels({
 
                       <TableBody>
                         {paginatedProjects.map((row, idx) => (
-                          <TableRow key={row?.id || `${idx}`} className="hover:bg-slate-50">
-                            <TableCell>{(projectsPage - 1) * pageSize + idx + 1}</TableCell>
-                            <TableCell className="font-medium text-slate-900">{row?.title || "-"}</TableCell>
+                          <TableRow
+                            key={row?.id || `${idx}`}
+                            className="hover:bg-slate-50"
+                          >
+                            <TableCell>
+                              {(projectsPage - 1) * pageSize + idx + 1}
+                            </TableCell>
+                            <TableCell className="font-medium text-slate-900">
+                              {row?.title || "-"}
+                            </TableCell>
                             <TableCell>
                               <Badge
                                 variant="outline"
@@ -292,10 +327,18 @@ export default function ResearchCenterContentPanels({
                                 {formatStatusLabel(row?.status) || "-"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-slate-700">{row?.year || "-"}</TableCell>
-                            <TableCell className="text-slate-700">{row?.lead_researcher || "-"}</TableCell>
-                            <TableCell className="text-slate-700">{row?.department_name || "-"}</TableCell>
-                            <TableCell className="text-slate-700">{row?.agenda_name || "-"}</TableCell>
+                            <TableCell className="text-slate-700">
+                              {row?.year || "-"}
+                            </TableCell>
+                            <TableCell className="text-slate-700">
+                              {row?.lead_researcher || "-"}
+                            </TableCell>
+                            <TableCell className="text-slate-700">
+                              {row?.department_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-slate-700">
+                              {row?.agenda_name || "-"}
+                            </TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"

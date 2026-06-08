@@ -43,5 +43,3 @@ export default function AgendasPanel({ center, agendaNames }) {
     </Card>
   );
 }
-
-

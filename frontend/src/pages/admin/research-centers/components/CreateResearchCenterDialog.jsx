@@ -216,14 +216,10 @@ export default function CreateResearchCenterDialog({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500">
-                Add at least one agenda.
-              </p>
+              <p className="text-xs text-slate-500">Add at least one agenda.</p>
             )}
             {errors.researchAgendas ? (
-              <p className="text-xs text-slate-800">
-                {errors.researchAgendas}
-              </p>
+              <p className="text-xs text-slate-800">{errors.researchAgendas}</p>
             ) : null}
           </div>
         </div>
@@ -249,4 +245,3 @@ export default function CreateResearchCenterDialog({
     </Dialog>
   ) : null;
 }
-
