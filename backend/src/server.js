@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import jwt from "jsonwebtoken";
 import { assertConfig, config } from "./config/index.js";
+import { query } from "./db/client.js";
 import {
   importLegacyUsersJsonIfNeeded,
   runMigrations,
@@ -93,11 +94,13 @@ import { registerCkanIntegrationRoutes } from "./modules/integrations/ckan.route
 import { registerReferenceRoutes } from "./modules/reference/reference.routes.js";
 import { registerDashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
 import { registerSubmissionsRoutes } from "./modules/submissions/submissions.routes.js";
+import { registerScorecardRoutes } from "./modules/scorecards/scorecards.routes.js";
 import { registerAdminRoutes } from "./modules/admin/admin.routes.js";
 import { registerAdminUserRoutes } from "./modules/admin/users.routes.js";
 import { registerAdminRbacRoutes } from "./modules/admin/rbac.routes.js";
 import { registerAwardsRoutes } from "./modules/awards/awards.routes.js";
 import { registerPublicRecordsRoutes } from "./modules/public-records/public-records.routes.js";
+import { syncResearchCentersFromOrganizations } from "./modules/research-centers/sync.js";
 import {
   createRole,
   deleteRole,
@@ -131,6 +134,38 @@ if (importSummary.imported > 0) {
 }
 await ensureDefaultAdmin();
 await ensureRbacSeedData();
+
+let researchCenterSyncInProgress = false;
+async function runResearchCenterSync(reason = "manual") {
+  if (researchCenterSyncInProgress) return null;
+  researchCenterSyncInProgress = true;
+  try {
+    const syncSummary = await syncResearchCentersFromOrganizations({
+      query,
+      listOrganizations,
+    });
+    console.log(
+      `[DB] Synced research centers from CKAN (${reason}): ${syncSummary.created} created, ${syncSummary.updated} updated, ${syncSummary.skipped} skipped.`,
+    );
+    return syncSummary;
+  } catch (error) {
+    console.warn(
+      `[WARN] Failed to sync research centers from CKAN (${reason}): ${String(error?.message || error)}`,
+    );
+    return null;
+  } finally {
+    researchCenterSyncInProgress = false;
+  }
+}
+
+await runResearchCenterSync("startup");
+
+if (config.researchCenterSyncIntervalMinutes > 0) {
+  const intervalMs = config.researchCenterSyncIntervalMinutes * 60 * 1000;
+  setInterval(() => {
+    void runResearchCenterSync("interval");
+  }, intervalMs);
+}
 
 const app = express();
 app.use(express.json({ limit: "40mb" }));
@@ -718,6 +753,11 @@ registerDashboardRoutes(app, {
   listGroups,
   listOrganizationAgendas,
   updateDatasetResource,
+});
+
+registerScorecardRoutes(app, {
+  authMiddleware,
+  query,
 });
 
 registerPublicRecordsRoutes(app, {

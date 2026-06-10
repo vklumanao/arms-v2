@@ -176,3 +176,15 @@ export async function fetchReferenceLinks({ type, id }) {
     agendas: payload?.agendas || [],
   };
 }
+
+export async function syncResearchCentersFromCkan() {
+  const payload = await apiFetch("/admin/controls/research-centers/sync", {
+    method: "POST",
+  });
+  return payload?.data || {
+    total: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+  };
+}

@@ -104,6 +104,10 @@ export const config = {
   serviceBotIds: readCsv(process.env.ARMS_SERVICE_BOT_IDS, []).map((value) =>
     value.toLowerCase(),
   ),
+  researchCenterSyncIntervalMinutes: readNumber(
+    process.env.ARMS_RESEARCH_CENTER_SYNC_INTERVAL_MINUTES,
+    0,
+  ),
   authCookieName: readString(process.env.ARMS_AUTH_COOKIE_NAME, "arms_session"),
   authCookieSecure: readBool(
     process.env.ARMS_AUTH_COOKIE_SECURE,
