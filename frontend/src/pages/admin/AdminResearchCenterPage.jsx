@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Eye, List, Pencil } from "lucide-react";
+import { Download, Eye, List, Pencil, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,9 +23,11 @@ import {
 } from "@/components/ui/sheet";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import { cn } from "@/utils/cn";
-import DirectoryPanel from "./research-centers/components/DirectoryPanel";
-import CreateResearchCenterDialog from "./research-centers/components/CreateResearchCenterDialog";
-import useAdminResearchCenterWorkspace from "./research-centers/hooks/useAdminResearchCenterWorkspace";
+import {
+  DirectoryPanel,
+  CreateResearchCenterDialog,
+} from "./research-centers/components/ResearchCenterWorkspacePanels";
+import useAdminResearchCenterWorkspace from "./research-centers/hooks/useAdminResearchCenterWorkspace.jsx";
 
 export default function AdminResearchCenterPage() {
   const {
@@ -71,6 +73,7 @@ export default function AdminResearchCenterPage() {
     addResearchAgenda,
     removeResearchAgenda,
     createResearchCenter,
+    syncResearchCenters,
     INITIAL_FILTERS,
   } = useAdminResearchCenterWorkspace();
   const [mobileDirectoryOpen, setMobileDirectoryOpen] = useState(false);
@@ -136,6 +139,18 @@ export default function AdminResearchCenterPage() {
                 }}
               >
                 Create Research Center
+              </Button>
+            ) : null}
+
+            {!isScopedCenterChief ? (
+              <Button
+                variant="outline"
+                className="min-h-11 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 sm:w-auto"
+                onClick={() => void syncResearchCenters()}
+                disabled={actionLoading}
+              >
+                <RotateCw className={actionLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                Sync from CKAN
               </Button>
             ) : null}
           </div>

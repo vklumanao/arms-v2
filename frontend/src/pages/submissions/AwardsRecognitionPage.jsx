@@ -89,7 +89,7 @@ export default function AwardsRecognitionPage() {
   const hasOrgId = String(profile?.ckan_org_id || "").trim();
   const canLoadOwnAwards = isAdmin || Boolean(hasOrgId);
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
   const missingAffiliation = !canLoadOwnAwards && !isCenterChief;
   const [rows, setRows] = useState([]);
   const [centerChiefRows, setCenterChiefRows] = useState([]);

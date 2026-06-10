@@ -19,7 +19,7 @@ function normalizeTab(value) {
   const tab = String(value || "")
     .trim()
     .toLowerCase();
-  if (["affiliates", "projects"].includes(tab)) return tab;
+  if (["affiliates", "projects", "scorecards"].includes(tab)) return tab;
   return "projects";
 }
 

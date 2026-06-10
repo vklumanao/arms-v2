@@ -13,8 +13,78 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default function DepartmentDirectoryContent({
+export function DepartmentWorkspaceHero({
+  exporting,
+  filteredCount,
+  onExportCsv,
+  onExportPdf,
+  onOpenCreate,
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Admin Workspace
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Department Workspace
+            </h1>
+            <p className="max-w-2xl text-sm text-slate-600">
+              Manage department records, monitor affiliations, and track project
+              coverage from one control panel.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exporting || filteredCount === 0}
+                  className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="border border-slate-200 bg-white shadow-md"
+              >
+                <DropdownMenuItem
+                  className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                  onSelect={onExportCsv}
+                >
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                  onSelect={onExportPdf}
+                >
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="mono" onClick={onOpenCreate}>
+              Create Department
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DepartmentDirectoryContent({
   dataLoading,
   viewMode,
   directorySkeletonCount,
@@ -98,12 +168,10 @@ export default function DepartmentDirectoryContent({
                           Chairperson: <span className="font-semibold text-slate-800">{row.chairpersonName || "-"}</span>
                         </p>
                       </div>
-
                       <Badge variant="outline" className="shrink-0 font-mono">
                         {row.code}
                       </Badge>
                     </div>
-
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Badge variant="secondary" className="bg-slate-100 text-slate-700">
                         Links: {row.totalLinks || 0}
@@ -115,7 +183,6 @@ export default function DepartmentDirectoryContent({
                         Projects: {row.projectCount || 0}
                       </Badge>
                     </div>
-
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <button
                         type="button"
@@ -134,7 +201,6 @@ export default function DepartmentDirectoryContent({
                           Admin {row.memberBreakdown?.adminCount || 0} - Editor {row.memberBreakdown?.editorCount || 0} - Member {row.memberBreakdown?.memberCount || 0}
                         </p>
                       </button>
-
                       <button
                         type="button"
                         className={cn(
@@ -151,7 +217,6 @@ export default function DepartmentDirectoryContent({
                         <p className="mt-1 text-xs text-slate-500">Linked research projects.</p>
                       </button>
                     </div>
-
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => goToDepartmentDetail(row)}>
                         <Eye className="h-4 w-4" />
@@ -159,12 +224,7 @@ export default function DepartmentDirectoryContent({
                       <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => startEdit(row)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9 text-slate-700 hover:bg-slate-100"
-                        onClick={() => setDeletingRow(row)}
-                      >
+                      <Button variant="outline" size="icon" className="h-9 w-9 text-slate-700 hover:bg-slate-100" onClick={() => setDeletingRow(row)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -172,15 +232,9 @@ export default function DepartmentDirectoryContent({
                 </Card>
               ))}
             </div>
-
             {totalPages > 1 ? (
               <div className="mt-3">
-                <PaginationControls
-                  page={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  className="border-0 rounded-none shadow-none bg-transparent"
-                />
+                <PaginationControls page={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} className="border-0 rounded-none shadow-none bg-transparent" />
               </div>
             ) : null}
           </>
@@ -201,39 +255,23 @@ export default function DepartmentDirectoryContent({
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleSort("chairpersonName")}
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => toggleSort("chairpersonName")}>
                       Chairperson {getSortIndicator("chairpersonName")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleSort("profileCount")}
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => toggleSort("profileCount")}>
                       Affiliates {getSortIndicator("profileCount")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleSort("projectCount")}
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => toggleSort("projectCount")}>
                       Projects {getSortIndicator("projectCount")}
                     </Button>
                   </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-
               <TableBody>
                 {paginatedRows.map((row, index) => (
                   <TableRow key={`${row.tag}-${row.id}`}>
@@ -263,17 +301,11 @@ export default function DepartmentDirectoryContent({
                   </TableRow>
                 ))}
               </TableBody>
-
               {totalPages > 1 ? (
                 <TableFooter>
                   <TableRow>
                     <TableCell colSpan={7} className="px-3 py-3">
-                      <PaginationControls
-                        page={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        className="border-0 rounded-none shadow-none bg-transparent"
-                      />
+                      <PaginationControls page={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} className="border-0 rounded-none shadow-none bg-transparent" />
                     </TableCell>
                   </TableRow>
                 </TableFooter>

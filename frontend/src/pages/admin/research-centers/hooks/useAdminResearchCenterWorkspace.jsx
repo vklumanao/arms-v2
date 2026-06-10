@@ -8,6 +8,7 @@ import {
   fetchReferenceData,
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
+  syncResearchCentersFromCkan,
   updateReference,
 } from "@/services/admin";
 import { validateCenterForm } from "@/utils/admin";
@@ -30,12 +31,13 @@ import {
   removeItem,
   toId,
 } from "../helpers";
-import usePagedList from "./usePagedList";
-import WorkspaceOverview from "../components/WorkspaceOverview";
-import MembersPanel from "../components/MembersPanel";
-import ProjectsPanel from "../components/ProjectsPanel";
-import AgendasPanel from "../components/AgendasPanel";
-import SettingsPanel from "../components/SettingsPanel";
+import {
+  WorkspaceOverview,
+  MembersPanel,
+  ProjectsPanel,
+  AgendasPanel,
+  SettingsPanel,
+} from "../components/ResearchCenterWorkspacePanels";
 
 function applyErrorResets(setErrors, patch, keyMap) {
   const keysToClear = Object.entries(keyMap)
@@ -51,6 +53,32 @@ function applyErrorResets(setErrors, patch, keyMap) {
     });
     return next;
   });
+}
+
+function usePagedList({ totalItems, pageSize, resetKeys = [], initialPage = 1 }) {
+  const [page, setPage] = useState(initialPage);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(Number(totalItems || 0) / pageSize)),
+    [pageSize, totalItems],
+  );
+
+  useEffect(() => {
+    setPage(initialPage);
+  }, [initialPage, ...resetKeys]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const start = (page - 1) * pageSize;
+
+  return {
+    page,
+    setPage,
+    totalPages,
+    start,
+  };
 }
 
 export default function useAdminResearchCenterWorkspace() {
@@ -899,6 +927,26 @@ export default function useAdminResearchCenterWorkspace() {
     await loadResearchCenterRows();
   };
 
+  const syncResearchCenters = async () => {
+    setActionLoading(true);
+    setActionError("");
+    setActionMessage("");
+
+    try {
+      const summary = await syncResearchCentersFromCkan();
+      setActionMessage(
+        `Synced research centers: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`,
+      );
+      await loadResearchCenterRows();
+      return summary;
+    } catch (error) {
+      setActionError(error.message || "Unable to sync research centers.");
+      return null;
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const addResearchAgenda = () => {
     const { items } = addUniqueTrimmedItem(newResearchAgendas, newAgendaInput);
     setNewResearchAgendas(items);
@@ -1189,6 +1237,7 @@ export default function useAdminResearchCenterWorkspace() {
     addResearchAgenda,
     removeResearchAgenda,
     createResearchCenter,
+    syncResearchCenters,
     INITIAL_FILTERS,
   };
 }

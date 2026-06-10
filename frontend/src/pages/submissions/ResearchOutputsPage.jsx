@@ -87,7 +87,7 @@ export default function ResearchOutputsPage() {
   const navigate = useNavigate();
   const { centers } = useReferenceData();
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
   const roleKeys = Array.isArray(profile?.roles)
     ? profile.roles.map((entry) => entry?.key)
     : profile?.role;
