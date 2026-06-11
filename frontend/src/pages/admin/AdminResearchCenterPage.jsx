@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Download, Eye, List, Pencil, RotateCw } from "lucide-react";
+import {
+  Building2,
+  Download,
+  Eye,
+  FolderKanban,
+  List,
+  RotateCw,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,12 +59,7 @@ export default function AdminResearchCenterPage() {
     setCreateErrors,
     setCreateModalOpen,
     workspaceCenterRow,
-    workspaceTabs,
-    activeWorkspaceTab,
-    setActiveWorkspaceTab,
     goToCenterDetail,
-    startInlineEdit,
-    workspaceContent,
     deletingRow,
     setDeletingRow,
     deleteGuard,
@@ -77,34 +79,45 @@ export default function AdminResearchCenterPage() {
     INITIAL_FILTERS,
   } = useAdminResearchCenterWorkspace();
   const [mobileDirectoryOpen, setMobileDirectoryOpen] = useState(false);
+  const selectedProjectCount =
+    workspaceCenterRow?.projectCount ??
+    workspaceCenterRow?.projectsCount ??
+    workspaceCenterRow?.linkedProjectsCount ??
+    0;
+  const selectedAffiliateCount =
+    workspaceCenterRow?.profileCount ??
+    workspaceCenterRow?.affiliatesCount ??
+    workspaceCenterRow?.memberCount ??
+    0;
+  const selectedAgendaCount = workspaceCenterRow?.agendaCount ?? 0;
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[1rem] sm:p-6">
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
               {isScopedCenterChief ? "My Research Center" : "Admin Workspace"}
             </p>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 md:text-3xl lg:text-4xl">
-                Research Center Workspace
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Research Centers
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-slate-600">
+              <p className="mt-1 max-w-3xl text-sm text-slate-600">
                 {isScopedCenterChief
-                  ? "Review the current state of your assigned research center, including member activity, linked projects, and agenda coverage."
-                  : "Manage the directory from a split-view console. Select a center on the left, then review members, projects, agendas, and settings without leaving the page."}
+                  ? "Review your assigned research center, including its members, projects, agendas, and supporting records."
+                  : "Manage center records, members, agendas, and related workspace details from a single view."}
               </p>
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   disabled={exporting || filteredRows.length === 0}
-                  className="w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
+                  className="min-h-10 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
                 >
                   <Download className="h-4 w-4" />
                   Export
@@ -132,7 +145,7 @@ export default function AdminResearchCenterPage() {
             {!isScopedCenterChief ? (
               <Button
                 variant="mono"
-                className="min-h-11 w-full sm:w-auto"
+                className="min-h-10 w-full sm:w-auto"
                 onClick={() => {
                   setCreateErrors({});
                   setCreateModalOpen(true);
@@ -145,11 +158,13 @@ export default function AdminResearchCenterPage() {
             {!isScopedCenterChief ? (
               <Button
                 variant="outline"
-                className="min-h-11 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 sm:w-auto"
+                className="min-h-10 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 sm:w-auto"
                 onClick={() => void syncResearchCenters()}
                 disabled={actionLoading}
               >
-                <RotateCw className={actionLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                <RotateCw
+                  className={actionLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+                />
                 Sync from CKAN
               </Button>
             ) : null}
@@ -162,7 +177,7 @@ export default function AdminResearchCenterPage() {
           <Button
             type="button"
             variant="outline"
-            className="min-h-11 w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            className="min-h-10 w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
             onClick={() => setMobileDirectoryOpen(true)}
           >
             <List className="h-4 w-4" />
@@ -181,63 +196,69 @@ export default function AdminResearchCenterPage() {
       >
         {!isScopedCenterChief ? (
           <div className="hidden xl:block">
-            <DirectoryPanel
-              rows={filteredRows}
-              paginatedRows={paginatedRows}
-              filters={filters}
-              onSearchChange={(search) => setFilters({ search })}
-              quickFilter={quickFilter}
-              onQuickFilterChange={setQuickFilter}
-              onResetFilters={() => {
-                setQuickFilter("all");
-                setFilters(INITIAL_FILTERS);
-              }}
-              quickFilterChips={quickFilterChips}
-              selectedCenterId={selectedCenterRow?.id}
-              onSelectCenter={setSelectedCenterId}
-              metrics={dashboardMetrics}
-              dataLoading={dataLoading}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-900">
+                  Directory
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Browse and switch between research centers.
+                </p>
+              </div>
+              <DirectoryPanel
+                rows={filteredRows}
+                paginatedRows={paginatedRows}
+                filters={filters}
+                onSearchChange={(search) => setFilters({ search })}
+                quickFilter={quickFilter}
+                onQuickFilterChange={setQuickFilter}
+                onResetFilters={() => {
+                  setQuickFilter("all");
+                  setFilters(INITIAL_FILTERS);
+                }}
+                quickFilterChips={quickFilterChips}
+                selectedCenterId={selectedCenterRow?.id}
+                onSelectCenter={setSelectedCenterId}
+                metrics={dashboardMetrics}
+                dataLoading={dataLoading}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                embedded
+              />
+            </div>
           </div>
         ) : null}
 
         <div className="space-y-4">
-          <Card className="overflow-hidden border-slate-200 bg-white/95 shadow-sm">
-            <CardHeader className="space-y-4 border-b border-slate-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Selected Workspace
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Selected Center
                   </p>
                   {workspaceCenterRow ? (
-                    <div className="flex flex-wrap items-center gap-2 pb-1">
-                      <Badge className="border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-100">
-                        {workspaceCenterRow.code || "No Code"}
-                      </Badge>
-                      <Badge className="border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-100">
-                        Research Center
-                      </Badge>
-                    </div>
+                    <p className="pb-1 text-sm text-slate-500">
+                      {workspaceCenterRow.code || "No Code"}
+                    </p>
                   ) : null}
-                  <CardTitle className="text-2xl font-bold text-slate-900 sm:text-3xl lg:text-4xl">
+                  <CardTitle className="text-xl font-semibold text-slate-900 sm:text-2xl">
                     {workspaceCenterRow?.name || "Select a Research Center"}
                   </CardTitle>
-                  <CardDescription className="text-slate-600">
+                  <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
                     {workspaceCenterRow
                       ? workspaceCenterRow.description ||
-                        "No description has been added for this research center yet. Use Settings to add positioning, summary copy, and public-facing links."
+                        "No description has been added for this research center yet."
                       : "Choose a center from the directory to load its workspace."}
                   </CardDescription>
                   {workspaceCenterRow ? (
-                    <div className="flex flex-wrap gap-4 pt-2 text-lg font-bold text-slate-600">
-                      <span>
-                        Center Chief:{" "}
+                    <p className="pt-1 text-sm text-slate-600">
+                      Center Chief:{" "}
+                      <span className="font-medium text-slate-900">
                         {workspaceCenterRow.centerChiefName || "-"}
                       </span>
-                    </div>
+                    </p>
                   ) : null}
                 </div>
 
@@ -245,62 +266,66 @@ export default function AdminResearchCenterPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
-                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
                       onClick={() => goToCenterDetail(workspaceCenterRow)}
                     >
                       <Eye className="h-4 w-4" />
-                      Open
+                      Open Full Profile
                     </Button>
-                    {!isScopedCenterChief ? (
-                      <Button
-                        variant="outline"
-                        className="border-slate-300 text-slate-700 hover:bg-slate-50"
-                        onClick={() => startInlineEdit(workspaceCenterRow)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit Inline
-                      </Button>
-                    ) : null}
                   </div>
                 ) : null}
               </div>
 
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {workspaceTabs.map((tab) => (
-                  <Button
-                    key={tab.key}
-                    type="button"
-                    size="sm"
-                    variant={
-                      activeWorkspaceTab === tab.key ? "secondary" : "outline"
-                    }
-                    className={cn(
-                      "min-h-7 shrink-0 rounded-full px-4",
-                      activeWorkspaceTab === tab.key
-                        ? "border-slate-300 bg-slate-100 text-slate-700"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-                    )}
-                    onClick={() => setActiveWorkspaceTab(tab.key)}
-                    disabled={!workspaceCenterRow}
-                  >
-                    {tab.label}
-                  </Button>
-                ))}
-              </div>
+              {!workspaceCenterRow ? (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-5 py-10 text-center">
+                  <Building2 className="mx-auto h-8 w-8 text-slate-400" />
+                  <p className="mt-3 text-base font-medium text-slate-900">
+                    Select a research center
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Choose a center from the directory to view its details,
+                    members, projects, and agendas.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <FolderKanban className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Projects
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {selectedProjectCount}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Users className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Affiliates
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {selectedAffiliateCount}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-4 py-4">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Building2 className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Agendas
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {selectedAgendaCount}
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardHeader>
           </Card>
-
-          {dataLoading && !workspaceCenterRow && !isScopedCenterChief ? (
-            <div className="space-y-3">
-              <div className="h-24 animate-pulse rounded-[1.7rem] bg-slate-200" />
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="h-40 animate-pulse rounded-[1.5rem] bg-slate-200" />
-                <div className="h-40 animate-pulse rounded-[1.5rem] bg-slate-200" />
-              </div>
-            </div>
-          ) : (
-            workspaceContent
-          )}
         </div>
       </div>
 
@@ -341,6 +366,7 @@ export default function AdminResearchCenterPage() {
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               useWindowedScroll={false}
+              embedded
             />
           </SheetContent>
         </Sheet>

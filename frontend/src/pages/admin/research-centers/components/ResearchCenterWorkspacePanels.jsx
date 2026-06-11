@@ -53,27 +53,22 @@ function MetricCard({ icon: Icon, label, value, caption, tone = "blue" }) {
   const toneClasses = {
     blue: "bg-white border-slate-200 text-slate-700",
     emerald:
-      "from-emerald-50 via-white to-emerald-100/70 border-emerald-200/80 text-emerald-700",
+      "bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.9))] border-emerald-200/90 text-emerald-700",
     amber:
-      "from-amber-50 via-white to-amber-100/70 border-amber-200/80 text-amber-700",
+      "bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(255,251,235,0.95))] border-amber-200/90 text-amber-700",
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-[1.4rem] border bg-white p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
-        toneClasses[tone],
-      )}
-    >
+    <div className={cn("rounded-lg border p-4 shadow-sm", toneClasses[tone])}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">
             {label}
           </p>
-          <p className="mt-3 text-3xl font-bold tracking-tight">{value}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
           <p className="mt-1 text-xs text-slate-600">{caption}</p>
         </div>
-        <div className="rounded-2xl border border-current/10 bg-white/80 p-2.5 shadow-sm">
+        <div className="rounded-md border border-current/10 bg-white/80 p-2">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -109,8 +104,8 @@ function WorkspaceOverview({ center, summary, agendaNames }) {
 
       <div className="grid gap-4">
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="sm:rounded-[1rem] space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
-            <CardTitle className="text-lg font-bold text-slate-700">
+          <CardHeader className="space-y-1 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+            <CardTitle className="text-base font-semibold text-slate-900">
               Agenda Highlights
             </CardTitle>
             <CardDescription>
@@ -159,25 +154,20 @@ function DirectoryPanel({
   totalPages,
   onPageChange,
   useWindowedScroll = true,
+  embedded = false,
 }) {
-  return (
-    <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
-      <CardHeader className="space-y-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
-        <div className="space-y-1">
-          <CardTitle className="text-lg font-bold text-slate-900">
-            Research Center Directory
-          </CardTitle>
-          <CardDescription>
-            Browse centers, narrow the registry, and keep one workspace pinned
-            on the right.
-          </CardDescription>
-        </div>
+  const shellClassName = embedded
+    ? "overflow-hidden"
+    : "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm";
 
-        <label className="relative">
+  const content = (
+    <>
+      <div className="space-y-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+        <label className="relative block">
           <span className="sr-only">Search research centers</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
-            className="h-11 rounded-2xl border-slate-300 bg-white pl-9 shadow-sm"
+            className="h-10 rounded-md border-slate-300 bg-white pl-9 text-sm shadow-none"
             placeholder="Search name, code, chief, agenda, or id"
             value={filters.search}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -185,19 +175,34 @@ function DirectoryPanel({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard
-            icon={Building2}
-            label="Centers"
-            value={metrics.totalCenters}
-            caption="Registered research centers"
-          />
-          <MetricCard
-            icon={Layers3}
-            label="Links"
-            value={metrics.totalLinks}
-            caption="Profiles and projects connected"
-            tone="emerald"
-          />
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+            <div className="flex items-center gap-2 text-slate-500">
+              <Building2 className="h-4 w-4" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                Centers
+              </span>
+            </div>
+            <p className="mt-2 text-xl font-semibold text-slate-900">
+              {metrics.totalCenters}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Registered research centers
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-3 py-3">
+            <div className="flex items-center gap-2 text-slate-500">
+              <Layers3 className="h-4 w-4" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                Links
+              </span>
+            </div>
+            <p className="mt-2 text-xl font-semibold text-slate-900">
+              {metrics.totalLinks}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Profiles and projects connected
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -208,15 +213,22 @@ function DirectoryPanel({
               size="sm"
               variant="outline"
               className={cn(
-                "rounded-full border px-3 text-xs shadow-sm",
+                "h-8 rounded-md border px-3 text-xs font-medium shadow-none",
                 quickFilter === chip.key
-                  ? "border-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-100"
+                  ? "border-slate-300 bg-slate-900 text-white hover:bg-slate-900"
                   : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
               )}
               onClick={() => onQuickFilterChange(chip.key)}
             >
               {chip.label}
-              <span className="ml-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+              <span
+                className={cn(
+                  "ml-2 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold",
+                  quickFilter === chip.key
+                    ? "bg-white/15 text-white"
+                    : "bg-slate-100 text-slate-600",
+                )}
+              >
                 {chip.count}
               </span>
             </Button>
@@ -226,71 +238,93 @@ function DirectoryPanel({
               type="button"
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-slate-700 hover:bg-slate-100"
+              className="h-8 rounded-md px-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               onClick={onResetFilters}
             >
-              Reset all filters
+              Reset
             </Button>
           )}
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-0">
+      <div className="p-3">
         <div
           className={cn(
-            "p-3",
-            useWindowedScroll ? "max-h-[72vh] overflow-y-auto" : "",
+            "space-y-2",
+            useWindowedScroll ? "max-h-[72vh] overflow-y-auto pr-1" : "",
           )}
         >
           {dataLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
                 (_, index) => (
                   <div
                     key={`directory-skeleton-${index}`}
-                    className="h-28 animate-pulse rounded-[1.4rem] bg-slate-200"
+                    className="h-24 animate-pulse rounded-lg bg-slate-200"
                   />
                 ),
               )}
             </div>
           ) : rows.length === 0 ? (
-            <div className="rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
               No research center records matched the current filters.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {paginatedRows.map((row) => {
                 const isSelected =
                   String(selectedCenterId || "") === String(row?.id || "");
+
                 return (
                   <button
                     key={`${row.tag}-${row.id}`}
                     type="button"
+                    aria-pressed={isSelected}
                     className={cn(
-                      "w-full overflow-hidden rounded-[1.45rem] border p-4 text-left transition-all duration-200",
+                      "group w-full rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
                       isSelected
-                        ? "border-slate-400 bg-slate-50 shadow-sm"
-                        : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm",
+                        ? "border-emerald-300 bg-emerald-50/50"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
                     )}
                     onClick={() => onSelectCenter(row.id)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        <p
+                          className={cn(
+                            "text-[11px] font-medium uppercase tracking-[0.12em] transition-colors",
+                            isSelected ? "text-emerald-700" : "text-slate-500",
+                          )}
+                        >
                           {row.code || "No Code"}
                         </p>
-                        <h3 className="mt-1 truncate text-base font-bold text-[#0F172A]">
+                        <h3
+                          className={cn(
+                            "mt-1 truncate text-sm font-semibold transition-colors",
+                            isSelected
+                              ? "text-slate-950"
+                              : "text-slate-900 group-hover:text-slate-950",
+                          )}
+                        >
                           {row.name}
                         </h3>
-                        <p className="mt-1 truncate text-sm text-slate-600">
+                        <p
+                          className={cn(
+                            "mt-2 truncate text-xs transition-colors",
+                            isSelected
+                              ? "text-emerald-800/90"
+                              : "text-slate-600",
+                          )}
+                        >
                           Chief: {row.centerChiefName || "-"}
                         </p>
                       </div>
-                      {isSelected ? (
-                        <Badge className="border-slate-300 bg-white text-slate-700 hover:bg-white">
-                          Pinned
-                        </Badge>
-                      ) : null}
+                      <div
+                        className={cn(
+                          "mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full transition-colors",
+                          isSelected ? "bg-emerald-500" : "bg-slate-300",
+                        )}
+                      />
                     </div>
                   </button>
                 );
@@ -298,7 +332,7 @@ function DirectoryPanel({
             </div>
           )}
         </div>
-      </CardContent>
+      </div>
 
       <PaginationControls
         page={currentPage}
@@ -306,6 +340,16 @@ function DirectoryPanel({
         onPageChange={onPageChange}
         className="rounded-none border-0 border-t border-[var(--border)]"
       />
+    </>
+  );
+
+  if (embedded) {
+    return <div className={shellClassName}>{content}</div>;
+  }
+
+  return (
+    <Card className={shellClassName}>
+      <CardContent className="p-0">{content}</CardContent>
     </Card>
   );
 }
@@ -325,10 +369,10 @@ function MembersPanel({
 }) {
   return (
     <Card className="overflow-hidden border-slate-200 shadow-sm">
-      <CardHeader className="space-y-4 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
+      <CardHeader className="space-y-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-bold text-slate-700">
+            <CardTitle className="text-base font-semibold text-slate-900">
               Research Center Members
             </CardTitle>
             <CardDescription>
@@ -337,9 +381,9 @@ function MembersPanel({
           </div>
           <label className="relative w-full lg:max-w-md">
             <span className="sr-only">Search members</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
-              className="border-slate-300 bg-white pl-8"
+              className="h-10 rounded-md border-slate-300 bg-white pl-9 shadow-none"
               placeholder="Search name or email"
               value={filters.search}
               onChange={(event) =>
@@ -361,7 +405,7 @@ function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-slate-300 bg-white">
+            <SelectTrigger className="h-10 rounded-md border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -380,7 +424,7 @@ function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-slate-300 bg-white">
+            <SelectTrigger className="h-10 rounded-md border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -401,7 +445,7 @@ function MembersPanel({
               })
             }
           >
-            <SelectTrigger className="border-slate-300 bg-white">
+            <SelectTrigger className="h-10 rounded-md border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -438,7 +482,7 @@ function MembersPanel({
                 {paginatedRows.map((member, index) => (
                   <div
                     key={member.id || `${member.email}-${index}`}
-                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+                    className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold text-[#0F172A]">
@@ -464,8 +508,8 @@ function MembersPanel({
                 ))}
               </div>
               <Table className="hidden md:table">
-                <TableHeader>
-                  <TableRow>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="hover:bg-slate-50">
                     <TableHead>No.</TableHead>
                     <TableHead>Full Name</TableHead>
                     <TableHead>Email</TableHead>
@@ -536,7 +580,7 @@ function ProjectsPanel({
       <CardHeader className="space-y-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-bold text-slate-900">
+            <CardTitle className="text-base font-semibold text-slate-900">
               Linked Projects
             </CardTitle>
             <CardDescription>
@@ -547,7 +591,7 @@ function ProjectsPanel({
             <span className="sr-only">Search projects</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
-              className="border-slate-300 bg-white pl-8"
+              className="h-10 rounded-md border-slate-300 bg-white pl-9 shadow-none"
               placeholder="Search title or lead researcher"
               value={filters.search}
               onChange={(event) =>
@@ -569,7 +613,7 @@ function ProjectsPanel({
               })
             }
           >
-            <SelectTrigger className="border-slate-300 bg-white">
+            <SelectTrigger className="h-10 rounded-md border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -590,7 +634,7 @@ function ProjectsPanel({
               })
             }
           >
-            <SelectTrigger className="border-slate-300 bg-white">
+            <SelectTrigger className="h-10 rounded-md border-slate-300 bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -632,7 +676,7 @@ function ProjectsPanel({
                     key={
                       project.id || project.name || `${project.title}-${index}`
                     }
-                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+                    className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                   >
                     <p className="text-sm font-semibold text-[#0F172A]">
                       {(page - 1) * PROJECT_PAGE_SIZE + index + 1}.{" "}
@@ -655,8 +699,8 @@ function ProjectsPanel({
                 ))}
               </div>
               <Table className="hidden md:table">
-                <TableHeader>
-                  <TableRow>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="hover:bg-slate-50">
                     <TableHead>No.</TableHead>
                     <TableHead>Project</TableHead>
                     <TableHead>Status</TableHead>
@@ -711,8 +755,8 @@ function ProjectsPanel({
 function AgendasPanel({ center, agendaNames }) {
   return (
     <Card className="overflow-hidden border-slate-200 shadow-sm">
-      <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
-        <CardTitle className="text-lg font-bold text-slate-700">
+      <CardHeader className="space-y-1 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+        <CardTitle className="text-base font-semibold text-slate-900">
           Linked Agendas
         </CardTitle>
         <CardDescription>
@@ -725,7 +769,7 @@ function AgendasPanel({ center, agendaNames }) {
             {agendaNames.map((agendaName) => (
               <div
                 key={`${center.id}-${agendaName}`}
-                className="rounded-[1.35rem] border border-slate-300 bg-white p-4 shadow-sm"
+                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                   Research Agenda
@@ -737,7 +781,7 @@ function AgendasPanel({ center, agendaNames }) {
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.35rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-700">
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-700">
             No agendas linked to this center yet.
           </div>
         )}
@@ -766,8 +810,8 @@ function SettingsPanel({
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden border-slate-200 shadow-sm">
-        <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
-          <CardTitle className="text-lg font-bold text-slate-700">
+        <CardHeader className="space-y-1 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+          <CardTitle className="text-base font-semibold text-slate-900">
             Workspace Settings
           </CardTitle>
           <CardDescription>
@@ -778,17 +822,17 @@ function SettingsPanel({
         <CardContent className="p-4 sm:p-6">
           {editLoading || !isReady ? (
             <div className="animate-pulse space-y-4">
-              <div className="h-10 rounded-2xl bg-slate-200" />
+              <div className="h-10 rounded-md bg-slate-200" />
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="h-32 rounded-[1.3rem] bg-slate-200" />
-                <div className="h-32 rounded-[1.3rem] bg-slate-200" />
+                <div className="h-32 rounded-lg bg-slate-200" />
+                <div className="h-32 rounded-lg bg-slate-200" />
               </div>
-              <div className="h-32 rounded-[1.3rem] bg-slate-200" />
+              <div className="h-32 rounded-lg bg-slate-200" />
             </div>
           ) : (
             <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+                <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                     Identity
                   </p>
@@ -799,7 +843,7 @@ function SettingsPanel({
                       </label>
                       <Input
                         className={cn(
-                          "h-11 rounded-2xl border bg-white",
+                          "h-10 rounded-md border bg-white",
                           editErrors.name
                             ? "border-[#F97316]"
                             : "border-slate-300",
@@ -821,7 +865,7 @@ function SettingsPanel({
                       </label>
                       <Input
                         className={cn(
-                          "h-11 rounded-2xl border bg-white",
+                          "h-10 rounded-md border bg-white",
                           editErrors.code
                             ? "border-[#F97316]"
                             : "border-slate-300",
@@ -853,7 +897,7 @@ function SettingsPanel({
                       >
                         <SelectTrigger
                           className={cn(
-                            "h-11 rounded-2xl border bg-white",
+                            "h-10 rounded-md border bg-white",
                             editErrors.centerChiefId
                               ? "border-[#F97316]"
                               : "border-slate-300",
@@ -878,7 +922,7 @@ function SettingsPanel({
                   </div>
                 </div>
 
-                <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+                <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                     Public Presence
                   </p>
@@ -894,7 +938,7 @@ function SettingsPanel({
                             onChange({ socialMediaPlatform: value })
                           }
                         >
-                          <SelectTrigger className="h-11 rounded-2xl border border-slate-300 bg-white">
+                          <SelectTrigger className="h-10 rounded-md border border-slate-300 bg-white">
                             <SelectValue placeholder="Select platform" />
                           </SelectTrigger>
                           <SelectContent className="border border-slate-300 bg-white">
@@ -910,7 +954,7 @@ function SettingsPanel({
                         </Select>
                         <div className="sm:col-span-2">
                           <Input
-                            className="h-11 rounded-2xl border border-slate-300 bg-white"
+                            className="h-10 rounded-md border border-slate-300 bg-white"
                             value={editing.socialMediaLink}
                             placeholder={getSocialPlaceholder(
                               editing.socialMediaPlatform,
@@ -931,7 +975,7 @@ function SettingsPanel({
                         Description
                       </label>
                       <Textarea
-                        className="min-h-[180px] rounded-[1.1rem] border border-slate-300 bg-white"
+                        className="min-h-[180px] rounded-md border border-slate-300 bg-white"
                         value={editing.description}
                         placeholder="Add a positioning statement, mission, or quick summary..."
                         onChange={(event) =>
@@ -947,7 +991,7 @@ function SettingsPanel({
                 </div>
               </div>
 
-              <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                   Research Agendas
                 </p>
@@ -955,7 +999,7 @@ function SettingsPanel({
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
                       className={cn(
-                        "h-11 rounded-2xl border bg-white",
+                        "h-10 rounded-md border bg-white",
                         editErrors.researchAgendas
                           ? "border-[#F97316]"
                           : "border-slate-300",
@@ -988,7 +1032,7 @@ function SettingsPanel({
                         <button
                           key={agenda}
                           type="button"
-                          className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
                           onClick={() => onRemoveAgenda(agenda)}
                         >
                           {agenda} ×
@@ -1010,7 +1054,7 @@ function SettingsPanel({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 rounded-[1.35rem] border border-slate-100 bg-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
                     Inline changes are ready to save.
@@ -1045,7 +1089,7 @@ function SettingsPanel({
 
       <Card className="border-orange-200 shadow-sm">
         <CardHeader className="space-y-1 border-b border-orange-100 bg-orange-50/60 px-4 py-4 sm:px-6 sm:py-5">
-          <CardTitle className="text-lg font-bold text-orange-700">
+          <CardTitle className="text-base font-semibold text-orange-700">
             Danger Zone
           </CardTitle>
           <CardDescription>
