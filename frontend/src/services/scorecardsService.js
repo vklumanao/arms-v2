@@ -46,3 +46,15 @@ export async function updateCenterScorecard({ centerId, year, payload }) {
     return { data: null, error };
   }
 }
+
+export async function deleteCenterScorecardItem({ centerId, year, sheetCode }) {
+  try {
+    const payload = await apiFetch(
+      `/scorecards/centers/${encodeURIComponent(String(centerId || "").trim())}/years/${encodeURIComponent(String(year || "").trim())}/items/${encodeURIComponent(String(sheetCode || "").trim())}`,
+      { method: "DELETE" },
+    );
+    return { data: payload?.data || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}

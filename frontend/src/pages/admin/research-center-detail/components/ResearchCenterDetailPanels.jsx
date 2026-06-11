@@ -1,20 +1,70 @@
-import EmptyState from '@/components/feedback/EmptyState';
-import PaginationControls from '@/components/navigation/PaginationControls';
-import { useToast } from '@/components/providers/ToastProvider';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { createCenterScorecard, fetchCenterScorecard, fetchDefaultScorecardTemplate, updateCenterScorecard } from '@/services/scorecardsService';
-import { cn } from '@/utils/cn';
-import { formatStatusLabel } from '@/utils/status';
-import { Building2, ChevronLeft, Eye, Facebook, FolderKanban, Globe, Instagram, Linkedin, Loader2, Pencil, RefreshCw, Save, Trash2, Twitter, Users, X, Youtube } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+﻿import EmptyState from "@/components/feedback/EmptyState";
+import PaginationControls from "@/components/navigation/PaginationControls";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  createCenterScorecard,
+  deleteCenterScorecardItem,
+  fetchCenterScorecard,
+  fetchDefaultScorecardTemplate,
+  updateCenterScorecard,
+} from "@/services/scorecardsService";
+import { cn } from "@/utils/cn";
+import { formatStatusLabel } from "@/utils/status";
+import {
+  Building2,
+  ChevronLeft,
+  Eye,
+  Facebook,
+  FolderKanban,
+  Globe,
+  Instagram,
+  Linkedin,
+  Loader2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  Trash2,
+  Twitter,
+  Users,
+  X,
+  Youtube,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 const ICON_BY_KEY = {
   facebook: Facebook,
@@ -136,11 +186,7 @@ function DetailWorkspaceHeader({
   );
 }
 
-function DetailWorkspaceRail({
-  center,
-  agendaFilter,
-  onAgendaClick,
-}) {
+function DetailWorkspaceRail({ center, agendaFilter, onAgendaClick }) {
   return (
     <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
       <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
@@ -240,7 +286,9 @@ function ReferenceDataGrid({
       </CardHeader>
 
       {loading ? (
-        <CardContent className="p-6 text-sm text-slate-600">Loading...</CardContent>
+        <CardContent className="p-6 text-sm text-slate-600">
+          Loading...
+        </CardContent>
       ) : rows.length === 0 ? (
         <CardContent className="p-6">
           <EmptyState title={emptyTitle} description={emptyDescription} />
@@ -297,12 +345,26 @@ function ReferenceDataGrid({
 }
 
 const affiliateColumns = [
-  { key: "number", label: "No.", headerClassName: "hidden sm:table-cell", cellClassName: "hidden sm:table-cell" },
-  { key: "full_name", label: "Full Name", cellClassName: "font-medium text-slate-900" },
+  {
+    key: "number",
+    label: "No.",
+    headerClassName: "hidden sm:table-cell",
+    cellClassName: "hidden sm:table-cell",
+  },
+  {
+    key: "full_name",
+    label: "Full Name",
+    cellClassName: "font-medium text-slate-900",
+  },
   { key: "email", label: "Email" },
   { key: "role", label: "Role" },
   { key: "department", label: "Department" },
-  { key: "actions", label: "Actions", headerClassName: "text-right", cellClassName: "text-right" },
+  {
+    key: "actions",
+    label: "Actions",
+    headerClassName: "text-right",
+    cellClassName: "text-right",
+  },
 ];
 
 function AffiliatesPanel({
@@ -335,11 +397,21 @@ function AffiliatesPanel({
         const centerChiefId = String(center?.centerChiefId || "").trim();
         const isChief = rowId && centerChiefId && rowId === centerChiefId;
 
-        if (key === "number") return (affiliatesPage - 1) * pageSize + index + 1;
+        if (key === "number")
+          return (affiliatesPage - 1) * pageSize + index + 1;
         if (key === "full_name") return row?.full_name || row?.name || "-";
-        if (key === "email") return <span className="text-slate-700">{row?.email || "-"}</span>;
-        if (key === "role") return <span className="capitalize text-slate-700">{row?.role || "-"}</span>;
-        if (key === "department") return <span className="text-slate-700">{row?.department || "-"}</span>;
+        if (key === "email")
+          return <span className="text-slate-700">{row?.email || "-"}</span>;
+        if (key === "role")
+          return (
+            <span className="capitalize text-slate-700">
+              {row?.role || "-"}
+            </span>
+          );
+        if (key === "department")
+          return (
+            <span className="text-slate-700">{row?.department || "-"}</span>
+          );
         if (key === "actions") {
           return (
             <Button
@@ -882,7 +954,6 @@ function formatPercent(value) {
 }
 
 function ScorecardsPanel({ center, isCenterChief }) {
-  const toast = useToast();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(String(currentYear));
   const [loading, setLoading] = useState(false);
@@ -890,6 +961,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
   const [template, setTemplate] = useState(null);
   const [scorecard, setScorecard] = useState(null);
   const [rows, setRows] = useState([]);
+  const [previewRow, setPreviewRow] = useState(null);
+  const [editingRowIndex, setEditingRowIndex] = useState(null);
+  const [editDraft, setEditDraft] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -923,21 +997,31 @@ function ScorecardsPanel({ center, isCenterChief }) {
       }
     } else {
       setScorecard(scorecardRes.data);
-      setRows(Array.isArray(scorecardRes.data?.items) ? scorecardRes.data.items : []);
+      setRows(
+        Array.isArray(scorecardRes.data?.items) ? scorecardRes.data.items : [],
+      );
     }
 
+    setPreviewRow(null);
+    setEditingRowIndex(null);
+    setEditDraft(null);
     setLoading(false);
   };
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerId, year]);
 
   const summary = useMemo(() => {
     const total = rows.length;
-    const withTarget = rows.filter((row) => Number(row?.target || 0) > 0).length;
-    const achieved = rows.filter((row) => Number(row?.actual_value || 0) >= Number(row?.target || 0) && Number(row?.target || 0) > 0).length;
+    const withTarget = rows.filter(
+      (row) => Number(row?.target || 0) > 0,
+    ).length;
+    const achieved = rows.filter(
+      (row) =>
+        Number(row?.actual_value || 0) >= Number(row?.target || 0) &&
+        Number(row?.target || 0) > 0,
+    ).length;
     return { total, withTarget, achieved };
   }, [rows]);
 
@@ -987,10 +1071,122 @@ function ScorecardsPanel({ center, isCenterChief }) {
     setSaving(false);
   };
 
-  const updateRow = (index, patch) => {
+  const handleViewRow = (row) => {
+    setPreviewRow(row);
+  };
+
+  const handleEditRow = (index) => {
+    const row = rows[index];
+    if (!row) return;
+    setEditingRowIndex(index);
+    setEditDraft({
+      ...row,
+      target_type: row.target_type || "count",
+      target: row.target ?? 0,
+      weight: row.weight ?? 1,
+      sort_order: row.sort_order ?? index + 1,
+      is_enabled: row.is_enabled ?? true,
+      notes: row.notes || "",
+    });
+  };
+
+  const closeEditDialog = () => {
+    setEditingRowIndex(null);
+    setEditDraft(null);
+  };
+
+  const saveEditRow = () => {
+    if (editingRowIndex === null || !editDraft) return;
     setRows((prev) =>
-      prev.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)),
+      prev.map((row, rowIndex) =>
+        rowIndex === editingRowIndex
+          ? {
+              ...row,
+              ...editDraft,
+              target: Number(editDraft.target ?? 0),
+              weight: Number(editDraft.weight ?? 1),
+              sort_order: Number(editDraft.sort_order ?? 0),
+              is_enabled: editDraft.is_enabled,
+            }
+          : row,
+      ),
     );
+    setMessage(
+      `Saved changes for indicator #${editDraft.sheet_code || editingRowIndex + 1}.`,
+    );
+    closeEditDialog();
+  };
+
+  const handleDeleteRow = async (row, index) => {
+    const sheetCode = Number(row?.sheet_code || 0);
+    if (!sheetCode) return;
+    if (
+      !window.confirm(`Delete indicator #${sheetCode}? This cannot be undone.`)
+    )
+      return;
+
+    setError("");
+    setMessage("");
+
+    if (!row?.id) {
+      setRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
+      setMessage(`Indicator #${sheetCode} removed.`);
+      return;
+    }
+
+    setSaving(true);
+    const deleted = await deleteCenterScorecardItem({
+      centerId,
+      year,
+      sheetCode,
+    });
+    if (deleted.error) {
+      setError(deleted.error.message || "Unable to delete indicator.");
+      setSaving(false);
+      return;
+    }
+
+    setMessage(`Indicator #${sheetCode} deleted successfully.`);
+    await loadData();
+    setSaving(false);
+  };
+
+  const addIndicator = () => {
+    const nextSheetCode = rows.length
+      ? Math.max(...rows.map((row) => Number(row?.sheet_code || 0))) + 1
+      : 1;
+    const nextSortOrder = rows.length
+      ? Math.max(...rows.map((row) => Number(row?.sort_order || 0))) + 1
+      : 1;
+
+    setRows((prev) => [
+      ...prev,
+      {
+        sheet_code: nextSheetCode,
+        deliverable: "",
+        target_type: "count",
+        target: 0,
+        actual_value: 0,
+        success_indicator: "",
+        weight: 1,
+        is_enabled: true,
+        sort_order: nextSortOrder,
+        notes: "",
+      },
+    ]);
+    setEditingRowIndex(rows.length);
+    setEditDraft({
+      sheet_code: nextSheetCode,
+      deliverable: "",
+      target_type: "count",
+      target: 0,
+      actual_value: 0,
+      success_indicator: "",
+      weight: 1,
+      is_enabled: true,
+      sort_order: nextSortOrder,
+      notes: "",
+    });
   };
 
   if (!centerId) {
@@ -1021,9 +1217,8 @@ function ScorecardsPanel({ center, isCenterChief }) {
                 Configure the annual RDISO scorecard for this center.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-700">Year</span>
+            <div className="flex items-center gap-2 overflow-x-auto">
+              <label className="shrink-0 space-y-1 text-sm">
                 <Input
                   value={year}
                   onChange={(event) => setYear(event.target.value)}
@@ -1033,14 +1228,30 @@ function ScorecardsPanel({ center, isCenterChief }) {
               <Button
                 variant="outline"
                 onClick={loadData}
-                className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                className="shrink-0 border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                 disabled={loading}
               >
-                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                <RefreshCw
+                  className={cn("h-4 w-4", loading && "animate-spin")}
+                />
                 Reload
               </Button>
+              <Button
+                variant="outline"
+                onClick={addIndicator}
+                className="shrink-0 border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                disabled={!scorecard || saving}
+              >
+                <Plus className="h-4 w-4" />
+                Add Indicator
+              </Button>
               {!scorecard ? (
-                <Button variant="mono" onClick={ensureScorecard} disabled={saving}>
+                <Button
+                  variant="mono"
+                  onClick={ensureScorecard}
+                  disabled={saving}
+                  className="shrink-0"
+                >
                   {saving ? (
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1051,7 +1262,12 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   )}
                 </Button>
               ) : (
-                <Button variant="mono" onClick={saveChanges} disabled={saving}>
+                <Button
+                  variant="mono"
+                  onClick={saveChanges}
+                  disabled={saving}
+                  className="shrink-0"
+                >
                   {saving ? (
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1067,35 +1283,21 @@ function ScorecardsPanel({ center, isCenterChief }) {
               )}
             </div>
           </div>
-          {template ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                Template: {template.name}
-              </Badge>
-              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                Version: {template.version}
-              </Badge>
-              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                Indicators: {template.items?.length || 0}
-              </Badge>
-              {scorecard ? (
-                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                  Status: {scorecard.status}
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
       {error ? (
         <Card className="border border-rose-200 bg-rose-50 shadow-sm">
-          <CardContent className="p-4 text-sm text-rose-700">{error}</CardContent>
+          <CardContent className="p-4 text-sm text-rose-700">
+            {error}
+          </CardContent>
         </Card>
       ) : null}
       {message ? (
         <Card className="border border-emerald-200 bg-emerald-50 shadow-sm">
-          <CardContent className="p-4 text-sm text-emerald-700">{message}</CardContent>
+          <CardContent className="p-4 text-sm text-emerald-700">
+            {message}
+          </CardContent>
         </Card>
       ) : null}
 
@@ -1105,7 +1307,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               Total Indicators
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{summary.total}</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {summary.total}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-slate-200 bg-white shadow-sm">
@@ -1113,7 +1317,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               With Targets
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{summary.withTarget}</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {summary.withTarget}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-slate-200 bg-white shadow-sm">
@@ -1121,7 +1327,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               Already Achieved
             </p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{summary.achieved}</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {summary.achieved}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -1138,6 +1346,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   <TableHead className="w-[120px]">Actual</TableHead>
                   <TableHead className="w-[140px]">%</TableHead>
                   <TableHead className="w-[180px]">Success Indicator</TableHead>
+                  <TableHead className="w-[170px] text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1147,35 +1356,23 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   const percent = target > 0 ? (actual / target) * 100 : 0;
                   return (
                     <TableRow key={`${row?.sheet_code || index}-${index}`}>
-                      <TableCell className="text-slate-700">{row.sheet_code}</TableCell>
+                      <TableCell className="text-slate-700">
+                        {row.sheet_code}
+                      </TableCell>
                       <TableCell className="text-slate-700">
                         <div className="space-y-1">
-                          <Input
-                            value={row.deliverable || ""}
-                            onChange={(event) =>
-                              updateRow(index, { deliverable: event.target.value })
-                            }
-                            className="border-slate-300 bg-white text-slate-700"
-                          />
-                          <Input
-                            value={row.notes || ""}
-                            onChange={(event) =>
-                              updateRow(index, { notes: event.target.value })
-                            }
-                            placeholder="Notes"
-                            className="border-slate-300 bg-white text-slate-700"
-                          />
+                          <p className="text-sm font-medium text-slate-900">
+                            {row.deliverable || "—"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {row.notes || "No notes"}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-700">
-                        <Input
-                          type="number"
-                          value={row.target ?? 0}
-                          onChange={(event) =>
-                            updateRow(index, { target: event.target.value })
-                          }
-                          className="border-slate-300 bg-white text-slate-700"
-                        />
+                        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                          {Number(row.target || 0).toLocaleString()}
+                        </div>
                       </TableCell>
                       <TableCell className="text-slate-700">
                         <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
@@ -1198,13 +1395,38 @@ function ScorecardsPanel({ center, isCenterChief }) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-slate-700">
-                        <Input
-                          value={row.success_indicator || ""}
-                          onChange={(event) =>
-                            updateRow(index, { success_indicator: event.target.value })
-                          }
-                          className="border-slate-300 bg-white text-slate-700"
-                        />
+                        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                          {row.success_indicator || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleViewRow(row)}
+                            className="h-8 shrink-0 border-slate-300 bg-white px-2.5 text-slate-700 hover:bg-slate-50"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleEditRow(index)}
+                            className="h-8 shrink-0 border-slate-300 bg-white px-2.5 text-slate-700 hover:bg-slate-50"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleDeleteRow(row, index)}
+                            className="h-8 shrink-0 border-rose-200 bg-white px-2.5 text-rose-700 hover:bg-rose-50"
+                            disabled={saving}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -1214,6 +1436,253 @@ function ScorecardsPanel({ center, isCenterChief }) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={editingRowIndex !== null && Boolean(editDraft)}
+        onOpenChange={(open) => !open && closeEditDialog()}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Indicator</DialogTitle>
+            <DialogDescription>
+              Update the indicator fields for this scorecard row.
+            </DialogDescription>
+          </DialogHeader>
+          {editDraft ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Sheet Code
+                </p>
+                <Input
+                  value={editDraft.sheet_code || ""}
+                  disabled
+                  className="border-slate-300 bg-slate-50 text-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Target Type
+                </p>
+                <Select
+                  value={editDraft.target_type || "count"}
+                  onValueChange={(value) =>
+                    setEditDraft((prev) => ({ ...prev, target_type: value }))
+                  }
+                >
+                  <SelectTrigger className="border-slate-300 bg-white text-slate-700">
+                    <SelectValue placeholder="Select target type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="count">Count</SelectItem>
+                    <SelectItem value="percent">Percent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Deliverable
+                </p>
+                <Input
+                  value={editDraft.deliverable || ""}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      deliverable: event.target.value,
+                    }))
+                  }
+                  className="border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Notes
+                </p>
+                <Textarea
+                  value={editDraft.notes || ""}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      notes: event.target.value,
+                    }))
+                  }
+                  className="min-h-24 border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Target
+                </p>
+                <Input
+                  type="number"
+                  value={editDraft.target ?? 0}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      target: Number(event.target.value),
+                    }))
+                  }
+                  className="border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Weight
+                </p>
+                <Input
+                  type="number"
+                  value={editDraft.weight ?? 1}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      weight: Number(event.target.value),
+                    }))
+                  }
+                  className="border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Sort Order
+                </p>
+                <Input
+                  type="number"
+                  value={editDraft.sort_order ?? 0}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      sort_order: Number(event.target.value),
+                    }))
+                  }
+                  className="border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Enabled
+                </p>
+                <Select
+                  value={String(editDraft.is_enabled ?? true)}
+                  onValueChange={(value) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      is_enabled: value === "true",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="border-slate-300 bg-white text-slate-700">
+                    <SelectValue placeholder="Enabled" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Yes</SelectItem>
+                    <SelectItem value="false">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Success Indicator
+                </p>
+                <Input
+                  value={editDraft.success_indicator || ""}
+                  onChange={(event) =>
+                    setEditDraft((prev) => ({
+                      ...prev,
+                      success_indicator: event.target.value,
+                    }))
+                  }
+                  className="border-slate-300 bg-white text-slate-700"
+                />
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeEditDialog}>
+              Cancel
+            </Button>
+            <Button type="button" variant="mono" onClick={saveEditRow}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(previewRow)}
+        onOpenChange={(open) => !open && setPreviewRow(null)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Indicator Details</DialogTitle>
+            <DialogDescription>
+              Read-only view of the selected scorecard indicator.
+            </DialogDescription>
+          </DialogHeader>
+          {previewRow ? (
+            <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Sheet
+                </p>
+                <p className="mt-1">{previewRow.sheet_code}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Target
+                </p>
+                <p className="mt-1">
+                  {Number(previewRow.target || 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Deliverable
+                </p>
+                <p className="mt-1">{previewRow.deliverable || "—"}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Notes
+                </p>
+                <p className="mt-1">{previewRow.notes || "No notes"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Actual
+                </p>
+                <p className="mt-1">
+                  {Number(previewRow.actual_value || 0).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Percent
+                </p>
+                <p className="mt-1">
+                  {formatPercent(
+                    Number(previewRow.target || 0) > 0
+                      ? (Number(previewRow.actual_value || 0) /
+                          Number(previewRow.target || 0)) *
+                          100
+                      : 0,
+                  )}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Success Indicator
+                </p>
+                <p className="mt-1">{previewRow.success_indicator || "—"}</p>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewRow(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
