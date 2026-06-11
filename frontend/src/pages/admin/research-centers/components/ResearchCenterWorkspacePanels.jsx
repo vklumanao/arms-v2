@@ -1,24 +1,55 @@
-import { DIRECTORY_SKELETON_COUNT, MEMBER_PAGE_SIZE, PROJECT_PAGE_SIZE, SOCIAL_MEDIA_OPTIONS } from '../constants';
-import { getSocialPlaceholder } from '../helpers';
-import PaginationControls from '@/components/navigation/PaginationControls';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/utils/cn';
-import { Building2, FolderKanban, Layers3, Search, Trash2, Users } from 'lucide-react';
+import {
+  DIRECTORY_SKELETON_COUNT,
+  MEMBER_PAGE_SIZE,
+  PROJECT_PAGE_SIZE,
+  SOCIAL_MEDIA_OPTIONS,
+} from "../constants";
+import { getSocialPlaceholder } from "../helpers";
+import PaginationControls from "@/components/navigation/PaginationControls";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/utils/cn";
+import {
+  Building2,
+  FolderKanban,
+  Layers3,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  caption,
-  tone = "blue",
-}) {
+function MetricCard({ icon: Icon, label, value, caption, tone = "blue" }) {
   const toneClasses = {
     blue: "bg-white border-slate-200 text-slate-700",
     emerald:
@@ -78,7 +109,7 @@ function WorkspaceOverview({ center, summary, agendaNames }) {
 
       <div className="grid gap-4">
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
+          <CardHeader className="sm:rounded-[1rem] space-y-1 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
             <CardTitle className="text-lg font-bold text-slate-700">
               Agenda Highlights
             </CardTitle>

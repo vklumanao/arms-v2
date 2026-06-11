@@ -615,7 +615,7 @@ export default function AwardsRecognitionPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -714,7 +714,7 @@ export default function AwardsRecognitionPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-slate-100/80 p-1 sm:w-auto">
             <TabsTrigger
               value="records"
