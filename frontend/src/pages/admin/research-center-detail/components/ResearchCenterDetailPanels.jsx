@@ -238,19 +238,43 @@ function DetailWorkspaceTabs({ activeTab, onTabChange }) {
       <TabsList className="grid h-auto w-full grid-cols-2 gap-2 border border-slate-200 bg-white p-1 sm:w-fit sm:grid-cols-none sm:grid-flow-col sm:gap-1">
         <TabsTrigger
           value="projects"
-          className="min-h-10 rounded-md data-[state=active]:bg-emerald-50 data-[state=active]:text-[#1E293B]"
+          className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
         >
           Projects
         </TabsTrigger>
         <TabsTrigger
           value="affiliates"
-          className="min-h-10 rounded-md data-[state=active]:bg-emerald-50 data-[state=active]:text-[#1E293B]"
+          className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
         >
           Affiliates
         </TabsTrigger>
         <TabsTrigger
           value="scorecards"
-          className="min-h-10 rounded-md data-[state=active]:bg-emerald-50 data-[state=active]:text-[#1E293B]"
+          className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
         >
           Scorecards
         </TabsTrigger>

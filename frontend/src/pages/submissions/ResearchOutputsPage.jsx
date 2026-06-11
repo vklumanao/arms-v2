@@ -1282,25 +1282,36 @@ export default function ResearchOutputsPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-slate-100/80 p-1 sm:w-auto">
-            <TabsTrigger
-              value="records"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-700 shadow-none transition data-[state=active]:border-[#10B981] data-[state=active]:bg-[#10B981] data-[state=active]:text-white data-[state=active]:shadow-sm"
-            >
-              Research Output Records
-            </TabsTrigger>
-            <TabsTrigger
-              value="managed"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-700 shadow-none transition data-[state=active]:border-[#10B981] data-[state=active]:bg-[#10B981] data-[state=active]:text-white data-[state=active]:shadow-sm"
-            >
-              Managed Center Outputs
-            </TabsTrigger>
-          </TabsList>
-          <p className="text-sm text-slate-600">
-            Click a tab to switch between output lists.
-          </p>
-        </div>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 border border-slate-200 bg-white p-1 sm:w-fit sm:grid-cols-none sm:grid-flow-col sm:gap-1">
+          <TabsTrigger
+            value="records"
+            className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
+          >
+            Research Output Records
+          </TabsTrigger>
+          <TabsTrigger
+            value="managed"
+            className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
+          >
+            Managed Center Outputs
+          </TabsTrigger>
+        </TabsList>
 
         {isCenterChief ? (
           <Card
