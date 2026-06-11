@@ -372,14 +372,14 @@ export function registerScorecardRoutes(app, deps) {
   );
 
   app.delete(
-    "/api/scorecards/centers/:centerId/years/:year/items/:sheetCode",
+    "/api/scorecards/centers/:centerId/years/:year/items/:itemId",
     authMiddleware,
     async (req, res) => {
       const centerId = asText(req.params.centerId);
       const year = Number(req.params.year);
-      const sheetCode = Number(req.params.sheetCode);
-      if (!centerId || !Number.isInteger(year) || !Number.isInteger(sheetCode)) {
-        return res.status(400).json({ error: "Invalid center, year, or sheet code." });
+      const itemId = asText(req.params.itemId);
+      if (!centerId || !Number.isInteger(year) || !itemId) {
+        return res.status(400).json({ error: "Invalid center, year, or item id." });
       }
       const center = await resolveCenter(centerId);
       if (!center) {
@@ -404,17 +404,23 @@ export function registerScorecardRoutes(app, deps) {
       const deletedResult = await query(
         `
         DELETE FROM center_scorecard_items
-        WHERE center_scorecard_id = $1 AND sheet_code = $2
+        WHERE center_scorecard_id = $1 AND id = $2
         RETURNING *
         `,
-        [scorecard.id, sheetCode],
+        [scorecard.id, itemId],
       );
 
       if (!deletedResult.rows?.length) {
         return res.status(404).json({ error: "Scorecard item not found." });
       }
 
-      return res.json({ data: { deleted: true, sheet_code: sheetCode } });
+      return res.json({
+        data: {
+          deleted: true,
+          id: deletedResult.rows[0].id,
+          sheet_code: deletedResult.rows[0].sheet_code,
+        },
+      });
     },
   );
 }

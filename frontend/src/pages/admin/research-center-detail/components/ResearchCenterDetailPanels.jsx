@@ -1,5 +1,6 @@
 ﻿import EmptyState from "@/components/feedback/EmptyState";
 import PaginationControls from "@/components/navigation/PaginationControls";
+import { useToast } from "@/components/providers/ToastProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -978,6 +979,7 @@ function formatPercent(value) {
 }
 
 function ScorecardsPanel({ center, isCenterChief }) {
+  const toast = useToast();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(String(currentYear));
   const [loading, setLoading] = useState(false);
@@ -988,8 +990,8 @@ function ScorecardsPanel({ center, isCenterChief }) {
   const [previewRow, setPreviewRow] = useState(null);
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   const [editDraft, setEditDraft] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const centerId = String(center?.id || "").trim();
 
@@ -997,7 +999,6 @@ function ScorecardsPanel({ center, isCenterChief }) {
     if (!centerId) return;
     setLoading(true);
     setError("");
-    setMessage("");
 
     const [templateRes, scorecardRes] = await Promise.all([
       fetchDefaultScorecardTemplate(),
@@ -1059,7 +1060,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
       setSaving(false);
       return;
     }
-    setMessage("Scorecard created successfully.");
+    toast.success("Scorecard created", "The annual scorecard is ready.");
     await loadData();
     setSaving(false);
   };
@@ -1090,7 +1091,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
       setSaving(false);
       return;
     }
-    setMessage("Scorecard saved successfully.");
+    toast.success("Scorecard saved", "Draft changes were saved.");
     await loadData();
     setSaving(false);
   };
@@ -1119,6 +1120,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
     setEditDraft(null);
   };
 
+  const buildIndicatorLabel = (row, index) =>
+    Number(row?.sheet_code || 0) || index + 1;
+
   const saveEditRow = () => {
     if (editingRowIndex === null || !editDraft) return;
     setRows((prev) =>
@@ -1135,44 +1139,81 @@ function ScorecardsPanel({ center, isCenterChief }) {
           : row,
       ),
     );
-    setMessage(
+    toast.success(
+      "Indicator updated",
       `Saved changes for indicator #${editDraft.sheet_code || editingRowIndex + 1}.`,
     );
     closeEditDialog();
   };
 
-  const handleDeleteRow = async (row, index) => {
-    const sheetCode = Number(row?.sheet_code || 0);
-    if (!sheetCode) return;
-    if (
-      !window.confirm(`Delete indicator #${sheetCode}? This cannot be undone.`)
-    )
-      return;
+  const handleDeleteRow = (row, index) => {
+    if (saving) return;
+    const itemId = String(row?.id || "").trim();
+    const indicatorLabel = buildIndicatorLabel(row, index);
+    if (!indicatorLabel && !itemId) return;
+    setPendingDelete({
+      row,
+      index,
+      itemId,
+      indicatorLabel,
+    });
+  };
+
+  const confirmDeleteRow = async () => {
+    if (!pendingDelete || saving) return;
+
+    const { row, index, itemId, indicatorLabel } = pendingDelete;
+    const matchesPreview =
+      previewRow &&
+      (String(previewRow?.id || "").trim()
+        ? String(previewRow?.id || "").trim() === itemId
+        : Number(previewRow?.sheet_code || 0) === indicatorLabel);
 
     setError("");
-    setMessage("");
+    setPendingDelete(null);
 
-    if (!row?.id) {
+    if (matchesPreview) {
+      setPreviewRow(null);
+    }
+
+    if (editingRowIndex !== null) {
+      if (editingRowIndex === index) {
+        closeEditDialog();
+      } else if (editingRowIndex > index) {
+        setEditingRowIndex((prev) => (prev === null ? prev : prev - 1));
+      }
+    }
+
+    if (!itemId) {
       setRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
-      setMessage(`Indicator #${sheetCode} removed.`);
+      toast.success("Indicator removed", `Indicator #${indicatorLabel} removed.`);
       return;
     }
 
     setSaving(true);
-    const deleted = await deleteCenterScorecardItem({
-      centerId,
-      year,
-      sheetCode,
-    });
-    if (deleted.error) {
-      setError(deleted.error.message || "Unable to delete indicator.");
-      setSaving(false);
-      return;
-    }
+    try {
+      const deleted = await deleteCenterScorecardItem({
+        centerId,
+        year,
+        itemId,
+      });
+      if (deleted.error) {
+        setError(deleted.error.message || "Unable to delete indicator.");
+        toast.error(
+          "Delete failed",
+          deleted.error.message || "Unable to delete indicator.",
+        );
+        return;
+      }
 
-    setMessage(`Indicator #${sheetCode} deleted successfully.`);
-    await loadData();
-    setSaving(false);
+      setRows((prev) => prev.filter((currentRow) => currentRow?.id !== itemId));
+      toast.success(
+        "Indicator deleted",
+        `Indicator #${indicatorLabel} deleted successfully.`,
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addIndicator = () => {
@@ -1317,14 +1358,6 @@ function ScorecardsPanel({ center, isCenterChief }) {
           </CardContent>
         </Card>
       ) : null}
-      {message ? (
-        <Card className="border border-emerald-200 bg-emerald-50 shadow-sm">
-          <CardContent className="p-4 text-sm text-emerald-700">
-            {message}
-          </CardContent>
-        </Card>
-      ) : null}
-
       <div className="grid gap-3 md:grid-cols-3">
         <Card className="border border-slate-200 bg-white shadow-sm">
           <CardContent className="p-4">
@@ -1626,6 +1659,54 @@ function ScorecardsPanel({ center, isCenterChief }) {
             </Button>
             <Button type="button" variant="mono" onClick={saveEditRow}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open && !saving) {
+            setPendingDelete(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delete Indicator</DialogTitle>
+            <DialogDescription>
+              {pendingDelete
+                ? `Delete indicator #${pendingDelete.indicatorLabel}? This action cannot be undone.`
+                : "Delete this scorecard indicator."}
+            </DialogDescription>
+          </DialogHeader>
+          {pendingDelete ? (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+              <p className="font-medium">
+                {pendingDelete.row?.deliverable || "Untitled indicator"}
+              </p>
+              <p className="mt-1 text-rose-800">
+                {pendingDelete.row?.success_indicator || "No success indicator"}
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingDelete(null)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              onClick={confirmDeleteRow}
+              disabled={saving}
+            >
+              {saving ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
