@@ -88,7 +88,7 @@ function formatTarget(target, targetUnit = "") {
 
 function DashboardHeader({ title, description, children }) {
   return (
-    <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
           RDISO Balanced Scorecard

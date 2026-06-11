@@ -370,4 +370,51 @@ export function registerScorecardRoutes(app, deps) {
       return res.json({ data: refreshed.rows?.[0] || null });
     },
   );
+
+  app.delete(
+    "/api/scorecards/centers/:centerId/years/:year/items/:sheetCode",
+    authMiddleware,
+    async (req, res) => {
+      const centerId = asText(req.params.centerId);
+      const year = Number(req.params.year);
+      const sheetCode = Number(req.params.sheetCode);
+      if (!centerId || !Number.isInteger(year) || !Number.isInteger(sheetCode)) {
+        return res.status(400).json({ error: "Invalid center, year, or sheet code." });
+      }
+      const center = await resolveCenter(centerId);
+      if (!center) {
+        return res.status(404).json({ error: "Research center not found." });
+      }
+      if (!canEditCenterScorecard(req.user, center.id)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const scorecardResult = await query(
+        `SELECT * FROM center_scorecards WHERE center_id = $1 AND year = $2 LIMIT 1`,
+        [center.id, year],
+      );
+      const scorecard = scorecardResult.rows?.[0];
+      if (!scorecard) {
+        return res.status(404).json({ error: "Scorecard not found." });
+      }
+      if (scorecard.status === "locked" || scorecard.status === "archived") {
+        return res.status(409).json({ error: "Scorecard is locked." });
+      }
+
+      const deletedResult = await query(
+        `
+        DELETE FROM center_scorecard_items
+        WHERE center_scorecard_id = $1 AND sheet_code = $2
+        RETURNING *
+        `,
+        [scorecard.id, sheetCode],
+      );
+
+      if (!deletedResult.rows?.length) {
+        return res.status(404).json({ error: "Scorecard item not found." });
+      }
+
+      return res.json({ data: { deleted: true, sheet_code: sheetCode } });
+    },
+  );
 }

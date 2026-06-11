@@ -80,7 +80,7 @@ export default function AdminResearchCenterPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-6">
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[1rem] sm:p-6">
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
