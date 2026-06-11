@@ -59,8 +59,10 @@ import {
   UserX,
   Users,
 } from "lucide-react";
-import UsersWorkspaceHero from "./users/components/UsersWorkspaceHero";
-import UsersDirectoryCard from "./users/components/UsersDirectoryCard";
+import {
+  UsersWorkspaceHero,
+  UsersDirectoryCard,
+} from "./users/components/UsersPanels";
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10;

@@ -103,7 +103,7 @@ export default function PublicRecordDetailPage() {
   const toast = useToast();
   const recordId = String(params?.id || "").trim();
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   const [record, setRecord] = useState(null);
   const [centers, setCenters] = useState([]);

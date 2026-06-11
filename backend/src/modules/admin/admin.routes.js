@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { query } from "../../db/client.js";
 import { config } from "../../config/index.js";
+import { syncResearchCentersFromOrganizations } from "../research-centers/sync.js";
 
 /**
  * Registers admin controls and reference-management routes.
@@ -1783,6 +1784,44 @@ export function registerAdminRoutes(app, deps) {
       } catch (error) {
         return res.status(500).json({
           error: String(error?.message || "Failed to load reference usage."),
+        });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/controls/research-centers/sync",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        if (!ensureAdminOnly(res, req.user)) return;
+        const summary = await syncResearchCentersFromOrganizations({
+          query,
+          listOrganizations,
+        });
+        return res.json({ data: summary });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to sync research centers."),
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/controls/research-centers/sync",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        if (!ensureAdminOnly(res, req.user)) return;
+        const summary = await syncResearchCentersFromOrganizations({
+          query,
+          listOrganizations,
+        });
+        return res.json({ data: summary });
+      } catch (error) {
+        return res.status(500).json({
+          error: String(error?.message || "Failed to sync research centers."),
         });
       }
     },

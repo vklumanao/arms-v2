@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 const UI_PREVIEW_MODE =
   String(import.meta.env.VITE_UI_PREVIEW_MODE || "false").toLowerCase() ===
   "true";

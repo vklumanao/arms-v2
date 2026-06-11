@@ -111,7 +111,7 @@ export default function ResearchProjectDetailPage() {
   const projectId = String(params?.id || "").trim();
   const { centers, departments, agendas } = useReferenceData();
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   const isAdmin =
     String(profile?.role || user?.role || "")

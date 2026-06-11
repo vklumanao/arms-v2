@@ -51,8 +51,10 @@ import {
   updateAffiliateProfile,
 } from "@/services/admin";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
-import DepartmentHeroHeader from "./department-detail/components/DepartmentHeroHeader";
-import DepartmentDetailTabs from "./department-detail/components/DepartmentDetailTabs";
+import {
+  DepartmentHeroHeader,
+  DepartmentDetailTabs,
+} from "./department-detail/components/DepartmentDetailPanels";
 import {
   Building2,
   ChevronLeft,

@@ -4,7 +4,45 @@ import { Compass, ArrowLeft, Home } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { getRoleAwareRecoveryTarget } from "@/pages/core/recoveryTargets";
+import { canAccessRoutePermission, PERMISSIONS } from "@/services/permissions";
+
+function getRoleAwareRecoveryTarget(user, profile) {
+  if (!user) {
+    return { to: "/login", label: "Go to Login" };
+  }
+
+  if (!profile) {
+    return { to: "/home", label: "Go Home" };
+  }
+
+  const isCenterChief =
+    profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
+  const managedCenterId = String(profile?.managed_center_id || "").trim();
+
+  if (isCenterChief && managedCenterId) {
+    return {
+      to: `/admin/research-center/${encodeURIComponent(managedCenterId)}`,
+      label: "Go to My Research Center",
+    };
+  }
+
+  if (
+    canAccessRoutePermission(profile, PERMISSIONS.ADMIN_CONTROLS_MANAGE) ||
+    canAccessRoutePermission(profile, PERMISSIONS.ADMIN_RBAC_MANAGE)
+  ) {
+    return { to: "/admin/research-center", label: "Go to Admin Workspace" };
+  }
+
+  if (canAccessRoutePermission(profile, PERMISSIONS.PROJECTS_VIEW)) {
+    return { to: "/projects", label: "Go to Research Projects" };
+  }
+
+  if (canAccessRoutePermission(profile, PERMISSIONS.AFFILIATE_PROFILE_VIEW)) {
+    return { to: "/profile", label: "Go to My Profile" };
+  }
+
+  return { to: "/home", label: "Go Home" };
+}
 
 export default function NotFoundPage() {
   const navigate = useNavigate();

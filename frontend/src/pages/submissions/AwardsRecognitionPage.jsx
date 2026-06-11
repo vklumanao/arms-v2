@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
 import PaginationControls from "@/components/navigation/PaginationControls";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/utils/cn";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +53,7 @@ const AWARDS_PAGE_SIZE = 10;
 
 export default function AwardsRecognitionPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
   const toast = useToast();
   const roleKeys = Array.isArray(profile?.roles)
@@ -87,7 +89,7 @@ export default function AwardsRecognitionPage() {
   const hasOrgId = String(profile?.ckan_org_id || "").trim();
   const canLoadOwnAwards = isAdmin || Boolean(hasOrgId);
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
   const missingAffiliation = !canLoadOwnAwards && !isCenterChief;
   const [rows, setRows] = useState([]);
   const [centerChiefRows, setCenterChiefRows] = useState([]);
@@ -102,6 +104,10 @@ export default function AwardsRecognitionPage() {
   const [centerChiefLoading, setCenterChiefLoading] = useState(false);
   const [centerChiefError, setCenterChiefError] = useState("");
   const [centerChiefPage, setCenterChiefPage] = useState(1);
+  const [activeTab, setActiveTab] = useState(() => {
+    const initialTab = searchParams.get("tab");
+    return initialTab === "managed" ? initialTab : "records";
+  });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [projectOptions, setProjectOptions] = useState([]);
@@ -210,6 +216,20 @@ export default function AwardsRecognitionPage() {
       cancelled = true;
     };
   }, [isCenterChief]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    const nextTab = tab === "managed" ? "managed" : "records";
+    setActiveTab(nextTab);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (activeTab === "records") nextParams.delete("tab");
+    else nextParams.set("tab", activeTab);
+    if (nextParams.toString() === searchParams.toString()) return;
+    setSearchParams(nextParams, { replace: true });
+  }, [activeTab, searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -680,39 +700,383 @@ export default function AwardsRecognitionPage() {
                   </p>
                   <Icon className="h-4 w-4 text-slate-700" />
                 </div>
-                <p className="mt-2 text-2xl font-bold text-slate-700">{value}</p>
+                <p className="mt-2 text-2xl font-bold text-slate-700">
+                  {value}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {isCenterChief ? (
-        <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-slate-100/80 p-1 sm:w-auto">
+            <TabsTrigger
+              value="records"
+              className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-700 shadow-none transition data-[state=active]:border-[#10B981] data-[state=active]:bg-[#10B981] data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              Awards Records
+            </TabsTrigger>
+            {isCenterChief ? (
+              <TabsTrigger
+                value="managed"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-700 shadow-none transition data-[state=active]:border-[#10B981] data-[state=active]:bg-[#10B981] data-[state=active]:text-white data-[state=active]:shadow-sm"
+              >
+                Managed Center Awards
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+          <p className="text-sm text-slate-600">
+            Click a tab to switch between award lists.
+          </p>
+        </div>
+
+        {isCenterChief ? (
+          <Card
+            className={cn(
+              "overflow-hidden border border-slate-200 bg-white shadow-sm",
+              activeTab === "managed" ? "block" : "hidden",
+            )}
+          >
+            <CardHeader className="border-b border-slate-200 px-6 py-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-base font-semibold text-slate-700">
+                    Managed Center Awards and Recognition
+                  </CardTitle>
+                  <CardDescription className="text-slate-600">
+                    Showing {centerChiefFilteredRows.length} record(s) from your
+                    managed research center.
+                  </CardDescription>
+                </div>
+                <p className="text-sm text-slate-600">
+                  {centerChiefFilteredRows.length} row(s).
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+                <label className="relative block w-full md:max-w-xl">
+                  <span className="sr-only">Search managed center awards</span>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                  <Input
+                    value={centerChiefSearch}
+                    onChange={(event) =>
+                      setCenterChiefSearch(event.target.value)
+                    }
+                    placeholder="Search title, award, body, recipient, level, or year"
+                    className="pl-9"
+                  />
+                </label>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {[
+                    {
+                      key: "all",
+                      label: "All Awards",
+                      count: baseCenterChiefRows.length,
+                    },
+                    {
+                      key: "institutional",
+                      label: "Institutional",
+                      count: baseCenterChiefRows.filter(
+                        (row) =>
+                          getLevelCategory(row?.level) === "institutional",
+                      ).length,
+                    },
+                    {
+                      key: "local",
+                      label: "Local",
+                      count: baseCenterChiefRows.filter(
+                        (row) => getLevelCategory(row?.level) === "local",
+                      ).length,
+                    },
+                    {
+                      key: "regional",
+                      label: "Regional",
+                      count: baseCenterChiefRows.filter(
+                        (row) => getLevelCategory(row?.level) === "regional",
+                      ).length,
+                    },
+                    {
+                      key: "national",
+                      label: "National",
+                      count: baseCenterChiefRows.filter(
+                        (row) => getLevelCategory(row?.level) === "national",
+                      ).length,
+                    },
+                    {
+                      key: "international",
+                      label: "International",
+                      count: baseCenterChiefRows.filter(
+                        (row) =>
+                          getLevelCategory(row?.level) === "international",
+                      ).length,
+                    },
+                  ].map((chip) => (
+                    <Button
+                      key={chip.key}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className={cn(
+                        "rounded-full border-slate-200 px-4 text-xs",
+                        centerChiefQuickFilter === chip.key
+                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
+                          : "bg-white text-slate-700 hover:bg-slate-50",
+                      )}
+                      onClick={() => setCenterChiefQuickFilter(chip.key)}
+                    >
+                      {chip.label}
+                      <span
+                        className={cn(
+                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          centerChiefQuickFilter === chip.key
+                            ? "bg-white/20 text-white"
+                            : "bg-slate-50 text-slate-700",
+                        )}
+                      >
+                        {chip.count}
+                      </span>
+                    </Button>
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                    onClick={resetCenterChiefFilters}
+                  >
+                    Reset all
+                  </Button>
+                </div>
+
+                {hasActiveCenterChiefFilters ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      Active Filters
+                    </span>
+                    {String(centerChiefSearch || "").trim() ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                        onClick={() => setCenterChiefSearch("")}
+                      >
+                        Search: "{String(centerChiefSearch || "").trim()}" x
+                      </button>
+                    ) : null}
+                    {centerChiefQuickFilter !== "all" ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                        onClick={() => setCenterChiefQuickFilter("all")}
+                      >
+                        {centerChiefQuickFilter} x
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+            {centerChiefLoading ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  Loading managed center awards...
+                </div>
+              </CardContent>
+            ) : centerChiefError ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-800">
+                  {centerChiefError}
+                </div>
+              </CardContent>
+            ) : sortedCenterChiefRows.length === 0 ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  No awards and recognition records found for your managed
+                  research center.
+                </div>
+              </CardContent>
+            ) : centerChiefFilteredRows.length === 0 ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  No managed center awards match your search.
+                </div>
+              </CardContent>
+            ) : (
+              <CardContent className="p-4">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <Table className="min-w-[980px]">
+                    <TableHeader className="bg-slate-50 text-slate-600">
+                      <TableRow>
+                        <TableHead>No.</TableHead>
+                        <TableHead>Title of Research/Creative Work</TableHead>
+                        <TableHead>Award/Recognition</TableHead>
+                        <TableHead>Awarding Body</TableHead>
+                        <TableHead>Year Received</TableHead>
+                        <TableHead>Level</TableHead>
+                        <TableHead>Recipient(s)</TableHead>
+                        <TableHead>Supporting MOVs</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {centerChiefPaginatedRows.map((row, index) => (
+                        <TableRow key={row.id || index}>
+                          <TableCell>
+                            {(centerChiefPage - 1) * AWARDS_PAGE_SIZE +
+                              index +
+                              1}
+                          </TableCell>
+                          <TableCell>{row.work_title || "-"}</TableCell>
+                          <TableCell>{row.award_recognition || "-"}</TableCell>
+                          <TableCell>{row.awarding_body || "-"}</TableCell>
+                          <TableCell>{row.year_received || "-"}</TableCell>
+                          <TableCell>{row.level || "-"}</TableCell>
+                          <TableCell>{row.recipients || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {row.supporting_movs ? (
+                                <a
+                                  href={row.supporting_movs}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  View Reference
+                                </a>
+                              ) : null}
+                              {row.supporting_mov_resource_id ? (
+                                <a
+                                  href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                    row.supporting_mov_resource_id,
+                                  )}/download?download=1`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={
+                                    row.supporting_mov_file_name ||
+                                    "Download MOV file"
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  Download MOV
+                                </a>
+                              ) : null}
+                              {!row.supporting_movs &&
+                              !row.supporting_mov_resource_id ? (
+                                <span className="text-xs text-slate-600">
+                                  No attachment
+                                </span>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              {row?.project_id ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                  asChild
+                                >
+                                  <Link
+                                    to={`/projects/${encodeURIComponent(
+                                      String(row.project_id || "").trim(),
+                                    )}`}
+                                    aria-label="Open linked project"
+                                    title="Open project"
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              ) : null}
+                              {canEditAwards ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                  onClick={() => openEdit(row)}
+                                  aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
+                                  title="Edit"
+                                >
+                                  <PencilLine className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                              {canDeleteAwards ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-700 hover:bg-slate-50"
+                                  onClick={() => setDeleteTarget(row)}
+                                  aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    {centerChiefTotalPages > 1 ? (
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={10} className="px-3 py-3">
+                            <PaginationControls
+                              page={centerChiefPage}
+                              totalPages={centerChiefTotalPages}
+                              onPageChange={setCenterChiefPage}
+                              className="border-0 rounded-none shadow-none bg-transparent"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    ) : null}
+                  </Table>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        ) : null}
+
+        <Card
+          className={cn(
+            "overflow-hidden border border-slate-200 bg-white shadow-sm",
+            activeTab === "records" ? "block" : "hidden",
+          )}
+        >
           <CardHeader className="border-b border-slate-200 px-6 py-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
                 <CardTitle className="text-base font-semibold text-slate-700">
-                  Managed Center Awards and Recognition
+                  Awards and Recognition Records
                 </CardTitle>
                 <CardDescription className="text-slate-600">
-                  Showing {centerChiefFilteredRows.length} record(s) from your
-                  managed research center.
+                  Showing {filteredRows.length} record(s).
                 </CardDescription>
               </div>
               <p className="text-sm text-slate-600">
-                {centerChiefFilteredRows.length} row(s).
+                {filteredRows.length} row(s).
               </p>
             </div>
           </CardHeader>
+
           <CardContent className="p-4">
             <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
               <label className="relative block w-full md:max-w-xl">
-                <span className="sr-only">Search managed center awards</span>
+                <span className="sr-only">Search awards and recognitions</span>
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
                 <Input
-                  value={centerChiefSearch}
-                  onChange={(event) => setCenterChiefSearch(event.target.value)}
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Search title, award, body, recipient, level, or year"
                   className="pl-9"
                 />
@@ -723,40 +1087,40 @@ export default function AwardsRecognitionPage() {
                   {
                     key: "all",
                     label: "All Awards",
-                    count: baseCenterChiefRows.length,
+                    count: baseSearchRows.length,
                   },
                   {
                     key: "institutional",
                     label: "Institutional",
-                    count: baseCenterChiefRows.filter(
+                    count: baseSearchRows.filter(
                       (row) => getLevelCategory(row?.level) === "institutional",
                     ).length,
                   },
                   {
                     key: "local",
                     label: "Local",
-                    count: baseCenterChiefRows.filter(
+                    count: baseSearchRows.filter(
                       (row) => getLevelCategory(row?.level) === "local",
                     ).length,
                   },
                   {
                     key: "regional",
                     label: "Regional",
-                    count: baseCenterChiefRows.filter(
+                    count: baseSearchRows.filter(
                       (row) => getLevelCategory(row?.level) === "regional",
                     ).length,
                   },
                   {
                     key: "national",
                     label: "National",
-                    count: baseCenterChiefRows.filter(
+                    count: baseSearchRows.filter(
                       (row) => getLevelCategory(row?.level) === "national",
                     ).length,
                   },
                   {
                     key: "international",
                     label: "International",
-                    count: baseCenterChiefRows.filter(
+                    count: baseSearchRows.filter(
                       (row) => getLevelCategory(row?.level) === "international",
                     ).length,
                   },
@@ -768,17 +1132,17 @@ export default function AwardsRecognitionPage() {
                     variant="outline"
                     className={cn(
                       "rounded-full border-slate-200 px-4 text-xs",
-                      centerChiefQuickFilter === chip.key
+                      recordsQuickFilter === chip.key
                         ? "bg-[#10B981] text-white hover:bg-[#059669]"
                         : "bg-white text-slate-700 hover:bg-slate-50",
                     )}
-                    onClick={() => setCenterChiefQuickFilter(chip.key)}
+                    onClick={() => setRecordsQuickFilter(chip.key)}
                   >
                     {chip.label}
                     <span
                       className={cn(
                         "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        centerChiefQuickFilter === chip.key
+                        recordsQuickFilter === chip.key
                           ? "bg-white/20 text-white"
                           : "bg-slate-50 text-slate-700",
                       )}
@@ -792,62 +1156,46 @@ export default function AwardsRecognitionPage() {
                   size="sm"
                   variant="ghost"
                   className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                  onClick={resetCenterChiefFilters}
+                  onClick={resetRecordsFilters}
                 >
                   Reset all
                 </Button>
               </div>
 
-              {hasActiveCenterChiefFilters ? (
+              {hasActiveRecordsFilters ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                     Active Filters
                   </span>
-                  {String(centerChiefSearch || "").trim() ? (
+                  {String(searchTerm || "").trim() ? (
                     <button
                       type="button"
                       className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setCenterChiefSearch("")}
+                      onClick={() => setSearchTerm("")}
                     >
-                      Search: "{String(centerChiefSearch || "").trim()}" x
+                      Search: "{String(searchTerm || "").trim()}" x
                     </button>
                   ) : null}
-                  {centerChiefQuickFilter !== "all" ? (
+                  {recordsQuickFilter !== "all" ? (
                     <button
                       type="button"
                       className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setCenterChiefQuickFilter("all")}
+                      onClick={() => setRecordsQuickFilter("all")}
                     >
-                      {centerChiefQuickFilter} x
+                      {recordsQuickFilter} x
                     </button>
                   ) : null}
                 </div>
               ) : null}
             </div>
           </CardContent>
-          {centerChiefLoading ? (
+          {filteredRows.length === 0 ? (
             <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                Loading managed center awards...
-              </div>
-            </CardContent>
-          ) : centerChiefError ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-800">
-                {centerChiefError}
-              </div>
-            </CardContent>
-          ) : sortedCenterChiefRows.length === 0 ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                No awards and recognition records found for your managed
-                research center.
-              </div>
-            </CardContent>
-          ) : centerChiefFilteredRows.length === 0 ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                No managed center awards match your search.
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+                {canLoadOwnAwards && loading
+                  ? "Loading award records..."
+                  : loadError ||
+                    "No awards and recognition records found. Try a different search term once award records are available."}
               </div>
             </CardContent>
           ) : (
@@ -868,10 +1216,10 @@ export default function AwardsRecognitionPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {centerChiefPaginatedRows.map((row, index) => (
+                    {paginatedRows.map((row, index) => (
                       <TableRow key={row.id || index}>
                         <TableCell>
-                          {(centerChiefPage - 1) * AWARDS_PAGE_SIZE + index + 1}
+                          {(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}
                         </TableCell>
                         <TableCell>{row.work_title || "-"}</TableCell>
                         <TableCell>{row.award_recognition || "-"}</TableCell>
@@ -889,7 +1237,7 @@ export default function AwardsRecognitionPage() {
                                 className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
                               >
                                 <ExternalLink className="h-3.5 w-3.5" />
-                                View Reference
+                                Open Link
                               </a>
                             ) : null}
                             {row.supporting_mov_resource_id ? (
@@ -919,61 +1267,81 @@ export default function AwardsRecognitionPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex items-center justify-end gap-1">
-                            {row?.project_id ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                asChild
-                              >
-                                <Link
-                                  to={`/projects/${encodeURIComponent(
-                                    String(row.project_id || "").trim(),
-                                  )}`}
-                                  aria-label="Open linked project"
-                                  title="Open project"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                            ) : null}
-                            {canEditAwards ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                onClick={() => openEdit(row)}
-                                aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
-                                title="Edit"
-                              >
-                                <PencilLine className="h-4 w-4" />
-                              </Button>
-                            ) : null}
-                            {canDeleteAwards ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-700 hover:bg-slate-50"
-                                onClick={() => setDeleteTarget(row)}
-                                aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            ) : null}
+                            {(() => {
+                              const ownerKey = String(
+                                row?.submitted_by_user_id || "",
+                              ).trim();
+                              const currentUserKey = String(
+                                profile?.id || "",
+                              ).trim();
+                              const isOwner =
+                                ownerKey &&
+                                currentUserKey &&
+                                ownerKey === currentUserKey;
+                              const canEdit =
+                                canEditAwards && (isAdmin || isOwner);
+                              const canDelete =
+                                canDeleteAwards && (isAdmin || isOwner);
+                              return canEdit || canDelete ? (
+                                <>
+                                  {row?.project_id ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                      asChild
+                                    >
+                                      <Link
+                                        to={`/projects/${encodeURIComponent(
+                                          String(row.project_id || "").trim(),
+                                        )}`}
+                                        aria-label="Open linked project"
+                                        title="Open project"
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </Link>
+                                    </Button>
+                                  ) : null}
+                                  {canEdit ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                      onClick={() => openEdit(row)}
+                                      aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
+                                      title="Edit"
+                                    >
+                                      <PencilLine className="h-4 w-4" />
+                                    </Button>
+                                  ) : null}
+                                  {canDelete ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-slate-700 hover:bg-slate-50"
+                                      onClick={() => setDeleteTarget(row)}
+                                      aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  ) : null}
+                                </>
+                              ) : null;
+                            })()}
                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
-                  {centerChiefTotalPages > 1 ? (
+                  {totalPages > 1 ? (
                     <TableFooter>
                       <TableRow>
                         <TableCell colSpan={10} className="px-3 py-3">
                           <PaginationControls
-                            page={centerChiefPage}
-                            totalPages={centerChiefTotalPages}
-                            onPageChange={setCenterChiefPage}
+                            page={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
                             className="border-0 rounded-none shadow-none bg-transparent"
                           />
                         </TableCell>
@@ -985,309 +1353,7 @@ export default function AwardsRecognitionPage() {
             </CardContent>
           )}
         </Card>
-      ) : null}
-
-      <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-slate-200 px-6 py-5">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-700">
-                Awards and Recognition Records
-              </CardTitle>
-              <CardDescription className="text-slate-600">
-                Showing {filteredRows.length} record(s).
-              </CardDescription>
-            </div>
-            <p className="text-sm text-slate-600">
-              {filteredRows.length} row(s).
-            </p>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-4">
-          <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-            <label className="relative block w-full md:max-w-xl">
-              <span className="sr-only">Search awards and recognitions</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search title, award, body, recipient, level, or year"
-                className="pl-9"
-              />
-            </label>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {[
-                {
-                  key: "all",
-                  label: "All Awards",
-                  count: baseSearchRows.length,
-                },
-                {
-                  key: "institutional",
-                  label: "Institutional",
-                  count: baseSearchRows.filter(
-                    (row) => getLevelCategory(row?.level) === "institutional",
-                  ).length,
-                },
-                {
-                  key: "local",
-                  label: "Local",
-                  count: baseSearchRows.filter(
-                    (row) => getLevelCategory(row?.level) === "local",
-                  ).length,
-                },
-                {
-                  key: "regional",
-                  label: "Regional",
-                  count: baseSearchRows.filter(
-                    (row) => getLevelCategory(row?.level) === "regional",
-                  ).length,
-                },
-                {
-                  key: "national",
-                  label: "National",
-                  count: baseSearchRows.filter(
-                    (row) => getLevelCategory(row?.level) === "national",
-                  ).length,
-                },
-                {
-                  key: "international",
-                  label: "International",
-                  count: baseSearchRows.filter(
-                    (row) => getLevelCategory(row?.level) === "international",
-                  ).length,
-                },
-              ].map((chip) => (
-                <Button
-                  key={chip.key}
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className={cn(
-                    "rounded-full border-slate-200 px-4 text-xs",
-                    recordsQuickFilter === chip.key
-                      ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                      : "bg-white text-slate-700 hover:bg-slate-50",
-                  )}
-                  onClick={() => setRecordsQuickFilter(chip.key)}
-                >
-                  {chip.label}
-                  <span
-                    className={cn(
-                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                      recordsQuickFilter === chip.key
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-50 text-slate-700",
-                    )}
-                  >
-                    {chip.count}
-                  </span>
-                </Button>
-              ))}
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                onClick={resetRecordsFilters}
-              >
-                Reset all
-              </Button>
-            </div>
-
-            {hasActiveRecordsFilters ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Active Filters
-                </span>
-                {String(searchTerm || "").trim() ? (
-                  <button
-                    type="button"
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                    onClick={() => setSearchTerm("")}
-                  >
-                    Search: "{String(searchTerm || "").trim()}" x
-                  </button>
-                ) : null}
-                {recordsQuickFilter !== "all" ? (
-                  <button
-                    type="button"
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                    onClick={() => setRecordsQuickFilter("all")}
-                  >
-                    {recordsQuickFilter} x
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </CardContent>
-        {filteredRows.length === 0 ? (
-          <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
-              {canLoadOwnAwards && loading
-                ? "Loading award records..."
-                : loadError ||
-                  "No awards and recognition records found. Try a different search term once award records are available."}
-            </div>
-          </CardContent>
-        ) : (
-          <CardContent className="p-4">
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <Table className="min-w-[980px]">
-                <TableHeader className="bg-slate-50 text-slate-600">
-                  <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Title of Research/Creative Work</TableHead>
-                    <TableHead>Award/Recognition</TableHead>
-                    <TableHead>Awarding Body</TableHead>
-                    <TableHead>Year Received</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Recipient(s)</TableHead>
-                    <TableHead>Supporting MOVs</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedRows.map((row, index) => (
-                    <TableRow key={row.id || index}>
-                      <TableCell>
-                        {(currentPage - 1) * AWARDS_PAGE_SIZE + index + 1}
-                      </TableCell>
-                      <TableCell>{row.work_title || "-"}</TableCell>
-                      <TableCell>{row.award_recognition || "-"}</TableCell>
-                      <TableCell>{row.awarding_body || "-"}</TableCell>
-                      <TableCell>{row.year_received || "-"}</TableCell>
-                      <TableCell>{row.level || "-"}</TableCell>
-                      <TableCell>{row.recipients || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {row.supporting_movs ? (
-                            <a
-                              href={row.supporting_movs}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                              Open Link
-                            </a>
-                          ) : null}
-                          {row.supporting_mov_resource_id ? (
-                            <a
-                              href={`${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                row.supporting_mov_resource_id,
-                              )}/download?download=1`}
-                              target="_blank"
-                              rel="noreferrer"
-                              title={
-                                row.supporting_mov_file_name ||
-                                "Download MOV file"
-                              }
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              Download MOV
-                            </a>
-                          ) : null}
-                          {!row.supporting_movs &&
-                          !row.supporting_mov_resource_id ? (
-                            <span className="text-xs text-slate-600">
-                              No attachment
-                            </span>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
-                          {(() => {
-                            const ownerKey = String(
-                              row?.submitted_by_user_id || "",
-                            ).trim();
-                            const currentUserKey = String(
-                              profile?.id || "",
-                            ).trim();
-                            const isOwner =
-                              ownerKey &&
-                              currentUserKey &&
-                              ownerKey === currentUserKey;
-                            const canEdit =
-                              canEditAwards && (isAdmin || isOwner);
-                            const canDelete =
-                              canDeleteAwards && (isAdmin || isOwner);
-                            return canEdit || canDelete ? (
-                              <>
-                                {row?.project_id ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                    asChild
-                                  >
-                                    <Link
-                                      to={`/projects/${encodeURIComponent(
-                                        String(row.project_id || "").trim(),
-                                      )}`}
-                                      aria-label="Open linked project"
-                                      title="Open project"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </Link>
-                                  </Button>
-                                ) : null}
-                                {canEdit ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                    onClick={() => openEdit(row)}
-                                    aria-label={`Edit ${row?.award_recognition || row?.work_title || "award record"}`}
-                                    title="Edit"
-                                  >
-                                    <PencilLine className="h-4 w-4" />
-                                  </Button>
-                                ) : null}
-                                {canDelete ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-700 hover:bg-slate-50"
-                                    onClick={() => setDeleteTarget(row)}
-                                    aria-label={`Delete ${row?.award_recognition || row?.work_title || "award record"}`}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                ) : null}
-                              </>
-                            ) : null;
-                          })()}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {totalPages > 1 ? (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={10} className="px-3 py-3">
-                        <PaginationControls
-                          page={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                          className="border-0 rounded-none shadow-none bg-transparent"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                ) : null}
-              </Table>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      </Tabs>
 
       <ConfirmActionModal
         open={Boolean(deleteTarget)}
@@ -1301,7 +1367,3 @@ export default function AwardsRecognitionPage() {
     </section>
   );
 }
-
-
-
-

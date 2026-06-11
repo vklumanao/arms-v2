@@ -58,8 +58,10 @@ import {
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/services/admin";
-import DepartmentWorkspaceHero from "./department/components/DepartmentWorkspaceHero";
-import DepartmentDirectoryContent from "./department/components/DepartmentDirectoryContent";
+import {
+  DepartmentWorkspaceHero,
+  DepartmentDirectoryContent,
+} from "./department/components/DepartmentPanels";
 
 const INITIAL_FILTERS = {
   search: "",

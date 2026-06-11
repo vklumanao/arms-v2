@@ -1,12 +1,15 @@
 import EmptyState from "@/components/feedback/EmptyState";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
-import DetailWorkspaceHeader from "./research-center-detail/components/DetailWorkspaceHeader";
-import DetailWorkspaceRail from "./research-center-detail/components/DetailWorkspaceRail";
-import DetailWorkspaceTabs from "./research-center-detail/components/DetailWorkspaceTabs";
-import ProjectsPanel from "./research-center-detail/components/ProjectsPanel";
-import AffiliatesPanel from "./research-center-detail/components/AffiliatesPanel";
-import EditResearchCenterDrawer from "./research-center-detail/components/EditResearchCenterDrawer";
-import DeleteResearchCenterDialog from "./research-center-detail/components/DeleteResearchCenterDialog";
+import {
+  DetailWorkspaceHeader,
+  DetailWorkspaceRail,
+  DetailWorkspaceTabs,
+  ProjectsPanel,
+  AffiliatesPanel,
+  ScorecardsPanel,
+  EditResearchCenterDrawer,
+  DeleteResearchCenterDialog,
+} from "./research-center-detail/components/ResearchCenterDetailPanels";
 import useAdminResearchCenterDetailWorkspace from "./research-center-detail/hooks/useAdminResearchCenterDetailWorkspace";
 import { useNavigate } from "react-router-dom";
 
@@ -71,6 +74,7 @@ export default function AdminResearchCenterDetailPage() {
   } = useAdminResearchCenterDetailWorkspace();
 
   const showProjects = activeTab === "projects";
+  const showAffiliates = activeTab === "affiliates";
 
   return (
     <section className="page-stack-lg pb-16 md:pb-8">
@@ -137,7 +141,7 @@ export default function AdminResearchCenterDetailPage() {
                   goToProject={goToProject}
                   loading={loading}
                 />
-              ) : (
+              ) : showAffiliates ? (
                 <AffiliatesPanel
                   links={links}
                   center={center}
@@ -148,6 +152,11 @@ export default function AdminResearchCenterDetailPage() {
                   onPageChange={setAffiliatesPage}
                   onUnlink={setUnlinkTarget}
                   loading={loading}
+                />
+              ) : (
+                <ScorecardsPanel
+                  center={center}
+                  isCenterChief={isCenterChief}
                 />
               )}
             </div>
