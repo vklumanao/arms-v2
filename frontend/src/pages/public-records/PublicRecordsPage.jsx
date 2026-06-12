@@ -22,7 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { normalizeStatus } from "@/utils/status";
-import { ArrowRight, Search } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  CalendarRange,
+  Eye,
+  FileSearch,
+  Filter,
+  Search,
+  X,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
 const NONE_SELECT_VALUE = "__all__";
@@ -43,10 +52,10 @@ const statusBadgeClass = (status) => {
     return "border-emerald-200 bg-emerald-50 text-emerald-700";
   }
   if (key === "ongoing" || key === "active") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-slate-200 bg-slate-100 text-slate-700";
   }
   if (key === "delayed" || key === "rejected" || key === "cancelled") {
-    return "border-orange-200 bg-orange-50 text-orange-700";
+    return "border-slate-300 bg-white text-slate-700";
   }
   return "border-slate-300 bg-slate-50 text-slate-700";
 };
@@ -56,10 +65,10 @@ const classificationBadgeClass = (classification) => {
     .trim()
     .toLowerCase();
   if (key === "academic") {
-    return "border-sky-200 bg-sky-50 text-sky-700";
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
   }
   if (key === "industry") {
-    return "border-violet-200 bg-violet-50 text-violet-700";
+    return "border-slate-200 bg-slate-100 text-slate-700";
   }
   return "border-zinc-200 bg-zinc-50 text-zinc-700";
 };
@@ -126,11 +135,15 @@ export default function PublicRecordsPage() {
 
   const summaryMetrics = useMemo(() => {
     const centerIds = new Set();
+    const departmentIds = new Set();
     const yearValues = new Set();
 
     publicRecords.forEach((record) => {
       if (record.research_center_id) {
         centerIds.add(String(record.research_center_id));
+      }
+      if (record.department_id) {
+        departmentIds.add(String(record.department_id));
       }
       if (record.year) {
         yearValues.add(String(record.year));
@@ -140,6 +153,7 @@ export default function PublicRecordsPage() {
     return {
       totalRecords: publicRecords.length,
       totalCenters: centerIds.size,
+      totalDepartments: departmentIds.size,
       totalYears: yearValues.size,
     };
   }, [publicRecords]);
@@ -273,6 +287,22 @@ export default function PublicRecordsPage() {
     setFilters(INITIAL_PUBLIC_RECORD_FILTERS);
   };
 
+  const activeFilterChips = useMemo(() => {
+    const chips = [];
+    if (filters.search.trim()) chips.push(`Search: ${filters.search.trim()}`);
+    if (filters.status) chips.push(`Status: ${normalizeLabel(filters.status)}`);
+    if (filters.classification) {
+      chips.push(`Classification: ${normalizeLabel(filters.classification)}`);
+    }
+    if (filters.year) chips.push(`Year: ${filters.year}`);
+    if (filters.center) chips.push(`Center: ${filters.center}`);
+    if (filters.department) chips.push(`Department: ${filters.department}`);
+    if (filters.sort && filters.sort !== "most_recent") {
+      chips.push(`Sort: ${normalizeLabel(filters.sort)}`);
+    }
+    return chips;
+  }, [filters]);
+
   const openDetails = (projectId) => {
     if (!projectId) return;
     if (user || profile) {
@@ -285,11 +315,13 @@ export default function PublicRecordsPage() {
     const statusKey = normalizeStatus(record.status);
     const statusLabel = normalizeLabel(statusKey);
     const classificationLabel = normalizeLabel(record.classification);
+    const centerLabel = centerById[record.research_center_id] || "Unknown";
+    const departmentLabel = departmentById[record.department_id] || "Unknown";
 
     return (
       <Card
         key={record.id}
-        className="group cursor-pointer rounded-[1.25rem] border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
+        className="group cursor-pointer rounded-[1.5rem] border border-emerald-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
         role="button"
         tabIndex={0}
         onClick={() => openDetails(record.id)}
@@ -300,7 +332,7 @@ export default function PublicRecordsPage() {
           }
         }}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-5 sm:p-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
@@ -320,29 +352,39 @@ export default function PublicRecordsPage() {
               </span>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold leading-7 text-slate-900 sm:text-xl">
                 {highlightText(record.title, filtered.terms)}
               </h3>
-              <p className="mt-2 line-clamp-2 text-sm leading-7 text-slate-600">
+              <p className="line-clamp-3 text-sm leading-7 text-slate-600">
                 {record.abstract
                   ? highlightText(record.abstract, filtered.terms)
                   : "No abstract available for this record."}
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2 text-sm text-slate-600">
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                Center: {centerById[record.research_center_id] || "Unknown"}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                Department: {departmentById[record.department_id] || "Unknown"}
-              </span>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcfa_100%)] p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Research Center
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">
+                  {centerLabel}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcfa_100%)] p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Department
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">
+                  {departmentLabel}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-slate-200 pt-4">
               <p className="text-sm text-slate-500">
-                Public record available for review.
+                Approved public institutional record.
               </p>
               <Button
                 type="button"
@@ -395,7 +437,7 @@ export default function PublicRecordsPage() {
   );
 
   const renderEmptyState = () => (
-    <Card className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 shadow-none">
+    <Card className="rounded-[1.5rem] border border-dashed border-emerald-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcfa_100%)] shadow-none">
       <CardContent className="p-8 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
           No Matches Found
@@ -421,169 +463,315 @@ export default function PublicRecordsPage() {
 
   return (
     <section className="page-stack-xl">
-      <div className="space-y-3">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-          Public records
-        </p>
-        <h1 className="text-slate-900">Public records catalog</h1>
-        <p className="max-w-3xl text-sm leading-7 text-slate-600">
-          Browse approved records, filter by basic fields, and open a record for
-          more detail.
-        </p>
-      </div>
-
-      <Card className="rounded-[1.25rem] border-slate-200 bg-white shadow-sm">
-        <CardContent className="p-4 sm:p-5">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <div className="relative md:col-span-2 xl:col-span-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                value={filters.search}
-                onChange={(event) =>
-                  setFilterValue("search", event.target.value)
-                }
-                placeholder="Search titles, abstracts, years, or statuses"
-                className="pl-10"
-              />
-            </div>
-
-            <Select
-              value={filters.status || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilterValue(
-                  "status",
-                  value === NONE_SELECT_VALUE ? "" : value,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>All status</SelectItem>
-                <SelectItem value="ongoing">Ongoing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.classification || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilterValue(
-                  "classification",
-                  value === NONE_SELECT_VALUE ? "" : value,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All classification" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>
-                  All classification
-                </SelectItem>
-                <SelectItem value="academic">Academic</SelectItem>
-                <SelectItem value="industry">Industry</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              placeholder="Year"
-              value={filters.year}
-              onChange={(event) => setFilterValue("year", event.target.value)}
-            />
-
-            <Select
-              value={filters.center || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilterValue(
-                  "center",
-                  value === NONE_SELECT_VALUE ? "" : value,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All centers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>All centers</SelectItem>
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.name}>
-                    {center.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.department || NONE_SELECT_VALUE}
-              onValueChange={(value) =>
-                setFilterValue(
-                  "department",
-                  value === NONE_SELECT_VALUE ? "" : value,
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All departments" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE_SELECT_VALUE}>
-                  All departments
-                </SelectItem>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.name}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.sort || "most_recent"}
-              onValueChange={(value) => setFilterValue("sort", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="most_recent">Most recent</SelectItem>
-                <SelectItem value="a_z">Title A-Z</SelectItem>
-                <SelectItem value="most_complete">Most complete</SelectItem>
-                <SelectItem value="longest_abstract">
-                  Longest abstract
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">
-              Showing {loading ? "--" : filtered.rows.length} matching records.
+      <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+        <div className="absolute inset-x-0 top-0 h-44" />
+        <div className="relative space-y-6 p-5 sm:p-6 lg:p-8">
+          <div className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+              Public Research Catalog
             </p>
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Clear filters
-            </Button>
+            <h1 className="max-w-4xl text-slate-900">
+              Institutional catalog of approved public research projects
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-slate-600">
+              Browse research records approved for public visibility, explore
+              institutional output by center or department, and review projects
+              prepared for wider academic and public reference.
+            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {loading ? renderLoadingState() : null}
-      {!loading && filtered.rows.length === 0 ? renderEmptyState() : null}
-
-      {!loading && filtered.rows.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {pagedRows.map((record) => renderRecordCard(record))}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: "Public Records",
+                value: summaryMetrics.totalRecords,
+                icon: FileSearch,
+              },
+              {
+                label: "Research Centers",
+                value: summaryMetrics.totalCenters,
+                icon: Building2,
+              },
+              {
+                label: "Departments",
+                value: summaryMetrics.totalDepartments,
+                icon: Filter,
+              },
+              {
+                label: "Years Covered",
+                value: summaryMetrics.totalYears,
+                icon: CalendarRange,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="rounded-[1.5rem] border border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcfa_100%)] p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {item.label}
+                      </p>
+                      <p className="mt-3 text-3xl font-semibold text-slate-900">
+                        {loading ? "--" : item.value}
+                      </p>
+                    </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ) : null}
+      </section>
 
-      {!loading && filtered.rows.length > 0 ? (
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
-      ) : null}
+      <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <Card className="h-fit rounded-[1.5rem] border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fcfa_100%)] shadow-sm xl:sticky xl:top-5">
+          <CardContent className="p-5">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                  <Filter className="h-3.5 w-3.5" />
+                  Filter Catalog
+                </div>
+                <p className="text-sm leading-6 text-slate-600">
+                  Refine the catalog by status, classification, institutional
+                  unit, year, or sort order.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Search Catalog
+                </p>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={filters.search}
+                    onChange={(event) =>
+                      setFilterValue("search", event.target.value)
+                    }
+                    placeholder="Search titles, abstracts, years, or statuses"
+                    className="h-12 rounded-xl border-slate-300 bg-white pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Publication Filters
+                </p>
+
+                <Select
+                  value={filters.status || NONE_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    setFilterValue(
+                      "status",
+                      value === NONE_SELECT_VALUE ? "" : value,
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="All status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_SELECT_VALUE}>
+                      All status
+                    </SelectItem>
+                    <SelectItem value="ongoing">Ongoing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.classification || NONE_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    setFilterValue(
+                      "classification",
+                      value === NONE_SELECT_VALUE ? "" : value,
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="All classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_SELECT_VALUE}>
+                      All classification
+                    </SelectItem>
+                    <SelectItem value="academic">Academic</SelectItem>
+                    <SelectItem value="industry">Industry</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  placeholder="Year"
+                  value={filters.year}
+                  onChange={(event) =>
+                    setFilterValue("year", event.target.value)
+                  }
+                  className="h-12 rounded-xl border-slate-300 bg-white"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Institutional Filters
+                </p>
+
+                <Select
+                  value={filters.center || NONE_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    setFilterValue(
+                      "center",
+                      value === NONE_SELECT_VALUE ? "" : value,
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="All centers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_SELECT_VALUE}>
+                      All centers
+                    </SelectItem>
+                    {centers.map((center) => (
+                      <SelectItem key={center.id} value={center.name}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.department || NONE_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    setFilterValue(
+                      "department",
+                      value === NONE_SELECT_VALUE ? "" : value,
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="All departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_SELECT_VALUE}>
+                      All departments
+                    </SelectItem>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.name}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Sort Results
+                </p>
+                <Select
+                  value={filters.sort || "most_recent"}
+                  onValueChange={(value) => setFilterValue("sort", value)}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="most_recent">Most recent</SelectItem>
+                    <SelectItem value="a_z">Title A-Z</SelectItem>
+                    <SelectItem value="most_complete">Most complete</SelectItem>
+                    <SelectItem value="longest_abstract">
+                      Longest abstract
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-slate-200 pt-4">
+                <Button type="button" variant="outline" onClick={resetFilters}>
+                  Clear filters
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <Card className="rounded-[1.5rem] border-emerald-100 bg-white shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+                      Catalog Results
+                    </p>
+                    <h2 className="text-2xl font-semibold text-slate-900">
+                      {loading
+                        ? "Loading approved public records..."
+                        : `${filtered.rows.length} approved public records`}
+                    </h2>
+                    <p className="text-sm leading-6 text-slate-600">
+                      Records shown here are prepared for public institutional
+                      visibility and review.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    {loading
+                      ? "Preparing catalog summary..."
+                      : `Page ${page} of ${totalPages}`}
+                  </div>
+                </div>
+
+                {activeFilterChips.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {activeFilterChips.map((chip) => (
+                      <span
+                        key={chip}
+                        className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Clear all
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+
+          {loading ? renderLoadingState() : null}
+          {!loading && filtered.rows.length === 0 ? renderEmptyState() : null}
+
+          {!loading && filtered.rows.length > 0 ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {pagedRows.map((record) => renderRecordCard(record))}
+            </div>
+          ) : null}
+
+          {!loading && filtered.rows.length > 0 ? (
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          ) : null}
+        </div>
+      </div>
     </section>
   );
 }
