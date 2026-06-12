@@ -198,7 +198,6 @@ export default function AboutPage() {
               <CardHeader className="space-y-4 px-0 pb-0 pt-0">
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                    <Sparkles className="h-3.5 w-3.5" />
                     Overview
                   </div>
                   <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
