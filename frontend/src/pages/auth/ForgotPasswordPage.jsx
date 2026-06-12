@@ -51,23 +51,18 @@ export default function ForgotPasswordPage() {
       <div className="flex h-full items-center justify-center px-4 py-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-6xl lg:max-h-full lg:overflow-hidden">
           <div className="grid lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
-            <aside className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(145deg,#0f172a_0%,#134e4a_48%,#ecfdf5_160%)] px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-8 lg:py-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_20%_80%,rgba(52,211,153,0.22),transparent_26%)]" />
+            <aside className="relative overflow-hidden border-b border-slate-200 bg-[url('/images/bg.jpeg')] bg-cover bg-center px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-8 lg:py-8">
+              <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,0.9)_0%,rgba(19,78,74,0.82)_48%,rgba(6,78,59,0.72)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_28%),radial-gradient(circle_at_20%_80%,rgba(52,211,153,0.18),transparent_26%)]" />
+              <div className="absolute inset-0 bg-black/15" />
 
               <div className="relative flex h-full flex-col justify-between gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center bg-white/14">
-                    <img
-                      src="icon.svg"
-                      alt="CenterPulse Logo"
-                      className="h-24 w-24 object-contain"
-                    />
-                  </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-100/80">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-50/90">
                       Account Recovery
                     </p>
-                    <p className="text-xl font-semibold tracking-[0.08em] text-white">
+                    <p className="text-xl font-semibold tracking-[0.08em] text-white drop-shadow-[0_2px_10px_rgba(15,23,42,0.35)]">
                       CenterPULSE: Platform for University Logging of Scholarly
                       Engagements
                     </p>
@@ -75,54 +70,44 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 <div className="max-w-lg space-y-3">
-                  <p className="text-sm font-medium uppercase tracking-[0.22em] text-emerald-100/80">
+                  <p className="text-sm font-medium uppercase tracking-[0.22em] text-emerald-50/90">
                     Forgot Password
                   </p>
-                  <h1 className="text-3xl font-semibold leading-tight text-white sm:text-[2rem]">
+                  <h1 className="text-3xl font-semibold leading-tight text-white drop-shadow-[0_4px_18px_rgba(15,23,42,0.45)] sm:text-[2rem]">
                     Request a reset link and recover access to your workspace.
                   </h1>
-                  <p className="max-w-lg text-sm leading-6 text-slate-200 sm:text-[15px]">
+                  <p className="max-w-lg text-sm leading-6 text-slate-100 sm:text-[15px]">
                     Enter the email address tied to your account and CenterPULSE
                     will prepare a secure password reset link.
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/12 bg-white/10 p-4 backdrop-blur">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/12 text-emerald-100">
+                  <div className="rounded-2xl border border-white/18 bg-white/12 p-4 backdrop-blur-md">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/14 text-emerald-50">
                       <MailCheck size={18} />
                     </div>
                     <p className="text-sm font-semibold text-white">
                       Check Your Inbox
                     </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-200">
+                    <p className="mt-1 text-sm leading-6 text-slate-100">
                       Look in spam or junk too if the reset email does not show
                       up right away.
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/12 bg-white/10 p-4 backdrop-blur">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/12 text-emerald-100">
+                  <div className="rounded-2xl border border-white/18 bg-white/12 p-4 backdrop-blur-md">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/14 text-emerald-50">
                       <KeyRound size={18} />
                     </div>
                     <p className="text-sm font-semibold text-white">
                       Use the Latest Link
                     </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-200">
+                    <p className="mt-1 text-sm leading-6 text-slate-100">
                       Older reset emails may expire, so open the newest message
                       you receive.
                     </p>
                   </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/12 bg-black/10 p-4 backdrop-blur">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
-                    Protected flow
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-100">
-                    If the account exists, a reset email can be sent without
-                    exposing account details on this page.
-                  </p>
                 </div>
               </div>
             </aside>
