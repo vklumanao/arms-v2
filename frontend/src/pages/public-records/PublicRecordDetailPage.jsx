@@ -335,19 +335,19 @@ export default function PublicRecordDetailPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,1))]" />
+      <div className="relative overflow-hidden rounded-[2rem] border border-emerald-100 bg-[linear-gradient(180deg,#f8fffc_0%,#ffffff_22%,#f8fafc_100%)] p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-6 lg:p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_26%),radial-gradient(circle_at_left_bottom,rgba(15,23,42,0.06),transparent_30%)]" />
         <div className="relative flex flex-col gap-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-700">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-4xl space-y-4">
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
                 Public Research Record
-              </p>
-              <div className="space-y-2">
-                <h1 className="text-slate-900">
+              </span>
+              <div className="space-y-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2.2rem]">
                   {record?.title || "Research Project"}
                 </h1>
-                <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
+                <p className="max-w-3xl text-[15px] leading-7 text-slate-600 sm:text-base">
                   Explore this approved public record, review its abstract,
                   discover related outputs and awards, and cite it from the
                   institutional research catalog.
@@ -356,7 +356,11 @@ export default function PublicRecordDetailPage() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
-              <Button asChild variant="outline">
+              <Button
+                asChild
+                variant="outline"
+                className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              >
                 <Link to="/public-records">
                   <ChevronLeft className="h-4 w-4" />
                   Back to Records
@@ -370,7 +374,10 @@ export default function PublicRecordDetailPage() {
                   Return
                 </Button>
               ) : null}
-              <Button asChild>
+              <Button
+                asChild
+                className="border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+              >
                 <Link
                   to={`/public-research-centers/${encodeURIComponent(
                     String(record?.research_center_id || "").trim(),
@@ -424,9 +431,9 @@ export default function PublicRecordDetailPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                    className="rounded-[1.4rem] border border-emerald-100 bg-white/90 p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.45)]"
                   >
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
                       {item.label}
                     </p>
                     <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
@@ -438,36 +445,46 @@ export default function PublicRecordDetailPage() {
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Overview
-                      </CardTitle>
-                      <CardDescription>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Overview
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Project Abstract
+                        </CardTitle>
+                      </div>
+                      <CardDescription className="text-sm leading-6 text-slate-500">
                         Public-facing summary and discovery context for this
                         record.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5 p-5">
-                      <div>
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-5">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Project Summary
                         </p>
-                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">
+                        <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">
                           {record?.abstract || "No abstract available."}
                         </p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Proponents
-                      </CardTitle>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          People
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Research Team
+                        </CardTitle>
+                      </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Lead Researcher
                         </p>
@@ -475,7 +492,7 @@ export default function PublicRecordDetailPage() {
                           {record?.lead_researcher || "-"}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Faculty Team
                         </p>
@@ -483,7 +500,7 @@ export default function PublicRecordDetailPage() {
                           {record?.faculty_team || "-"}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-4 sm:col-span-2">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Student Team
                         </p>
@@ -494,11 +511,16 @@ export default function PublicRecordDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Funding and Timeline
-                      </CardTitle>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Project Details
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Funding and Timeline
+                        </CardTitle>
+                      </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
                       {[
@@ -517,7 +539,7 @@ export default function PublicRecordDetailPage() {
                       ].map(([label, value]) => (
                         <div
                           key={label}
-                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                          className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-4"
                         >
                           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                             {label}
@@ -530,17 +552,18 @@ export default function PublicRecordDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-6 py-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <CardTitle className="text-base font-semibold text-black">
-                            Timeline
-                          </CardTitle>
-                        </div>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Milestones
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Record Timeline
+                        </CardTitle>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-6">
+                    <CardContent className="p-5">
                       {timelineLoading ? (
                         <p className="text-sm text-slate-600">
                           Loading timeline...
@@ -554,7 +577,7 @@ export default function PublicRecordDetailPage() {
                           {timeline.map((item, index) => (
                             <div
                               key={`${item?.date || "timeline"}-${index}`}
-                              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                              className="rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-4"
                             >
                               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm font-semibold text-slate-900">
@@ -580,11 +603,16 @@ export default function PublicRecordDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm xl:sticky xl:top-5">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Record Facts
-                      </CardTitle>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)] xl:sticky xl:top-5">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Catalog Data
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Record Facts
+                        </CardTitle>
+                      </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5">
                       {[
@@ -598,7 +626,10 @@ export default function PublicRecordDetailPage() {
                         ["Project Year", record?.year || "-"],
                         ["Duration", durationLabel],
                       ].map(([label, value]) => (
-                        <div key={label}>
+                        <div
+                          key={label}
+                          className="rounded-[1.1rem] border border-slate-200 bg-slate-50/70 p-4"
+                        >
                           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                             {label}
                           </p>
@@ -610,14 +641,19 @@ export default function PublicRecordDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Supporting Links
-                      </CardTitle>
+                  <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                    <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Navigation
+                        </p>
+                        <CardTitle className="text-lg font-semibold text-slate-900">
+                          Supporting Links
+                        </CardTitle>
+                      </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 p-5">
-                      <div>
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50/70 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Research Center
                         </p>
@@ -631,13 +667,18 @@ export default function PublicRecordDetailPage() {
                           <ExternalLink className="ml-2 h-4 w-4" />
                         </Link>
                       </div>
-                      <div>
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50/70 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                           Signed MOA
                         </p>
                         {moaDownloadUrl ? (
                           <div className="mt-3">
-                            <Button asChild variant="outline" size="sm">
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                            >
                               <a
                                 href={moaDownloadUrl}
                                 target="_blank"
@@ -656,59 +697,39 @@ export default function PublicRecordDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-
-                  <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader className="border-b border-slate-100 px-5 py-4">
-                      <CardTitle className="text-lg font-bold text-slate-900">
-                        Cite This Record
-                      </CardTitle>
-                      <CardDescription>
-                        Generated from the currently visible public metadata.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 p-5">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                          APA
-                        </p>
-                        <p className="mt-2 text-sm leading-7 text-slate-700">
-                          {apaCitation}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                          MLA
-                        </p>
-                        <p className="mt-2 text-sm leading-7 text-slate-700">
-                          {mlaCitation}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               </div>
 
-              <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                <CardHeader className="border-b border-[var(--border)] px-5 py-4">
-                  <CardTitle className="text-base font-semibold text-black">
-                    Outputs and Resources
-                  </CardTitle>
+              <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                      Research Outputs
+                    </p>
+                    <CardTitle className="text-lg font-semibold text-slate-900">
+                      Outputs and Resources
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-6 text-slate-500">
+                      Linked materials and public-facing research outputs from
+                      this record.
+                    </CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-5">
                   {!resourcePanel.syncEnabled ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600">
                       CKAN sync is disabled in this environment.
                     </p>
                   ) : resourcePanel.loading ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600">
                       Loading linked resources...
                     </p>
                   ) : resourcePanel.error ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600">
                       {resourcePanel.error}
                     </p>
                   ) : resourcePanel.resources.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-muted-foreground">
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
                       No linked resources found for this record.
                     </div>
                   ) : (
@@ -760,7 +781,7 @@ export default function PublicRecordDetailPage() {
                           return (
                             <Card
                               key={resource.id || resource.url || resource.name}
-                              className="h-full rounded-2xl border border-slate-200 bg-white shadow-sm"
+                              className="h-full rounded-[1.25rem] border border-slate-200 bg-slate-50/70 shadow-none"
                             >
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between gap-3">
@@ -769,7 +790,7 @@ export default function PublicRecordDetailPage() {
                                       {resource.name || "Unnamed resource"}
                                     </p>
                                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                                      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-sm font-semibold text-slate-600">
+                                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
                                         {outputTypeLabelByValue[
                                           String(
                                             resource.output_type ||
@@ -839,7 +860,12 @@ export default function PublicRecordDetailPage() {
 
                                 {resource.id && hasFile ? (
                                   <div className="mt-2 flex flex-wrap gap-2">
-                                    <Button asChild variant="outline" size="sm">
+                                    <Button
+                                      asChild
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                    >
                                       <a
                                         href={downloadUrl}
                                         target="_blank"
@@ -864,14 +890,17 @@ export default function PublicRecordDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card className="overflow-hidden border border-black/20 bg-white shadow-sm">
-                <CardHeader className="border-b border-zinc-200 px-6 py-5">
-                  <div className="flex items-start justify-between gap-3">
+              <Card className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white/95 shadow-[0_20px_45px_-38px_rgba(15,23,42,0.45)]">
+                <CardHeader className="border-b border-emerald-100 px-5 py-5">
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                      Recognition
+                    </p>
                     <div className="space-y-1">
-                      <CardTitle className="text-base font-semibold text-black">
+                      <CardTitle className="text-lg font-semibold text-slate-900">
                         Awards &amp; Recognition
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-sm leading-6 text-slate-500">
                         Awards linked to this public research record.
                       </CardDescription>
                     </div>
@@ -879,15 +908,15 @@ export default function PublicRecordDetailPage() {
                 </CardHeader>
                 <CardContent className="p-5">
                   {awardsPanel.loading ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600">
                       Loading linked awards...
                     </p>
                   ) : awardsPanel.error ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-600">
                       {awardsPanel.error}
                     </p>
                   ) : awardsPanel.rows.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-6 text-center text-sm text-muted-foreground">
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
                       No awards linked to this project yet.
                     </div>
                   ) : (
@@ -902,7 +931,7 @@ export default function PublicRecordDetailPage() {
                         return (
                           <Card
                             key={row.id || row.award_recognition}
-                            className="h-full rounded-2xl border border-slate-200 bg-white shadow-sm"
+                            className="h-full rounded-[1.25rem] border border-slate-200 bg-slate-50/70 shadow-none"
                           >
                             <CardContent className="p-4">
                               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -911,11 +940,17 @@ export default function PublicRecordDetailPage() {
                                     {row.award_recognition || "Award"}
                                   </p>
                                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline">
+                                    <Badge
+                                      variant="outline"
+                                      className="border-emerald-200 bg-white text-emerald-700"
+                                    >
                                       {row.level || "Level"}
                                     </Badge>
                                     {row.year_received ? (
-                                      <Badge variant="secondary">
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-slate-200 text-slate-700"
+                                      >
                                         {row.year_received}
                                       </Badge>
                                     ) : null}
@@ -931,7 +966,12 @@ export default function PublicRecordDetailPage() {
                               </div>
                               {downloadUrl || fallbackLink ? (
                                 <div className="mt-3 flex flex-wrap gap-2">
-                                  <Button asChild variant="outline" size="sm">
+                                  <Button
+                                    asChild
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                  >
                                     <a
                                       href={downloadUrl || fallbackLink}
                                       target="_blank"
