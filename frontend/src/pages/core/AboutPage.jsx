@@ -13,88 +13,83 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const audienceCards = [
+const overviewCards = [
   {
-    title: "Administrators",
+    title: "Institutional Access",
     description:
-      "Oversee research centers, affiliates, access control, and reporting standards from one workspace.",
+      "Coordinate research records, affiliates, and submissions in one shared workspace.",
     icon: Building2,
   },
   {
-    title: "Research Center Leads",
+    title: "Protected Workflow",
     description:
-      "Monitor center performance, member activity, projects, and agenda coverage without scattered records.",
-    icon: Users,
-  },
-  {
-    title: "Researchers and Affiliates",
-    description:
-      "Submit projects, manage outputs, and keep research activity visible through structured workflows.",
-    icon: FolderKanban,
+      "Keep review, approvals, and internal decisions visible only to the right roles.",
+    icon: ShieldCheck,
   },
 ];
 
 const capabilityCards = [
   {
-    title: "Submission Workflows",
+    title: "Structured Records",
     description:
-      "Guide projects, outputs, and recognition records through one consistent institutional process.",
+      "Standardize project details, outputs, affiliations, and supporting evidence in cleaner institutional forms.",
     icon: Layers3,
   },
   {
-    title: "Governance Controls",
+    title: "Role-Aware Review",
     description:
-      "Use role-aware permissions, review visibility, and accountable actions across core modules.",
-    icon: ShieldCheck,
+      "Guide records through visible review and approval steps so ownership stays clear at every stage.",
+    icon: Users,
   },
   {
     title: "Reporting Readiness",
     description:
-      "Keep cleaner data for summaries, compliance checks, and institution-wide research reporting.",
+      "Maintain more dependable records for summaries, monitoring, and administrative reporting.",
     icon: FileSpreadsheet,
   },
   {
     title: "Public Visibility",
     description:
-      "Surface approved research records in a public-facing catalog without exposing internal workflow noise.",
+      "Publish approved scholarly records in a public-facing catalog without exposing workflow-only activity.",
     icon: Eye,
   },
 ];
 
-const timelineSteps = [
+const roleCards = [
   {
-    step: "01",
-    title: "Capture structured records",
+    title: "Administrators",
     description:
-      "Collect affiliations, project metadata, outputs, and evidence in standardized forms.",
+      "Oversee standards, access, and institution-wide research operations from one controlled environment.",
+    icon: Building2,
   },
   {
-    step: "02",
-    title: "Review with role clarity",
+    title: "Research Center Leads",
     description:
-      "Make ownership and approval paths visible so records move with less ambiguity.",
+      "Monitor center activity, submissions, outputs, and affiliate participation with less fragmentation.",
+    icon: Users,
   },
   {
-    step: "03",
-    title: "Track status and evidence",
+    title: "Researchers and Affiliates",
     description:
-      "Keep progress, outputs, and supporting files aligned with institutional expectations.",
+      "Submit projects, maintain records, and keep approved work visible through a clearer institutional process.",
+    icon: FolderKanban,
   },
-  {
-    step: "04",
-    title: "Publish what is ready",
-    description:
-      "Expose approved records to the public catalog while preserving internal controls.",
-  },
+];
+
+const workflowSteps = [
+  "Capture project, output, and affiliation records in standardized forms.",
+  "Route submissions through review and validation with role-based visibility.",
+  "Track progress, revisions, and supporting evidence in one governed workspace.",
+  "Publish approved records for institutional visibility and public access.",
 ];
 
 const trustSignals = [
   "Role-based access aligned with research administration responsibilities",
-  "Structured records that reduce reporting gaps and repeated follow-ups",
-  "Public and private visibility controls for institution-safe publishing",
-  "A clearer operating model for departments, centers, and affiliates",
+  "Clear separation between internal workflow and public-facing records",
+  "Cleaner data for reports, summaries, and oversight discussions",
+  "A more dependable operating model for centers, departments, and affiliates",
 ];
 
 export default function AboutPage() {
@@ -102,269 +97,295 @@ export default function AboutPage() {
   const isAuthenticated = Boolean(user || profile);
 
   return (
-    <section className="page-stack-xl">
-      <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_32%),linear-gradient(180deg,rgba(248,250,252,0.92),rgba(255,255,255,1))]" />
-        <div className="relative grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:p-10">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              About CenterPulse
-            </div>
+    <section className="items-center justify-center">
+      <div className="flex h-full items-center justify-center px-4 py-4 sm:px-6 lg:px-8">
+        <Card className="w-full">
+          <div className="grid lg:grid-cols-[1.08fr_minmax(0,0.92fr)] lg:gap-x-2">
+            <aside className="relative overflow-hidden rounded-2xl border-b border-slate-200 bg-[linear-gradient(145deg,#0f172a_0%,#134e4a_48%,#ecfdf5_160%)] px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-10 lg:py-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_20%_80%,rgba(52,211,153,0.22),transparent_26%)]" />
 
-            <div className="space-y-3">
-              <h1 className="max-w-4xl text-slate-900">
-                A research operations platform built for institutional clarity,
-                accountability, and visibility.
-              </h1>
-              <p className="max-w-3xl text-[15px] leading-7 text-slate-600 lg:text-base">
-                CenterPulse helps institutions organize affiliations, research
-                submissions, outputs, and public-ready records in one governed
-                system. Instead of fragmented spreadsheets and disconnected
-                follow-ups, teams get one structured workflow from submission to
-                reporting.
-              </p>
-            </div>
+              <div className="relative flex h-full flex-col justify-between gap-6">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center">
+                      <img
+                        src="icon.svg"
+                        alt="CenterPulse Logo"
+                        className="h-24 w-24 object-contain"
+                      />
+                    </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button asChild className="sm:w-auto">
-                <Link to={isAuthenticated ? "/dashboard" : "/login"}>
-                  {isAuthenticated ? "Open Dashboard" : "Login to Workspace"}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="sm:w-auto">
-                <Link to="/public-records">Explore Public Records</Link>
-              </Button>
-            </div>
+                    <div className="min-w-0 space-y-2 pt-1">
+                      <span className="inline-flex items-center bg-slate-950/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
+                        About the Platform
+                      </span>
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold tracking-[0.08em] text-white sm:text-xl">
+                          CenterPULSE: Platform for University Logging of
+                          Scholarly Engagements
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Core Coverage", value: "Projects, outputs, awards" },
-                { label: "Governance Lens", value: "Role-aware actions" },
-                {
-                  label: "Institution Value",
-                  value: "Reporting-ready records",
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">
-                    {item.value}
-                  </p>
+                  <div className="max-w-xl space-y-4">
+                    <p className="text-sm font-medium uppercase tracking-[0.22em] text-emerald-100/80">
+                      Research Management
+                    </p>
+                    <div className="space-y-3">
+                      <h1 className="text-3xl font-semibold leading-tight text-white sm:text-[2rem]">
+                        One governed workspace for research operations and
+                        approved public visibility.
+                      </h1>
+                      <p className="max-w-lg text-sm leading-6 text-slate-200 sm:text-[15px]">
+                        CenterPULSE helps institutions manage submissions,
+                        affiliations, outputs, and review workflows while
+                        preparing approved scholarly records for wider
+                        institutional visibility.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="grid gap-4 self-stretch">
-            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-950 p-5 text-white shadow-lg">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-300">
-                Research Operations Snapshot
-              </p>
-              <div className="mt-4 space-y-3">
-                {[
-                  [
-                    "Affiliation Records",
-                    "Structured across centers and departments",
-                  ],
-                  ["Submission Workflow", "Tracked from encoding to approval"],
-                  ["Output Visibility", "Ready for governance and publication"],
-                ].map(([title, copy]) => (
-                  <div
-                    key={title}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                  >
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-300">
-                      {copy}
+                <div className="grid gap-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {overviewCards.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.title}
+                          className="rounded-2xl border border-white/12 bg-white/10 p-4 backdrop-blur"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/12 text-emerald-100">
+                              <Icon size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-white">
+                                {item.title}
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-200">
+                                {item.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/12 bg-black/10 p-4 backdrop-blur">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
+                          Platform Value
+                        </p>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-100">
+                          Instead of disconnected spreadsheets and repeated
+                          manual follow-ups, teams get one clearer workflow from
+                          submission to publication-ready record.
+                        </p>
+                      </div>
+                      <div className="hidden rounded-2xl border border-white/10 bg-white/10 px-3 py-2 lg:block">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-100/80">
+                          Institution-Ready
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <div className="px-6 py-6 sm:px-8 sm:py-7 lg:px-10 lg:py-8">
+              <div className="mx-auto w-full max-w-5xl">
+                <CardHeader className="space-y-4 px-0 pb-5 pt-0">
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Overview
+                    </div>
+                    <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
+                      What CenterPULSE does
+                    </h2>
+                    <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                      CenterPULSE is built for institutions that need stronger
+                      control over research administration, cleaner records for
+                      reporting, and a safer way to present approved scholarly
+                      outputs to the public.
                     </p>
                   </div>
-                ))}
+                </CardHeader>
+
+                <CardContent className="space-y-5 px-0">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {capabilityCards.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.title}
+                          className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5"
+                        >
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 shadow-sm">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <h3 className="mt-4 text-lg font-semibold text-slate-900">
+                            {item.title}
+                          </h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {item.description}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          Workflow
+                        </p>
+                        <h3 className="text-xl font-semibold text-slate-900">
+                          How records move through the platform
+                        </h3>
+                      </div>
+
+                      <div className="mt-4 grid gap-3">
+                        {workflowSteps.map((item, index) => (
+                          <div
+                            key={item}
+                            className="rounded-2xl border border-white bg-white/90 p-4"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                              Step 0{index + 1}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-slate-700">
+                              {item}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Users
+                          </p>
+                          <h3 className="text-xl font-semibold text-slate-900">
+                            Who the platform serves
+                          </h3>
+                        </div>
+
+                        <div className="mt-4 grid gap-3">
+                          {roleCards.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <div
+                                key={item.title}
+                                className="rounded-2xl border border-white bg-white/90 p-4"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                                    <Icon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-900">
+                                      {item.title}
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                                      {item.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Governance
+                          </p>
+                          <h3 className="text-xl font-semibold text-slate-900">
+                            Why institutions can trust it
+                          </h3>
+                        </div>
+
+                        <div className="mt-4 grid gap-3">
+                          {trustSignals.map((item) => (
+                            <div
+                              key={item}
+                              className="flex items-start gap-3 rounded-2xl border border-white bg-white/90 p-4"
+                            >
+                              <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                              <p className="text-sm leading-6 text-slate-700">
+                                {item}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(145deg,#0f172a_0%,#134e4a_48%,#ecfdf5_160%)] p-5 text-white">
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_auto] lg:items-end">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100/80">
+                          Continue with CenterPULSE
+                        </p>
+                        <h3 className="mt-3 text-2xl font-semibold text-white">
+                          Use the workspace for internal coordination or browse
+                          the public catalog for approved records.
+                        </h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">
+                          Sign in to manage research operations, create an
+                          account for access, or review public-facing scholarly
+                          records already prepared for broader institutional
+                          visibility.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                        >
+                          <Link to="/public-records">Public Records</Link>
+                        </Button>
+                        {!isAuthenticated ? (
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                          >
+                            <Link to="/register">Create Account</Link>
+                          </Button>
+                        ) : null}
+                        <Button
+                          asChild
+                          className="border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+                        >
+                          <Link to={isAuthenticated ? "/dashboard" : "/login"}>
+                            {isAuthenticated ? "Open Dashboard" : "Login"}
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
               </div>
             </div>
-
-            <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
-                Why it matters
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-700">
-                When records are standardized and workflow states are visible,
-                institutions spend less time reconciling data and more time
-                improving research performance.
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {audienceCards.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Card
-              key={item.title}
-              className="border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
-            >
-              <CardContent className="p-5 lg:p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h2 className="mt-4 text-xl font-bold text-slate-900">
-                  {item.title}
-                </h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-5 rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:p-8">
-        <div className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-            What CenterPulse Solves
-          </p>
-          <h2 className="text-slate-900">
-            From fragmented research records to one dependable operating system.
-          </h2>
-          <p className="text-sm leading-7 text-slate-600">
-            The platform is designed for teams that need better control over
-            project submissions, affiliate data, output tracking, and public
-            transparency without losing institutional rigor.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {capabilityCards.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.title}
-                className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-lg font-bold text-slate-900">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  {item.description}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">
-            Platform Flow
-          </p>
-          <h2 className="mt-3 text-white">
-            A cleaner path from submission to publication-ready record.
-          </h2>
-          <div className="mt-6 grid gap-4">
-            {timelineSteps.map((item) => (
-              <div
-                key={item.step}
-                className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4"
-              >
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-300">
-                  Step {item.step}
-                </p>
-                <p className="mt-2 text-base font-semibold text-white">
-                  {item.title}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-slate-300">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-            Governance and Trust
-          </p>
-          <h2 className="mt-3 text-slate-900">
-            Built for visibility without sacrificing control.
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            CenterPulse is not just a submission form. It is a governed research
-            workspace where institutions can define ownership, reduce ambiguity,
-            and keep public-facing records separate from internal workflow
-            decisions.
-          </p>
-
-          <div className="mt-6 grid gap-3">
-            {trustSignals.map((item) => (
-              <div
-                key={item}
-                className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                <p className="text-sm leading-7 text-slate-700">{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#111827_55%,#1f2937_100%)] p-5 text-white sm:p-6 lg:p-8">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_auto] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">
-              Next Step
-            </p>
-            <h2 className="mt-3 text-white">
-              Continue with CenterPulse in the way that fits your role.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-              Open your dashboard, sign in to your workspace, register a new
-              account, or review public research records already approved for
-              institutional visibility.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
-            <Button
-              asChild
-              variant="outline"
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
-            >
-              <Link to="/public-records">Public Records</Link>
-            </Button>
-            {!isAuthenticated ? (
-              <Button
-                asChild
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white hover:bg-white/20"
-              >
-                <Link to="/register">Create Account</Link>
-              </Button>
-            ) : null}
-            <Button
-              asChild
-              className="border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
-            >
-              <Link to={isAuthenticated ? "/dashboard" : "/login"}>
-                {isAuthenticated ? "Open Dashboard" : "Login"}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+        </Card>
+      </div>
     </section>
   );
 }
