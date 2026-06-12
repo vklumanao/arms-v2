@@ -113,7 +113,7 @@ export default function LoginPage() {
             <aside className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(145deg,#0f172a_0%,#134e4a_48%,#ecfdf5_160%)] px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-10 lg:py-8 rounded-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_20%_80%,rgba(52,211,153,0.22),transparent_26%)]" />
 
-              <div className="relative flex h-full flex-col items-start justify-center gap-6">
+              <div className="relative flex h-full flex-col items-start justify-center gap-1">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center bg-white/14">
                     <img
@@ -127,7 +127,7 @@ export default function LoginPage() {
                       Workspace
                     </p>
                     <p className="text-xl font-semibold tracking-[0.08em] text-white">
-                      CenterPULSE
+                      CenterPULSE: Platform for University Logging of Scholarly Engagements
                     </p>
                   </div>
                 </div>
@@ -190,12 +190,6 @@ export default function LoginPage() {
             <div className="flex items-center px-6 py-6 sm:px-8 sm:py-7 lg:px-10 lg:py-8">
               <div className="mx-auto w-full max-w-md">
                 <CardHeader className="space-y-4 px-0 pb-5 pt-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-full inline-flex border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                      Login
-                    </span>
-                  </div>
-
                   <div className="space-y-2">
                     <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
                       Sign in
