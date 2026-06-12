@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -86,7 +87,7 @@ export default function ResearchOutputsPage() {
   const navigate = useNavigate();
   const { centers } = useReferenceData();
   const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:4010/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
   const roleKeys = Array.isArray(profile?.roles)
     ? profile.roles.map((entry) => entry?.key)
     : profile?.role;
@@ -150,6 +151,7 @@ export default function ResearchOutputsPage() {
   const [projectOptions, setProjectOptions] = useState([]);
   const [addingOutput, setAddingOutput] = useState(false);
   const [exportingType, setExportingType] = useState("");
+  const [activeTab, setActiveTab] = useState("records");
   const [addOutputForm, setAddOutputForm] = useState({
     project_id: "",
     output_type: "",
@@ -1266,346 +1268,84 @@ export default function ResearchOutputsPage() {
                   </p>
                   <Icon className="h-4 w-4 text-slate-700" />
                 </div>
-                <p className="mt-2 text-2xl font-bold text-slate-700">{value}</p>
+                <p className="mt-2 text-2xl font-bold text-slate-700">
+                  {value}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {isCenterChief ? (
-        <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-200 px-6 py-5">
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-slate-700">
-                  Managed Center Research Outputs
-                </CardTitle>
-                <CardDescription className="text-slate-600">
-                  Showing {centerChiefFilteredRows.length} output(s) from your
-                  managed research center.
-                </CardDescription>
-              </div>
-              <p className="text-sm text-slate-600">
-                {centerChiefFilteredRows.length} row(s).
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-              <label className="relative block w-full md:max-w-xl">
-                <span className="sr-only">Search managed center outputs</span>
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                <Input
-                  value={centerChiefSearch}
-                  onChange={(event) => setCenterChiefSearch(event.target.value)}
-                  placeholder="Search file, dataset, project, center, state, or visibility"
-                  className="pl-9"
-                />
-              </label>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 border border-slate-200 bg-white p-1 sm:w-fit sm:grid-cols-none sm:grid-flow-col sm:gap-1">
+          <TabsTrigger
+            value="records"
+            className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
+          >
+            Research Output Records
+          </TabsTrigger>
+          <TabsTrigger
+            value="managed"
+            className="
+    min-h-10 rounded-md border-slate-200
+    text-slate-600
+    data-[state=active]:border-emerald-600
+    data-[state=active]:bg-emerald-600
+    data-[state=active]:text-white
+    data-[state=active]:font-semibold
+    data-[state=active]:shadow-sm
+  "
+          >
+            Managed Center Outputs
+          </TabsTrigger>
+        </TabsList>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {[
-                  {
-                    key: "all",
-                    label: "All Outputs",
-                    count: baseCenterChiefSearchRows.length,
-                  },
-                  ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
-                    const key = String(item?.value || "").trim();
-                    const label =
-                      outputTypeLabelByValue[key] || String(item?.label || key);
-                    return {
-                      key,
-                      label,
-                      count: baseCenterChiefSearchRows.filter(
-                        (row) =>
-                          String(row?.outputTypeValue || "").trim() === key,
-                      ).length,
-                    };
-                  }),
-                ].map((chip) => (
-                  <Button
-                    key={chip.key}
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn(
-                      "rounded-full border-slate-200 px-4 text-xs",
-                      centerChiefQuickFilter === chip.key
-                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                        : "bg-white text-slate-700 hover:bg-slate-50",
-                    )}
-                    onClick={() => setCenterChiefQuickFilter(chip.key)}
-                  >
-                    {chip.label}
-                    <span
-                      className={cn(
-                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        centerChiefQuickFilter === chip.key
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-50 text-slate-700",
-                      )}
-                    >
-                      {chip.count}
-                    </span>
-                  </Button>
-                ))}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                  onClick={resetCenterChiefFilters}
-                >
-                  Reset all
-                </Button>
-              </div>
-
-              {hasActiveCenterChiefFilters ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Active Filters
-                  </span>
-                  {String(centerChiefSearch || "").trim() ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setCenterChiefSearch("")}
-                    >
-                      Search: "{String(centerChiefSearch || "").trim()}" x
-                    </button>
-                  ) : null}
-                  {centerChiefQuickFilter !== "all" ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setCenterChiefQuickFilter("all")}
-                    >
-                      {centerChiefQuickFilter} x
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </CardContent>
-          {centerChiefLoading ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                Loading managed center outputs...
-              </div>
-            </CardContent>
-          ) : centerChiefError ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-800">
-                {centerChiefError}
-              </div>
-            </CardContent>
-          ) : centerChiefRows.length === 0 ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                No research outputs found for your managed research center.
-              </div>
-            </CardContent>
-          ) : centerChiefFilteredRows.length === 0 ? (
-            <CardContent className="p-4">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                No managed center outputs match your search.
-              </div>
-            </CardContent>
-          ) : (
-            <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <Table className="min-w-[980px]">
-                  <TableHeader className="bg-slate-50 text-slate-600">
-                    <TableRow>
-                      <TableHead>No.</TableHead>
-                      <TableHead>Resource/File</TableHead>
-                      <TableHead>Output Type</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Research Center</TableHead>
-                      <TableHead>Visibility</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {centerChiefPaginatedRows.map((row, index) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          {(centerChiefPage - 1) * pageSize + index + 1}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{row.title}</div>
-                          {row.subtitle ? (
-                            <div className="text-xs text-slate-600">
-                              {row.subtitle}
-                            </div>
-                          ) : null}
-                          {row.isPendingOutput ? (
-                            <div className="space-y-1 text-xs text-slate-800">
-                              <div>No file attached yet.</div>
-                            </div>
-                          ) : null}
-                        </TableCell>
-                        <TableCell>{row.outputType || "-"}</TableCell>
-                        <TableCell>{row.datasetName || "-"}</TableCell>
-                        <TableCell>{row.organization || "-"}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className={getVisibilityBadgeClass(row.private)}
-                            >
-                              {row.private ? "Private" : "Public"}
-                            </Badge>
-                            {row.isPendingOutput ? (
-                              <Badge
-                                variant="outline"
-                                className="border-slate-200 bg-slate-50 text-slate-700"
-                              >
-                                Pending
-                              </Badge>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="inline-flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                              onClick={() => goToOutputProject(row)}
-                              aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
-                              title="Open project"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {!row.isPendingOutput && Boolean(row.resourceId) ? (
-                              <>
-                                {canEditOutputs ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                    onClick={() => handleOpenEdit(row)}
-                                    aria-label={`Edit ${row?.title || "research output"}`}
-                                    title="Edit"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                ) : null}
-                                {!row.isPendingOutput &&
-                                row.resourceId &&
-                                /\/resource\/.+\/download\//i.test(
-                                  String(row.resourceUrl || ""),
-                                ) ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                    aria-label={`Download ${row?.title || "resource"}`}
-                                    title="Download"
-                                    onClick={() => {
-                                      const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                        row.resourceId,
-                                      )}/download?download=1`;
-                                      window.open(
-                                        url,
-                                        "_blank",
-                                        "noopener,noreferrer",
-                                      );
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                ) : null}
-                                {canDeleteOutputs ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-700 hover:bg-slate-50"
-                                    onClick={() => setDeleteTarget(row)}
-                                    aria-label={`Delete ${row?.title || "research output"}`}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                ) : null}
-                              </>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  {centerChiefTotalPages > 1 ? (
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell colSpan={8} className="px-3 py-3">
-                          <PaginationControls
-                            page={centerChiefPage}
-                            totalPages={centerChiefTotalPages}
-                            onPageChange={setCenterChiefPage}
-                            className="border-0 rounded-none shadow-none bg-transparent"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  ) : null}
-                </Table>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-      ) : null}
-
-      {canLoadOwnOutputs && loading ? (
-        <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
-          <CardContent className="p-4">
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-              Loading research outputs...
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {canLoadOwnOutputs && !loading && !error && !tableRows.length ? (
-        <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <CardContent className="p-6">
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
-              No research outputs found. No linked expected output resources are
-              available yet.
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {canLoadOwnOutputs && !loading && !error && tableRows.length ? (
-        <div className="page-stack">
-          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+        {isCenterChief ? (
+          <Card
+            className={cn(
+              "overflow-hidden border border-slate-200 bg-white shadow-sm",
+              activeTab === "managed" ? "block" : "hidden",
+            )}
+          >
             <CardHeader className="border-b border-slate-200 px-6 py-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-semibold text-slate-700">
-                    Research Output Records
+                    Managed Center Research Outputs
                   </CardTitle>
                   <CardDescription className="text-slate-600">
-                    Showing {filteredRows.length} output(s).
+                    Showing {centerChiefFilteredRows.length} output(s) from your
+                    managed research center.
                   </CardDescription>
                 </div>
                 <p className="text-sm text-slate-600">
-                  {filteredRows.length} row(s).
+                  {centerChiefFilteredRows.length} row(s).
                 </p>
               </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
                 <label className="relative block w-full md:max-w-xl">
-                  <span className="sr-only">Search outputs</span>
+                  <span className="sr-only">Search managed center outputs</span>
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
                   <Input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    value={centerChiefSearch}
+                    onChange={(event) =>
+                      setCenterChiefSearch(event.target.value)
+                    }
                     placeholder="Search file, dataset, project, center, state, or visibility"
                     className="pl-9"
                   />
@@ -1616,7 +1356,7 @@ export default function ResearchOutputsPage() {
                     {
                       key: "all",
                       label: "All Outputs",
-                      count: baseSearchRows.length,
+                      count: baseCenterChiefSearchRows.length,
                     },
                     ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
                       const key = String(item?.value || "").trim();
@@ -1626,7 +1366,7 @@ export default function ResearchOutputsPage() {
                       return {
                         key,
                         label,
-                        count: baseSearchRows.filter(
+                        count: baseCenterChiefSearchRows.filter(
                           (row) =>
                             String(row?.outputTypeValue || "").trim() === key,
                         ).length,
@@ -1640,17 +1380,17 @@ export default function ResearchOutputsPage() {
                       variant="outline"
                       className={cn(
                         "rounded-full border-slate-200 px-4 text-xs",
-                        recordsQuickFilter === chip.key
+                        centerChiefQuickFilter === chip.key
                           ? "bg-[#10B981] text-white hover:bg-[#059669]"
                           : "bg-white text-slate-700 hover:bg-slate-50",
                       )}
-                      onClick={() => setRecordsQuickFilter(chip.key)}
+                      onClick={() => setCenterChiefQuickFilter(chip.key)}
                     >
                       {chip.label}
                       <span
                         className={cn(
                           "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          recordsQuickFilter === chip.key
+                          centerChiefQuickFilter === chip.key
                             ? "bg-white/20 text-white"
                             : "bg-slate-50 text-slate-700",
                         )}
@@ -1664,44 +1404,61 @@ export default function ResearchOutputsPage() {
                     size="sm"
                     variant="ghost"
                     className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                    onClick={resetRecordsFilters}
+                    onClick={resetCenterChiefFilters}
                   >
                     Reset all
                   </Button>
                 </div>
 
-                {hasActiveRecordsFilters ? (
+                {hasActiveCenterChiefFilters ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
                       Active Filters
                     </span>
-                    {String(searchTerm || "").trim() ? (
+                    {String(centerChiefSearch || "").trim() ? (
                       <button
                         type="button"
                         className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                        onClick={() => setSearchTerm("")}
+                        onClick={() => setCenterChiefSearch("")}
                       >
-                        Search: "{String(searchTerm || "").trim()}" x
+                        Search: "{String(centerChiefSearch || "").trim()}" x
                       </button>
                     ) : null}
-                    {recordsQuickFilter !== "all" ? (
+                    {centerChiefQuickFilter !== "all" ? (
                       <button
                         type="button"
                         className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                        onClick={() => setRecordsQuickFilter("all")}
+                        onClick={() => setCenterChiefQuickFilter("all")}
                       >
-                        {recordsQuickFilter} x
+                        {centerChiefQuickFilter} x
                       </button>
                     ) : null}
                   </div>
                 ) : null}
               </div>
             </CardContent>
-            {filteredRows.length === 0 ? (
+            {centerChiefLoading ? (
               <CardContent className="p-4">
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
-                  No research outputs found. Try a different search term or add
-                  a new research output.
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  Loading managed center outputs...
+                </div>
+              </CardContent>
+            ) : centerChiefError ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-800">
+                  {centerChiefError}
+                </div>
+              </CardContent>
+            ) : centerChiefRows.length === 0 ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  No research outputs found for your managed research center.
+                </div>
+              </CardContent>
+            ) : centerChiefFilteredRows.length === 0 ? (
+              <CardContent className="p-4">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                  No managed center outputs match your search.
                 </div>
               </CardContent>
             ) : (
@@ -1713,16 +1470,17 @@ export default function ResearchOutputsPage() {
                         <TableHead>No.</TableHead>
                         <TableHead>Resource/File</TableHead>
                         <TableHead>Output Type</TableHead>
-                        <TableHead>Title</TableHead>
+                        <TableHead>Project</TableHead>
                         <TableHead>Research Center</TableHead>
+                        <TableHead>Visibility</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedRows.map((row, index) => (
+                      {centerChiefPaginatedRows.map((row, index) => (
                         <TableRow key={row.id}>
                           <TableCell>
-                            {(currentPage - 1) * pageSize + index + 1}
+                            {(centerChiefPage - 1) * pageSize + index + 1}
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">{row.title}</div>
@@ -1731,7 +1489,7 @@ export default function ResearchOutputsPage() {
                                 {row.subtitle}
                               </div>
                             ) : null}
-                            {row.isPlaceholder || row.isPendingOutput ? (
+                            {row.isPendingOutput ? (
                               <div className="space-y-1 text-xs text-slate-800">
                                 <div>No file attached yet.</div>
                               </div>
@@ -1740,34 +1498,26 @@ export default function ResearchOutputsPage() {
                           <TableCell>{row.outputType || "-"}</TableCell>
                           <TableCell>{row.datasetName || "-"}</TableCell>
                           <TableCell>{row.organization || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={getVisibilityBadgeClass(row.private)}
+                              >
+                                {row.private ? "Private" : "Public"}
+                              </Badge>
+                              {row.isPendingOutput ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-slate-200 bg-slate-50 text-slate-700"
+                                >
+                                  Pending
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="inline-flex items-center justify-end gap-1">
-                              {canCreateOutputs &&
-                              (row.isPlaceholder || row.isPendingOutput) ? (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                  onClick={() =>
-                                    openAddOutputForProject(
-                                      {
-                                        id: row.datasetId,
-                                        title: row.projectTitle || row.subtitle,
-                                      },
-                                      row.isPlaceholder
-                                        ? {}
-                                        : {
-                                            output_type: row.outputTypeValue,
-                                            target_count: row.targetCount,
-                                          },
-                                    )
-                                  }
-                                  aria-label={`Add output for ${row?.subtitle || "project"}`}
-                                  title="Add Output"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              ) : null}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1778,8 +1528,7 @@ export default function ResearchOutputsPage() {
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              {!row.isPlaceholder &&
-                              !row.isPendingOutput &&
+                              {!row.isPendingOutput &&
                               Boolean(row.resourceId) ? (
                                 <>
                                   {canEditOutputs ? (
@@ -1787,75 +1536,48 @@ export default function ResearchOutputsPage() {
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                      disabled={
-                                        Boolean(
-                                          deletingByResource[row.resourceId],
-                                        ) || row.isPlaceholder
-                                      }
                                       onClick={() => handleOpenEdit(row)}
                                       aria-label={`Edit ${row?.title || "research output"}`}
-                                      title={
-                                        row.isPlaceholder
-                                          ? "Edit unavailable"
-                                          : "Edit"
-                                      }
+                                      title="Edit"
                                     >
                                       <Pencil className="h-4 w-4" />
                                     </Button>
                                   ) : null}
-                                  {!row.isPlaceholder &&
-                                  !row.isPendingOutput &&
+                                  {!row.isPendingOutput &&
                                   row.resourceId &&
                                   /\/resource\/.+\/download\//i.test(
                                     String(row.resourceUrl || ""),
                                   ) ? (
-                                    <>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
-                                        aria-label={`Download ${row?.title || "resource"}`}
-                                        title="Download"
-                                        onClick={() => {
-                                          const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
-                                            row.resourceId,
-                                          )}/download?download=1`;
-                                          window.open(
-                                            url,
-                                            "_blank",
-                                            "noopener,noreferrer",
-                                          );
-                                        }}
-                                      >
-                                        <Download className="h-4 w-4" />
-                                      </Button>
-                                    </>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                      aria-label={`Download ${row?.title || "resource"}`}
+                                      title="Download"
+                                      onClick={() => {
+                                        const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                          row.resourceId,
+                                        )}/download?download=1`;
+                                        window.open(
+                                          url,
+                                          "_blank",
+                                          "noopener,noreferrer",
+                                        );
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
                                   ) : null}
                                   {canDeleteOutputs ? (
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-slate-700 hover:bg-slate-50"
-                                      disabled={
-                                        Boolean(
-                                          deletingByResource[row.resourceId],
-                                        ) || row.isPlaceholder
-                                      }
                                       onClick={() => setDeleteTarget(row)}
                                       aria-label={`Delete ${row?.title || "research output"}`}
-                                      title={
-                                        row.isPlaceholder
-                                          ? "Delete unavailable"
-                                          : deletingByResource[row.resourceId]
-                                            ? "Deleting..."
-                                            : "Delete"
-                                      }
+                                      title="Delete"
                                     >
-                                      {deletingByResource[row.resourceId] ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <Trash2 className="h-4 w-4" />
-                                      )}
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   ) : null}
                                 </>
@@ -1865,14 +1587,14 @@ export default function ResearchOutputsPage() {
                         </TableRow>
                       ))}
                     </TableBody>
-                    {totalPages > 1 ? (
+                    {centerChiefTotalPages > 1 ? (
                       <TableFooter>
                         <TableRow>
                           <TableCell colSpan={8} className="px-3 py-3">
                             <PaginationControls
-                              page={currentPage}
-                              totalPages={totalPages}
-                              onPageChange={setCurrentPage}
+                              page={centerChiefPage}
+                              totalPages={centerChiefTotalPages}
+                              onPageChange={setCenterChiefPage}
                               className="border-0 rounded-none shadow-none bg-transparent"
                             />
                           </TableCell>
@@ -1884,8 +1606,345 @@ export default function ResearchOutputsPage() {
               </CardContent>
             )}
           </Card>
-        </div>
-      ) : null}
+        ) : null}
+
+        {activeTab === "records" && canLoadOwnOutputs && loading ? (
+          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-4">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
+                Loading research outputs...
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {activeTab === "records" &&
+        canLoadOwnOutputs &&
+        !loading &&
+        !error &&
+        !tableRows.length ? (
+          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+                No research outputs found. No linked expected output resources
+                are available yet.
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {activeTab === "records" &&
+        canLoadOwnOutputs &&
+        !loading &&
+        !error &&
+        tableRows.length ? (
+          <div className="page-stack">
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-200 px-6 py-5">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base font-semibold text-slate-700">
+                      Research Output Records
+                    </CardTitle>
+                    <CardDescription className="text-slate-600">
+                      Showing {filteredRows.length} output(s).
+                    </CardDescription>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    {filteredRows.length} row(s).
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+                  <label className="relative block w-full md:max-w-xl">
+                    <span className="sr-only">Search outputs</span>
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search file, dataset, project, center, state, or visibility"
+                      className="pl-9"
+                    />
+                  </label>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {[
+                      {
+                        key: "all",
+                        label: "All Outputs",
+                        count: baseSearchRows.length,
+                      },
+                      ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
+                        const key = String(item?.value || "").trim();
+                        const label =
+                          outputTypeLabelByValue[key] ||
+                          String(item?.label || key);
+                        return {
+                          key,
+                          label,
+                          count: baseSearchRows.filter(
+                            (row) =>
+                              String(row?.outputTypeValue || "").trim() === key,
+                          ).length,
+                        };
+                      }),
+                    ].map((chip) => (
+                      <Button
+                        key={chip.key}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className={cn(
+                          "rounded-full border-slate-200 px-4 text-xs",
+                          recordsQuickFilter === chip.key
+                            ? "bg-[#10B981] text-white hover:bg-[#059669]"
+                            : "bg-white text-slate-700 hover:bg-slate-50",
+                        )}
+                        onClick={() => setRecordsQuickFilter(chip.key)}
+                      >
+                        {chip.label}
+                        <span
+                          className={cn(
+                            "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                            recordsQuickFilter === chip.key
+                              ? "bg-white/20 text-white"
+                              : "bg-slate-50 text-slate-700",
+                          )}
+                        >
+                          {chip.count}
+                        </span>
+                      </Button>
+                    ))}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                      onClick={resetRecordsFilters}
+                    >
+                      Reset all
+                    </Button>
+                  </div>
+
+                  {hasActiveRecordsFilters ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                        Active Filters
+                      </span>
+                      {String(searchTerm || "").trim() ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                          onClick={() => setSearchTerm("")}
+                        >
+                          Search: "{String(searchTerm || "").trim()}" x
+                        </button>
+                      ) : null}
+                      {recordsQuickFilter !== "all" ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                          onClick={() => setRecordsQuickFilter("all")}
+                        >
+                          {recordsQuickFilter} x
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </CardContent>
+              {filteredRows.length === 0 ? (
+                <CardContent className="p-4">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+                    No research outputs found. Try a different search term or
+                    add a new research output.
+                  </div>
+                </CardContent>
+              ) : (
+                <CardContent className="p-4">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <Table className="min-w-[980px]">
+                      <TableHeader className="bg-slate-50 text-slate-600">
+                        <TableRow>
+                          <TableHead>No.</TableHead>
+                          <TableHead>Resource/File</TableHead>
+                          <TableHead>Output Type</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Research Center</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedRows.map((row, index) => (
+                          <TableRow key={row.id}>
+                            <TableCell>
+                              {(currentPage - 1) * pageSize + index + 1}
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">{row.title}</div>
+                              {row.subtitle ? (
+                                <div className="text-xs text-slate-600">
+                                  {row.subtitle}
+                                </div>
+                              ) : null}
+                              {row.isPlaceholder || row.isPendingOutput ? (
+                                <div className="space-y-1 text-xs text-slate-800">
+                                  <div>No file attached yet.</div>
+                                </div>
+                              ) : null}
+                            </TableCell>
+                            <TableCell>{row.outputType || "-"}</TableCell>
+                            <TableCell>{row.datasetName || "-"}</TableCell>
+                            <TableCell>{row.organization || "-"}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="inline-flex items-center justify-end gap-1">
+                                {canCreateOutputs &&
+                                (row.isPlaceholder || row.isPendingOutput) ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                    onClick={() =>
+                                      openAddOutputForProject(
+                                        {
+                                          id: row.datasetId,
+                                          title:
+                                            row.projectTitle || row.subtitle,
+                                        },
+                                        row.isPlaceholder
+                                          ? {}
+                                          : {
+                                              output_type: row.outputTypeValue,
+                                              target_count: row.targetCount,
+                                            },
+                                      )
+                                    }
+                                    aria-label={`Add output for ${row?.subtitle || "project"}`}
+                                    title="Add Output"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                  onClick={() => goToOutputProject(row)}
+                                  aria-label={`Open project for ${row?.subtitle || row?.datasetName || "research output"}`}
+                                  title="Open project"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {!row.isPlaceholder &&
+                                !row.isPendingOutput &&
+                                Boolean(row.resourceId) ? (
+                                  <>
+                                    {canEditOutputs ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                        disabled={
+                                          Boolean(
+                                            deletingByResource[row.resourceId],
+                                          ) || row.isPlaceholder
+                                        }
+                                        onClick={() => handleOpenEdit(row)}
+                                        aria-label={`Edit ${row?.title || "research output"}`}
+                                        title={
+                                          row.isPlaceholder
+                                            ? "Edit unavailable"
+                                            : "Edit"
+                                        }
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                    ) : null}
+                                    {!row.isPlaceholder &&
+                                    !row.isPendingOutput &&
+                                    row.resourceId &&
+                                    /\/resource\/.+\/download\//i.test(
+                                      String(row.resourceUrl || ""),
+                                    ) ? (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-700"
+                                          aria-label={`Download ${row?.title || "resource"}`}
+                                          title="Download"
+                                          onClick={() => {
+                                            const url = `${apiBaseUrl}/submissions/resources/${encodeURIComponent(
+                                              row.resourceId,
+                                            )}/download?download=1`;
+                                            window.open(
+                                              url,
+                                              "_blank",
+                                              "noopener,noreferrer",
+                                            );
+                                          }}
+                                        >
+                                          <Download className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    ) : null}
+                                    {canDeleteOutputs ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-slate-700 hover:bg-slate-50"
+                                        disabled={
+                                          Boolean(
+                                            deletingByResource[row.resourceId],
+                                          ) || row.isPlaceholder
+                                        }
+                                        onClick={() => setDeleteTarget(row)}
+                                        aria-label={`Delete ${row?.title || "research output"}`}
+                                        title={
+                                          row.isPlaceholder
+                                            ? "Delete unavailable"
+                                            : deletingByResource[row.resourceId]
+                                              ? "Deleting..."
+                                              : "Delete"
+                                        }
+                                      >
+                                        {deletingByResource[row.resourceId] ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Trash2 className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    ) : null}
+                                  </>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      {totalPages > 1 ? (
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell colSpan={8} className="px-3 py-3">
+                              <PaginationControls
+                                page={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                className="border-0 rounded-none shadow-none bg-transparent"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      ) : null}
+                    </Table>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </div>
+        ) : null}
+      </Tabs>
 
       <Dialog
         open={showAddOutputModal}
@@ -2226,7 +2285,3 @@ export default function ResearchOutputsPage() {
     </section>
   );
 }
-
-
-
-

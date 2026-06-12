@@ -1,691 +1,310 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import InlineNotice from "@/components/feedback/InlineNotice";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { useDashboardData, useDashboardSections } from "@/hooks/dashboard";
+import { useMemo, useState } from "react";
+import { useReferenceData } from "@/hooks/useReferenceData";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  AwardsByLevelSection,
-  CenterBreakdownSection,
-  DashboardHeader,
-  DashboardSection,
-  FacultyActivitySection,
-  FacultyStatusSection,
-  FundingOverviewSection,
-  LinkedProjectsSection,
-  OverviewSection,
-  OutputVisibilitySection,
-  OutputsByTypeSection,
-  OutputsOverTimeSection,
-  ProjectsPerCenterSection,
-  RecentActivitySection,
-  TopContributorsSection,
-} from "./DashboardSections";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  formatDateTimeLabel,
-  groupByQuarter,
-  normalizeCenterId,
-  safeString,
-  toNumber,
-  UNASSIGNED_VALUE,
-} from "./dashboardUtils";
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/utils/cn";
+
+const ALL_VALUE = "__all__";
+
+const KPI_DEFINITIONS = [
+  {
+    sheetCode: "A1",
+    title: "Research Output Volume",
+    deliverable: "Completed research outputs submitted for recognition.",
+    target: 24,
+    targetUnit: "count",
+    successIndicator: "At least 24 outputs submitted.",
+  },
+  {
+    sheetCode: "B1",
+    title: "Publications",
+    deliverable: "Peer-reviewed and institutional publications logged.",
+    target: 18,
+    targetUnit: "count",
+    successIndicator: "At least 18 publications logged.",
+  },
+  {
+    sheetCode: "C1",
+    title: "Research Engagement",
+    deliverable: "Active participation across centers and projects.",
+    target: 80,
+    targetUnit: "count",
+    successIndicator: "80 or more active participants.",
+  },
+  {
+    sheetCode: "D1",
+    title: "On-time Completion",
+    deliverable: "Projects completed within planned timelines.",
+    target: 95,
+    targetUnit: "percent",
+    successIndicator: "95% or higher on-time completion.",
+  },
+];
+
+function safeString(value) {
+  return String(value || "").trim();
+}
+
+function formatCount(value) {
+  return new Intl.NumberFormat("en-US").format(Number(value || 0));
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toFixed(2)}%`;
+}
+
+function calculateAccomplishment(actual, target, targetUnit = "") {
+  const actualValue = Number(actual || 0);
+  const targetValue = Number(target || 0);
+  if (targetValue <= 0) return 0;
+  if (targetUnit === "percent") return actualValue;
+  return (actualValue / targetValue) * 100;
+}
+
+function getStatusVariant(percent) {
+  if (percent >= 100) return "success";
+  if (percent >= 50) return "warning";
+  return "danger";
+}
+
+function formatTarget(target, targetUnit = "") {
+  if (targetUnit === "percent") return `${formatCount(target)}%`;
+  return formatCount(target);
+}
+
+function DashboardHeader({ title, description, children }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+          RDISO Balanced Scorecard
+        </p>
+        <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">{title}</h1>
+        <p className="max-w-2xl text-sm text-slate-600">{description}</p>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function DashboardSection({ title, description, children }) {
+  return (
+    <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+      <CardContent className="p-4">
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">{title}</h2>
+            {description ? (
+              <p className="text-sm text-slate-600">{description}</p>
+            ) : null}
+          </div>
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SummaryTile({ label, value, hint, tone = "neutral" }) {
+  const toneClass =
+    tone === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : tone === "danger"
+          ? "border-rose-200 bg-rose-50 text-rose-700"
+          : "border-slate-200 bg-slate-50 text-slate-700";
+
+  return (
+    <Card className={cn("border shadow-sm", toneClass)}>
+      <CardContent className="p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</p>
+        <p className="mt-2 text-2xl font-bold">{value}</p>
+        {hint ? <p className="mt-1 text-xs opacity-80">{hint}</p> : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScorecardRow({ item }) {
+  return (
+    <tr className="border-t border-slate-200">
+      <td className="px-3 py-3 text-sm text-slate-700">{item.sheetCode}</td>
+      <td className="px-3 py-3 text-sm text-slate-700">{item.deliverable}</td>
+      <td className="px-3 py-3 text-sm text-slate-700">{item.targetLabel}</td>
+      <td className="px-3 py-3 text-sm text-slate-700">{item.actualLabel}</td>
+      <td className="px-3 py-3 text-sm text-slate-700">
+        <Badge variant="outline" className={item.badgeClass}>
+          {item.percentLabel}
+        </Badge>
+      </td>
+      <td className="px-3 py-3 text-sm text-slate-700">{item.successIndicator || "-"}</td>
+    </tr>
+  );
+}
+
+const demoActualsByCenter = {
+  [ALL_VALUE]: {},
+};
 
 export default function DashboardPage() {
-  const { user, profile } = useAuth();
-  const role = safeString(profile?.role).toLowerCase();
-  const isAdmin = role === "admin";
-  const [chartTheme, setChartTheme] = useState("branded");
-  const displayName = safeString(
-    profile?.full_name || profile?.name || user?.name || user?.email,
-  );
-  const greetingName = displayName || "Faculty";
+  const { centers } = useReferenceData();
+  const [selectedCenterId, setSelectedCenterId] = useState(ALL_VALUE);
 
-  const {
-    projects,
-    error,
-    referenceError,
-    effectiveCenters,
-    effectiveDepartments,
-    linkedProjects,
-  } = useDashboardData({ user, profile, isAdmin });
-
-  const knownCenterIds = useMemo(
-    () =>
-      new Set(
-        (effectiveCenters || [])
-          .map((center) => safeString(center?.id))
-          .filter(Boolean),
-      ),
-    [effectiveCenters],
-  );
-
-  const scopedProjects = useMemo(() => {
-    if (isAdmin) return projects || [];
-    const ownerId = safeString(profile?.id || user?.id);
-    if (!ownerId) return [];
-    return (projects || []).filter(
-      (project) => safeString(project?.submitted_by) === ownerId,
-    );
-  }, [isAdmin, profile?.id, projects, user?.id]);
-  const ownerId = safeString(profile?.id || user?.id);
-
-  const visibleProjects = scopedProjects;
-
-  const facultyProjects = useMemo(() => {
-    if (isAdmin) return visibleProjects || [];
-    const owned = Array.isArray(visibleProjects) ? visibleProjects : [];
-    const seen = new Set();
-    return owned.filter((project) => {
-      const key =
-        safeString(project?.ckan_dataset_id) ||
-        safeString(project?.id) ||
-        safeString(project?.title);
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [isAdmin, visibleProjects]);
-
-  const [filters, setFilters] = useState({
-    centerId: "",
-    departmentId: "",
-    year: "",
-    range: "",
-    startDate: "",
-    endDate: "",
-  });
-  const [showAllCenters, setShowAllCenters] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [trendView, setTrendView] = useState("monthly");
-  const [outputsRange, setOutputsRange] = useState("last12");
-  const [contributorView, setContributorView] = useState("month");
-  const [sortConfig, setSortConfig] = useState({
-    key: "projects",
-    direction: "desc",
-  });
-  const [lastUpdated, setLastUpdated] = useState(null);
-
-  const dashboardFilters = useMemo(
-    () => ({ ...filters, ownerOnly: !isAdmin }),
-    [filters, isAdmin],
-  );
-
-  const {
-    yearOptions: dashboardYearOptions,
-    overview: dashboardOverview,
-    centerBreakdownRows: dashboardCenterBreakdownRows,
-    projectsPerCenterData: dashboardProjectsPerCenterData,
-    outputsByTypeData: dashboardOutputsByTypeData,
-    outputsOverTimeData: dashboardOutputsOverTimeData,
-    awardsByLevelData: dashboardAwardsByLevelData,
-    fundingOverview: dashboardFundingOverview,
-    outputsVisibility: dashboardOutputsVisibility,
-    projectStatusCounts: dashboardProjectStatusCounts,
-    topContributors: dashboardTopContributors,
-    recentProjects: dashboardRecentProjects,
-    recentOutputs: dashboardRecentOutputs,
-    recentAwards: dashboardRecentAwards,
-    activityThisMonth: dashboardActivityThisMonth,
-    loading: dashboardLoading,
-    error: dashboardError,
-  } = useDashboardSections({
-    filters: dashboardFilters,
-  });
-
-  const visibleCenterIds = useMemo(() => {
-    if (isAdmin) {
-      return new Set(
-        (effectiveCenters || []).map((center) => safeString(center?.id)),
-      );
-    }
-
-    const ids = new Set(
-      (visibleProjects || [])
-        .map((project) =>
-          normalizeCenterId(project?.research_center_id, knownCenterIds),
-        )
-        .filter(Boolean),
-    );
-    const profileCenterId = normalizeCenterId(
-      profile?.ckan_org_id || profile?.research_center_id,
-      knownCenterIds,
-    );
-    if (profileCenterId) ids.add(profileCenterId);
-    return ids;
-  }, [
-    effectiveCenters,
-    isAdmin,
-    knownCenterIds,
-    profile?.ckan_org_id,
-    profile?.research_center_id,
-    visibleProjects,
-  ]);
-
-  const visibleCenters = useMemo(() => {
-    if (isAdmin) return effectiveCenters || [];
-    return (effectiveCenters || []).filter((center) =>
-      visibleCenterIds.has(safeString(center?.id)),
-    );
-  }, [effectiveCenters, isAdmin, visibleCenterIds]);
-
-  const visibleDepartmentIds = useMemo(() => {
-    if (isAdmin) {
-      return new Set(
-        (effectiveDepartments || []).map((department) =>
-          safeString(department?.id),
-        ),
-      );
-    }
-
-    const ids = new Set(
-      (visibleProjects || [])
-        .map((project) => safeString(project?.department_id))
-        .filter(Boolean),
-    );
-    const profileDepartmentId = safeString(profile?.department_id);
-    if (profileDepartmentId) ids.add(profileDepartmentId);
-    return ids;
-  }, [effectiveDepartments, isAdmin, profile?.department_id, visibleProjects]);
-
-  const visibleDepartments = useMemo(() => {
-    if (isAdmin) return effectiveDepartments || [];
-    return (effectiveDepartments || []).filter((department) =>
-      visibleDepartmentIds.has(safeString(department?.id)),
-    );
-  }, [effectiveDepartments, isAdmin, visibleDepartmentIds]);
-
-  const yearOptions = useMemo(
-    () => (Array.isArray(dashboardYearOptions) ? dashboardYearOptions : []),
-    [dashboardYearOptions],
-  );
-
-  const summaryCounts = useMemo(
-    () =>
-      dashboardOverview || {
-        centers: 0,
-        departments: 0,
-        affiliates: 0,
-        linkedProjects: 0,
-        projects: 0,
-        outputs: 0,
-        outputsSubmitted: 0,
-        outputsExpected: 0,
-        awards: 0,
-      },
-    [dashboardOverview],
-  );
-
-  const projectsPerCenterData = useMemo(
-    () =>
-      Array.isArray(dashboardProjectsPerCenterData)
-        ? dashboardProjectsPerCenterData
-        : [],
-    [dashboardProjectsPerCenterData],
-  );
-
-  const outputsByTypeData = useMemo(
-    () =>
-      Array.isArray(dashboardOutputsByTypeData)
-        ? dashboardOutputsByTypeData
-        : [],
-    [dashboardOutputsByTypeData],
-  );
-
-  const outputsOverTimeData = useMemo(
-    () =>
-      Array.isArray(dashboardOutputsOverTimeData)
-        ? dashboardOutputsOverTimeData
-        : [],
-    [dashboardOutputsOverTimeData],
-  );
-
-  const awardsByLevelData = useMemo(
-    () =>
-      Array.isArray(dashboardAwardsByLevelData)
-        ? dashboardAwardsByLevelData
-        : [],
-    [dashboardAwardsByLevelData],
-  );
-
-  const fundingOverview = useMemo(
-    () =>
-      dashboardFundingOverview && typeof dashboardFundingOverview === "object"
-        ? dashboardFundingOverview
-        : null,
-    [dashboardFundingOverview],
-  );
-
-  const outputsVisibility = useMemo(
-    () =>
-      dashboardOutputsVisibility &&
-      typeof dashboardOutputsVisibility === "object"
-        ? dashboardOutputsVisibility
-        : null,
-    [dashboardOutputsVisibility],
-  );
-
-  const topContributors = useMemo(
-    () =>
-      dashboardTopContributors && typeof dashboardTopContributors === "object"
-        ? dashboardTopContributors
-        : null,
-    [dashboardTopContributors],
-  );
-
-  const centerBreakdownRows = useMemo(
-    () =>
-      Array.isArray(dashboardCenterBreakdownRows)
-        ? dashboardCenterBreakdownRows
-        : [],
-    [dashboardCenterBreakdownRows],
-  );
-
-  const recentProjects = useMemo(
-    () =>
-      Array.isArray(dashboardRecentProjects) ? dashboardRecentProjects : [],
-    [dashboardRecentProjects],
-  );
-
-  const recentOutputs = useMemo(
-    () =>
-      dashboardRecentOutputs && typeof dashboardRecentOutputs === "object"
-        ? dashboardRecentOutputs
-        : { mode: "submitted", rows: [] },
-    [dashboardRecentOutputs],
-  );
-
-  const recentAwards = useMemo(
-    () => (Array.isArray(dashboardRecentAwards) ? dashboardRecentAwards : []),
-    [dashboardRecentAwards],
-  );
-
-  const activeFilterCount = useMemo(
-    () =>
-      [
-        filters.centerId,
-        filters.departmentId,
-        filters.year,
-        filters.range,
-        filters.startDate,
-        filters.endDate,
-      ].filter(Boolean).length,
-    [
-      filters.centerId,
-      filters.departmentId,
-      filters.endDate,
-      filters.range,
-      filters.startDate,
-      filters.year,
+  const centerOptions = useMemo(
+    () => [
+      { value: ALL_VALUE, label: "All Research Centers" },
+      ...(Array.isArray(centers)
+        ? centers.map((center) => ({
+            value: safeString(center?.id),
+            label: safeString(center?.name || center?.title || center?.id),
+          }))
+        : []),
     ],
+    [centers],
   );
 
-  const outputsTrendData = useMemo(
-    () =>
-      trendView === "quarterly"
-        ? groupByQuarter(outputsOverTimeData)
-        : outputsOverTimeData,
-    [outputsOverTimeData, trendView],
-  );
-
-  const outputsTrendDataScoped = useMemo(() => {
-    if (isAdmin) return outputsTrendData;
-    if (outputsRange === "last6") {
-      return outputsTrendData.slice(-6);
-    }
-    return outputsTrendData;
-  }, [isAdmin, outputsRange, outputsTrendData]);
-
-  const totalOutputsByType = useMemo(
-    () =>
-      outputsByTypeData.reduce((sum, entry) => sum + toNumber(entry?.value), 0),
-    [outputsByTypeData],
-  );
-
-  const totalProjectsPerCenter = useMemo(
-    () =>
-      projectsPerCenterData.reduce(
-        (sum, entry) => sum + toNumber(entry?.count),
-        0,
-      ),
-    [projectsPerCenterData],
-  );
-
-  const totalOutputsTrend = useMemo(
-    () =>
-      outputsTrendDataScoped.reduce(
-        (sum, entry) => sum + toNumber(entry?.outputs),
-        0,
-      ),
-    [outputsTrendDataScoped],
-  );
-
-  const summaryCountsForView = useMemo(() => {
-    if (isAdmin || !summaryCounts) return summaryCounts;
-    const linkedCount = Array.isArray(linkedProjects)
-      ? linkedProjects.length
-      : 0;
-    return { ...summaryCounts, linkedProjects: linkedCount };
-  }, [isAdmin, linkedProjects, summaryCounts]);
-
-  const loadIssueMessage =
-    error || dashboardError || referenceError?.message || "";
-  const lastUpdatedLabel = lastUpdated ? formatDateTimeLabel(lastUpdated) : "";
-  const currentYear = useMemo(() => String(new Date().getFullYear()), []);
-
-  const handleToggleFilters = useCallback(
-    () => setShowFilters((prev) => !prev),
-    [],
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({
-      centerId: "",
-      departmentId: "",
-      year: "",
-      range: "",
-      startDate: "",
-      endDate: "",
+  const scorecard = useMemo(() => {
+    const actuals = demoActualsByCenter[selectedCenterId] || {};
+    return KPI_DEFINITIONS.map((item) => {
+      const actual = actuals[item.sheetCode] ?? "";
+      const percent = calculateAccomplishment(
+        actual,
+        item.target,
+        item.targetUnit,
+      );
+      return {
+        ...item,
+        actual,
+        percent,
+        targetLabel: formatTarget(item.target, item.targetUnit),
+        actualLabel:
+          actual === "" || actual === null || actual === undefined
+            ? "-"
+            : formatCount(actual),
+        percentLabel: formatPercent(percent),
+        badgeClass:
+          getStatusVariant(percent) === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : getStatusVariant(percent) === "warning"
+              ? "border-amber-200 bg-amber-50 text-amber-700"
+              : "border-rose-200 bg-rose-50 text-rose-700",
+      };
     });
-    setShowFilters(false);
-  }, []);
+  }, [selectedCenterId]);
 
-  const handleTrendChange = useCallback((nextView) => {
-    setTrendView(nextView);
-  }, []);
-
-  const handleToggleShowAll = useCallback(
-    () => setShowAllCenters((prev) => !prev),
-    [],
-  );
-
-  const presetFlags = useMemo(
-    () => ({
-      thisYear: filters.year === currentYear && !filters.range,
-      last12: filters.range === "last12",
-      topCenters: !filters.centerId && !filters.departmentId && !showAllCenters,
-      unassigned: filters.centerId === UNASSIGNED_VALUE,
-    }),
-    [
-      currentYear,
-      filters.centerId,
-      filters.departmentId,
-      filters.range,
-      filters.year,
-      showAllCenters,
-    ],
-  );
-
-  const handleApplyPreset = useCallback(
-    (preset) => {
-      if (preset === "thisYear") {
-        setFilters((prev) => ({
-          ...prev,
-          year: currentYear,
-          range: "",
-          startDate: "",
-          endDate: "",
-        }));
-        return;
-      }
-      if (preset === "last12") {
-        setFilters((prev) => ({
-          ...prev,
-          year: "",
-          range: "last12",
-          startDate: "",
-          endDate: "",
-        }));
-        return;
-      }
-      if (preset === "topCenters") {
-        setFilters((prev) => ({
-          ...prev,
-          centerId: "",
-          departmentId: "",
-        }));
-        setShowAllCenters(false);
-        setSortConfig({ key: "projects", direction: "desc" });
-        return;
-      }
-      if (preset === "unassigned") {
-        setFilters((prev) => ({
-          ...prev,
-          centerId: UNASSIGNED_VALUE,
-        }));
-      }
-    },
-    [currentYear],
-  );
-
-  useEffect(() => {
-    if (!dashboardLoading) {
-      setLastUpdated(new Date());
-    }
-  }, [
-    dashboardLoading,
-    filters.centerId,
-    filters.departmentId,
-    filters.endDate,
-    filters.range,
-    filters.startDate,
-    filters.year,
-  ]);
+  const summary = useMemo(() => {
+    const total = scorecard.length;
+    const achieved = scorecard.filter((item) => item.percent >= 100).length;
+    const partial = scorecard.filter(
+      (item) => item.percent > 0 && item.percent < 100,
+    ).length;
+    const behind = scorecard.filter((item) => item.percent <= 0).length;
+    return { total, achieved, partial, behind };
+  }, [scorecard]);
 
   return (
     <section className="page-stack-lg">
       <DashboardHeader
-        isAdmin={isAdmin}
-        title={
-          isAdmin ? "Research Management Dashboard" : "My Research Dashboard"
-        }
-        description={
-          isAdmin
-            ? "Institution-wide overview across research centers, departments, affiliates, projects, outputs, and awards."
-            : "Quick insights scoped to your affiliated portfolio: projects, outputs, and recognitions you can access."
-        }
-        filters={filters}
-        visibleCenters={visibleCenters}
-        visibleDepartments={visibleDepartments}
-        yearOptions={yearOptions}
-        activeFilterCount={activeFilterCount}
-        lastUpdatedLabel={lastUpdatedLabel}
-        dashboardLoading={dashboardLoading}
-        greetingName={greetingName}
-        showFilters={showFilters}
-        onToggleFilters={handleToggleFilters}
-        onUpdateFilters={setFilters}
-        onClearFilters={handleClearFilters}
-        onApplyPreset={handleApplyPreset}
-        presetFlags={presetFlags}
-        chartTheme={chartTheme}
-        onChartThemeChange={setChartTheme}
-      />
+        title="Dashboard"
+        description="RDISO Balanced Scorecard for monitoring center KPI accomplishments, deliverables, and indicators."
+      >
+        <div className="grid gap-2 sm:min-w-[280px]">
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-700">Research Center</span>
+            <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+              <SelectTrigger className="border-slate-300 bg-white text-slate-700">
+                <SelectValue placeholder="Select center" />
+              </SelectTrigger>
+              <SelectContent className="border border-slate-200 bg-white text-slate-700">
+                {centerOptions.map((center) => (
+                  <SelectItem key={center.value} value={center.value}>
+                    {center.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+      </DashboardHeader>
 
-      {loadIssueMessage ? (
-        <InlineNotice
-          type="error"
-          title="Dashboard load issue"
-          message={loadIssueMessage}
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryTile
+          label="Total Indicators"
+          value={summary.total}
+          hint="All scorecard rows"
         />
-      ) : null}
+        <SummaryTile
+          label="Achieved"
+          value={summary.achieved}
+          hint="At or above target"
+          tone="success"
+        />
+        <SummaryTile
+          label="Partially Achieved"
+          value={summary.partial}
+          hint="Progress but below target"
+          tone="warning"
+        />
+        <SummaryTile
+          label="Behind Target"
+          value={summary.behind}
+          hint="Need follow-up"
+          tone="danger"
+        />
+      </div>
 
-      {isAdmin ? (
-        <>
-          <DashboardSection
-            eyebrow="Overview Metrics"
-            title="Institution Snapshot"
-            tone="contrast"
-          >
-            <OverviewSection
-              isAdmin={isAdmin}
-              summaryCounts={summaryCountsForView}
-              filters={filters}
-              loading={dashboardLoading}
-              asPanel={false}
-            />
-          </DashboardSection>
+      <DashboardSection
+        title="RDISO KPI / Deliverables Scorecard"
+        description="Monitor target vs actual accomplishment per research center."
+      >
+        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+          <Table>
+            <TableHeader className="bg-slate-50 text-slate-600">
+              <TableRow>
+                <TableHead className="w-[90px]">Sheet Code</TableHead>
+                <TableHead>Deliverables</TableHead>
+                <TableHead className="w-[120px]">Target</TableHead>
+                <TableHead className="w-[140px]">Actual</TableHead>
+                <TableHead className="w-[140px]">% Accomplishment</TableHead>
+                <TableHead className="w-[220px]">Success Indicator</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scorecard.map((item) => (
+                <ScorecardRow key={item.sheetCode} item={item} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </DashboardSection>
 
-          <DashboardSection
-            eyebrow="Core Analytics"
-            title="Performance Signals"
-            framed={false}
-          >
-            <div className="grid gap-4 xl:grid-cols-3">
-              <div className="xl:col-span-2">
-                <FacultyStatusSection
-                  loading={dashboardLoading}
-                  projects={projects}
-                  title="All Project Status"
-                  description="Snapshot of project status across all research centers."
-                  statusCounts={dashboardProjectStatusCounts}
-                  chartTheme={chartTheme}
-                  ownerId={ownerId}
-                />
-              </div>
-
-              <div className="xl:col-span-1">
-                <TopContributorsSection
-                  loading={dashboardLoading}
-                  contributors={topContributors}
-                  view={contributorView}
-                  onViewChange={setContributorView}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2 mt-4">
-              <FundingOverviewSection
-                loading={dashboardLoading}
-                fundingOverview={fundingOverview}
-              />
-              <OutputVisibilitySection
-                loading={dashboardLoading}
-                visibility={outputsVisibility}
-              />
-            </div>
-
-            {/* Full-width AwardsByLevelSection */}
-            <div className="mt-8">
-              <AwardsByLevelSection
-                loading={dashboardLoading}
-                awardsByLevelData={awardsByLevelData}
-                chartTheme={chartTheme}
-              />
-            </div>
-          </DashboardSection>
-
-          <DashboardSection
-            eyebrow="Detailed Data Tables"
-            title="Research Center Breakdown"
-            framed={false}
-          >
-            <CenterBreakdownSection
-              isAdmin={isAdmin}
-              loading={dashboardLoading}
-              centerBreakdownRows={centerBreakdownRows}
-              showAllCenters={showAllCenters}
-              onToggleShowAll={handleToggleShowAll}
-              sortConfig={sortConfig}
-              onSortChange={setSortConfig}
-            />
-          </DashboardSection>
-
-          <DashboardSection
-            eyebrow="Distribution & Trends"
-            title="Coverage and Momentum"
-            framed={false}
-          >
-            <ProjectsPerCenterSection
-              loading={dashboardLoading}
-              projectsPerCenterData={projectsPerCenterData}
-              totalProjectsPerCenter={totalProjectsPerCenter}
-              chartTheme={chartTheme}
-            />
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="col-span-2">
-                <OutputsOverTimeSection
-                  loading={dashboardLoading}
-                  outputsTrendData={outputsTrendDataScoped}
-                  trendView={trendView}
-                  onTrendChange={handleTrendChange}
-                  rangeView={outputsRange}
-                  onRangeChange={setOutputsRange}
-                  isAdmin={isAdmin}
-                  totalOutputsTrend={totalOutputsTrend}
-                  chartTheme={chartTheme}
-                />
-              </div>
-
-              <OutputsByTypeSection
-                loading={dashboardLoading}
-                outputsByTypeData={outputsByTypeData}
-                totalOutputsByType={totalOutputsByType}
-                chartTheme={chartTheme}
-              />
-            </div>
-          </DashboardSection>
-
-          <DashboardSection
-            eyebrow="Recent Activity"
-            title="Latest Updates"
-            framed={false}
-          >
-            <RecentActivitySection
-              loading={dashboardLoading}
-              recentProjects={recentProjects}
-              recentOutputs={recentOutputs}
-              recentAwards={recentAwards}
-              showHeader={false}
-            />
-          </DashboardSection>
-        </>
-      ) : (
-        <>
-          <OverviewSection
-            isAdmin={isAdmin}
-            summaryCounts={summaryCountsForView}
-            filters={filters}
-            loading={dashboardLoading}
-          />
-
-          <FacultyActivitySection
-            loading={dashboardLoading}
-            activity={dashboardActivityThisMonth}
-          />
-          <FacultyStatusSection
-            loading={dashboardLoading}
-            projects={facultyProjects}
-            chartTheme={chartTheme}
-            ownerId={ownerId}
-            statusCounts={dashboardProjectStatusCounts}
-          />
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <OutputsOverTimeSection
-              loading={dashboardLoading}
-              outputsTrendData={outputsTrendDataScoped}
-              trendView={trendView}
-              onTrendChange={handleTrendChange}
-              rangeView={outputsRange}
-              onRangeChange={setOutputsRange}
-              isAdmin={isAdmin}
-              totalOutputsTrend={totalOutputsTrend}
-              chartTheme={chartTheme}
-            />
-          </div>
-
-          <LinkedProjectsSection
-            loading={dashboardLoading}
-            linkedProjects={linkedProjects}
-          />
-
-          <RecentActivitySection
-            loading={dashboardLoading}
-            recentProjects={recentProjects}
-            recentOutputs={recentOutputs}
-            recentAwards={recentAwards}
-          />
-        </>
-      )}
+      <DashboardSection
+        title="Notes"
+        description="This is the fresh dashboard foundation. Next we can connect actual accomplishments from project outputs, awards, patents, MOA/MOU, and funding records."
+      >
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+          <p>
+            Right now the scorecard is scaffolded with the KPI definitions and
+            calculation logic. The next step is mapping actual accomplishments
+            from real database sources per Research Center.
+          </p>
+        </div>
+      </DashboardSection>
     </section>
   );
 }

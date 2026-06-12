@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
-import AccessControlPanelHeader from "./access-control/components/AccessControlPanelHeader";
-import RolesPanel from "./access-control/components/RolesPanel";
-import RoleDetailsPanel from "./access-control/components/RoleDetailsPanel";
-import PermissionsMatrixPanel from "./access-control/components/PermissionsMatrixPanel";
+import {
+  AccessControlPanelHeader,
+  RolesPanel,
+  RoleDetailsPanel,
+  PermissionsMatrixPanel,
+} from "./access-control/components/AccessControlPanels";
 
 const BASE_ACTION_COLUMNS = ["create", "view", "edit", "delete"];
 const MODULE_HIERARCHY = [

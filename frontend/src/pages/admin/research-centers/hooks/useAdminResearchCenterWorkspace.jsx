@@ -8,34 +8,22 @@ import {
   fetchReferenceData,
   fetchReferenceLinks,
   fetchReferenceUsageCounts,
-  updateReference,
+  syncResearchCentersFromCkan,
 } from "@/services/admin";
 import { validateCenterForm } from "@/utils/admin";
 import {
-  EMPTY_EDITING,
   INITIAL_FILTERS,
-  INITIAL_MEMBER_FILTERS,
-  INITIAL_PROJECT_FILTERS,
-  MEMBER_PAGE_SIZE,
   PAGE_SIZE,
-  PROJECT_PAGE_SIZE,
 } from "../constants";
 import {
   addUniqueTrimmedItem,
   buildDeleteGuard,
   buildResearchCenterCsvContent,
   buildResearchCenterPdfRowsHtml,
-  createEditingState,
   normalizeUniqueNames,
   removeItem,
   toId,
 } from "../helpers";
-import usePagedList from "./usePagedList";
-import WorkspaceOverview from "../components/WorkspaceOverview";
-import MembersPanel from "../components/MembersPanel";
-import ProjectsPanel from "../components/ProjectsPanel";
-import AgendasPanel from "../components/AgendasPanel";
-import SettingsPanel from "../components/SettingsPanel";
 
 function applyErrorResets(setErrors, patch, keyMap) {
   const keysToClear = Object.entries(keyMap)
@@ -53,6 +41,32 @@ function applyErrorResets(setErrors, patch, keyMap) {
   });
 }
 
+function usePagedList({ totalItems, pageSize, resetKeys = [], initialPage = 1 }) {
+  const [page, setPage] = useState(initialPage);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(Number(totalItems || 0) / pageSize)),
+    [pageSize, totalItems],
+  );
+
+  useEffect(() => {
+    setPage(initialPage);
+  }, [initialPage, ...resetKeys]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const start = (page - 1) * pageSize;
+
+  return {
+    page,
+    setPage,
+    totalPages,
+    start,
+  };
+}
+
 export default function useAdminResearchCenterWorkspace() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -63,8 +77,6 @@ export default function useAdminResearchCenterWorkspace() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [quickFilter, setQuickFilter] = useState("all");
   const [rows, setRows] = useState([]);
-  const [editing, setEditing] = useState(EMPTY_EDITING);
-  const [editLoading, setEditLoading] = useState(false);
   const [deletingRow, setDeletingRow] = useState(null);
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -89,16 +101,8 @@ export default function useAdminResearchCenterWorkspace() {
   const [newResearchAgendas, setNewResearchAgendas] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
   const [agendaNamesByCenterId, setAgendaNamesByCenterId] = useState({});
-  const [editErrors, setEditErrors] = useState({});
   const [createErrors, setCreateErrors] = useState({});
-  const [scopedMembers, setScopedMembers] = useState([]);
-  const [scopedProjects, setScopedProjects] = useState([]);
-  const [scopedLinksLoading, setScopedLinksLoading] = useState(false);
-  const [scopedLinksError, setScopedLinksError] = useState("");
-  const [memberFilters, setMemberFilters] = useState(INITIAL_MEMBER_FILTERS);
-  const [projectFilters, setProjectFilters] = useState(INITIAL_PROJECT_FILTERS);
   const [selectedCenterId, setSelectedCenterId] = useState("");
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("overview");
 
   const isScopedCenterChief =
     profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
@@ -111,32 +115,6 @@ export default function useAdminResearchCenterWorkspace() {
         : null,
     [isScopedCenterChief, managedCenterId, rows],
   );
-
-  const loadCenterLinks = useCallback(async (centerId) => {
-    const id = toId(centerId);
-    if (!id) {
-      setScopedMembers([]);
-      setScopedProjects([]);
-      setScopedLinksError("");
-      return;
-    }
-
-    setScopedLinksLoading(true);
-    setScopedLinksError("");
-    try {
-      const linked = await fetchReferenceLinks({ type: "center", id });
-      setScopedMembers(Array.isArray(linked?.profiles) ? linked.profiles : []);
-      setScopedProjects(Array.isArray(linked?.projects) ? linked.projects : []);
-    } catch (error) {
-      setScopedMembers([]);
-      setScopedProjects([]);
-      setScopedLinksError(
-        error.message || "Unable to load research center workspace details.",
-      );
-    } finally {
-      setScopedLinksLoading(false);
-    }
-  }, []);
 
   const loadResearchCenterRows = useCallback(async () => {
     setDataLoading(true);
@@ -285,25 +263,14 @@ export default function useAdminResearchCenterWorkspace() {
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
 
-      if (isScopedCenterChief && mapped.length > 0) {
-        const managedRow = mapped.find(
-          (row) => toId(row?.id) === managedCenterId,
-        );
-        if (managedRow) {
-          await loadCenterLinks(managedRow.id);
-        }
-      }
     } catch (error) {
       setRows([]);
       setAgendaNamesByCenterId({});
-      setScopedMembers([]);
-      setScopedProjects([]);
-      setScopedLinksError("");
       setDataError(error.message || "Unable to load research center data.");
     } finally {
       setDataLoading(false);
     }
-  }, [isScopedCenterChief, loadCenterLinks, managedCenterId]);
+  }, [isScopedCenterChief, managedCenterId]);
 
   useEffect(() => {
     loadResearchCenterRows();
@@ -403,10 +370,6 @@ export default function useAdminResearchCenterWorkspace() {
     if (isScopedCenterChief) return;
     if (!filteredRows.length) {
       setSelectedCenterId("");
-      setScopedMembers([]);
-      setScopedProjects([]);
-      setScopedLinksError("");
-      setScopedLinksLoading(false);
       return;
     }
 
@@ -418,168 +381,6 @@ export default function useAdminResearchCenterWorkspace() {
       setSelectedCenterId(toId(filteredRows[0]?.id));
     }
   }, [filteredRows, isScopedCenterChief, selectedCenterId]);
-
-  useEffect(() => {
-    if (isScopedCenterChief || !workspaceCenterRow?.id) return;
-    loadCenterLinks(workspaceCenterRow.id);
-  }, [isScopedCenterChief, loadCenterLinks, workspaceCenterRow?.id]);
-
-  const scopedDepartmentOptions = useMemo(
-    () =>
-      normalizeUniqueNames(
-        scopedMembers.map((member) => String(member?.department || "")),
-      ).sort((a, b) => a.localeCompare(b)),
-    [scopedMembers],
-  );
-
-  const scopedProjectDepartmentOptions = useMemo(
-    () =>
-      normalizeUniqueNames(
-        scopedProjects.map((project) => String(project?.department_name || "")),
-      ).sort((a, b) => a.localeCompare(b)),
-    [scopedProjects],
-  );
-
-  const scopedProjectStatusOptions = useMemo(
-    () =>
-      normalizeUniqueNames(
-        scopedProjects.map((project) =>
-          String(project?.status || "")
-            .trim()
-            .toLowerCase(),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [scopedProjects],
-  );
-
-  const filteredScopedMembers = useMemo(() => {
-    const keyword = memberFilters.search.trim().toLowerCase();
-    return scopedMembers.filter((member) => {
-      const fullName = String(member?.full_name || "").toLowerCase();
-      const email = String(member?.email || "").toLowerCase();
-      const role = String(member?.role || "").toLowerCase();
-      const department = String(member?.department || "").trim();
-      const isActive = member?.is_active !== false;
-
-      if (keyword && !(fullName.includes(keyword) || email.includes(keyword))) {
-        return false;
-      }
-      if (memberFilters.role !== "all" && role !== memberFilters.role) {
-        return false;
-      }
-      if (
-        memberFilters.department !== "all" &&
-        department !== memberFilters.department
-      ) {
-        return false;
-      }
-      if (memberFilters.status === "active" && !isActive) {
-        return false;
-      }
-      if (memberFilters.status === "inactive" && isActive) {
-        return false;
-      }
-      return true;
-    });
-  }, [memberFilters, scopedMembers]);
-
-  const filteredScopedProjects = useMemo(() => {
-    const keyword = projectFilters.search.trim().toLowerCase();
-    return scopedProjects.filter((project) => {
-      const title = String(project?.title || project?.name || "").toLowerCase();
-      const leadResearcher = String(
-        project?.lead_researcher_name || project?.researcher_name || "",
-      ).toLowerCase();
-      const status = String(project?.status || "")
-        .trim()
-        .toLowerCase();
-      const department = String(project?.department_name || "").trim();
-
-      if (
-        keyword &&
-        !(title.includes(keyword) || leadResearcher.includes(keyword))
-      ) {
-        return false;
-      }
-      if (projectFilters.status !== "all" && status !== projectFilters.status) {
-        return false;
-      }
-      if (
-        projectFilters.department !== "all" &&
-        department !== projectFilters.department
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [projectFilters, scopedProjects]);
-
-  const memberPaging = usePagedList({
-    totalItems: filteredScopedMembers.length,
-    pageSize: MEMBER_PAGE_SIZE,
-    resetKeys: [
-      memberFilters.search,
-      memberFilters.role,
-      memberFilters.department,
-      memberFilters.status,
-      scopedMembers.length,
-    ],
-  });
-
-  const projectPaging = usePagedList({
-    totalItems: filteredScopedProjects.length,
-    pageSize: PROJECT_PAGE_SIZE,
-    resetKeys: [
-      projectFilters.search,
-      projectFilters.status,
-      projectFilters.department,
-      scopedProjects.length,
-    ],
-  });
-
-  const memberPage = memberPaging.page;
-  const setMemberPage = memberPaging.setPage;
-  const memberTotalPages = memberPaging.totalPages;
-  const paginatedScopedMembers = useMemo(
-    () =>
-      filteredScopedMembers.slice(
-        memberPaging.start,
-        memberPaging.start + MEMBER_PAGE_SIZE,
-      ),
-    [filteredScopedMembers, memberPaging.start],
-  );
-
-  const projectPage = projectPaging.page;
-  const setProjectPage = projectPaging.setPage;
-  const projectTotalPages = projectPaging.totalPages;
-  const paginatedScopedProjects = useMemo(
-    () =>
-      filteredScopedProjects.slice(
-        projectPaging.start,
-        projectPaging.start + PROJECT_PAGE_SIZE,
-      ),
-    [filteredScopedProjects, projectPaging.start],
-  );
-
-  const workspaceSummary = useMemo(() => {
-    const activeMembers = scopedMembers.filter(
-      (member) => member?.is_active !== false,
-    );
-    return {
-      totalMembers: scopedMembers.length,
-      activeMembers: activeMembers.length,
-      linkedProjects: scopedProjects.length,
-      totalAgendas: workspaceCenterRow?.agendaCount || 0,
-      totalLinks:
-        (workspaceCenterRow?.profileCount || 0) +
-        (workspaceCenterRow?.projectCount || 0),
-    };
-  }, [scopedMembers, scopedProjects.length, workspaceCenterRow]);
-
-  const selectedAgendaNames = useMemo(
-    () => agendaNamesByCenterId[workspaceCenterRow?.id] || [],
-    [agendaNamesByCenterId, workspaceCenterRow?.id],
-  );
 
   const dashboardMetrics = useMemo(() => {
     const totalCenters = rows.length;
@@ -612,87 +413,6 @@ export default function useAdminResearchCenterWorkspace() {
     [rows],
   );
 
-  const workspaceTabs = useMemo(
-    () =>
-      isScopedCenterChief
-        ? [
-            { key: "overview", label: "Overview" },
-            { key: "members", label: "Members" },
-            { key: "projects", label: "Projects" },
-            { key: "agendas", label: "Agendas" },
-          ]
-        : [
-            { key: "overview", label: "Overview" },
-            { key: "members", label: "Members" },
-            { key: "projects", label: "Projects" },
-            { key: "agendas", label: "Agendas" },
-            { key: "settings", label: "Settings" },
-          ],
-    [isScopedCenterChief],
-  );
-
-  useEffect(() => {
-    setActiveWorkspaceTab("overview");
-  }, [workspaceCenterRow?.id]);
-
-  const loadEditableCenter = useCallback(async (row) => {
-    if (!row?.id) {
-      setEditing(EMPTY_EDITING);
-      return;
-    }
-
-    setEditLoading(true);
-    setEditErrors({});
-    setEditing(createEditingState(row));
-
-    try {
-      const result = await fetchReferenceLinks({ type: "center", id: row.id });
-      const linkedAgendas = Array.isArray(result?.agendas)
-        ? normalizeUniqueNames(
-            result.agendas.map((agenda) => String(agenda?.name || "")),
-          )
-        : [];
-      setEditing(createEditingState(row, linkedAgendas));
-    } catch (error) {
-      setActionError(
-        error.message || "Unable to load editable center details.",
-      );
-    } finally {
-      setEditLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (
-      isScopedCenterChief ||
-      activeWorkspaceTab !== "settings" ||
-      !workspaceCenterRow?.id
-    ) {
-      return;
-    }
-
-    if (editing.id !== workspaceCenterRow.id) {
-      loadEditableCenter(workspaceCenterRow);
-    }
-  }, [
-    activeWorkspaceTab,
-    editing.id,
-    isScopedCenterChief,
-    loadEditableCenter,
-    workspaceCenterRow,
-  ]);
-
-  const editValidationErrors = useMemo(
-    () =>
-      validateCenterForm({
-        name: editing.name,
-        code: editing.code,
-        centerChiefId: editing.centerChiefId,
-        researchAgendas: editing.researchAgendas,
-      }),
-    [editing],
-  );
-
   const createValidationErrors = useMemo(
     () =>
       validateCenterForm({
@@ -709,95 +429,7 @@ export default function useAdminResearchCenterWorkspace() {
     ],
   );
 
-  const isEditFormValid = Object.keys(editValidationErrors).length === 0;
   const isCreateFormValid = Object.keys(createValidationErrors).length === 0;
-
-  const startInlineEdit = useCallback(
-    async (row) => {
-      setActionError("");
-      setActionMessage("");
-      setActiveWorkspaceTab("settings");
-      await loadEditableCenter(row);
-    },
-    [loadEditableCenter],
-  );
-
-  const resetInlineEdit = useCallback(async () => {
-    if (actionLoading) return;
-    setEditErrors({});
-    if (workspaceCenterRow) {
-      await loadEditableCenter(workspaceCenterRow);
-      return;
-    }
-    setEditing(EMPTY_EDITING);
-  }, [actionLoading, loadEditableCenter, workspaceCenterRow]);
-
-  const updateEditing = (patch) => {
-    setEditing((prev) => ({ ...prev, ...patch }));
-    applyErrorResets(setEditErrors, patch, {
-      name: "name",
-      code: "code",
-      centerChiefId: "centerChiefId",
-      agendaInput: "researchAgendas",
-      researchAgendas: "researchAgendas",
-    });
-  };
-
-  const addEditAgenda = () => {
-    const { items } = addUniqueTrimmedItem(
-      editing.researchAgendas,
-      editing.agendaInput,
-    );
-    updateEditing({ researchAgendas: items, agendaInput: "" });
-  };
-
-  const removeEditAgenda = (agendaName) => {
-    updateEditing({
-      researchAgendas: removeItem(editing.researchAgendas, agendaName),
-    });
-  };
-
-  const saveEdit = async () => {
-    setEditErrors(editValidationErrors);
-    if (!editing.id || !isEditFormValid) return;
-
-    const nextName = editing.name.trim();
-    const nextCode = editing.code.trim();
-
-    setActionLoading(true);
-    setActionError("");
-    setActionMessage("");
-
-    const { error } = await updateReference({
-      type: "center",
-      id: editing.id,
-      name: nextName,
-      code: nextCode,
-      description: editing.description,
-      social_media_link: editing.socialMediaLink,
-      center_chief_id: editing.centerChiefId,
-      research_agendas: editing.researchAgendas,
-    });
-
-    if (error) {
-      setActionError(error.message || "Unable to update center.");
-      setActionLoading(false);
-      return;
-    }
-
-    setActionMessage("Center updated successfully.");
-    setActionLoading(false);
-    await loadResearchCenterRows();
-    await loadEditableCenter({
-      ...workspaceCenterRow,
-      id: editing.id,
-      name: nextName,
-      code: nextCode,
-      description: editing.description,
-      socialMediaLink: editing.socialMediaLink,
-      centerChiefId: editing.centerChiefId,
-    });
-  };
 
   const confirmDelete = async () => {
     if (!deletingRow?.id) return;
@@ -897,6 +529,26 @@ export default function useAdminResearchCenterWorkspace() {
     setNewAgendaInput("");
     setNewResearchAgendas([]);
     await loadResearchCenterRows();
+  };
+
+  const syncResearchCenters = async () => {
+    setActionLoading(true);
+    setActionError("");
+    setActionMessage("");
+
+    try {
+      const summary = await syncResearchCentersFromCkan();
+      setActionMessage(
+        `Synced research centers: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`,
+      );
+      await loadResearchCenterRows();
+      return summary;
+    } catch (error) {
+      setActionError(error.message || "Unable to sync research centers.");
+      return null;
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const addResearchAgenda = () => {
@@ -1020,132 +672,6 @@ export default function useAdminResearchCenterWorkspace() {
     ],
   );
 
-  const membersPanelProps = useMemo(
-    () => ({
-      center: workspaceCenterRow,
-      filters: memberFilters,
-      onFiltersChange: setMemberFilters,
-      departmentOptions: scopedDepartmentOptions,
-      filteredRows: filteredScopedMembers,
-      paginatedRows: paginatedScopedMembers,
-      loading: scopedLinksLoading,
-      error: scopedLinksError,
-      page: memberPage,
-      totalPages: memberTotalPages,
-      onPageChange: setMemberPage,
-    }),
-    [
-      filteredScopedMembers,
-      memberFilters,
-      memberPage,
-      memberTotalPages,
-      paginatedScopedMembers,
-      scopedDepartmentOptions,
-      scopedLinksError,
-      scopedLinksLoading,
-      workspaceCenterRow,
-    ],
-  );
-
-  const projectsPanelProps = useMemo(
-    () => ({
-      center: workspaceCenterRow,
-      filters: projectFilters,
-      onFiltersChange: setProjectFilters,
-      statusOptions: scopedProjectStatusOptions,
-      departmentOptions: scopedProjectDepartmentOptions,
-      filteredRows: filteredScopedProjects,
-      paginatedRows: paginatedScopedProjects,
-      loading: scopedLinksLoading,
-      error: scopedLinksError,
-      page: projectPage,
-      totalPages: projectTotalPages,
-      onPageChange: setProjectPage,
-    }),
-    [
-      filteredScopedProjects,
-      paginatedScopedProjects,
-      projectFilters,
-      projectPage,
-      projectTotalPages,
-      scopedLinksError,
-      scopedLinksLoading,
-      scopedProjectDepartmentOptions,
-      scopedProjectStatusOptions,
-      workspaceCenterRow,
-    ],
-  );
-
-  const settingsPanelProps = useMemo(
-    () => ({
-      center: workspaceCenterRow,
-      editing,
-      editErrors,
-      editLoading,
-      actionLoading,
-      isEditFormValid,
-      centerChiefUsers,
-      onChange: updateEditing,
-      onAddAgenda: addEditAgenda,
-      onRemoveAgenda: removeEditAgenda,
-      onCancel: resetInlineEdit,
-      onSave: saveEdit,
-      onDelete: () => setDeletingRow(workspaceCenterRow),
-    }),
-    [
-      actionLoading,
-      centerChiefUsers,
-      editErrors,
-      editLoading,
-      editing,
-      isEditFormValid,
-      resetInlineEdit,
-      workspaceCenterRow,
-    ],
-  );
-
-  const workspaceContent = useMemo(() => {
-    if (!workspaceCenterRow) {
-      return (
-        <div className="rounded-[1.7rem] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-[#1E293B]">
-          Select a research center from the directory to open its workspace.
-        </div>
-      );
-    }
-
-    switch (activeWorkspaceTab) {
-      case "members":
-        return <MembersPanel {...membersPanelProps} />;
-      case "projects":
-        return <ProjectsPanel {...projectsPanelProps} />;
-      case "agendas":
-        return (
-          <AgendasPanel
-            center={workspaceCenterRow}
-            agendaNames={selectedAgendaNames}
-          />
-        );
-      case "settings":
-        return <SettingsPanel {...settingsPanelProps} />;
-      default:
-        return (
-          <WorkspaceOverview
-            center={workspaceCenterRow}
-            summary={workspaceSummary}
-            agendaNames={selectedAgendaNames}
-          />
-        );
-    }
-  }, [
-    activeWorkspaceTab,
-    membersPanelProps,
-    projectsPanelProps,
-    selectedAgendaNames,
-    settingsPanelProps,
-    workspaceCenterRow,
-    workspaceSummary,
-  ]);
-
   return {
     isScopedCenterChief,
     dataLoading,
@@ -1168,12 +694,7 @@ export default function useAdminResearchCenterWorkspace() {
     setCreateErrors,
     setCreateModalOpen,
     workspaceCenterRow,
-    workspaceTabs,
-    activeWorkspaceTab,
-    setActiveWorkspaceTab,
     goToCenterDetail,
-    startInlineEdit,
-    workspaceContent,
     deletingRow,
     setDeletingRow,
     deleteGuard,
@@ -1189,6 +710,7 @@ export default function useAdminResearchCenterWorkspace() {
     addResearchAgenda,
     removeResearchAgenda,
     createResearchCenter,
+    syncResearchCenters,
     INITIAL_FILTERS,
   };
 }

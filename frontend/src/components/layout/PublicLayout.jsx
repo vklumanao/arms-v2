@@ -19,6 +19,13 @@ const landingLinks = [
 export default function PublicLayout() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isLoginPage = location.pathname === "/login";
+  const isRegisterPage = location.pathname === "/register";
+  const authAction = isLoginPage
+    ? { to: "/register", label: "Create Account" }
+    : isRegisterPage
+      ? { to: "/login", label: "Login" }
+      : { to: "/login", label: "Login" };
 
   const isActive = (to) => {
     if (to === "/home") {
@@ -66,8 +73,8 @@ export default function PublicLayout() {
               <Menu className="h-4.5 w-4.5" />
             </Button>
             <Button asChild className="hidden lg:inline-flex">
-              <Link to="/login" className="font-semibold">
-                Login
+              <Link to={authAction.to} className="font-semibold">
+                {authAction.label}
               </Link>
             </Button>
           </div>
@@ -101,8 +108,8 @@ export default function PublicLayout() {
               </NavLink>
             ))}
             <Button asChild className="mt-3 w-full">
-              <Link to="/login" onClick={() => setMobileNavOpen(false)}>
-                Login
+              <Link to={authAction.to} onClick={() => setMobileNavOpen(false)}>
+                {authAction.label}
               </Link>
             </Button>
           </div>

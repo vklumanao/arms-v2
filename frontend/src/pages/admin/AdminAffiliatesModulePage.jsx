@@ -57,7 +57,9 @@ import {
   updateAffiliateProfile,
 } from "@/services/admin";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
-import AffiliatesDirectoryContent from "./affiliates-module/components/AffiliatesDirectoryContent";
+import {
+  AffiliatesDirectoryContent,
+} from "./affiliates-module/components/AffiliatesModulePanels";
 
 export default function AdminAffiliatesModulePage() {
   const navigate = useNavigate();

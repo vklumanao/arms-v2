@@ -15,7 +15,6 @@ export default function ConfirmActionModal({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
-  align = "top",
   loading = false,
   className = "",
   cancelButtonClassName = "",
@@ -38,12 +37,7 @@ export default function ConfirmActionModal({
       }}
     >
       <DialogContent
-        className={cn(
-          align === "center"
-            ? "top-1/2"
-            : "top-[14%] -translate-y-0 sm:top-[18%]",
-          className,
-        )}
+        className={cn(className)}
         onInteractOutside={(event) => {
           if (loading) event.preventDefault();
         }}

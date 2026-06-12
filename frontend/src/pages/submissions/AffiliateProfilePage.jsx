@@ -46,6 +46,64 @@ const INITIAL_PASSWORD_FORM = {
   confirm_password: "",
 };
 
+function parseNameParts(fullName = "") {
+  const raw = String(fullName || "").trim();
+  if (!raw) return { first_name: "", middle_initial: "", last_name: "" };
+
+  if (raw.includes(",")) {
+    const [lastPart = "", givenPart = ""] = raw.split(",", 2);
+    const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
+    const middleToken = givenTokens[givenTokens.length - 1] || "";
+    const hasMiddleInitial =
+      givenTokens.length > 1 && /^[A-Za-z](\.)?$/.test(middleToken);
+    const first = (hasMiddleInitial
+      ? givenTokens.slice(0, -1)
+      : givenTokens
+    ).join(" ");
+    return {
+      first_name: first,
+      middle_initial: hasMiddleInitial
+        ? middleToken.replace(/\./g, "").charAt(0).toUpperCase()
+        : "",
+      last_name: lastPart.trim(),
+    };
+  }
+
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length === 1) {
+    return { first_name: tokens[0], middle_initial: "", last_name: "" };
+  }
+  const first = tokens[0];
+  const middleCandidate = tokens[1] || "";
+  const isMiddleInitial = /^[A-Za-z](\.)?$/.test(middleCandidate);
+  const middle = isMiddleInitial
+    ? middleCandidate.replace(/\./g, "").charAt(0)
+    : "";
+  const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(" ");
+  return {
+    first_name: first,
+    middle_initial: middle,
+    last_name: last,
+  };
+}
+
+function buildFormFromProfile(data) {
+  const nameParts = parseNameParts(data?.full_name);
+  return {
+    ...INITIAL_FORM,
+    first_name: nameParts.first_name || "",
+    middle_initial: nameParts.middle_initial || "",
+    last_name: nameParts.last_name || "",
+    department: data?.department || "",
+    ckan_org_id: data?.ckan_org_id || "",
+    ckan_group_id: data?.ckan_group_id || "",
+    google_scholar_link: data?.google_scholar_link || "",
+    employment_status: data?.employment_status || "",
+    designation: data?.designation || "",
+    is_gs_faculty: Boolean(data?.is_gs_faculty),
+  };
+}
+
 export default function AffiliateProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const { centers, departments, error: referenceError } = useReferenceData();
@@ -66,60 +124,6 @@ export default function AffiliateProfilePage() {
     confirm: false,
   });
   const toast = useToast();
-
-  const parseNameParts = (fullName = "") => {
-    const raw = String(fullName || "").trim();
-    if (!raw) return { first_name: "", middle_initial: "", last_name: "" };
-
-    if (raw.includes(",")) {
-      const [lastPart = "", givenPart = ""] = raw.split(",", 2);
-      const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
-      const first = givenTokens[0] || "";
-      const middleToken = givenTokens[1] || "";
-      const middle = middleToken.replace(/\./g, "").charAt(0) || "";
-      return {
-        first_name: first,
-        middle_initial: middle,
-        last_name: lastPart.trim(),
-      };
-    }
-
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    if (tokens.length === 1) {
-      return { first_name: tokens[0], middle_initial: "", last_name: "" };
-    }
-    const first = tokens[0];
-    const middleCandidate = tokens[1] || "";
-    const isMiddleInitial = /^[A-Za-z](\.)?$/.test(middleCandidate);
-    const middle = isMiddleInitial
-      ? middleCandidate.replace(/\./g, "").charAt(0)
-      : "";
-    const last = (isMiddleInitial ? tokens.slice(2) : tokens.slice(1)).join(
-      " ",
-    );
-    return {
-      first_name: first,
-      middle_initial: middle,
-      last_name: last,
-    };
-  };
-
-  const buildFormFromProfile = (data) => {
-    const nameParts = parseNameParts(data?.full_name);
-    return {
-      ...INITIAL_FORM,
-      first_name: nameParts.first_name || "",
-      middle_initial: nameParts.middle_initial || "",
-      last_name: nameParts.last_name || "",
-      department: data?.department || "",
-      ckan_org_id: data?.ckan_org_id || "",
-      ckan_group_id: data?.ckan_group_id || "",
-      google_scholar_link: data?.google_scholar_link || "",
-      employment_status: data?.employment_status || "",
-      designation: data?.designation || "",
-      is_gs_faculty: Boolean(data?.is_gs_faculty),
-    };
-  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -194,6 +198,10 @@ export default function AffiliateProfilePage() {
     }
 
     setSaving(false);
+    if (data) {
+      setForm(buildFormFromProfile(data));
+      setOriginalOrgId(String(data?.ckan_org_id || "").trim());
+    }
     await refreshProfile();
     if (Array.isArray(data?.warnings) && data.warnings.length) {
       data.warnings.forEach((warning) =>

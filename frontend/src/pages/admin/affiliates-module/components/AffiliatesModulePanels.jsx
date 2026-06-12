@@ -12,8 +12,118 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PaginationControls from "@/components/navigation/PaginationControls";
+import { Download, Users } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default function AffiliatesDirectoryContent({
+export function AffiliatesWorkspaceHero({
+  canExportAffiliates,
+  filteredCount,
+  exportingType,
+  affiliateMetrics,
+  onExportCsv,
+  onExportPdf,
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Admin Workspace
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              Affiliate Workspace
+            </h1>
+            <p className="max-w-2xl text-sm text-slate-600">
+              Manage affiliate records, review membership status, and export
+              directory reports from one panel.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {canExportAffiliates ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!filteredCount || Boolean(exportingType)}
+                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="border border-slate-200 bg-white shadow-md"
+                >
+                  <DropdownMenuItem
+                    className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                    onSelect={onExportCsv}
+                    disabled={!filteredCount || Boolean(exportingType)}
+                  >
+                    {exportingType === "csv" ? "Exporting..." : "Export CSV"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                    onSelect={onExportPdf}
+                    disabled={!filteredCount || Boolean(exportingType)}
+                  >
+                    {exportingType === "pdf" ? "Exporting..." : "Export PDF"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Affiliates
+              </p>
+              <Users className="h-4 w-4 text-slate-600" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.total}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Active
+              </p>
+              <Users className="h-4 w-4 text-slate-600" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.active}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                GS Faculty
+              </p>
+              <Users className="h-4 w-4 text-slate-600" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {affiliateMetrics.gsFaculty}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AffiliatesDirectoryContent({
   dataLoading,
   viewMode,
   directorySkeletonCount,
@@ -32,37 +142,35 @@ export default function AffiliatesDirectoryContent({
         {dataLoading ? (
           viewMode === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: directorySkeletonCount }).map(
-                (_, index) => (
-                  <Card
-                    key={`affiliate-skeleton-grid-${index}`}
-                    className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm"
-                  >
-                    <div className="animate-pulse space-y-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="w-full space-y-2">
-                          <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
-                          <div className="h-5 w-3/4 rounded-full bg-slate-200" />
-                          <div className="h-3 w-1/2 rounded-full bg-slate-200" />
-                        </div>
-                        <div className="h-6 w-16 rounded-full bg-slate-200" />
+              {Array.from({ length: directorySkeletonCount }).map((_, index) => (
+                <Card
+                  key={`affiliate-skeleton-grid-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm"
+                >
+                  <div className="animate-pulse space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="w-full space-y-2">
+                        <div className="h-3 w-24 rounded-full bg-zinc-200/80" />
+                        <div className="h-5 w-3/4 rounded-full bg-slate-200" />
+                        <div className="h-3 w-1/2 rounded-full bg-slate-200" />
                       </div>
-                      <div className="flex gap-2">
-                        <div className="h-6 w-20 rounded-full bg-slate-200" />
-                        <div className="h-6 w-24 rounded-full bg-slate-200" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="h-24 rounded-lg bg-slate-200" />
-                        <div className="h-24 rounded-lg bg-slate-200" />
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="h-9 w-9 rounded-lg bg-slate-200" />
-                        <div className="h-9 w-9 rounded-lg bg-slate-200" />
-                      </div>
+                      <div className="h-6 w-16 rounded-full bg-slate-200" />
                     </div>
-                  </Card>
-                ),
-              )}
+                    <div className="flex gap-2">
+                      <div className="h-6 w-20 rounded-full bg-slate-200" />
+                      <div className="h-6 w-24 rounded-full bg-slate-200" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="h-24 rounded-lg bg-slate-200" />
+                      <div className="h-24 rounded-lg bg-slate-200" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                      <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
@@ -110,31 +218,20 @@ export default function AffiliatesDirectoryContent({
                         </p>
                       </div>
                     </div>
-
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-50 text-slate-700"
-                      >
+                      <Badge variant="secondary" className="bg-slate-50 text-slate-700">
                         Dept: {row.department || "-"}
                       </Badge>
-                      <Badge
-                        variant="outline"
-                        className="border-slate-200 text-slate-700"
-                      >
+                      <Badge variant="outline" className="border-slate-200 text-slate-700">
                         Center:{" "}
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
                       </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-50 text-slate-700"
-                      >
+                      <Badge variant="secondary" className="bg-slate-50 text-slate-700">
                         GS: {row.is_gs_faculty ? "Yes" : "No"}
                       </Badge>
                     </div>
-
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="rounded-lg border border-slate-200 bg-slate-200 p-3 text-left">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
@@ -147,7 +244,6 @@ export default function AffiliatesDirectoryContent({
                           Publications {Number(row.publication_count || 0)}
                         </p>
                       </div>
-
                       <div className="rounded-lg border border-slate-200 bg-slate-200 p-3 text-left">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">
                           Outputs
@@ -161,7 +257,6 @@ export default function AffiliatesDirectoryContent({
                         </p>
                       </div>
                     </div>
-
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
@@ -172,7 +267,6 @@ export default function AffiliatesDirectoryContent({
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-
                       {canEditAffiliates ? (
                         <Button
                           type="button"
@@ -195,7 +289,6 @@ export default function AffiliatesDirectoryContent({
                 </Card>
               ))}
             </div>
-
             {pagination.totalPages > 1 ? (
               <div className="mt-3">
                 <PaginationControls
@@ -229,16 +322,10 @@ export default function AffiliatesDirectoryContent({
                       {row.email || "-"}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-50 text-slate-700"
-                      >
+                      <Badge variant="secondary" className="bg-slate-50 text-slate-700">
                         {row.department || "-"}
                       </Badge>
-                      <Badge
-                        variant="outline"
-                        className="border-slate-200 text-slate-700"
-                      >
+                      <Badge variant="outline" className="border-slate-200 text-slate-700">
                         {row.ckan_org_id
                           ? centerNameById[row.ckan_org_id] || "-"
                           : "-"}
@@ -312,7 +399,6 @@ export default function AffiliatesDirectoryContent({
                 />
               ) : null}
             </div>
-
             <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
               <Table>
                 <TableHeader className="bg-slate-50">
@@ -387,7 +473,6 @@ export default function AffiliatesDirectoryContent({
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-
                           {canEditAffiliates ? (
                             <Button
                               type="button"
@@ -414,7 +499,7 @@ export default function AffiliatesDirectoryContent({
                 {pagination.totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={12} className="px-3 py-3">
+                      <TableCell colSpan={12} className="p-0">
                         <PaginationControls
                           page={currentPage}
                           totalPages={pagination.totalPages}
@@ -433,4 +518,3 @@ export default function AffiliatesDirectoryContent({
     </Card>
   );
 }
-

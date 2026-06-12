@@ -1,8 +1,167 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
-export default function PermissionsMatrixPanel({
+export function AccessControlPanelHeader({
+  loading,
+  saving,
+  onRefresh,
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Administration
+        </p>
+        <CardTitle className="mt-1 text-2xl font-bold text-slate-900">
+          Access Control Panel
+        </CardTitle>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage roles and permission matrix with a scalable RBAC layout.
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        onClick={onRefresh}
+        disabled={loading || saving}
+      >
+        {loading ? "Refreshing..." : "Refresh"}
+      </Button>
+    </div>
+  );
+}
+
+export function RolesPanel({
+  roleSearch,
+  onRoleSearchChange,
+  filteredRoles,
+  selectedRoleId,
+  onSelectRole,
+  onAddRole,
+}) {
+  return (
+    <Card className="xl:col-span-6 border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-2 border-b border-slate-200 bg-slate-50/60 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base text-slate-900">Roles</CardTitle>
+          <Button size="sm" onClick={onAddRole}>
+            Add Role
+          </Button>
+        </div>
+        <Input
+          placeholder="Search role"
+          value={roleSearch}
+          onChange={(event) => onRoleSearchChange(event.target.value)}
+        />
+      </CardHeader>
+      <CardContent className="max-h-[520px] space-y-2 overflow-auto p-3">
+        {filteredRoles.map((role) => {
+          const selected = role.id === selectedRoleId;
+          return (
+            <button
+              key={role.id}
+              type="button"
+              onClick={() => onSelectRole(role.id)}
+              className={[
+                "w-full rounded-lg border px-3 py-2 text-left transition",
+                selected
+                  ? "border-slate-400 bg-slate-100 ring-1 ring-slate-200"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {role.name}
+                  </p>
+                </div>
+                {role.is_critical ? (
+                  <Badge variant="secondary">Critical</Badge>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
+        {filteredRoles.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+            No roles found.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function RoleDetailsPanel({
+  selectedRole,
+  editForm,
+  isReadonlyRole,
+  saving,
+  onEditName,
+  onEditDescription,
+  onSaveRoleDetails,
+  onDeleteRole,
+}) {
+  return (
+    <Card className="xl:col-span-6 border-slate-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-200 bg-slate-50/60 p-4">
+        <CardTitle className="text-base text-slate-900">Role Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 p-4">
+        {selectedRole ? (
+          <>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Role Name
+              </label>
+              <Input
+                placeholder="Role name"
+                value={editForm.name}
+                disabled={isReadonlyRole}
+                onChange={(event) => onEditName(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Description
+              </label>
+              <Input
+                placeholder="Description"
+                value={editForm.description}
+                disabled={isReadonlyRole}
+                onChange={(event) => onEditDescription(event.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={onSaveRoleDetails}
+                disabled={saving || isReadonlyRole}
+              >
+                Save Details
+              </Button>
+              <Button
+                variant="outline"
+                disabled={Boolean(selectedRole.is_critical) || saving}
+                onClick={onDeleteRole}
+              >
+                Delete Role
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-slate-600">
+            Select a role to manage details.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function PermissionsMatrixPanel({
   actionColumns,
   columnKeys,
   rowKeys,
@@ -142,7 +301,7 @@ export default function PermissionsMatrixPanel({
                       return (
                         <td
                           key={`${row.moduleName}-${action}`}
-                            className="border-b border-slate-100 px-3 py-2 text-center"
+                          className="border-b border-slate-100 px-3 py-2 text-center"
                         >
                           {keys.length > 0 ? (
                             <label className="inline-flex cursor-pointer items-center justify-center px-2 py-1">

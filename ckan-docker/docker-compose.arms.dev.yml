@@ -132,7 +132,7 @@ services:
       arms-db:
         condition: service_healthy
     ports:
-      - "4010:4000"
+      - "4000:4000"
     healthcheck:
       test:
         ["CMD", "wget", "-qO", "/dev/null", "http://localhost:4000/api/health"]
@@ -155,7 +155,7 @@ services:
     working_dir: /app
     command: npm run dev -- --host 0.0.0.0 --port 5173
     environment:
-      VITE_API_BASE_URL: http://${LAN_HOST:-localhost}:4010/api
+      VITE_API_BASE_URL: http://${LAN_HOST:-localhost}:4000/api
       VITE_UI_PREVIEW_MODE: "false"
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "300"

@@ -139,12 +139,18 @@ function parseNameParts(fullName = "") {
   if (raw.includes(",")) {
     const [lastPart = "", givenPart = ""] = raw.split(",", 2);
     const givenTokens = givenPart.trim().split(/\s+/).filter(Boolean);
-    const first = givenTokens[0] || "";
-    const middleToken = givenTokens[1] || "";
-    const middle = middleToken.replace(/\./g, "").charAt(0) || "";
+    const middleToken = givenTokens[givenTokens.length - 1] || "";
+    const hasMiddleInitial =
+      givenTokens.length > 1 && /^[A-Za-z](\.)?$/.test(middleToken);
+    const first = (hasMiddleInitial
+      ? givenTokens.slice(0, -1)
+      : givenTokens
+    ).join(" ");
     return {
       first_name: first,
-      middle_initial: middle,
+      middle_initial: hasMiddleInitial
+        ? middleToken.replace(/\./g, "").charAt(0).toUpperCase()
+        : "",
       last_name: lastPart.trim(),
     };
   }
