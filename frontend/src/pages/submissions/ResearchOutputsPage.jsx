@@ -514,6 +514,34 @@ export default function ResearchOutputsPage() {
         String(row?.outputTypeValue || "").trim() === centerChiefQuickFilter,
     );
   }, [baseCenterChiefSearchRows, centerChiefQuickFilter]);
+  const centerChiefQuickFilterOptions = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Outputs",
+        count: baseCenterChiefSearchRows.length,
+      },
+      ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
+        const key = String(item?.value || "").trim();
+        const label = outputTypeLabelByValue[key] || String(item?.label || key);
+        return {
+          key,
+          label,
+          count: baseCenterChiefSearchRows.filter(
+            (row) => String(row?.outputTypeValue || "").trim() === key,
+          ).length,
+        };
+      }),
+    ],
+    [baseCenterChiefSearchRows, outputTypeLabelByValue],
+  );
+  const selectedCenterChiefQuickFilter = useMemo(
+    () =>
+      centerChiefQuickFilterOptions.find(
+        (option) => option.key === centerChiefQuickFilter,
+      ) || centerChiefQuickFilterOptions[0],
+    [centerChiefQuickFilter, centerChiefQuickFilterOptions],
+  );
   const pendingOutputRows = useMemo(() => {
     const expectedByKey = new Map();
     const uploadedCountByKey = new Map();
@@ -686,6 +714,34 @@ export default function ResearchOutputsPage() {
       (row) => String(row?.outputTypeValue || "").trim() === recordsQuickFilter,
     );
   }, [baseSearchRows, recordsQuickFilter]);
+  const recordsQuickFilterOptions = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Outputs",
+        count: baseSearchRows.length,
+      },
+      ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
+        const key = String(item?.value || "").trim();
+        const label = outputTypeLabelByValue[key] || String(item?.label || key);
+        return {
+          key,
+          label,
+          count: baseSearchRows.filter(
+            (row) => String(row?.outputTypeValue || "").trim() === key,
+          ).length,
+        };
+      }),
+    ],
+    [baseSearchRows, outputTypeLabelByValue],
+  );
+  const selectedRecordsQuickFilter = useMemo(
+    () =>
+      recordsQuickFilterOptions.find(
+        (option) => option.key === recordsQuickFilter,
+      ) || recordsQuickFilterOptions[0],
+    [recordsQuickFilter, recordsQuickFilterOptions],
+  );
 
   const analytics = useMemo(() => {
     const linkedProjectIds = new Set();
@@ -1352,53 +1408,25 @@ export default function ResearchOutputsPage() {
                 </label>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {[
-                    {
-                      key: "all",
-                      label: "All Outputs",
-                      count: baseCenterChiefSearchRows.length,
-                    },
-                    ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
-                      const key = String(item?.value || "").trim();
-                      const label =
-                        outputTypeLabelByValue[key] ||
-                        String(item?.label || key);
-                      return {
-                        key,
-                        label,
-                        count: baseCenterChiefSearchRows.filter(
-                          (row) =>
-                            String(row?.outputTypeValue || "").trim() === key,
-                        ).length,
-                      };
-                    }),
-                  ].map((chip) => (
-                    <Button
-                      key={chip.key}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className={cn(
-                        "rounded-full border-slate-200 px-4 text-xs",
-                        centerChiefQuickFilter === chip.key
-                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                          : "bg-white text-slate-700 hover:bg-slate-50",
-                      )}
-                      onClick={() => setCenterChiefQuickFilter(chip.key)}
-                    >
-                      {chip.label}
-                      <span
-                        className={cn(
-                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          centerChiefQuickFilter === chip.key
-                            ? "bg-white/20 text-white"
-                            : "bg-slate-50 text-slate-700",
-                        )}
-                      >
-                        {chip.count}
-                      </span>
-                    </Button>
-                  ))}
+                  <Select
+                    value={centerChiefQuickFilter}
+                    onValueChange={setCenterChiefQuickFilter}
+                  >
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue>
+                        {selectedCenterChiefQuickFilter
+                          ? `${selectedCenterChiefQuickFilter.label} (${selectedCenterChiefQuickFilter.count})`
+                          : "Filter outputs"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      {centerChiefQuickFilterOptions.map((option) => (
+                        <SelectItem key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button
                     type="button"
                     size="sm"
@@ -1430,7 +1458,9 @@ export default function ResearchOutputsPage() {
                         className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                         onClick={() => setCenterChiefQuickFilter("all")}
                       >
-                        {centerChiefQuickFilter} x
+                        {selectedCenterChiefQuickFilter?.label ||
+                          centerChiefQuickFilter}{" "}
+                        x
                       </button>
                     ) : null}
                   </div>
@@ -1669,53 +1699,25 @@ export default function ResearchOutputsPage() {
                   </label>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {[
-                      {
-                        key: "all",
-                        label: "All Outputs",
-                        count: baseSearchRows.length,
-                      },
-                      ...EXPECTED_OUTPUT_TYPE_OPTIONS.map((item) => {
-                        const key = String(item?.value || "").trim();
-                        const label =
-                          outputTypeLabelByValue[key] ||
-                          String(item?.label || key);
-                        return {
-                          key,
-                          label,
-                          count: baseSearchRows.filter(
-                            (row) =>
-                              String(row?.outputTypeValue || "").trim() === key,
-                          ).length,
-                        };
-                      }),
-                    ].map((chip) => (
-                      <Button
-                        key={chip.key}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className={cn(
-                          "rounded-full border-slate-200 px-4 text-xs",
-                          recordsQuickFilter === chip.key
-                            ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                            : "bg-white text-slate-700 hover:bg-slate-50",
-                        )}
-                        onClick={() => setRecordsQuickFilter(chip.key)}
-                      >
-                        {chip.label}
-                        <span
-                          className={cn(
-                            "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                            recordsQuickFilter === chip.key
-                              ? "bg-white/20 text-white"
-                              : "bg-slate-50 text-slate-700",
-                          )}
-                        >
-                          {chip.count}
-                        </span>
-                      </Button>
-                    ))}
+                    <Select
+                      value={recordsQuickFilter}
+                      onValueChange={setRecordsQuickFilter}
+                    >
+                      <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                        <SelectValue>
+                          {selectedRecordsQuickFilter
+                            ? `${selectedRecordsQuickFilter.label} (${selectedRecordsQuickFilter.count})`
+                            : "Filter outputs"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="border border-slate-200 bg-white shadow-md">
+                        {recordsQuickFilterOptions.map((option) => (
+                          <SelectItem key={option.key} value={option.key}>
+                            {option.label} ({option.count})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       type="button"
                       size="sm"
@@ -1747,7 +1749,9 @@ export default function ResearchOutputsPage() {
                           className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                           onClick={() => setRecordsQuickFilter("all")}
                         >
-                          {recordsQuickFilter} x
+                          {selectedRecordsQuickFilter?.label ||
+                            recordsQuickFilter}{" "}
+                          x
                         </button>
                       ) : null}
                     </div>
