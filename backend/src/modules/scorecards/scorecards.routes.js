@@ -9,21 +9,39 @@ export function registerScorecardRoutes(app, deps) {
     return Boolean(user && user.role === "admin");
   }
 
-  function isCenterChiefForCenter(user, centerId) {
-    return (
-      Boolean(user?.is_center_chief) &&
-      asText(user?.managed_center_id) === asText(centerId)
-    );
+  function isCenterChiefForCenter(user, center) {
+    if (!user?.is_center_chief) return false;
+
+    const managedCenterId = asText(user?.managed_center_id);
+    if (!managedCenterId) return false;
+
+    if (typeof center === "string") {
+      return managedCenterId === asText(center);
+    }
+
+    if (!center || typeof center !== "object") return false;
+
+    const candidateKeys = [
+      center.id,
+      center.code,
+      center.name,
+      center.title,
+      center.display_name,
+    ]
+      .map((value) => asText(value))
+      .filter(Boolean);
+
+    return candidateKeys.includes(managedCenterId);
   }
 
-  function canViewCenterScorecard(user, centerId) {
+  function canViewCenterScorecard(user, center) {
     if (!user) return false;
-    return canManageScorecards(user) || isCenterChiefForCenter(user, centerId);
+    return canManageScorecards(user) || isCenterChiefForCenter(user, center);
   }
 
-  function canEditCenterScorecard(user, centerId) {
+  function canEditCenterScorecard(user, center) {
     if (!user) return false;
-    return canManageScorecards(user) || isCenterChiefForCenter(user, centerId);
+    return canManageScorecards(user) || isCenterChiefForCenter(user, center);
   }
 
   async function resolveCenter(centerKey) {
@@ -95,10 +113,6 @@ export function registerScorecardRoutes(app, deps) {
     "/api/scorecards/centers/:centerId/years/:year",
     authMiddleware,
     async (req, res) => {
-      if (!canManageScorecards(req.user)) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
       const centerId = asText(req.params.centerId);
       const year = Number(req.params.year);
       if (!centerId || !Number.isInteger(year)) {
@@ -108,6 +122,9 @@ export function registerScorecardRoutes(app, deps) {
       const center = await resolveCenter(centerId);
       if (!center) {
         return res.status(404).json({ error: "Research center not found." });
+      }
+      if (!canEditCenterScorecard(req.user, center)) {
+        return res.status(403).json({ error: "Forbidden" });
       }
 
       const existingResult = await query(
@@ -187,7 +204,7 @@ export function registerScorecardRoutes(app, deps) {
       if (!center) {
         return res.status(404).json({ error: "Research center not found." });
       }
-      if (!canViewCenterScorecard(req.user, center.id)) {
+      if (!canViewCenterScorecard(req.user, center)) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -244,7 +261,7 @@ export function registerScorecardRoutes(app, deps) {
       if (!center) {
         return res.status(404).json({ error: "Research center not found." });
       }
-      if (!canEditCenterScorecard(req.user, center.id)) {
+      if (!canEditCenterScorecard(req.user, center)) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
@@ -385,7 +402,7 @@ export function registerScorecardRoutes(app, deps) {
       if (!center) {
         return res.status(404).json({ error: "Research center not found." });
       }
-      if (!canEditCenterScorecard(req.user, center.id)) {
+      if (!canEditCenterScorecard(req.user, center)) {
         return res.status(403).json({ error: "Forbidden" });
       }
 
