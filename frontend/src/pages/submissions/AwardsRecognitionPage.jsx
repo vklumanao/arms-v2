@@ -22,6 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -281,6 +288,58 @@ export default function AwardsRecognitionPage() {
       (row) => getLevelCategory(row?.level) === recordsQuickFilter,
     );
   }, [baseSearchRows, getLevelCategory, recordsQuickFilter]);
+  const recordsQuickFilterOptions = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Awards",
+        count: baseSearchRows.length,
+      },
+      {
+        key: "institutional",
+        label: "Institutional",
+        count: baseSearchRows.filter(
+          (row) => getLevelCategory(row?.level) === "institutional",
+        ).length,
+      },
+      {
+        key: "local",
+        label: "Local",
+        count: baseSearchRows.filter(
+          (row) => getLevelCategory(row?.level) === "local",
+        ).length,
+      },
+      {
+        key: "regional",
+        label: "Regional",
+        count: baseSearchRows.filter(
+          (row) => getLevelCategory(row?.level) === "regional",
+        ).length,
+      },
+      {
+        key: "national",
+        label: "National",
+        count: baseSearchRows.filter(
+          (row) => getLevelCategory(row?.level) === "national",
+        ).length,
+      },
+      {
+        key: "international",
+        label: "International",
+        count: baseSearchRows.filter(
+          (row) => getLevelCategory(row?.level) === "international",
+        ).length,
+      },
+    ],
+    [baseSearchRows, getLevelCategory],
+  );
+  const selectedRecordsQuickFilter = useMemo(
+    () =>
+      recordsQuickFilterOptions.find(
+        (option) => option.key === recordsQuickFilter,
+      ) || recordsQuickFilterOptions[0],
+    [recordsQuickFilter, recordsQuickFilterOptions],
+  );
 
   const sortedCenterChiefRows = useMemo(
     () =>
@@ -317,6 +376,58 @@ export default function AwardsRecognitionPage() {
       (row) => getLevelCategory(row?.level) === centerChiefQuickFilter,
     );
   }, [baseCenterChiefRows, centerChiefQuickFilter, getLevelCategory]);
+  const centerChiefQuickFilterOptions = useMemo(
+    () => [
+      {
+        key: "all",
+        label: "All Awards",
+        count: baseCenterChiefRows.length,
+      },
+      {
+        key: "institutional",
+        label: "Institutional",
+        count: baseCenterChiefRows.filter(
+          (row) => getLevelCategory(row?.level) === "institutional",
+        ).length,
+      },
+      {
+        key: "local",
+        label: "Local",
+        count: baseCenterChiefRows.filter(
+          (row) => getLevelCategory(row?.level) === "local",
+        ).length,
+      },
+      {
+        key: "regional",
+        label: "Regional",
+        count: baseCenterChiefRows.filter(
+          (row) => getLevelCategory(row?.level) === "regional",
+        ).length,
+      },
+      {
+        key: "national",
+        label: "National",
+        count: baseCenterChiefRows.filter(
+          (row) => getLevelCategory(row?.level) === "national",
+        ).length,
+      },
+      {
+        key: "international",
+        label: "International",
+        count: baseCenterChiefRows.filter(
+          (row) => getLevelCategory(row?.level) === "international",
+        ).length,
+      },
+    ],
+    [baseCenterChiefRows, getLevelCategory],
+  );
+  const selectedCenterChiefQuickFilter = useMemo(
+    () =>
+      centerChiefQuickFilterOptions.find(
+        (option) => option.key === centerChiefQuickFilter,
+      ) || centerChiefQuickFilterOptions[0],
+    [centerChiefQuickFilter, centerChiefQuickFilterOptions],
+  );
 
   const analytics = useMemo(() => {
     const base = {
@@ -786,76 +897,25 @@ export default function AwardsRecognitionPage() {
                 </label>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {[
-                    {
-                      key: "all",
-                      label: "All Awards",
-                      count: baseCenterChiefRows.length,
-                    },
-                    {
-                      key: "institutional",
-                      label: "Institutional",
-                      count: baseCenterChiefRows.filter(
-                        (row) =>
-                          getLevelCategory(row?.level) === "institutional",
-                      ).length,
-                    },
-                    {
-                      key: "local",
-                      label: "Local",
-                      count: baseCenterChiefRows.filter(
-                        (row) => getLevelCategory(row?.level) === "local",
-                      ).length,
-                    },
-                    {
-                      key: "regional",
-                      label: "Regional",
-                      count: baseCenterChiefRows.filter(
-                        (row) => getLevelCategory(row?.level) === "regional",
-                      ).length,
-                    },
-                    {
-                      key: "national",
-                      label: "National",
-                      count: baseCenterChiefRows.filter(
-                        (row) => getLevelCategory(row?.level) === "national",
-                      ).length,
-                    },
-                    {
-                      key: "international",
-                      label: "International",
-                      count: baseCenterChiefRows.filter(
-                        (row) =>
-                          getLevelCategory(row?.level) === "international",
-                      ).length,
-                    },
-                  ].map((chip) => (
-                    <Button
-                      key={chip.key}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className={cn(
-                        "rounded-full border-slate-200 px-4 text-xs",
-                        centerChiefQuickFilter === chip.key
-                          ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                          : "bg-white text-slate-700 hover:bg-slate-50",
-                      )}
-                      onClick={() => setCenterChiefQuickFilter(chip.key)}
-                    >
-                      {chip.label}
-                      <span
-                        className={cn(
-                          "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          centerChiefQuickFilter === chip.key
-                            ? "bg-white/20 text-white"
-                            : "bg-slate-50 text-slate-700",
-                        )}
-                      >
-                        {chip.count}
-                      </span>
-                    </Button>
-                  ))}
+                  <Select
+                    value={centerChiefQuickFilter}
+                    onValueChange={setCenterChiefQuickFilter}
+                  >
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue>
+                        {selectedCenterChiefQuickFilter
+                          ? `${selectedCenterChiefQuickFilter.label} (${selectedCenterChiefQuickFilter.count})`
+                          : "Filter awards"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      {centerChiefQuickFilterOptions.map((option) => (
+                        <SelectItem key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button
                     type="button"
                     size="sm"
@@ -887,7 +947,9 @@ export default function AwardsRecognitionPage() {
                         className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                         onClick={() => setCenterChiefQuickFilter("all")}
                       >
-                        {centerChiefQuickFilter} x
+                        {selectedCenterChiefQuickFilter?.label ||
+                          centerChiefQuickFilter}{" "}
+                        x
                       </button>
                     ) : null}
                   </div>
@@ -1094,74 +1156,25 @@ export default function AwardsRecognitionPage() {
               </label>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {[
-                  {
-                    key: "all",
-                    label: "All Awards",
-                    count: baseSearchRows.length,
-                  },
-                  {
-                    key: "institutional",
-                    label: "Institutional",
-                    count: baseSearchRows.filter(
-                      (row) => getLevelCategory(row?.level) === "institutional",
-                    ).length,
-                  },
-                  {
-                    key: "local",
-                    label: "Local",
-                    count: baseSearchRows.filter(
-                      (row) => getLevelCategory(row?.level) === "local",
-                    ).length,
-                  },
-                  {
-                    key: "regional",
-                    label: "Regional",
-                    count: baseSearchRows.filter(
-                      (row) => getLevelCategory(row?.level) === "regional",
-                    ).length,
-                  },
-                  {
-                    key: "national",
-                    label: "National",
-                    count: baseSearchRows.filter(
-                      (row) => getLevelCategory(row?.level) === "national",
-                    ).length,
-                  },
-                  {
-                    key: "international",
-                    label: "International",
-                    count: baseSearchRows.filter(
-                      (row) => getLevelCategory(row?.level) === "international",
-                    ).length,
-                  },
-                ].map((chip) => (
-                  <Button
-                    key={chip.key}
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn(
-                      "rounded-full border-slate-200 px-4 text-xs",
-                      recordsQuickFilter === chip.key
-                        ? "bg-[#10B981] text-white hover:bg-[#059669]"
-                        : "bg-white text-slate-700 hover:bg-slate-50",
-                    )}
-                    onClick={() => setRecordsQuickFilter(chip.key)}
-                  >
-                    {chip.label}
-                    <span
-                      className={cn(
-                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        recordsQuickFilter === chip.key
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-50 text-slate-700",
-                      )}
-                    >
-                      {chip.count}
-                    </span>
-                  </Button>
-                ))}
+                <Select
+                  value={recordsQuickFilter}
+                  onValueChange={setRecordsQuickFilter}
+                >
+                  <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                    <SelectValue>
+                      {selectedRecordsQuickFilter
+                        ? `${selectedRecordsQuickFilter.label} (${selectedRecordsQuickFilter.count})`
+                        : "Filter awards"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="border border-slate-200 bg-white shadow-md">
+                    {recordsQuickFilterOptions.map((option) => (
+                      <SelectItem key={option.key} value={option.key}>
+                        {option.label} ({option.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   type="button"
                   size="sm"
@@ -1193,7 +1206,8 @@ export default function AwardsRecognitionPage() {
                       className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
                       onClick={() => setRecordsQuickFilter("all")}
                     >
-                      {recordsQuickFilter} x
+                      {selectedRecordsQuickFilter?.label || recordsQuickFilter}{" "}
+                      x
                     </button>
                   ) : null}
                 </div>
