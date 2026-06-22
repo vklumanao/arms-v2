@@ -984,7 +984,7 @@ export default function AwardsRecognitionPage() {
             ) : (
               <CardContent className="p-4">
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-[980px]">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
                         <TableHead>No.</TableHead>
@@ -1226,7 +1226,7 @@ export default function AwardsRecognitionPage() {
           ) : (
             <CardContent className="p-4">
               <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <Table className="min-w-[980px]">
+                <Table className="min-w-[650px]">
                   <TableHeader className="bg-slate-50 text-slate-600">
                     <TableRow>
                       <TableHead>No.</TableHead>

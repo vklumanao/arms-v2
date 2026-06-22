@@ -1015,7 +1015,7 @@ export default function ResearchProjectsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -1381,7 +1381,7 @@ export default function ResearchProjectsPage() {
             ) : (
               <CardContent className="p-4">
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-[980px]">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
                         <TableHead className="w-[40px]">No.</TableHead>
@@ -1868,7 +1868,7 @@ export default function ResearchProjectsPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-[1120px] w-full table-fixed">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
                         <TableHead className="w-[40px]">No.</TableHead>
@@ -2360,7 +2360,7 @@ export default function ResearchProjectsPage() {
             linkedViewMode === "list" &&
             linkedProjectFilteredRows.length > 0 ? (
               <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <Table className="min-w-[980px]">
+                <Table className="min-w-[650px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="w-[50px]">No.</TableHead>

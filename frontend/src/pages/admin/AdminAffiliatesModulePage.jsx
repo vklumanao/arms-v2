@@ -568,7 +568,7 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="relative">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -631,7 +631,7 @@ export default function AdminAffiliatesModulePage() {
           </div>
         </div>
       </div>
-      <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
+      <details className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
         <summary className="cursor-pointer text-sm font-semibold text-slate-700">
           More stats
         </summary>
@@ -656,7 +656,7 @@ export default function AdminAffiliatesModulePage() {
       </details>
 
       <div className="space-y-4">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-6 py-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
@@ -916,24 +916,6 @@ export default function AdminAffiliatesModulePage() {
         </div>
       </div>
 
-      {!dataLoading ? (
-        <div className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
-          <div className="flex flex-col gap-1 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              {isMobile
-                ? `${filteredRows.length} results | Page ${pagination.page}/${pagination.totalPages}`
-                : filteredRows.length
-                  ? `Showing ${pagination.start + 1}-${pagination.end} of ${filteredRows.length} filtered affiliate record(s).`
-                  : "Showing 0 records."}
-            </p>
-            {!isMobile ? (
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Page {pagination.page} of {pagination.totalPages}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
       {editingAffiliate && canEditAffiliates ? (
         <Dialog
           open={Boolean(editingAffiliate)}

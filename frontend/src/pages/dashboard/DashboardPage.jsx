@@ -88,7 +88,7 @@ function formatTarget(target, targetUnit = "") {
 
 function DashboardHeader({ title, description, children }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
           RDISO Balanced Scorecard
@@ -272,7 +272,7 @@ export default function DashboardPage() {
         title="RDISO KPI / Deliverables Scorecard"
         description="Monitor target vs actual accomplishment per research center."
       >
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-md border border-slate-200">
           <Table>
             <TableHeader className="bg-slate-50 text-slate-600">
               <TableRow>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
         title="Notes"
         description="This is the fresh dashboard foundation. Next we can connect actual accomplishments from project outputs, awards, patents, MOA/MOU, and funding records."
       >
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
           <p>
             Right now the scorecard is scaffolded with the KPI definitions and
             calculation logic. The next step is mapping actual accomplishments
