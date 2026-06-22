@@ -1015,7 +1015,7 @@ export default function ResearchProjectsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -1085,7 +1085,7 @@ export default function ResearchProjectsPage() {
           </div>
 
           {needsOrganization ? (
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white/80 p-4 text-sm text-slate-900">
+            <div className="mt-4 rounded-md border border-slate-300 bg-white/80 p-4 text-sm text-slate-900">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p>
                   You can browse projects, but submitting requires an
@@ -1224,7 +1224,7 @@ export default function ResearchProjectsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+              <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <label className="relative w-full md:max-w-xl">
                     <span className="sr-only">
@@ -1314,7 +1314,7 @@ export default function ResearchProjectsPage() {
                       (_, index) => (
                         <Card
                           key={`projects-skeleton-grid-${index}`}
-                          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                          className="rounded-md border border-slate-200 bg-white p-5 shadow-sm"
                         >
                           <div className="animate-pulse space-y-4">
                             <div className="flex items-start justify-between gap-3">
@@ -1344,7 +1344,7 @@ export default function ResearchProjectsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="animate-pulse space-y-3">
                       <div className="h-8 w-full rounded-lg bg-slate-200" />
                       {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
@@ -1380,7 +1380,7 @@ export default function ResearchProjectsPage() {
               </CardContent>
             ) : (
               <CardContent className="p-4">
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                   <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
@@ -1527,7 +1527,7 @@ export default function ResearchProjectsPage() {
           </CardHeader>
 
           <CardContent className="p-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex flex-1 flex-col gap-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1703,7 +1703,7 @@ export default function ResearchProjectsPage() {
                     return (
                       <Card
                         key={project.id}
-                        className="group rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        className="group rounded-md border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                       >
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between gap-3">
@@ -1867,7 +1867,7 @@ export default function ResearchProjectsPage() {
                   })}
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                   <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
@@ -2147,7 +2147,7 @@ export default function ResearchProjectsPage() {
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
               <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={linkedProjectsQuickFilter}
@@ -2204,7 +2204,7 @@ export default function ResearchProjectsPage() {
                     (_, index) => (
                       <Card
                         key={`linked-skeleton-grid-${index}`}
-                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                        className="rounded-md border border-slate-200 bg-white p-5 shadow-sm"
                       >
                         <div className="animate-pulse space-y-4">
                           <div className="flex items-start justify-between gap-3">
@@ -2234,7 +2234,7 @@ export default function ResearchProjectsPage() {
                   )}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="animate-pulse space-y-3">
                     <div className="h-8 w-full rounded-lg bg-slate-200" />
                     {Array.from({ length: DIRECTORY_SKELETON_COUNT }).map(
@@ -2265,7 +2265,7 @@ export default function ResearchProjectsPage() {
                 {linkedProjectFilteredRows.map((project, index) => (
                   <Card
                     key={`linked-card-${project.id}-${index}`}
-                    className="group rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    className="group rounded-md border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -2359,7 +2359,7 @@ export default function ResearchProjectsPage() {
             {!dataLoading &&
             linkedViewMode === "list" &&
             linkedProjectFilteredRows.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                 <Table className="min-w-[650px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>

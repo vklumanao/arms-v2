@@ -29,7 +29,7 @@ import PaginationControls from "@/components/navigation/PaginationControls";
 
 export function UsersWorkspaceHero({ metrics, onCreateUser }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
       <div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
@@ -62,7 +62,7 @@ export function UsersWorkspaceHero({ metrics, onCreateUser }) {
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-md border border-slate-200 bg-white p-4 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -113,7 +113,7 @@ export function UsersDirectoryCard({
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
           <label className="relative block w-full md:max-w-xl">
             <span className="sr-only">Search users</span>
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
@@ -156,7 +156,7 @@ export function UsersDirectoryCard({
       </CardContent>
 
       <CardContent className="p-4 pt-0">
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
           <Table className="min-w-[980px]">
             <TableHeader className="bg-slate-50 text-slate-600">
               <TableRow>

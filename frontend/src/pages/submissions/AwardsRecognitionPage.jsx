@@ -690,7 +690,7 @@ export default function AwardsRecognitionPage() {
   if (missingAffiliation) {
     return (
       <section className="page-stack-lg">
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-6 shadow-sm">
           <div className="relative space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Awards and Recognition
@@ -705,7 +705,7 @@ export default function AwardsRecognitionPage() {
           </div>
         </div>
 
-        <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Card className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <CardContent className="space-y-3 p-5">
             <p className="text-sm text-slate-900">
               Please set your Organization (Research Center) in My Profile first
@@ -726,7 +726,7 @@ export default function AwardsRecognitionPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -803,7 +803,7 @@ export default function AwardsRecognitionPage() {
             ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                className="rounded-md border border-slate-200 bg-white/90 p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
@@ -882,7 +882,7 @@ export default function AwardsRecognitionPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+              <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
                 <label className="relative block w-full md:max-w-xl">
                   <span className="sr-only">Search managed center awards</span>
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
@@ -983,7 +983,7 @@ export default function AwardsRecognitionPage() {
               </CardContent>
             ) : (
               <CardContent className="p-4">
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                   <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
@@ -1143,7 +1143,7 @@ export default function AwardsRecognitionPage() {
           </CardHeader>
 
           <CardContent className="p-4">
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
               <label className="relative block w-full md:max-w-xl">
                 <span className="sr-only">Search awards and recognitions</span>
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
@@ -1225,7 +1225,7 @@ export default function AwardsRecognitionPage() {
             </CardContent>
           ) : (
             <CardContent className="p-4">
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                 <Table className="min-w-[650px]">
                   <TableHeader className="bg-slate-50 text-slate-600">
                     <TableRow>
