@@ -137,8 +137,7 @@ export function AffiliatesDirectoryContent({
   openEditModal,
 }) {
   return (
-    <Card className="overflow-hidden border-slate-200 shadow-sm">
-      <CardContent className="p-4">
+    <>
         {dataLoading ? (
           viewMode === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -400,21 +399,27 @@ export function AffiliatesDirectoryContent({
               ) : null}
             </div>
             <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
-              <Table>
+              <Table className="min-w-[1240px]">
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Research Center</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>GS Faculty</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Awards</TableHead>
-                    <TableHead>Publications</TableHead>
-                    <TableHead>IPs</TableHead>
-                    <TableHead>Creative Works</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="w-[56px]">No.</TableHead>
+                    <TableHead className="min-w-[240px]">Name</TableHead>
+                    <TableHead className="min-w-[180px]">
+                      Research Center
+                    </TableHead>
+                    <TableHead className="min-w-[180px]">Department</TableHead>
+                    <TableHead className="w-[110px]">Role</TableHead>
+                    <TableHead className="w-[110px]">GS Faculty</TableHead>
+                    <TableHead className="w-[96px]">Projects</TableHead>
+                    <TableHead className="w-[92px]">Awards</TableHead>
+                    <TableHead className="w-[108px]">Publications</TableHead>
+                    <TableHead className="w-[72px]">IPs</TableHead>
+                    <TableHead className="w-[128px]">
+                      Creative Works
+                    </TableHead>
+                    <TableHead className="w-[96px] text-right">
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -499,7 +504,7 @@ export function AffiliatesDirectoryContent({
                 {pagination.totalPages > 1 ? (
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={12} className="p-0">
+                      <TableCell colSpan={12} className="px-3 py-3">
                         <PaginationControls
                           page={currentPage}
                           totalPages={pagination.totalPages}
@@ -514,7 +519,6 @@ export function AffiliatesDirectoryContent({
             </div>
           </>
         ) : null}
-      </CardContent>
-    </Card>
+    </>
   );
 }

@@ -4,10 +4,8 @@ import {
   Download,
   LayoutGrid,
   List,
-  MoreHorizontal,
   RefreshCw,
   Search,
-  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,13 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useReferenceData } from "@/hooks/useReferenceData";
@@ -57,9 +48,7 @@ import {
   updateAffiliateProfile,
 } from "@/services/admin";
 import { hasPermission, PERMISSIONS } from "@/services/permissions";
-import {
-  AffiliatesDirectoryContent,
-} from "./affiliates-module/components/AffiliatesModulePanels";
+import { AffiliatesDirectoryContent } from "./affiliates-module/components/AffiliatesModulePanels";
 
 export default function AdminAffiliatesModulePage() {
   const navigate = useNavigate();
@@ -85,7 +74,6 @@ export default function AdminAffiliatesModulePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileFilterSheetOpen, setMobileFilterSheetOpen] = useState(false);
   const { profile } = useAuth();
   const roleKeys = Array.isArray(profile?.roles)
     ? profile.roles.map((entry) => entry?.key)
@@ -276,9 +264,13 @@ export default function AdminAffiliatesModulePage() {
     return pills;
   }, [filters, quickFilter, quickFilterChips]);
 
-  const visibleMobilePills = activeFilterPills.slice(0, 2);
-  const hiddenMobilePillCount = Math.max(activeFilterPills.length - 2, 0);
   const effectiveViewMode = isMobile ? "list" : viewMode;
+  const selectedQuickFilterChip = useMemo(
+    () =>
+      quickFilterChips.find((chip) => chip.key === quickFilter) ||
+      quickFilterChips[0],
+    [quickFilter, quickFilterChips],
+  );
   const departmentOptions = useMemo(() => {
     const seen = new Set();
     const options = [];
@@ -446,6 +438,11 @@ export default function AdminAffiliatesModulePage() {
   const buildExportRows = () =>
     buildAffiliateExportRows(filteredRows, centerNameById);
 
+  const resetDirectoryFilters = useCallback(() => {
+    setQuickFilter("all");
+    setFilters(createAffiliateModuleFilters());
+  }, []);
+
   const exportAsCsv = () => {
     if (!filteredRows.length) return;
     setExportingType("csv");
@@ -571,66 +568,68 @@ export default function AdminAffiliatesModulePage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <div className="relative flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Admin Workspace
-          </p>
-          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-            Affiliate Directory
-          </h1>
-          <p className="max-w-3xl text-sm text-slate-600">
-            Find, filter, review, and update affiliate records from a unified
-            responsive workspace.
-          </p>
-        </div>
-      </div>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="relative">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Admin Workspace
+            </p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+              Affiliate Directory
+            </h1>
+            <p className="max-w-3xl text-sm leading-6 text-slate-600">
+              Find, filter, review, and update affiliate records from one
+              responsive admin workspace.
+            </p>
+          </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              Total
-            </p>
-            <Users className="h-4 w-4 text-slate-700" />
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Total
+                </p>
+                <Users className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-slate-700">
+                {affiliateMetrics.total}
+              </p>
+            </article>
+            <article className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Active
+                </p>
+                <Users className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-slate-700">
+                {affiliateMetrics.active}
+              </p>
+            </article>
+            <article className="hidden rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm sm:block">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Faculty
+                </p>
+                <Users className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-slate-700">
+                {affiliateMetrics.faculty}
+              </p>
+            </article>
+            <article className="hidden rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm sm:block">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  GS Faculty
+                </p>
+                <Users className="h-4 w-4 text-slate-700" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-slate-700">
+                {affiliateMetrics.gsFaculty}
+              </p>
+            </article>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-700">
-            {affiliateMetrics.total}
-          </p>
-        </article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              Active
-            </p>
-            <Users className="h-4 w-4 text-slate-700" />
-          </div>
-          <p className="mt-2 text-2xl font-bold text-slate-700">
-            {affiliateMetrics.active}
-          </p>
-        </article>
-        <article className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:block">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              Faculty
-            </p>
-            <Users className="h-4 w-4 text-slate-700" />
-          </div>
-          <p className="mt-2 text-2xl font-bold text-slate-700">
-            {affiliateMetrics.faculty}
-          </p>
-        </article>
-        <article className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:block">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              GS Faculty
-            </p>
-            <Users className="h-4 w-4 text-slate-700" />
-          </div>
-          <p className="mt-2 text-2xl font-bold text-slate-700">
-            {affiliateMetrics.gsFaculty}
-          </p>
-        </article>
+        </div>
       </div>
       <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:hidden">
         <summary className="cursor-pointer text-sm font-semibold text-slate-700">
@@ -656,326 +655,170 @@ export default function AdminAffiliatesModulePage() {
         </div>
       </details>
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
-        <aside className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:sticky xl:top-3 xl:block">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-700">Filters</h2>
-            <p className="text-xs text-slate-500">
-              Refine affiliates by search, role, center, and department.
-            </p>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <label className="relative block">
-              <span className="sr-only">Search affiliates</span>
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-              <Input
-                className="border-slate-200 bg-white pl-8"
-                placeholder="Search affiliates"
-                value={filters.search}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Quick Filter
-              </p>
-              <div className="grid gap-2">
-                {quickFilterChips.map((chip) => (
-                  <Button
-                    key={chip.key}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "justify-between rounded-xl border-slate-200 text-left text-xs",
-                      quickFilter === chip.key
-                        ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
-                        : "bg-white text-slate-700 hover:bg-slate-50",
-                    )}
-                    onClick={() => setQuickFilter(chip.key)}
-                  >
-                    <span>{chip.label}</span>
-                    <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold">
-                      {chip.count}
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {isAdmin ? (
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Research Center
-                </p>
-                <Select
-                  value={filters.centerId}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      centerId: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-10 border-slate-200 bg-white text-xs">
-                    <SelectValue placeholder="Research Center" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Research Center</SelectItem>
-                    {centers.map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Department
-              </p>
-              <Select
-                value={filters.department}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    department: value,
-                  }))
-                }
-              >
-                <SelectTrigger className="h-10 border-slate-200 bg-white text-xs">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Department</SelectItem>
-                  {departmentOptions.map((department) => (
-                    <SelectItem
-                      key={department.id}
-                      value={String(department.name || "").trim()}
-                    >
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-9 w-full border border-dashed border-slate-200 text-xs text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setQuickFilter("all");
-                setFilters(createAffiliateModuleFilters());
-              }}
-            >
-              Reset all
-            </Button>
-          </div>
-
-          {hasActiveDirectoryFilters ? (
-            <div className="mt-4 border-t border-slate-100 pt-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Active Filters
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {activeFilterPills.map((pill) => (
-                  <button
-                    key={pill.key}
-                    type="button"
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                    onClick={pill.onRemove}
-                  >
-                    {pill.label} x
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </aside>
-
-        <div className="min-w-0 space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:hidden">
-            <div className="space-y-3">
-              <label className="relative block">
-                <span className="sr-only">Search affiliates</span>
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                <Input
-                  className="border-slate-200 bg-white pl-8"
-                  placeholder="Search affiliates"
-                  value={filters.search}
-                  onChange={(event) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      search: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <div className="grid grid-cols-[minmax(0,1fr)_150px_auto] gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 border-slate-200 text-xs text-slate-700"
-                  onClick={() => setMobileFilterSheetOpen(true)}
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Filters ({activeFilterPills.length})
-                </Button>
-                <Select
-                  value={filters.sortBy}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      sortBy: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-9 border-slate-200 bg-white px-2 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name_asc">Name A-Z</SelectItem>
-                    <SelectItem value="name_desc">Name Z-A</SelectItem>
-                    <SelectItem value="recent_desc">Recent</SelectItem>
-                    <SelectItem value="recent_asc">Oldest</SelectItem>
-                  </SelectContent>
-                </Select>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 border-slate-200 text-slate-700"
-                      aria-label="More actions"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="border border-slate-300 bg-white shadow-md"
-                  >
-                    <DropdownMenuItem
-                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
-                      onSelect={() => loadData()}
-                      disabled={dataLoading}
-                    >
-                      Refresh
-                    </DropdownMenuItem>
-                    {canExportAffiliates ? (
-                      <>
-                        <DropdownMenuItem
-                          className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
-                          onSelect={exportAsCsv}
-                          disabled={
-                            !filteredRows.length || Boolean(exportingType)
-                          }
-                        >
-                          {exportingType === "csv"
-                            ? "Exporting..."
-                            : "Export CSV"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
-                          onSelect={exportAsPdf}
-                          disabled={
-                            !filteredRows.length || Boolean(exportingType)
-                          }
-                        >
-                          {exportingType === "pdf"
-                            ? "Exporting..."
-                            : "Export PDF"}
-                        </DropdownMenuItem>
-                      </>
-                    ) : null}
-                    <DropdownMenuItem
-                      className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
-                      onSelect={() => setViewMode("list")}
-                    >
-                      View: List
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {hasActiveDirectoryFilters ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-                  {(isMobile ? visibleMobilePills : activeFilterPills).map(
-                    (pill) => (
-                      <button
-                        key={pill.key}
-                        type="button"
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                        onClick={pill.onRemove}
-                      >
-                        {pill.label} x
-                      </button>
-                    ),
-                  )}
-                  {isMobile && hiddenMobilePillCount > 0 ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setMobileFilterSheetOpen(true)}
-                    >
-                      +{hiddenMobilePillCount} more
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
                 <h2 className="text-base font-semibold text-slate-700">
                   Affiliate Directory
                 </h2>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-slate-600">
                   Showing {filteredRows.length} filtered affiliate record(s).
                 </p>
-                <p className="text-xs text-slate-500">
-                  Last synced: {syncLabel}
-                </p>
               </div>
-              <div className="hidden flex-wrap items-center gap-2 xl:flex">
-                <Select
-                  value={filters.sortBy}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      sortBy: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-9 w-[170px] border-slate-200 bg-white text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
-                    <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
-                    <SelectItem value="recent_desc">
-                      Sort: Recently updated
-                    </SelectItem>
-                    <SelectItem value="recent_asc">
-                      Sort: Least recently updated
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            </div>
+          </div>
+
+          <div className="space-y-4 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+                  <label className="relative w-full lg:max-w-md">
+                    <span className="sr-only">Search affiliates</span>
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search name, email, center, department, or role"
+                      value={filters.search}
+                      onChange={(event) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          search: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <Select
+                    value={filters.sortBy}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        sortBy: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full lg:w-[16rem]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-300 bg-white shadow-md">
+                      <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
+                      <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
+                      <SelectItem value="recent_desc">
+                        Sort: Recently updated
+                      </SelectItem>
+                      <SelectItem value="recent_asc">
+                        Sort: Least recently updated
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 lg:w-auto">
+                    <Button
+                      variant={viewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                      type="button"
+                      className="rounded-full"
+                      disabled={isMobile}
+                    >
+                      <LayoutGrid size={14} />
+                      Grid
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      type="button"
+                      className="rounded-full"
+                    >
+                      <List size={14} />
+                      List
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={quickFilter} onValueChange={setQuickFilter}>
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue>
+                        {selectedQuickFilterChip
+                          ? `${selectedQuickFilterChip.label} (${selectedQuickFilterChip.count})`
+                          : "Filter affiliates"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      {quickFilterChips.map((chip) => (
+                        <SelectItem key={chip.key} value={chip.key}>
+                          {chip.label} ({chip.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {isAdmin ? (
+                    <Select
+                      value={filters.centerId}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          centerId: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                        <SelectValue placeholder="Research Center" />
+                      </SelectTrigger>
+                      <SelectContent className="border border-slate-200 bg-white shadow-md">
+                        <SelectItem value="all">Research Center</SelectItem>
+                        {centers.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+
+                  <Select
+                    value={filters.department}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        department: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      <SelectItem value="all">Department</SelectItem>
+                      {departmentOptions.map((department) => (
+                        <SelectItem
+                          key={department.id}
+                          value={String(department.name || "").trim()}
+                        >
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                    onClick={resetDirectoryFilters}
+                  >
+                    Reset all
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -989,6 +832,7 @@ export default function AdminAffiliatesModulePage() {
                   />
                   Refresh
                 </Button>
+
                 {canExportAffiliates ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1034,184 +878,43 @@ export default function AdminAffiliatesModulePage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : null}
-                <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
-                  <Button
-                    variant={viewMode === "grid" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    type="button"
-                    className={cn(
-                      "h-8 rounded-full px-3 text-xs",
-                      viewMode === "grid"
-                        ? "bg-white text-slate-700 shadow-sm"
-                        : "text-slate-700",
-                    )}
-                    disabled={isMobile}
-                  >
-                    <LayoutGrid size={14} />
-                    Grid
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    type="button"
-                    className={cn(
-                      "h-8 rounded-full px-3 text-xs",
-                      viewMode === "list"
-                        ? "bg-white text-slate-700 shadow-sm"
-                        : "text-slate-700",
-                    )}
-                  >
-                    <List size={14} />
-                    List
-                  </Button>
-                </div>
               </div>
             </div>
-          </div>
 
-          <AffiliatesDirectoryContent
-            dataLoading={dataLoading}
-            viewMode={effectiveViewMode}
-            directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
-            filteredRows={filteredRows}
-            pagination={pagination}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            centerNameById={centerNameById}
-            canEditAffiliates={canEditAffiliates}
-            goToAffiliateDetail={goToAffiliateDetail}
-            openEditModal={openEditModal}
-          />
-        </div>
-      </div>
-
-      <Sheet
-        open={mobileFilterSheetOpen}
-        onOpenChange={setMobileFilterSheetOpen}
-      >
-        <SheetContent
-          side="bottom"
-          className="max-h-[86vh] overflow-y-auto px-4 xl:hidden"
-        >
-          <SheetHeader>
-            <SheetTitle className="text-slate-700">
-              Filter Affiliates
-            </SheetTitle>
-            <SheetDescription>
-              Adjust quick filters, center, and department.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Quick Filter
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {quickFilterChips.map((chip) => (
-                  <Button
-                    key={`sheet-${chip.key}`}
+            {hasActiveDirectoryFilters ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Active Filters
+                </span>
+                {activeFilterPills.map((pill) => (
+                  <button
+                    key={pill.key}
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn(
-                      "rounded-full border-slate-200 text-xs",
-                      quickFilter === chip.key
-                        ? "bg-slate-100 text-slate-700"
-                        : "bg-white text-slate-700",
-                    )}
-                    onClick={() => setQuickFilter(chip.key)}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                    onClick={pill.onRemove}
                   >
-                    {chip.label} ({chip.count})
-                  </Button>
+                    {pill.label} x
+                  </button>
                 ))}
-              </div>
-            </div>
-
-            {isAdmin ? (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Research Center
-                </p>
-                <Select
-                  value={filters.centerId}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      centerId: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-10 border-slate-200 bg-white">
-                    <SelectValue placeholder="Research Center" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Research Center</SelectItem>
-                    {centers.map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Department
-              </p>
-              <Select
-                value={filters.department}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    department: value,
-                  }))
-                }
-              >
-                <SelectTrigger className="h-10 border-slate-200 bg-white">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Department</SelectItem>
-                  {departmentOptions.map((department) => (
-                    <SelectItem
-                      key={department.id}
-                      value={String(department.name || "").trim()}
-                    >
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 border-slate-200"
-                onClick={() => {
-                  setQuickFilter("all");
-                  setFilters(createAffiliateModuleFilters());
-                }}
-              >
-                Reset all
-              </Button>
-              <Button
-                type="button"
-                className="flex-1"
-                onClick={() => setMobileFilterSheetOpen(false)}
-              >
-                Apply
-              </Button>
-            </div>
+            <AffiliatesDirectoryContent
+              dataLoading={dataLoading}
+              viewMode={effectiveViewMode}
+              directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
+              filteredRows={filteredRows}
+              pagination={pagination}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              centerNameById={centerNameById}
+              canEditAffiliates={canEditAffiliates}
+              goToAffiliateDetail={goToAffiliateDetail}
+              openEditModal={openEditModal}
+            />
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </div>
 
       {!dataLoading ? (
         <div className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
@@ -1220,8 +923,8 @@ export default function AdminAffiliatesModulePage() {
               {isMobile
                 ? `${filteredRows.length} results | Page ${pagination.page}/${pagination.totalPages}`
                 : filteredRows.length
-                ? `Showing ${pagination.start + 1}-${pagination.end} of ${filteredRows.length} filtered affiliate record(s).`
-                : "Showing 0 records."}
+                  ? `Showing ${pagination.start + 1}-${pagination.end} of ${filteredRows.length} filtered affiliate record(s).`
+                  : "Showing 0 records."}
             </p>
             {!isMobile ? (
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -1522,5 +1225,3 @@ export default function AdminAffiliatesModulePage() {
     </section>
   );
 }
-
-
