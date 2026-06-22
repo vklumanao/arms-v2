@@ -29,7 +29,7 @@ export function DepartmentWorkspaceHero({
   onOpenCreate,
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
       <div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
@@ -107,7 +107,7 @@ export function DepartmentDirectoryContent({
           viewMode === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: directorySkeletonCount }).map((_, index) => (
-                <Card key={`department-skeleton-grid-${index}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <Card key={`department-skeleton-grid-${index}`} className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="animate-pulse space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="w-full space-y-2">
@@ -135,7 +135,7 @@ export function DepartmentDirectoryContent({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
               <div className="animate-pulse space-y-3">
                 <div className="h-8 w-full rounded-lg bg-slate-200" />
                 {Array.from({ length: directorySkeletonCount }).map((_, index) => (
@@ -156,7 +156,7 @@ export function DepartmentDirectoryContent({
           <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedRows.map((row, index) => (
-                <Card key={`${row.tag}-${row.id}`} className="group rounded-2xl border border-slate-200 bg-white">
+                <Card key={`${row.tag}-${row.id}`} className="group rounded-md border border-slate-200 bg-white">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -239,7 +239,7 @@ export function DepartmentDirectoryContent({
             ) : null}
           </>
         ) : !dataLoading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="rounded-md border border-slate-200 bg-white shadow-sm">
             <Table className="min-w-[980px]">
               <TableHeader className="bg-slate-50">
                 <TableRow>

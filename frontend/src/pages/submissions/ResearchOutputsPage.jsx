@@ -1233,7 +1233,7 @@ export default function ResearchOutputsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -1295,7 +1295,7 @@ export default function ResearchOutputsPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {[
               {
                 label: "Total Outputs",
@@ -1494,7 +1494,7 @@ export default function ResearchOutputsPage() {
             ) : (
               <CardContent className="p-4">
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-[980px]">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
                         <TableHead>No.</TableHead>
@@ -1768,7 +1768,7 @@ export default function ResearchOutputsPage() {
               ) : (
                 <CardContent className="p-4">
                   <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <Table className="min-w-[980px]">
+                    <Table className="min-w-[650px]">
                       <TableHeader className="bg-slate-50 text-slate-600">
                         <TableRow>
                           <TableHead>No.</TableHead>

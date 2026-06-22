@@ -730,7 +730,7 @@ export default function AdminDepartmentPage() {
           setCreateModalOpen(true);
         }}
       />
-      <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+      <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-slate-700">
