@@ -142,7 +142,7 @@ export default function AdminAffiliateDetailPage() {
         icon: FolderKanban,
       },
       {
-        label: "IPs",
+        label: "Intellectual Properties",
         value: Number(affiliate?.ip_count || 0),
         icon: FolderKanban,
       },
@@ -452,14 +452,6 @@ export default function AdminAffiliateDetailPage() {
                   <CardContent className="grid gap-4 p-5">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Record ID
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-900">
-                        {affiliate?.id || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                         Role
                       </p>
                       <p className="mt-2 text-sm font-semibold text-slate-900 capitalize">
@@ -473,26 +465,6 @@ export default function AdminAffiliateDetailPage() {
                       <p className="mt-2 text-sm font-semibold text-slate-900">
                         {affiliate?.is_active ? "Active" : "Inactive"}
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Directory Scope
-                      </p>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Managed under the affiliates registry and linked project
-                        catalog.
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Navigation
-                      </p>
-                      <Link
-                        className="mt-2 inline-flex items-center text-sm font-semibold text-slate-900 underline-offset-4 hover:underline"
-                        to="/admin/affiliates"
-                      >
-                        Return to all affiliates
-                      </Link>
                     </div>
                   </CardContent>
                 </Card>
