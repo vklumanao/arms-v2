@@ -1400,8 +1400,10 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   <TableHead className="w-[90px]">Sheet</TableHead>
                   <TableHead>Deliverable</TableHead>
                   <TableHead className="w-[120px]">Target</TableHead>
-                  <TableHead className="w-[120px]">Actual</TableHead>
-                  <TableHead className="w-[140px]">%</TableHead>
+                  <TableHead className="w-[120px]">
+                    Actual Accomplishment
+                  </TableHead>
+                  <TableHead className="w-[140px]">Percent Accomplishment</TableHead>
                   <TableHead className="w-[180px]">Success Indicator</TableHead>
                   <TableHead className="w-[170px] text-right">Action</TableHead>
                 </TableRow>

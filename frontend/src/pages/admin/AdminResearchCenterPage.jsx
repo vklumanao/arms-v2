@@ -238,14 +238,15 @@ export default function AdminResearchCenterPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     Selected Center
                   </p>
+
+                  <CardTitle className="text-xl font-bold text-slate-900 sm:text-3xl uppercase">
+                    {workspaceCenterRow?.name || "Select a Research Center"}
+                  </CardTitle>
                   {workspaceCenterRow ? (
                     <p className="pb-1 text-sm text-slate-500">
                       {workspaceCenterRow.code || "No Code"}
                     </p>
                   ) : null}
-                  <CardTitle className="text-xl font-semibold text-slate-900 sm:text-2xl">
-                    {workspaceCenterRow?.name || "Select a Research Center"}
-                  </CardTitle>
                   <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
                     {workspaceCenterRow
                       ? workspaceCenterRow.description ||
@@ -270,7 +271,7 @@ export default function AdminResearchCenterPage() {
                       onClick={() => goToCenterDetail(workspaceCenterRow)}
                     >
                       <Eye className="h-4 w-4" />
-                      Open Full Profile
+                      Open Research Center
                     </Button>
                   </div>
                 ) : null}
@@ -311,7 +312,7 @@ export default function AdminResearchCenterPage() {
                       {selectedAffiliateCount}
                     </p>
                   </div>
-                  <div className="rounded-md border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-4 py-4">
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center gap-2 text-slate-500">
                       <Building2 className="h-4 w-4" />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">

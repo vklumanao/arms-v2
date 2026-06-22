@@ -1,4 +1,4 @@
-import { Eye, Loader2, Mail, UserCheck, UserX, BadgeCheck, Briefcase, Users } from "lucide-react";
+import { Eye, Loader2, Mail, UserCheck, UserX, BadgeCheck, Briefcase, Users, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,6 +116,7 @@ export function UsersDirectoryCard({
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <label className="relative block w-full md:max-w-xl">
             <span className="sr-only">Search users</span>
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
             <Input
               className="pl-9"
               placeholder="Search user by name, email, or role"

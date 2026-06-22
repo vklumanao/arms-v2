@@ -189,7 +189,7 @@ function DirectoryPanel({
               Registered research centers
             </p>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-3 py-3">
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
             <div className="flex items-center gap-2 text-slate-500">
               <Layers3 className="h-4 w-4" />
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
