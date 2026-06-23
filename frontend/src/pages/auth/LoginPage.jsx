@@ -110,7 +110,7 @@ export default function LoginPage() {
       <div className="flex h-full items-center justify-center px-4 py-4 sm:px-6 lg:px-8">
         <Card>
           <div className="grid lg:grid-cols-[1.12fr_minmax(0,0.88fr)] lg:gap-x-2">
-            <aside className="relative overflow-hidden rounded-2xl border-b border-slate-200 bg-[url('/images/bg.jpeg')] bg-cover bg-center px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-10 lg:py-8">
+            <aside className="relative overflow-hidden rounded-md border-b border-slate-200 bg-[url('/images/bg.jpeg')] bg-cover bg-center px-6 py-6 text-white sm:px-8 sm:py-7 lg:border-b-0 lg:border-r lg:border-white/10 lg:px-10 lg:py-8">
               <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,0.9)_0%,rgba(19,78,74,0.82)_48%,rgba(6,78,59,0.72)_100%)]" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_28%),radial-gradient(circle_at_20%_80%,rgba(52,211,153,0.18),transparent_26%)]" />
               <div className="absolute inset-0 bg-black/15" />
@@ -299,7 +299,7 @@ export default function LoginPage() {
                           </Button>
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-white bg-white/80 px-4 py-3 text-sm text-slate-600">
+                      <div className="rounded-2xl border border-white px-4 py-3 text-sm text-slate-600">
                         Use the email address registered to your account.
                       </div>
                     </div>

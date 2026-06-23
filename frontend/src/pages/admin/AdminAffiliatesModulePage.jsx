@@ -843,7 +843,7 @@ export default function AdminAffiliatesModulePage() {
                         disabled={
                           !filteredRows.length || Boolean(exportingType)
                         }
-                        className="h-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        className="h-9 border-slate-200"
                       >
                         <Download className="h-4 w-4" />
                         Export
@@ -854,7 +854,7 @@ export default function AdminAffiliatesModulePage() {
                       className="border border-slate-300 bg-white shadow-md"
                     >
                       <DropdownMenuItem
-                        className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                        className="text-slate-700"
                         onSelect={exportAsCsv}
                         disabled={
                           !filteredRows.length || Boolean(exportingType)
@@ -865,7 +865,7 @@ export default function AdminAffiliatesModulePage() {
                           : "Export CSV"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                        className="text-slate-700"
                         onSelect={exportAsPdf}
                         disabled={
                           !filteredRows.length || Boolean(exportingType)

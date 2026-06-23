@@ -243,9 +243,7 @@ export default function AppShell() {
     }
 
     return links;
-  }, [
-    profile,
-  ]);
+  }, [profile]);
 
   const workspaceResearchLinks = useMemo(
     () => [
@@ -311,28 +309,19 @@ export default function AppShell() {
     workspaceResearchLinks,
   ]);
 
-  const visibleGroups = useMemo(
-    () => {
-      const roleGuardVersion = permissionVersion;
-      return (
-      navGroups
-        .map((group) => ({
-          ...group,
-          items: group.links.filter((item) => {
-            // Re-evaluate nav visibility whenever role-permission map updates.
-            void roleGuardVersion;
-            return canAccessRoutePermission(profile, item.permission);
-          }),
-        }))
-        .filter((group) => group.items.length > 0)
-      );
-    },
-    [
-      navGroups,
-      permissionVersion,
-      profile,
-    ],
-  );
+  const visibleGroups = useMemo(() => {
+    const roleGuardVersion = permissionVersion;
+    return navGroups
+      .map((group) => ({
+        ...group,
+        items: group.links.filter((item) => {
+          // Re-evaluate nav visibility whenever role-permission map updates.
+          void roleGuardVersion;
+          return canAccessRoutePermission(profile, item.permission);
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [navGroups, permissionVersion, profile]);
 
   useEffect(() => {
     if (!(location.pathname === "/" || location.pathname === "/home")) return;
@@ -589,7 +578,7 @@ export default function AppShell() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-slate-700 focus:bg-slate-50 focus:text-[#1E293B] flex w-full items-center gap-2"
+            className="text-slate-700 focus:bg-red-400 focus:text-[#1E293B] flex w-full items-center gap-2"
             onSelect={(event) => {
               event.preventDefault();
               signOut();

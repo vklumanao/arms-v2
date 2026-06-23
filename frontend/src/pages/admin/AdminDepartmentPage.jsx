@@ -730,161 +730,163 @@ export default function AdminDepartmentPage() {
           setCreateModalOpen(true);
         }}
       />
-      <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-700">
-              Department Directory
-            </h2>
-            <p className="text-sm text-slate-700">
-              Showing {filteredRows.length} filtered department record(s).
-            </p>
-          </div>
+      <Card className="overflow-hidden border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+        <CardContent className="space-y-4 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-slate-700">
+                Department Directory
+              </h2>
+              <p className="text-sm text-slate-700">
+                Showing {filteredRows.length} filtered department record(s).
+              </p>
+            </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:w-auto">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "grid"
-                  ? "bg-white text-slate-700 shadow-sm"
-                  : "text-slate-700",
-              )}
-            >
-              <LayoutGrid size={14} />
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "list"
-                  ? "bg-white text-slate-700 shadow-sm"
-                  : "text-slate-700",
-              )}
-            >
-              <List size={14} />
-              List
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="relative w-full xl:max-w-lg">
-            <span className="sr-only">Search departments</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-            <Input
-              className="border-slate-200 bg-white pl-8"
-              placeholder="Search name, code, chairperson, or id"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  search: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {quickFilterChips.map((chip) => (
+            <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:w-auto">
               <Button
-                key={chip.key}
-                type="button"
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
-                  quickFilter === chip.key
-                    ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
-                    : "bg-white text-slate-700 hover:bg-slate-50",
-                )}
-                onClick={() => setQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-[#F1F5F9] text-slate-700"
-                      : "bg-slate-50 text-slate-700",
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-              onClick={() => {
-                setQuickFilter("all");
-                setFilters(INITIAL_FILTERS);
-              }}
-            >
-              Reset all
-            </Button>
-          </div>
-        </div>
-
-        {hasActiveDirectoryFilters ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              Active Filters
-            </span>
-            {filters.search.trim() ? (
-              <button
+                onClick={() => setViewMode("grid")}
                 type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() =>
+                className={cn(
+                  "rounded-full",
+                  viewMode === "grid"
+                    ? "bg-white text-slate-700 shadow-sm"
+                    : "text-slate-700",
+                )}
+              >
+                <LayoutGrid size={14} />
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                type="button"
+                className={cn(
+                  "rounded-full",
+                  viewMode === "list"
+                    ? "bg-white text-slate-700 shadow-sm"
+                    : "text-slate-700",
+                )}
+              >
+                <List size={14} />
+                List
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <label className="relative w-full xl:max-w-lg">
+              <span className="sr-only">Search departments</span>
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+              <Input
+                className="border-slate-200 bg-white pl-8"
+                placeholder="Search name, code, chairperson, or id"
+                value={filters.search}
+                onChange={(event) =>
                   setFilters((prev) => ({
                     ...prev,
-                    search: "",
+                    search: event.target.value,
                   }))
                 }
-              >
-                Search: "{filters.search.trim()}" x
-              </button>
-            ) : null}
-            {quickFilter !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() => setQuickFilter("all")}
-              >
-                {quickFilterChips.find((chip) => chip.key === quickFilter)
-                  ?.label || "Quick filter"}{" "}
-                x
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+              />
+            </label>
 
-      <DepartmentDirectoryContent
-        dataLoading={dataLoading}
-        viewMode={viewMode}
-        directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
-        filteredRows={filteredRows}
-        paginatedRows={paginatedRows}
-        currentPage={currentPage}
-        pageSize={PAGE_SIZE}
-        totalPages={totalPages}
-        setCurrentPage={setCurrentPage}
-        goToDepartmentDetail={goToDepartmentDetail}
-        startEdit={startEdit}
-        setDeletingRow={setDeletingRow}
-        toggleSort={toggleSort}
-        getSortIndicator={getSortIndicator}
-      />
+            <div className="flex flex-wrap items-center gap-2">
+              {quickFilterChips.map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "rounded-full border-slate-200 px-4 text-xs",
+                    quickFilter === chip.key
+                      ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
+                      : "bg-white text-slate-700 hover:bg-slate-50",
+                  )}
+                  onClick={() => setQuickFilter(chip.key)}
+                >
+                  {chip.label}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      quickFilter === chip.key
+                        ? "bg-[#F1F5F9] text-slate-700"
+                        : "bg-slate-50 text-slate-700",
+                    )}
+                  >
+                    {chip.count}
+                  </span>
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                onClick={() => {
+                  setQuickFilter("all");
+                  setFilters(INITIAL_FILTERS);
+                }}
+              >
+                Reset all
+              </Button>
+            </div>
+          </div>
+
+          {hasActiveDirectoryFilters ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                Active Filters
+              </span>
+              {filters.search.trim() ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      search: "",
+                    }))
+                  }
+                >
+                  Search: "{filters.search.trim()}" x
+                </button>
+              ) : null}
+              {quickFilter !== "all" ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                  onClick={() => setQuickFilter("all")}
+                >
+                  {quickFilterChips.find((chip) => chip.key === quickFilter)
+                    ?.label || "Quick filter"}{" "}
+                  x
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          <DepartmentDirectoryContent
+            dataLoading={dataLoading}
+            viewMode={viewMode}
+            directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
+            filteredRows={filteredRows}
+            paginatedRows={paginatedRows}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            goToDepartmentDetail={goToDepartmentDetail}
+            startEdit={startEdit}
+            setDeletingRow={setDeletingRow}
+            toggleSort={toggleSort}
+            getSortIndicator={getSortIndicator}
+          />
+        </CardContent>
+      </Card>
       <ConfirmActionModal
         open={Boolean(deletingRow)}
         title="Delete Department"
