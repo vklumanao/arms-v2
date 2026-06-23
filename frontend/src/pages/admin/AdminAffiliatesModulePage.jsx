@@ -671,154 +671,74 @@ export default function AdminAffiliatesModulePage() {
           </div>
 
           <div className="space-y-4 p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex flex-1 flex-col gap-3">
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-                  <label className="relative w-full lg:max-w-md">
-                    <span className="sr-only">Search affiliates</span>
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                    <Input
-                      className="pl-9"
-                      placeholder="Search name, email, center, department, or role"
-                      value={filters.search}
-                      onChange={(event) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          search: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-
-                  <Select
-                    value={filters.sortBy}
-                    onValueChange={(value) =>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+                <label className="relative w-full lg:max-w-md xl:max-w-lg">
+                  <span className="sr-only">Search affiliates</span>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Search name, email, center, department, or role"
+                    value={filters.search}
+                    onChange={(event) =>
                       setFilters((prev) => ({
                         ...prev,
-                        sortBy: value,
+                        search: event.target.value,
                       }))
                     }
-                  >
-                    <SelectTrigger className="w-full lg:w-[16rem]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="border border-slate-300 bg-white shadow-md">
-                      <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
-                      <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
-                      <SelectItem value="recent_desc">
-                        Sort: Recently updated
-                      </SelectItem>
-                      <SelectItem value="recent_asc">
-                        Sort: Least recently updated
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                </label>
 
-                  <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
-                    <Button
-                      variant={viewMode === "grid" ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("grid")}
-                      type="button"
-                      className="rounded-md"
-                      disabled={isMobile}
-                    >
-                      <LayoutGrid size={14} />
-                      Grid
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("list")}
-                      type="button"
-                      className="rounded-md"
-                    >
-                      <List size={14} />
-                      List
-                    </Button>
-                  </div>
-                </div>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      sortBy: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full lg:w-[16rem]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border border-slate-300 bg-white shadow-md">
+                    <SelectItem value="name_asc">Sort: Name A-Z</SelectItem>
+                    <SelectItem value="name_desc">Sort: Name Z-A</SelectItem>
+                    <SelectItem value="recent_desc">
+                      Sort: Recently updated
+                    </SelectItem>
+                    <SelectItem value="recent_asc">
+                      Sort: Least recently updated
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={quickFilter} onValueChange={setQuickFilter}>
-                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                      <SelectValue>
-                        {selectedQuickFilterChip
-                          ? `${selectedQuickFilterChip.label} (${selectedQuickFilterChip.count})`
-                          : "Filter affiliates"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="border border-slate-200 bg-white shadow-md">
-                      {quickFilterChips.map((chip) => (
-                        <SelectItem key={chip.key} value={chip.key}>
-                          {chip.label} ({chip.count})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {isAdmin ? (
-                    <Select
-                      value={filters.centerId}
-                      onValueChange={(value) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          centerId: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                        <SelectValue placeholder="Research Center" />
-                      </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white shadow-md">
-                        <SelectItem value="all">Research Center</SelectItem>
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : null}
-
-                  <Select
-                    value={filters.department}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        department: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                      <SelectValue placeholder="Department" />
-                    </SelectTrigger>
-                    <SelectContent className="border border-slate-200 bg-white shadow-md">
-                      <SelectItem value="all">Department</SelectItem>
-                      {departmentOptions.map((department) => (
-                        <SelectItem
-                          key={department.id}
-                          value={String(department.name || "").trim()}
-                        >
-                          {department.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
+                <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
                   <Button
-                    type="button"
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
                     size="sm"
-                    variant="ghost"
-                    className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                    onClick={resetDirectoryFilters}
+                    onClick={() => setViewMode("grid")}
+                    type="button"
+                    className="rounded-md"
+                    disabled={isMobile}
                   >
-                    Reset all
+                    <LayoutGrid size={14} />
+                    Grid
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    type="button"
+                    className="rounded-md"
+                  >
+                    <List size={14} />
+                    List
                   </Button>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -878,6 +798,94 @@ export default function AdminAffiliatesModulePage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : null}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                <Select value={quickFilter} onValueChange={setQuickFilter}>
+                  <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                    <SelectValue>
+                      {selectedQuickFilterChip
+                        ? `${selectedQuickFilterChip.label} (${selectedQuickFilterChip.count})`
+                        : "Filter affiliates"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="border border-slate-200 bg-white shadow-md">
+                    {quickFilterChips.map((chip) => (
+                      <SelectItem key={chip.key} value={chip.key}>
+                        {chip.label} ({chip.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {isAdmin ? (
+                  <Select
+                    value={filters.centerId}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        centerId: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue placeholder="Research Center" />
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      <SelectItem value="all">Research Center</SelectItem>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+
+                <Select
+                  value={filters.department}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      department: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                    <SelectValue placeholder="Department" />
+                  </SelectTrigger>
+                  <SelectContent className="border border-slate-200 bg-white shadow-md">
+                    <SelectItem value="all">Department</SelectItem>
+                    {departmentOptions.map((department) => (
+                      <SelectItem
+                        key={department.id}
+                        value={String(department.name || "").trim()}
+                      >
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                  onClick={resetDirectoryFilters}
+                >
+                  Reset all
+                </Button>
+              </div>
+
+              <div className="text-sm text-slate-600 xl:text-right">
+                Showing{" "}
+                <span className="font-semibold text-slate-900">
+                  {filteredRows.length}
+                </span>{" "}
+                affiliate record{filteredRows.length === 1 ? "" : "s"}.
               </div>
             </div>
 

@@ -5,7 +5,6 @@ import {
   Eye,
   FolderKanban,
   List,
-  RotateCw,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -154,20 +153,6 @@ export default function AdminResearchCenterPage() {
                 Create Research Center
               </Button>
             ) : null}
-
-            {!isScopedCenterChief ? (
-              <Button
-                variant="outline"
-                className="min-h-10 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 sm:w-auto"
-                onClick={() => void syncResearchCenters()}
-                disabled={actionLoading}
-              >
-                <RotateCw
-                  className={actionLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
-                />
-                Sync from CKAN
-              </Button>
-            ) : null}
           </div>
         </div>
       </div>
@@ -247,7 +232,7 @@ export default function AdminResearchCenterPage() {
                       {workspaceCenterRow.code || "No Code"}
                     </p>
                   ) : null}
-                  <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
+                  <CardDescription className="max-auto text-sm leading-6 text-slate-600">
                     {workspaceCenterRow
                       ? workspaceCenterRow.description ||
                         "No description has been added for this research center yet."
@@ -316,7 +301,7 @@ export default function AdminResearchCenterPage() {
                     <div className="flex items-center gap-2 text-slate-500">
                       <Building2 className="h-4 w-4" />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                        Agendas
+                        Agenda
                       </span>
                     </div>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">

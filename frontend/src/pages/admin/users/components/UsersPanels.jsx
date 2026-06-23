@@ -62,7 +62,7 @@ export function UsersWorkspaceHero({ metrics, onCreateUser }) {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
           {[
             { label: "Total Users", value: metrics.total, icon: Users },
             { label: "Active", value: metrics.active, icon: UserCheck },
@@ -122,33 +122,31 @@ export function UsersDirectoryCard({
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="relative block w-full md:max-w-xl">
-            <span className="sr-only">Search users</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-            <Input
-              className="pl-9"
-              placeholder="Search user by name, email, or role"
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-            />
-          </label>
+        <label className="relative block w-full md:max-w-xl">
+          <span className="sr-only">Search users</span>
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+          <Input
+            className="pl-9"
+            placeholder="Search user by name, email, or role"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+          />
+        </label>
 
-          {hasActiveDirectoryFilters ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                Active Filters
-              </span>
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() => setUserSearch("")}
-              >
-                Search: "{String(userSearch || "").trim()}" x
-              </button>
-            </div>
-          ) : null}
-        </div>
+        {hasActiveDirectoryFilters ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Active Filters
+            </span>
+            <button
+              type="button"
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+              onClick={() => setUserSearch("")}
+            >
+              Search: "{String(userSearch || "").trim()}" x
+            </button>
+          </div>
+        ) : null}
       </CardContent>
 
       <CardContent className="p-4 pt-0">

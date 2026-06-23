@@ -1221,28 +1221,25 @@ export default function ResearchProjectsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <label className="relative w-full md:max-w-xl">
-                    <span className="sr-only">
-                      Search managed center projects
-                    </span>
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                    <Input
-                      value={centerChiefSearch}
-                      onChange={(event) =>
-                        setCenterChiefSearch(event.target.value)
-                      }
-                      placeholder="Search title, lead, status, year, or center"
-                      className="pl-9"
-                    />
-                  </label>
-                  <span className="text-xs text-slate-600">
-                    Scope: {profile?.managed_center_name || "My Center"}
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <label className="relative w-full md:max-w-xl">
+                  <span className="sr-only">
+                    Search managed center projects
                   </span>
-                </div>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                  <Input
+                    value={centerChiefSearch}
+                    onChange={(event) =>
+                      setCenterChiefSearch(event.target.value)
+                    }
+                    placeholder="Search title, lead, status, year, or center"
+                    className="pl-9"
+                  />
+                </label>
+              </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-1 flex-wrap items-center gap-2">
                   <Select
                     value={centerChiefQuickFilter}
                     onValueChange={setCenterChiefQuickFilter}
@@ -1273,34 +1270,41 @@ export default function ResearchProjectsPage() {
                   </Button>
                 </div>
 
-                {hasActiveCenterChiefFilters ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                      Active Filters
-                    </span>
-                    {String(centerChiefSearch || "").trim() ? (
-                      <button
-                        type="button"
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                        onClick={() => setCenterChiefSearch("")}
-                      >
-                        Search: "{String(centerChiefSearch || "").trim()}" x
-                      </button>
-                    ) : null}
-                    {centerChiefQuickFilter !== "all" ? (
-                      <button
-                        type="button"
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                        onClick={() => setCenterChiefQuickFilter("all")}
-                      >
-                        {selectedCenterChiefQuickFilter?.label ||
-                          centerChiefQuickFilter}{" "}
-                        x
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="text-sm text-slate-600 xl:text-right">
+                  Scope:{" "}
+                  <span className="font-semibold text-slate-900">
+                    {profile?.managed_center_name || "My Center"}
+                  </span>
+                </div>
               </div>
+
+              {hasActiveCenterChiefFilters ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Active Filters
+                  </span>
+                  {String(centerChiefSearch || "").trim() ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                      onClick={() => setCenterChiefSearch("")}
+                    >
+                      Search: "{String(centerChiefSearch || "").trim()}" x
+                    </button>
+                  ) : null}
+                  {centerChiefQuickFilter !== "all" ? (
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                      onClick={() => setCenterChiefQuickFilter("all")}
+                    >
+                      {selectedCenterChiefQuickFilter?.label ||
+                        centerChiefQuickFilter}{" "}
+                      x
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </CardContent>
 
             {dataLoading ? (
@@ -1521,133 +1525,135 @@ export default function ResearchProjectsPage() {
           </CardHeader>
 
           <CardContent className="p-4">
-            <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="flex flex-1 flex-col gap-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="relative w-full sm:max-w-md">
-                      <span className="sr-only">Search projects</span>
-                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                      <Input
-                        className="pl-9"
-                        placeholder="Search title, abstract, lead, status, year, or center"
-                        value={filters.search}
-                        onChange={(e) => updateFilter("search", e.target.value)}
-                      />
-                    </label>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <label className="relative w-full sm:max-w-md xl:max-w-lg">
+                  <span className="sr-only">Search projects</span>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Search title, abstract, lead, status, year, or center"
+                    value={filters.search}
+                    onChange={(e) => updateFilter("search", e.target.value)}
+                  />
+                </label>
 
-                    <Select
-                      value={filters.sortBy}
-                      onValueChange={(value) => updateFilter("sortBy", value)}
-                    >
-                      <SelectTrigger className="w-full sm:w-[16rem]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-slate-300 shadow-md">
-                        <SelectItem value="submitted_desc">
-                          Sort: Newest submitted
-                        </SelectItem>
-                        <SelectItem value="submitted_asc">
-                          Sort: Oldest submitted
-                        </SelectItem>
-                        <SelectItem value="title_asc">
-                          Sort: Title A-Z
-                        </SelectItem>
-                        <SelectItem value="title_desc">
-                          Sort: Title Z-A
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) => updateFilter("sortBy", value)}
+                >
+                  <SelectTrigger className="w-full sm:w-[16rem]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-slate-300 shadow-md">
+                    <SelectItem value="submitted_desc">
+                      Sort: Newest submitted
+                    </SelectItem>
+                    <SelectItem value="submitted_asc">
+                      Sort: Oldest submitted
+                    </SelectItem>
+                    <SelectItem value="title_asc">Sort: Title A-Z</SelectItem>
+                    <SelectItem value="title_desc">Sort: Title Z-A</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                    <div className="ine-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
-                      <Button
-                        variant={viewMode === "grid" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("grid")}
-                        type="button"
-                        className="rounded-md"
-                      >
-                        <LayoutGrid size={14} />
-                        Grid
-                      </Button>
-                      <Button
-                        variant={viewMode === "list" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("list")}
-                        type="button"
-                        className="rounded-md"
-                      >
-                        <List size={14} />
-                        List
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select value={quickFilter} onValueChange={setQuickFilter}>
-                      <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                        <SelectValue>
-                          {selectedDirectoryQuickFilter
-                            ? `${selectedDirectoryQuickFilter.label} (${selectedDirectoryQuickFilter.count})`
-                            : "Filter projects"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white shadow-md">
-                        {directoryQuickFilterOptions.map((option) => (
-                          <SelectItem key={option.key} value={option.key}>
-                            {option.label} ({option.count})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                      onClick={resetDirectoryFilters}
-                    >
-                      Reset all
-                    </Button>
-                  </div>
+                <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
+                  <Button
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    type="button"
+                    className="rounded-md"
+                  >
+                    <LayoutGrid size={14} />
+                    Grid
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    type="button"
+                    className="rounded-md"
+                  >
+                    <List size={14} />
+                    List
+                  </Button>
                 </div>
               </div>
-
-              {hasActiveDirectoryFilters ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Active Filters
-                  </span>
-                  {String(filters.search || "").trim() ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => updateFilter("search", "")}
-                    >
-                      Search: "{String(filters.search || "").trim()}" x
-                    </button>
-                  ) : null}
-                  {quickFilter !== "all" ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => setQuickFilter("all")}
-                    >
-                      {selectedDirectoryQuickFilter?.label || quickFilter} x
-                    </button>
-                  ) : null}
-                  {String(filters.sortBy || "") !== "submitted_desc" ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                      onClick={() => updateFilter("sortBy", "submitted_desc")}
-                    >
-                      Sort: {filters.sortBy} x
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
+
+            <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                <Select value={quickFilter} onValueChange={setQuickFilter}>
+                  <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                    <SelectValue>
+                      {selectedDirectoryQuickFilter
+                        ? `${selectedDirectoryQuickFilter.label} (${selectedDirectoryQuickFilter.count})`
+                        : "Filter projects"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="border border-slate-200 bg-white shadow-md">
+                    {directoryQuickFilterOptions.map((option) => (
+                      <SelectItem key={option.key} value={option.key}>
+                        {option.label} ({option.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                  onClick={resetDirectoryFilters}
+                >
+                  Reset all
+                </Button>
+              </div>
+
+              <div className="text-sm text-slate-600 xl:text-right">
+                Showing{" "}
+                <span className="font-semibold text-slate-900">
+                  {filteredProjects.length}
+                </span>{" "}
+                project record{filteredProjects.length === 1 ? "" : "s"}.
+              </div>
+            </div>
+
+            {hasActiveDirectoryFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Active Filters
+                </span>
+                {String(filters.search || "").trim() ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                    onClick={() => updateFilter("search", "")}
+                  >
+                    Search: "{String(filters.search || "").trim()}" x
+                  </button>
+                ) : null}
+                {quickFilter !== "all" ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                    onClick={() => setQuickFilter("all")}
+                  >
+                    {selectedDirectoryQuickFilter?.label || quickFilter} x
+                  </button>
+                ) : null}
+                {String(filters.sortBy || "") !== "submitted_desc" ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                    onClick={() => updateFilter("sortBy", "submitted_desc")}
+                  >
+                    Sort: {filters.sortBy} x
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
           {!dataLoading && filteredProjects.length === 0 ? (
             <CardContent className="p-4">
@@ -2137,55 +2143,53 @@ export default function ResearchProjectsPage() {
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-              <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={linkedProjectsQuickFilter}
-                  onValueChange={setLinkedProjectsQuickFilter}
-                >
-                  <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                    <SelectValue>
-                      {selectedLinkedProjectQuickFilter
-                        ? `${selectedLinkedProjectQuickFilter.label} (${selectedLinkedProjectQuickFilter.count})`
-                        : "Filter projects"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="border border-slate-200 bg-white shadow-md">
-                    {linkedProjectQuickFilterOptions.map((option) => (
-                      <SelectItem key={option.key} value={option.key}>
-                        {option.label} ({option.count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                  onClick={resetLinkedFilters}
-                >
-                  Reset all
-                </Button>
-              </div>
-
-              {hasActiveLinkedFilters ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Active Filters
-                  </span>
-                  <button
-                    type="button"
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                    onClick={() => setLinkedProjectsQuickFilter("all")}
-                  >
-                    {selectedLinkedProjectQuickFilter?.label ||
-                      linkedProjectsQuickFilter}{" "}
-                    x
-                  </button>
-                </div>
-              ) : null}
+            <div className="flex flex-wrap items-center gap-2 pb-4">
+              <Select
+                value={linkedProjectsQuickFilter}
+                onValueChange={setLinkedProjectsQuickFilter}
+              >
+                <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                  <SelectValue>
+                    {selectedLinkedProjectQuickFilter
+                      ? `${selectedLinkedProjectQuickFilter.label} (${selectedLinkedProjectQuickFilter.count})`
+                      : "Filter projects"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="border border-slate-200 bg-white shadow-md">
+                  {linkedProjectQuickFilterOptions.map((option) => (
+                    <SelectItem key={option.key} value={option.key}>
+                      {option.label} ({option.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                onClick={resetLinkedFilters}
+              >
+                Reset all
+              </Button>
             </div>
+
+            {hasActiveLinkedFilters ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Active Filters
+                </span>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                  onClick={() => setLinkedProjectsQuickFilter("all")}
+                >
+                  {selectedLinkedProjectQuickFilter?.label ||
+                    linkedProjectsQuickFilter}{" "}
+                  x
+                </button>
+              </div>
+            ) : null}
 
             {dataLoading ? (
               linkedViewMode === "grid" ? (

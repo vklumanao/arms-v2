@@ -826,7 +826,7 @@ export default function AdminDepartmentPage() {
                       {workspaceDepartmentRow.code || "No Code"}
                     </p>
                   ) : null}
-                  <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
+                  <CardDescription className="max-auto text-sm leading-6 text-slate-600">
                     {workspaceDepartmentRow
                       ? workspaceDepartmentRow.description ||
                         "No description has been added for this department yet."

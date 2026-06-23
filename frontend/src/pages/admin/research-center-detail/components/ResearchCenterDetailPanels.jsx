@@ -202,7 +202,7 @@ function DetailWorkspaceRail({ center, agendaFilter, onAgendaClick }) {
 
       <div className="rounded-md border border-slate-200 bg-white p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Research Agendas
+          Research Agenda
         </p>
 
         {center?.agendaNames?.length ? (
@@ -669,11 +669,11 @@ function EditResearchCenterModal({
 
             <div className="space-y-4 rounded-md border border-slate-200 bg-white p-4 text-sm sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                Research Agendas
+                Research Agenda
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {editForm.researchAgendas.map((agenda) => (
+                {editForm.researchAgenda.map((agenda) => (
                   <button
                     key={agenda}
                     type="button"
@@ -685,13 +685,13 @@ function EditResearchCenterModal({
                   </button>
                 ))}
 
-                {editForm.researchAgendas.length === 0 ? (
+                {editForm.researchAgenda.length === 0 ? (
                   <p className="text-xs text-slate-500">No agendas yet.</p>
                 ) : null}
               </div>
 
-              {editErrors.researchAgendas ? (
-                <p className="field-error">{editErrors.researchAgendas}</p>
+              {editErrors.researchAgenda ? (
+                <p className="field-error">{editErrors.researchAgenda}</p>
               ) : null}
 
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -1403,7 +1403,9 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   <TableHead className="w-[120px]">
                     Actual Accomplishment
                   </TableHead>
-                  <TableHead className="w-[140px]">Percent Accomplishment</TableHead>
+                  <TableHead className="w-[140px]">
+                    Percent Accomplishment
+                  </TableHead>
                   <TableHead className="w-[180px]">Success Indicator</TableHead>
                   <TableHead className="w-[170px] text-right">Action</TableHead>
                 </TableRow>
