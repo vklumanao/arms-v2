@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Building2,
   Download,
   Eye,
   FolderKanban,
-  LayoutGrid,
   Link2,
   List,
   Pencil,
-  Search,
   Trash2,
   Users,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -22,15 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -39,33 +41,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import ConfirmActionModal from "@/components/feedback/ConfirmActionModal";
-import PaginationControls from "@/components/navigation/PaginationControls";
 import { useToast } from "@/components/providers/ToastProvider";
 import {
-  deleteReference,
   createReference,
+  deleteReference,
   fetchReferenceData,
-  fetchReferenceLinks,
   fetchReferenceUsageCounts,
   updateReference,
 } from "@/services/admin";
-import {
-  DepartmentWorkspaceHero,
-  DepartmentDirectoryContent,
-} from "./department/components/DepartmentPanels";
+import { DepartmentDirectoryPanel } from "./department/components/DepartmentPanels";
 
 const INITIAL_FILTERS = {
   search: "",
 };
+
 const EMPTY_EDITING = {
   id: null,
   name: "",
@@ -104,12 +101,13 @@ export default function AdminDepartmentPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const PAGE_SIZE = 10;
-  const DIRECTORY_SKELETON_COUNT = 6;
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [quickFilter, setQuickFilter] = useState("all");
   const [rows, setRows] = useState([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState(null);
+  const [mobileDirectoryOpen, setMobileDirectoryOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_EDITING);
   const [editLoading, setEditLoading] = useState(false);
@@ -118,7 +116,6 @@ export default function AdminDepartmentPage() {
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState("grid");
   const [exporting, setExporting] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState("");
@@ -129,12 +126,8 @@ export default function AdminDepartmentPage() {
   const [newChairpersonId, setNewChairpersonId] = useState("");
   const [chairpersonUsers, setChairpersonUsers] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: "name",
-    direction: "asc",
-  });
-  const [editErrors, setEditErrors] = useState({});
   const [createErrors, setCreateErrors] = useState({});
+  const [editErrors, setEditErrors] = useState({});
 
   const dashboardMetrics = useMemo(() => {
     const totalDepartments = rows.length;
@@ -164,19 +157,19 @@ export default function AdminDepartmentPage() {
     setDataError("");
     try {
       const referencePayload = await fetchReferenceData();
-      const centersData = referencePayload?.departmentsRes?.data || [];
+      const departmentsData = referencePayload?.departmentsRes?.data || [];
       const ckanUsersData = referencePayload?.ckanUsersRes?.data || [];
 
-      const usageByCenter = await Promise.all(
-        centersData.map(async (center) => {
-          const centerId = center?.id;
+      const usageByDepartment = await Promise.all(
+        departmentsData.map(async (department) => {
+          const departmentId = department?.id;
           try {
             const usage = await fetchReferenceUsageCounts({
               type: "department",
-              id: centerId,
+              id: departmentId,
             });
             return {
-              id: centerId,
+              id: departmentId,
               projectCount: usage?.projectCount || 0,
               profileCount: usage?.profileCount || 0,
               memberBreakdown: usage?.memberBreakdown || {
@@ -188,7 +181,7 @@ export default function AdminDepartmentPage() {
             };
           } catch {
             return {
-              id: center.id,
+              id: departmentId,
               projectCount: 0,
               profileCount: 0,
               memberBreakdown: {
@@ -203,12 +196,12 @@ export default function AdminDepartmentPage() {
       );
 
       const usageMap = Object.fromEntries(
-        usageByCenter.map((item) => [item.id, item]),
+        usageByDepartment.map((item) => [item.id, item]),
       );
 
-      const mapped = centersData
+      const mapped = departmentsData
         .map((item) => {
-          const orgId = item.id;
+          const departmentId = item.id;
           const chairpersonId = String(item?.chairperson_id || "").trim();
           const chairpersonName =
             String(item?.chairperson_name || "").trim() ||
@@ -216,9 +209,11 @@ export default function AdminDepartmentPage() {
               (user) => String(user?.id || "").trim() === chairpersonId,
             )?.name ||
             "";
+
           return {
-            id: orgId,
-            code: String(item?.code || "").trim() || String(orgId || "-"),
+            id: departmentId,
+            code:
+              String(item?.code || "").trim() || String(departmentId || "-"),
             name: item.title || item.display_name || item.name || "-",
             description: String(item?.description || "").trim(),
             socialMediaLink: String(item?.social_media_link || "").trim(),
@@ -226,17 +221,17 @@ export default function AdminDepartmentPage() {
             tag: "department",
             chairpersonId,
             chairpersonName: chairpersonName || "-",
-            projectCount: usageMap[orgId]?.projectCount || 0,
-            profileCount: usageMap[orgId]?.profileCount || 0,
-            memberBreakdown: usageMap[orgId]?.memberBreakdown || {
+            projectCount: usageMap[departmentId]?.projectCount || 0,
+            profileCount: usageMap[departmentId]?.profileCount || 0,
+            memberBreakdown: usageMap[departmentId]?.memberBreakdown || {
               adminCount: 0,
               editorCount: 0,
               memberCount: 0,
               totalCount: 0,
             },
             totalLinks:
-              (usageMap[orgId]?.projectCount || 0) +
-              (usageMap[orgId]?.profileCount || 0),
+              (usageMap[departmentId]?.projectCount || 0) +
+              (usageMap[departmentId]?.profileCount || 0),
           };
         })
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -261,9 +256,15 @@ export default function AdminDepartmentPage() {
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
+      setSelectedDepartmentId((prev) =>
+        mapped.some((item) => item.id === prev)
+          ? prev
+          : (mapped[0]?.id ?? null),
+      );
     } catch (loadError) {
       setRows([]);
       setChairpersonUsers([]);
+      setSelectedDepartmentId(null);
       setDataError(loadError.message || "Unable to load department data.");
     } finally {
       setDataLoading(false);
@@ -296,15 +297,18 @@ export default function AdminDepartmentPage() {
       if (
         quickFilter === "with_projects" &&
         Number(row?.projectCount || 0) === 0
-      )
+      ) {
         return false;
+      }
       if (
         quickFilter === "with_affiliates" &&
         Number(row?.profileCount || 0) === 0
-      )
+      ) {
         return false;
-      if (quickFilter === "with_links" && Number(row?.totalLinks || 0) === 0)
+      }
+      if (quickFilter === "with_links" && Number(row?.totalLinks || 0) === 0) {
         return false;
+      }
       if (
         keyword &&
         !(
@@ -350,44 +354,15 @@ export default function AdminDepartmentPage() {
     [rows],
   );
 
-  const hasActiveDirectoryFilters =
-    quickFilter !== "all" || filters.search.trim().length > 0;
-
-  const sortedFilteredRows = useMemo(() => {
-    const source = [...filteredRows];
-    const { key, direction } = sortConfig;
-    const factor = direction === "asc" ? 1 : -1;
-
-    source.sort((a, b) => {
-      const av = a?.[key];
-      const bv = b?.[key];
-
-      if (typeof av === "number" && typeof bv === "number") {
-        return (av - bv) * factor;
-      }
-
-      return (
-        String(av ?? "")
-          .toLowerCase()
-          .localeCompare(String(bv ?? "").toLowerCase()) * factor
-      );
-    });
-
-    return source;
-  }, [filteredRows, sortConfig]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedFilteredRows.length / PAGE_SIZE),
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedFilteredRows.slice(start, start + PAGE_SIZE);
-  }, [sortedFilteredRows, currentPage, PAGE_SIZE]);
+    return filteredRows.slice(start, start + PAGE_SIZE);
+  }, [filteredRows, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, rows.length, quickFilter]);
+  }, [filters, quickFilter, rows.length]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -395,19 +370,23 @@ export default function AdminDepartmentPage() {
     }
   }, [currentPage, totalPages]);
 
-  const toggleSort = (key) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
-      }
-      return { key, direction: "asc" };
-    });
-  };
+  useEffect(() => {
+    if (!filteredRows.length) {
+      setSelectedDepartmentId(null);
+      return;
+    }
+    if (!filteredRows.some((row) => row.id === selectedDepartmentId)) {
+      setSelectedDepartmentId(filteredRows[0].id);
+    }
+  }, [filteredRows, selectedDepartmentId]);
 
-  const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return "\u2195";
-    return sortConfig.direction === "asc" ? "\u2191" : "\u2193";
-  };
+  const workspaceDepartmentRow = useMemo(
+    () =>
+      filteredRows.find((row) => row.id === selectedDepartmentId) ||
+      rows.find((row) => row.id === selectedDepartmentId) ||
+      null,
+    [filteredRows, rows, selectedDepartmentId],
+  );
 
   const editValidationErrors = useMemo(
     () =>
@@ -468,6 +447,7 @@ export default function AdminDepartmentPage() {
     if (!editing.id || Object.keys(errors).length > 0) {
       return;
     }
+
     setActionLoading(true);
     setActionError("");
     setActionMessage("");
@@ -540,6 +520,7 @@ export default function AdminDepartmentPage() {
     if (Object.keys(errors).length > 0) {
       return;
     }
+
     setCreateLoading(true);
     setActionError("");
     setActionMessage("");
@@ -720,181 +701,309 @@ export default function AdminDepartmentPage() {
 
   return (
     <section className="page-stack-lg">
-      <DepartmentWorkspaceHero
-        exporting={exporting}
-        filteredCount={filteredRows.length}
-        onExportCsv={() => exportRowsAsCsv(sortedFilteredRows, "filtered")}
-        onExportPdf={() => exportRowsAsPdf(sortedFilteredRows, "filtered")}
-        onOpenCreate={() => {
-          setCreateErrors({});
-          setCreateModalOpen(true);
-        }}
-      />
-      <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-700">
-              Department Directory
-            </h2>
-            <p className="text-sm text-slate-700">
-              Showing {filteredRows.length} filtered department record(s).
+      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Admin Workspace
             </p>
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Departments
+              </h1>
+              <p className="mt-1 max-w-3xl text-sm text-slate-600">
+                Manage department records, chairperson assignments, and linked
+                workspace details from a single view.
+              </p>
+            </div>
           </div>
 
-          <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:w-auto">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={exporting || filteredRows.length === 0}
+                  className="min-h-10 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 sm:w-auto"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="border border-slate-300 bg-white shadow-md"
+              >
+                <DropdownMenuItem
+                  className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                  onSelect={() => exportRowsAsCsv(filteredRows, "filtered")}
+                >
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                  onSelect={() => exportRowsAsPdf(filteredRows, "filtered")}
+                >
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "grid"
-                  ? "bg-white text-slate-700 shadow-sm"
-                  : "text-slate-700",
-              )}
+              variant="mono"
+              className="min-h-10 w-full sm:w-auto"
+              onClick={() => {
+                setCreateErrors({});
+                setCreateModalOpen(true);
+              }}
             >
-              <LayoutGrid size={14} />
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              type="button"
-              className={cn(
-                "rounded-full",
-                viewMode === "list"
-                  ? "bg-white text-slate-700 shadow-sm"
-                  : "text-slate-700",
-              )}
-            >
-              <List size={14} />
-              List
+              Create Department
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="relative w-full xl:max-w-lg">
-            <span className="sr-only">Search departments</span>
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-            <Input
-              className="border-slate-200 bg-white pl-8"
-              placeholder="Search name, code, chairperson, or id"
-              value={filters.search}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  search: event.target.value,
-                }))
-              }
-            />
-          </label>
+      <div className="xl:hidden">
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-10 w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          onClick={() => setMobileDirectoryOpen(true)}
+        >
+          <List className="h-4 w-4" />
+          {workspaceDepartmentRow?.name
+            ? `Change Department: ${workspaceDepartmentRow.name}`
+            : "Select Department"}
+        </Button>
+      </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {quickFilterChips.map((chip) => (
-              <Button
-                key={chip.key}
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "rounded-full border-slate-200 px-4 text-xs",
-                  quickFilter === chip.key
-                    ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
-                    : "bg-white text-slate-700 hover:bg-slate-50",
-                )}
-                onClick={() => setQuickFilter(chip.key)}
-              >
-                {chip.label}
-                <span
-                  className={cn(
-                    "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                    quickFilter === chip.key
-                      ? "bg-[#F1F5F9] text-slate-700"
-                      : "bg-slate-50 text-slate-700",
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </Button>
-            ))}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-              onClick={() => {
+      <div className={cn("grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]")}>
+        <div className="hidden xl:block">
+          <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">Directory</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Browse and switch between departments.
+              </p>
+            </div>
+            <DepartmentDirectoryPanel
+              rows={filteredRows}
+              paginatedRows={paginatedRows}
+              filters={filters}
+              onSearchChange={(search) => setFilters({ search })}
+              quickFilter={quickFilter}
+              onQuickFilterChange={setQuickFilter}
+              onResetFilters={() => {
                 setQuickFilter("all");
                 setFilters(INITIAL_FILTERS);
               }}
-            >
-              Reset all
-            </Button>
+              quickFilterChips={quickFilterChips}
+              selectedDepartmentId={workspaceDepartmentRow?.id}
+              onSelectDepartment={setSelectedDepartmentId}
+              metrics={dashboardMetrics}
+              dataLoading={dataLoading}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              embedded
+            />
           </div>
         </div>
 
-        {hasActiveDirectoryFilters ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-              Active Filters
-            </span>
-            {filters.search.trim() ? (
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    search: "",
-                  }))
-                }
-              >
-                Search: "{filters.search.trim()}" x
-              </button>
-            ) : null}
-            {quickFilter !== "all" ? (
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() => setQuickFilter("all")}
-              >
-                {quickFilterChips.find((chip) => chip.key === quickFilter)
-                  ?.label || "Quick filter"}{" "}
-                x
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="space-y-4">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Selected Department
+                  </p>
+                  <CardTitle className="text-xl font-bold uppercase text-slate-900 sm:text-3xl">
+                    {workspaceDepartmentRow?.name || "Select a Department"}
+                  </CardTitle>
+                  {workspaceDepartmentRow ? (
+                    <p className="pb-1 text-sm text-slate-500">
+                      {workspaceDepartmentRow.code || "No Code"}
+                    </p>
+                  ) : null}
+                  <CardDescription className="max-auto text-sm leading-6 text-slate-600">
+                    {workspaceDepartmentRow
+                      ? workspaceDepartmentRow.description ||
+                        "No description has been added for this department yet."
+                      : "Choose a department from the directory to load its workspace."}
+                  </CardDescription>
+                  {workspaceDepartmentRow ? (
+                    <p className="pt-1 text-sm text-slate-600">
+                      Chairperson:{" "}
+                      <span className="font-medium text-slate-900">
+                        {workspaceDepartmentRow.chairpersonName || "-"}
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
+
+                {workspaceDepartmentRow ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                      onClick={() =>
+                        goToDepartmentDetail(workspaceDepartmentRow)
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                      Open Department
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                      onClick={() => startEdit(workspaceDepartmentRow)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                      onClick={() => setDeletingRow(workspaceDepartmentRow)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              {!workspaceDepartmentRow ? (
+                <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/70 px-5 py-10 text-center">
+                  <Building2 className="mx-auto h-8 w-8 text-slate-400" />
+                  <p className="mt-3 text-base font-medium text-slate-900">
+                    Select a department
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Choose a department from the directory to view its details,
+                    affiliates, projects, and workspace links.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4 text-left hover:bg-slate-100"
+                    onClick={() =>
+                      goToDepartmentDetail(workspaceDepartmentRow, "projects")
+                    }
+                  >
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <FolderKanban className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Projects
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {workspaceDepartmentRow.projectCount || 0}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4 text-left hover:bg-slate-100"
+                    onClick={() =>
+                      goToDepartmentDetail(workspaceDepartmentRow, "affiliates")
+                    }
+                  >
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Users className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Affiliates
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {workspaceDepartmentRow.profileCount || 0}
+                    </p>
+                  </button>
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Link2 className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                        Total Links
+                      </span>
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                      {workspaceDepartmentRow.totalLinks || 0}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardHeader>
+          </Card>
+        </div>
       </div>
 
-      <DepartmentDirectoryContent
-        dataLoading={dataLoading}
-        viewMode={viewMode}
-        directorySkeletonCount={DIRECTORY_SKELETON_COUNT}
-        filteredRows={filteredRows}
-        paginatedRows={paginatedRows}
-        currentPage={currentPage}
-        pageSize={PAGE_SIZE}
-        totalPages={totalPages}
-        setCurrentPage={setCurrentPage}
-        goToDepartmentDetail={goToDepartmentDetail}
-        startEdit={startEdit}
-        setDeletingRow={setDeletingRow}
-        toggleSort={toggleSort}
-        getSortIndicator={getSortIndicator}
-      />
+      <Sheet open={mobileDirectoryOpen} onOpenChange={setMobileDirectoryOpen}>
+        <SheetContent
+          side="left"
+          className="w-[92vw] max-w-none overflow-y-auto border-r border-slate-300 bg-white p-3 sm:max-w-lg"
+        >
+          <SheetHeader className="px-2 pb-2">
+            <SheetTitle className="text-slate-700">
+              Select Department
+            </SheetTitle>
+            <SheetDescription>
+              Search and pin a department to open its workspace.
+            </SheetDescription>
+          </SheetHeader>
+          <DepartmentDirectoryPanel
+            rows={filteredRows}
+            paginatedRows={paginatedRows}
+            filters={filters}
+            onSearchChange={(search) => setFilters({ search })}
+            quickFilter={quickFilter}
+            onQuickFilterChange={setQuickFilter}
+            onResetFilters={() => {
+              setQuickFilter("all");
+              setFilters(INITIAL_FILTERS);
+            }}
+            quickFilterChips={quickFilterChips}
+            selectedDepartmentId={workspaceDepartmentRow?.id}
+            onSelectDepartment={(departmentId) => {
+              setSelectedDepartmentId(departmentId);
+              setMobileDirectoryOpen(false);
+            }}
+            metrics={dashboardMetrics}
+            dataLoading={dataLoading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            embedded
+          />
+        </SheetContent>
+      </Sheet>
+
       <ConfirmActionModal
         open={Boolean(deletingRow)}
-        title="Delete Department"
-        message={deleteGuard.message}
+        title={
+          <span className="text-base font-semibold text-slate-700">
+            Delete Department
+          </span>
+        }
+        message={
+          <p className="text-sm leading-relaxed text-slate-600">
+            {deleteGuard.message}
+          </p>
+        }
         confirmLabel={deleteGuard.confirmLabel}
         align="center"
         loading={deleteGuard.blocked ? false : actionLoading}
         onCancel={() => setDeletingRow(null)}
         onConfirm={
           deleteGuard.blocked ? () => setDeletingRow(null) : confirmDelete
+        }
+        className="border border-slate-300 bg-white text-slate-700 shadow-md"
+        cancelButtonClassName="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+        confirmButtonClassName={
+          deleteGuard.blocked
+            ? "bg-[#10B981] text-white hover:bg-[#059669] active:bg-[#047857] disabled:bg-slate-300 disabled:text-slate-500"
+            : "bg-[#F97316] text-white hover:bg-[#EA580C] active:bg-[#C2410C] disabled:bg-slate-300 disabled:text-slate-500"
         }
       />
 
@@ -905,7 +1014,7 @@ export default function AdminDepartmentPage() {
         >
           <DialogContent
             className="max-w-2xl"
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader>
               <DialogTitle>Edit Department</DialogTitle>
@@ -926,11 +1035,17 @@ export default function AdminDepartmentPage() {
                   </label>
                   <Input
                     value={editing.name}
-                    onChange={(e) => {
-                      setEditing((p) => ({ ...p, name: e.target.value }));
-                      setEditErrors((p) => ({ ...p, name: "" }));
+                    onChange={(event) => {
+                      setEditing((prev) => ({
+                        ...prev,
+                        name: event.target.value,
+                      }));
+                      setEditErrors((prev) => ({ ...prev, name: "" }));
                     }}
                   />
+                  {editErrors.name ? (
+                    <p className="text-xs text-rose-600">{editErrors.name}</p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -939,14 +1054,19 @@ export default function AdminDepartmentPage() {
                   </label>
                   <Input
                     value={editing.code}
-                    onChange={(e) => {
-                      setEditing((p) => ({
-                        ...p,
-                        code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    onChange={(event) => {
+                      setEditing((prev) => ({
+                        ...prev,
+                        code: event.target.value
+                          .toUpperCase()
+                          .replace(/\s+/g, "_"),
                       }));
-                      setEditErrors((p) => ({ ...p, code: "" }));
+                      setEditErrors((prev) => ({ ...prev, code: "" }));
                     }}
                   />
+                  {editErrors.code ? (
+                    <p className="text-xs text-rose-600">{editErrors.code}</p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
@@ -955,8 +1075,11 @@ export default function AdminDepartmentPage() {
                   </label>
                   <Textarea
                     value={editing.description}
-                    onChange={(e) =>
-                      setEditing((p) => ({ ...p, description: e.target.value }))
+                    onChange={(event) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        description: event.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -967,10 +1090,10 @@ export default function AdminDepartmentPage() {
                   </label>
                   <Input
                     value={editing.socialMediaLink}
-                    onChange={(e) =>
-                      setEditing((p) => ({
-                        ...p,
-                        socialMediaLink: e.target.value,
+                    onChange={(event) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        socialMediaLink: event.target.value,
                       }))
                     }
                   />
@@ -982,22 +1105,30 @@ export default function AdminDepartmentPage() {
                   </label>
                   <Select
                     value={editing.chairpersonId}
-                    onValueChange={(v) => {
-                      setEditing((p) => ({ ...p, chairpersonId: v }));
-                      setEditErrors((p) => ({ ...p, chairpersonId: "" }));
+                    onValueChange={(value) => {
+                      setEditing((prev) => ({ ...prev, chairpersonId: value }));
+                      setEditErrors((prev) => ({
+                        ...prev,
+                        chairpersonId: "",
+                      }));
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Chairperson" />
                     </SelectTrigger>
                     <SelectContent>
-                      {chairpersonUsers.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
+                      {chairpersonUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {editErrors.chairpersonId ? (
+                    <p className="text-xs text-rose-600">
+                      {editErrors.chairpersonId}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -1041,8 +1172,15 @@ export default function AdminDepartmentPage() {
                       className="w-full"
                       placeholder="e.g. Bachelor of Science in Information System"
                       value={newDepartmentName}
-                      onChange={(e) => setNewDepartmentName(e.target.value)}
+                      onChange={(event) =>
+                        setNewDepartmentName(event.target.value)
+                      }
                     />
+                    {createErrors.name ? (
+                      <p className="text-xs text-rose-600">
+                        {createErrors.name}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -1053,31 +1191,50 @@ export default function AdminDepartmentPage() {
                       className="w-full"
                       placeholder="e.g. BSIS"
                       value={newDepartmentCode}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setNewDepartmentCode(
-                          e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                          event.target.value.toUpperCase().replace(/\s+/g, "_"),
                         )
                       }
                     />
                     <p className="text-xs text-slate-400">
                       Use uppercase abbreviation.
                     </p>
+                    {createErrors.code ? (
+                      <p className="text-xs text-rose-600">
+                        {createErrors.code}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Description *
+                      Description
                     </label>
                     <Textarea
                       className="w-full"
                       placeholder="Short description about the department..."
                       value={newDepartmentDescription}
-                      onChange={(e) =>
-                        setNewDepartmentDescription(e.target.value)
+                      onChange={(event) =>
+                        setNewDepartmentDescription(event.target.value)
                       }
                       rows={4}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Social Media Link
+                    </label>
+                    <Input
+                      className="w-full"
+                      placeholder="https://..."
+                      value={newDepartmentSocialMediaLink}
+                      onChange={(event) =>
+                        setNewDepartmentSocialMediaLink(event.target.value)
+                      }
                     />
                   </div>
 
@@ -1093,13 +1250,18 @@ export default function AdminDepartmentPage() {
                         <SelectValue placeholder="Select chairperson" />
                       </SelectTrigger>
                       <SelectContent>
-                        {chairpersonUsers.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
+                        {chairpersonUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {createErrors.chairpersonId ? (
+                      <p className="text-xs text-rose-600">
+                        {createErrors.chairpersonId}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1112,8 +1274,11 @@ export default function AdminDepartmentPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={createDepartment} disabled={!isCreateFormValid}>
-                Create
+              <Button
+                onClick={createDepartment}
+                disabled={createLoading || !isCreateFormValid}
+              >
+                {createLoading ? "Creating..." : "Create"}
               </Button>
             </div>
           </DialogContent>

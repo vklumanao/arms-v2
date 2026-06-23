@@ -88,12 +88,14 @@ function formatTarget(target, targetUnit = "") {
 
 function DashboardHeader({ title, description, children }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
           RDISO Balanced Scorecard
         </p>
-        <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">{title}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+          {title}
+        </h1>
         <p className="max-w-2xl text-sm text-slate-600">{description}</p>
       </div>
       <div>{children}</div>
@@ -132,7 +134,9 @@ function SummaryTile({ label, value, hint, tone = "neutral" }) {
   return (
     <Card className={cn("border shadow-sm", toneClass)}>
       <CardContent className="p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em]">
+          {label}
+        </p>
         <p className="mt-2 text-2xl font-bold">{value}</p>
         {hint ? <p className="mt-1 text-xs opacity-80">{hint}</p> : null}
       </CardContent>
@@ -152,7 +156,9 @@ function ScorecardRow({ item }) {
           {item.percentLabel}
         </Badge>
       </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{item.successIndicator || "-"}</td>
+      <td className="px-3 py-3 text-sm text-slate-700">
+        {item.successIndicator || "-"}
+      </td>
     </tr>
   );
 }
@@ -225,8 +231,13 @@ export default function DashboardPage() {
       >
         <div className="grid gap-2 sm:min-w-[280px]">
           <label className="space-y-1 text-sm">
-            <span className="font-semibold text-slate-700">Research Center</span>
-            <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+            <span className="font-semibold text-slate-700">
+              Research Center
+            </span>
+            <Select
+              value={selectedCenterId}
+              onValueChange={setSelectedCenterId}
+            >
               <SelectTrigger className="border-slate-300 bg-white text-slate-700">
                 <SelectValue placeholder="Select center" />
               </SelectTrigger>
@@ -242,37 +253,37 @@ export default function DashboardPage() {
         </div>
       </DashboardHeader>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryTile
-          label="Total Indicators"
-          value={summary.total}
-          hint="All scorecard rows"
-        />
-        <SummaryTile
-          label="Achieved"
-          value={summary.achieved}
-          hint="At or above target"
-          tone="success"
-        />
-        <SummaryTile
-          label="Partially Achieved"
-          value={summary.partial}
-          hint="Progress but below target"
-          tone="warning"
-        />
-        <SummaryTile
-          label="Behind Target"
-          value={summary.behind}
-          hint="Need follow-up"
-          tone="danger"
-        />
-      </div>
-
       <DashboardSection
         title="RDISO KPI / Deliverables Scorecard"
         description="Monitor target vs actual accomplishment per research center."
       >
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-md border border-slate-200">
+          <div className="grid grid-cols-1 gap-3 p-4 text-sm text-slate-700 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-4">
+            <SummaryTile
+              label="Total Indicators"
+              value={summary.total}
+              hint="All scorecard rows"
+            />
+            <SummaryTile
+              label="Achieved"
+              value={summary.achieved}
+              hint="At or above target"
+              tone="success"
+            />
+            <SummaryTile
+              label="Partially Achieved"
+              value={summary.partial}
+              hint="Progress but below target"
+              tone="warning"
+            />
+            <SummaryTile
+              label="Behind Target"
+              value={summary.behind}
+              hint="Need follow-up"
+              tone="danger"
+            />
+          </div>
+
           <Table>
             <TableHeader className="bg-slate-50 text-slate-600">
               <TableRow>
@@ -297,7 +308,7 @@ export default function DashboardPage() {
         title="Notes"
         description="This is the fresh dashboard foundation. Next we can connect actual accomplishments from project outputs, awards, patents, MOA/MOU, and funding records."
       >
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
           <p>
             Right now the scorecard is scaffolded with the KPI definitions and
             calculation logic. The next step is mapping actual accomplishments

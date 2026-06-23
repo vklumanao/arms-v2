@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -81,6 +81,7 @@ export default function useAdminResearchCenterWorkspace() {
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newResearchCenterName, setNewResearchCenterName] = useState("");
@@ -103,6 +104,7 @@ export default function useAdminResearchCenterWorkspace() {
   const [agendaNamesByCenterId, setAgendaNamesByCenterId] = useState({});
   const [createErrors, setCreateErrors] = useState({});
   const [selectedCenterId, setSelectedCenterId] = useState("");
+  const hasAutoSyncStartedRef = useRef(false);
 
   const isScopedCenterChief =
     profile?.is_center_chief === true && Boolean(profile?.managed_center_id);
@@ -406,7 +408,7 @@ export default function useAdminResearchCenterWorkspace() {
       },
       {
         key: "with_agendas",
-        label: "With Agendas",
+        label: "With Agenda",
         count: rows.filter((row) => Number(row?.agendaCount || 0) > 0).length,
       },
     ],
@@ -531,25 +533,40 @@ export default function useAdminResearchCenterWorkspace() {
     await loadResearchCenterRows();
   };
 
-  const syncResearchCenters = async () => {
-    setActionLoading(true);
-    setActionError("");
-    setActionMessage("");
+  const syncResearchCenters = useCallback(
+    async (options = { showSuccessMessage: true }) => {
+      if (syncLoading) return null;
 
-    try {
-      const summary = await syncResearchCentersFromCkan();
-      setActionMessage(
-        `Synced research centers: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`,
-      );
-      await loadResearchCenterRows();
-      return summary;
-    } catch (error) {
-      setActionError(error.message || "Unable to sync research centers.");
-      return null;
-    } finally {
-      setActionLoading(false);
-    }
-  };
+      setSyncLoading(true);
+      setActionError("");
+      if (options.showSuccessMessage) {
+        setActionMessage("");
+      }
+
+      try {
+        const summary = await syncResearchCentersFromCkan();
+        if (options.showSuccessMessage) {
+          setActionMessage(
+            `Synced research centers: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`,
+          );
+        }
+        await loadResearchCenterRows();
+        return summary;
+      } catch (error) {
+        setActionError(error.message || "Unable to sync research centers.");
+        return null;
+      } finally {
+        setSyncLoading(false);
+      }
+    },
+    [loadResearchCenterRows, syncLoading],
+  );
+
+  useEffect(() => {
+    if (isScopedCenterChief || hasAutoSyncStartedRef.current) return;
+    hasAutoSyncStartedRef.current = true;
+    void syncResearchCenters({ showSuccessMessage: false });
+  }, [isScopedCenterChief, syncResearchCenters]);
 
   const addResearchAgenda = () => {
     const { items } = addUniqueTrimmedItem(newResearchAgendas, newAgendaInput);
@@ -699,6 +716,7 @@ export default function useAdminResearchCenterWorkspace() {
     setDeletingRow,
     deleteGuard,
     actionLoading,
+    syncLoading,
     confirmDelete,
     createModalOpen,
     createLoading,

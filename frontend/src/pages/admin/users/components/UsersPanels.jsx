@@ -1,4 +1,14 @@
-import { Eye, Loader2, Mail, UserCheck, UserX, BadgeCheck, Briefcase, Users } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  Mail,
+  UserCheck,
+  UserX,
+  BadgeCheck,
+  Briefcase,
+  Users,
+  Search,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +39,7 @@ import PaginationControls from "@/components/navigation/PaginationControls";
 
 export function UsersWorkspaceHero({ metrics, onCreateUser }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
       <div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
@@ -52,7 +62,7 @@ export function UsersWorkspaceHero({ metrics, onCreateUser }) {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
           {[
             { label: "Total Users", value: metrics.total, icon: Users },
             { label: "Active", value: metrics.active, icon: UserCheck },
@@ -62,7 +72,7 @@ export function UsersWorkspaceHero({ metrics, onCreateUser }) {
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-md border border-slate-200 bg-white p-4 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -108,54 +118,39 @@ export function UsersDirectoryCard({
               Showing {filteredUsers.length} account(s).
             </CardDescription>
           </div>
-          <p className="text-sm text-slate-600">{filteredUsers.length} row(s).</p>
         </div>
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="relative block w-full md:max-w-xl">
-            <span className="sr-only">Search users</span>
-            <Input
-              className="pl-9"
-              placeholder="Search user by name, email, or role"
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-            />
-          </label>
+        <label className="relative block w-full md:max-w-xl">
+          <span className="sr-only">Search users</span>
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+          <Input
+            className="pl-9"
+            placeholder="Search user by name, email, or role"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+          />
+        </label>
 
+        {hasActiveDirectoryFilters ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Active Filters
+            </span>
+            <button
               type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-slate-700 hover:text-slate-900"
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
               onClick={() => setUserSearch("")}
-              disabled={!hasActiveDirectoryFilters}
             >
-              Reset all
-            </Button>
+              Search: "{String(userSearch || "").trim()}" x
+            </button>
           </div>
-
-          {hasActiveDirectoryFilters ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                Active Filters
-              </span>
-              <button
-                type="button"
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                onClick={() => setUserSearch("")}
-              >
-                Search: "{String(userSearch || "").trim()}" x
-              </button>
-            </div>
-          ) : null}
-        </div>
+        ) : null}
       </CardContent>
 
       <CardContent className="p-4 pt-0">
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
           <Table className="min-w-[980px]">
             <TableHeader className="bg-slate-50 text-slate-600">
               <TableRow>
@@ -171,7 +166,10 @@ export function UsersDirectoryCard({
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-slate-600">
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-slate-600"
+                  >
                     No users found.
                   </TableCell>
                 </TableRow>
@@ -217,7 +215,8 @@ export function UsersDirectoryCard({
                             variant={
                               state === "active"
                                 ? "secondary"
-                                : state === "pending_reset" || state === "pending_verification"
+                                : state === "pending_reset" ||
+                                    state === "pending_verification"
                                   ? "outline"
                                   : "destructive"
                             }
@@ -234,7 +233,9 @@ export function UsersDirectoryCard({
                       })()}
                     </TableCell>
                     <TableCell>
-                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
@@ -281,7 +282,11 @@ export function UsersDirectoryCard({
                               ? `Resend setup invite to ${user?.full_name || user?.email || "user"}`
                               : `Send password reset to ${user?.full_name || user?.email || "user"}`
                           }
-                          title={user.email_verified !== true ? "Resend invite" : "Send reset"}
+                          title={
+                            user.email_verified !== true
+                              ? "Resend invite"
+                              : "Send reset"
+                          }
                         >
                           <Mail className="h-4 w-4" />
                         </Button>

@@ -91,7 +91,7 @@ function DetailWorkspaceHeader({
   const SocialIcon = ICON_BY_KEY[socialMeta?.iconKey] || Globe;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.96))] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
+    <div className="rounded-md border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.96))] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!isCenterChief ? (
@@ -129,7 +129,7 @@ function DetailWorkspaceHeader({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+        <div className="flex flex-col gap-4 rounded-md border border-slate-200 bg-white/80 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
           <div className="flex items-start gap-3 sm:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#10B981] text-lg font-bold text-white">
               {initials}
@@ -138,7 +138,7 @@ function DetailWorkspaceHeader({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Research Center
               </p>
-              <h1 className="break-words text-lg font-bold leading-tight text-[#1E293B] sm:text-2xl">
+              <h1 className="break-words text-lg uppercase font-bold leading-tight text-[#1E293B] sm:text-2xl">
                 {center?.name || "Research Center"}
               </h1>
               <p className="text-sm text-slate-600">
@@ -190,7 +190,7 @@ function DetailWorkspaceHeader({
 function DetailWorkspaceRail({ center, agendaFilter, onAgendaClick }) {
   return (
     <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+      <div className="rounded-md border border-slate-200 bg-white p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           Description
         </p>
@@ -200,9 +200,9 @@ function DetailWorkspaceRail({ center, agendaFilter, onAgendaClick }) {
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+      <div className="rounded-md border border-slate-200 bg-white p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Research Agendas
+          Research Agenda
         </p>
 
         {center?.agendaNames?.length ? (
@@ -414,7 +414,7 @@ function AffiliatesPanel({
       totalPages={affiliatesTotalPages}
       onPageChange={onPageChange}
       loading={loading}
-      minWidthClass="min-w-[720px]"
+      minWidthClass="min-w-[720px] "
       emptyTitle="No affiliates"
       emptyDescription="No linked affiliates found for this research center."
       renderCell={(key, row, index) => {
@@ -488,7 +488,7 @@ function DeleteResearchCenterDialog({
         </DialogHeader>
 
         {blocked ? (
-          <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             {projectCount > 0 ? (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span>{projectCount} linked project(s)</span>
@@ -560,7 +560,7 @@ function EditResearchCenterModal({
       onOpenChange={(next) => !editSaving && onOpenChange(next)}
     >
       <DialogContent className="sm:max-w-4xl">
-        <div className="flex max-h-[90vh] flex-col">
+        <div className="flex max-h-[90vh] flex-col rounded-md">
           <DialogHeader className="border-b border-slate-200 px-5 py-4 sm:px-6 sm:py-5">
             <DialogTitle>Edit Research Center</DialogTitle>
             <DialogDescription>
@@ -569,7 +569,7 @@ function EditResearchCenterModal({
           </DialogHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
-            <div className="rounded-xl border bg-white p-4 sm:p-5">
+            <div className="rounded-md border bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                 Basic Information
               </p>
@@ -667,13 +667,13 @@ function EditResearchCenterModal({
               </div>
             </div>
 
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 text-sm sm:p-5">
+            <div className="space-y-4 rounded-md border border-slate-200 bg-white p-4 text-sm sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                Research Agendas
+                Research Agenda
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {editForm.researchAgendas.map((agenda) => (
+                {editForm.researchAgenda.map((agenda) => (
                   <button
                     key={agenda}
                     type="button"
@@ -685,13 +685,13 @@ function EditResearchCenterModal({
                   </button>
                 ))}
 
-                {editForm.researchAgendas.length === 0 ? (
+                {editForm.researchAgenda.length === 0 ? (
                   <p className="text-xs text-slate-500">No agendas yet.</p>
                 ) : null}
               </div>
 
-              {editErrors.researchAgendas ? (
-                <p className="field-error">{editErrors.researchAgendas}</p>
+              {editErrors.researchAgenda ? (
+                <p className="field-error">{editErrors.researchAgenda}</p>
               ) : null}
 
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -785,7 +785,7 @@ function ProjectFilterBar({
   onReset,
 }) {
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3 sm:p-4">
+    <div className="space-y-3 rounded-md border border-slate-200 bg-white p-3 sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           Project Filters
@@ -1186,7 +1186,10 @@ function ScorecardsPanel({ center, isCenterChief }) {
 
     if (!itemId) {
       setRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
-      toast.success("Indicator removed", `Indicator #${indicatorLabel} removed.`);
+      toast.success(
+        "Indicator removed",
+        `Indicator #${indicatorLabel} removed.`,
+      );
       return;
     }
 
@@ -1272,15 +1275,12 @@ function ScorecardsPanel({ center, isCenterChief }) {
             <div className="space-y-2">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Scorecard Builder
+                  Scorecard
                 </p>
-                <h3 className="text-xl font-bold text-slate-900">
+                <h3 className="text-xl font-bold text-slate-900 ">
                   {center?.name || "Research Center"}
                 </h3>
               </div>
-              <p className="text-sm text-slate-600">
-                Configure the annual RDISO scorecard for this center.
-              </p>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto">
               <label className="shrink-0 space-y-1 text-sm">
@@ -1341,7 +1341,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <Save className="h-4 w-4" />
-                      Save Draft
+                      Save
                     </span>
                   )}
                 </Button>
@@ -1400,8 +1400,12 @@ function ScorecardsPanel({ center, isCenterChief }) {
                   <TableHead className="w-[90px]">Sheet</TableHead>
                   <TableHead>Deliverable</TableHead>
                   <TableHead className="w-[120px]">Target</TableHead>
-                  <TableHead className="w-[120px]">Actual</TableHead>
-                  <TableHead className="w-[140px]">%</TableHead>
+                  <TableHead className="w-[120px]">
+                    Actual Accomplishment
+                  </TableHead>
+                  <TableHead className="w-[140px]">
+                    Percent Accomplishment
+                  </TableHead>
                   <TableHead className="w-[180px]">Success Indicator</TableHead>
                   <TableHead className="w-[170px] text-right">Action</TableHead>
                 </TableRow>
@@ -1452,7 +1456,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-slate-700">
-                        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                        <div className="px-3 py-2 text-slate-700">
                           {row.success_indicator || "—"}
                         </div>
                       </TableCell>
@@ -1682,7 +1686,7 @@ function ScorecardsPanel({ center, isCenterChief }) {
             </DialogDescription>
           </DialogHeader>
           {pendingDelete ? (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+            <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
               <p className="font-medium">
                 {pendingDelete.row?.deliverable || "Untitled indicator"}
               </p>

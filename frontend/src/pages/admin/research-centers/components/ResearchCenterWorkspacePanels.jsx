@@ -95,8 +95,8 @@ function WorkspaceOverview({ center, summary, agendaNames }) {
         />
         <MetricCard
           icon={Layers3}
-          label="Agendas"
-          value={summary.totalAgendas}
+          label="Agenda"
+          value={summary.totalAgenda}
           caption="Linked research directions"
           tone="amber"
         />
@@ -189,7 +189,7 @@ function DirectoryPanel({
               Registered research centers
             </p>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-3 py-3">
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
             <div className="flex items-center gap-2 text-slate-500">
               <Layers3 className="h-4 w-4" />
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
@@ -752,12 +752,12 @@ function ProjectsPanel({
   );
 }
 
-function AgendasPanel({ center, agendaNames }) {
+function AgendaPanel({ center, agendaNames }) {
   return (
     <Card className="overflow-hidden border-slate-200 shadow-sm">
       <CardHeader className="space-y-1 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
         <CardTitle className="text-base font-semibold text-slate-900">
-          Linked Agendas
+          Linked Agenda
         </CardTitle>
         <CardDescription>
           Review the agenda coverage connected to {center.name}.
@@ -993,14 +993,14 @@ function SettingsPanel({
 
               <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
-                  Research Agendas
+                  Research Agenda
                 </p>
                 <div className="mt-4 space-y-3">
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
                       className={cn(
                         "h-10 rounded-md border bg-white",
-                        editErrors.researchAgendas
+                        editErrors.researchAgenda
                           ? "border-[#F97316]"
                           : "border-slate-300",
                       )}
@@ -1026,9 +1026,9 @@ function SettingsPanel({
                     </Button>
                   </div>
 
-                  {editing.researchAgendas.length > 0 ? (
+                  {editing.researchAgenda.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {editing.researchAgendas.map((agenda) => (
+                      {editing.researchAgenda.map((agenda) => (
                         <button
                           key={agenda}
                           type="button"
@@ -1046,9 +1046,9 @@ function SettingsPanel({
                     </p>
                   )}
 
-                  {editErrors.researchAgendas ? (
+                  {editErrors.researchAgenda ? (
                     <p className="text-xs text-slate-800">
-                      {editErrors.researchAgendas}
+                      {editErrors.researchAgenda}
                     </p>
                   ) : null}
                 </div>
@@ -1273,7 +1273,7 @@ function CreateResearchCenterDialog({
               <Input
                 className={cn(
                   "border bg-white",
-                  errors.researchAgendas
+                  errors.researchAgenda
                     ? "border-[#F97316]"
                     : "border-slate-300",
                 )}
@@ -1298,9 +1298,9 @@ function CreateResearchCenterDialog({
                 Add
               </Button>
             </div>
-            {values.researchAgendas.length > 0 ? (
+            {values.researchAgenda.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {values.researchAgendas.map((agenda) => (
+                {values.researchAgenda.map((agenda) => (
                   <button
                     key={agenda}
                     type="button"
@@ -1314,8 +1314,8 @@ function CreateResearchCenterDialog({
             ) : (
               <p className="text-xs text-slate-500">Add at least one agenda.</p>
             )}
-            {errors.researchAgendas ? (
-              <p className="text-xs text-slate-800">{errors.researchAgendas}</p>
+            {errors.researchAgenda ? (
+              <p className="text-xs text-slate-800">{errors.researchAgenda}</p>
             ) : null}
           </div>
         </div>
@@ -1343,7 +1343,7 @@ function CreateResearchCenterDialog({
 }
 
 export {
-  AgendasPanel,
+  AgendaPanel,
   CreateResearchCenterDialog,
   DirectoryPanel,
   MembersPanel,

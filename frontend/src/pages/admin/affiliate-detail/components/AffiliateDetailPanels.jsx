@@ -1,6 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -119,11 +125,17 @@ export function AffiliateProjectsPanel({
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { label: "Publications", value: Number(affiliate?.publication_count || 0) },
+          {
+            label: "Publications",
+            value: Number(affiliate?.publication_count || 0),
+          },
           { label: "Awards", value: Number(affiliate?.awards_count || 0) },
           { label: "IPs", value: Number(affiliate?.ip_count || 0) },
         ].map((card) => (
-          <Card key={card.label} className="overflow-hidden border border-black/20 bg-white shadow-sm">
+          <Card
+            key={card.label}
+            className="overflow-hidden border border-black/20 bg-white shadow-sm"
+          >
             <CardContent className="p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">
                 {card.label}
@@ -138,12 +150,16 @@ export function AffiliateProjectsPanel({
         <CardHeader className="border-b border-zinc-200 px-6 py-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-base font-semibold text-black">Related Projects</CardTitle>
+              <CardTitle className="text-base font-semibold text-black">
+                Related Projects
+              </CardTitle>
               <CardDescription className="text-zinc-600">
                 Projects linked to this affiliate.
               </CardDescription>
             </div>
-            <p className="text-sm text-zinc-600">{filteredProjects.length} row(s).</p>
+            <p className="text-sm text-zinc-600">
+              {filteredProjects.length} row(s).
+            </p>
           </div>
         </CardHeader>
 
@@ -204,7 +220,9 @@ export function AffiliateProjectsPanel({
               </div>
             </div>
 
-            {projectSearch || projectStatus !== "all" || projectYear !== "all" ? (
+            {projectSearch ||
+            projectStatus !== "all" ||
+            projectYear !== "all" ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
                   Active Filters
@@ -259,12 +277,18 @@ export function AffiliateProjectsPanel({
                 {filteredProjects.map((project, index) => (
                   <TableRow key={project.id || index}>
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{project.title || "-"}</TableCell>
-                    <TableCell className="capitalize">{project.status || "-"}</TableCell>
+                    <TableCell className="font-medium">
+                      {project.title || "-"}
+                    </TableCell>
+                    <TableCell className="capitalize">
+                      {project.status || "-"}
+                    </TableCell>
                     <TableCell>{project.year || "-"}</TableCell>
                     <TableCell>{project.organization || "-"}</TableCell>
                     <TableCell>
-                      {project.updatedAt ? new Date(project.updatedAt).toLocaleString() : "-"}
+                      {project.updatedAt
+                        ? new Date(project.updatedAt).toLocaleString()
+                        : "-"}
                     </TableCell>
                   </TableRow>
                 ))}

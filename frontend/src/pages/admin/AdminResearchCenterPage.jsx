@@ -5,7 +5,6 @@ import {
   Eye,
   FolderKanban,
   List,
-  RotateCw,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -93,7 +92,7 @@ export default function AdminResearchCenterPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -154,20 +153,6 @@ export default function AdminResearchCenterPage() {
                 Create Research Center
               </Button>
             ) : null}
-
-            {!isScopedCenterChief ? (
-              <Button
-                variant="outline"
-                className="min-h-10 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 sm:w-auto"
-                onClick={() => void syncResearchCenters()}
-                disabled={actionLoading}
-              >
-                <RotateCw
-                  className={actionLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
-                />
-                Sync from CKAN
-              </Button>
-            ) : null}
           </div>
         </div>
       </div>
@@ -196,7 +181,7 @@ export default function AdminResearchCenterPage() {
       >
         {!isScopedCenterChief ? (
           <div className="hidden xl:block">
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-4 py-3">
                 <p className="text-sm font-semibold text-slate-900">
                   Directory
@@ -238,15 +223,16 @@ export default function AdminResearchCenterPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     Selected Center
                   </p>
+
+                  <CardTitle className="text-xl font-bold text-slate-900 sm:text-3xl uppercase">
+                    {workspaceCenterRow?.name || "Select a Research Center"}
+                  </CardTitle>
                   {workspaceCenterRow ? (
                     <p className="pb-1 text-sm text-slate-500">
                       {workspaceCenterRow.code || "No Code"}
                     </p>
                   ) : null}
-                  <CardTitle className="text-xl font-semibold text-slate-900 sm:text-2xl">
-                    {workspaceCenterRow?.name || "Select a Research Center"}
-                  </CardTitle>
-                  <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
+                  <CardDescription className="max-auto text-sm leading-6 text-slate-600">
                     {workspaceCenterRow
                       ? workspaceCenterRow.description ||
                         "No description has been added for this research center yet."
@@ -270,14 +256,14 @@ export default function AdminResearchCenterPage() {
                       onClick={() => goToCenterDetail(workspaceCenterRow)}
                     >
                       <Eye className="h-4 w-4" />
-                      Open Full Profile
+                      Open Research Center
                     </Button>
                   </div>
                 ) : null}
               </div>
 
               {!workspaceCenterRow ? (
-                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-5 py-10 text-center">
+                <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/70 px-5 py-10 text-center">
                   <Building2 className="mx-auto h-8 w-8 text-slate-400" />
                   <p className="mt-3 text-base font-medium text-slate-900">
                     Select a research center
@@ -289,7 +275,7 @@ export default function AdminResearchCenterPage() {
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center gap-2 text-slate-500">
                       <FolderKanban className="h-4 w-4" />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
@@ -300,7 +286,7 @@ export default function AdminResearchCenterPage() {
                       {selectedProjectCount}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center gap-2 text-slate-500">
                       <Users className="h-4 w-4" />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
@@ -311,11 +297,11 @@ export default function AdminResearchCenterPage() {
                       {selectedAffiliateCount}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(240,253,244,0.88))] px-4 py-4">
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center gap-2 text-slate-500">
                       <Building2 className="h-4 w-4" />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                        Agendas
+                        Agenda
                       </span>
                     </div>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">

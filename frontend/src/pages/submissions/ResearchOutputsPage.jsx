@@ -343,7 +343,7 @@ export default function ResearchOutputsPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <Card className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
         <CardContent className="space-y-3 p-5">
           <p className="text-sm text-slate-900">
             Please set your Organization (Research Center) in My Profile first
@@ -1233,7 +1233,7 @@ export default function ResearchOutputsPage() {
 
   return (
     <section className="page-stack-lg">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-6 shadow-sm">
         <div className="relative">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
@@ -1295,7 +1295,7 @@ export default function ResearchOutputsPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-9">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {[
               {
                 label: "Total Outputs",
@@ -1387,13 +1387,10 @@ export default function ResearchOutputsPage() {
                     managed research center.
                   </CardDescription>
                 </div>
-                <p className="text-sm text-slate-600">
-                  {centerChiefFilteredRows.length} row(s).
-                </p>
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+              <div className="rounded-md border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
                 <label className="relative block w-full md:max-w-xl">
                   <span className="sr-only">Search managed center outputs</span>
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
@@ -1493,8 +1490,8 @@ export default function ResearchOutputsPage() {
               </CardContent>
             ) : (
               <CardContent className="p-4">
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-[980px]">
+                <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-50 text-slate-600">
                       <TableRow>
                         <TableHead>No.</TableHead>
@@ -1653,7 +1650,7 @@ export default function ResearchOutputsPage() {
         !loading &&
         !error &&
         !tableRows.length ? (
-          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <Card className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
             <CardContent className="p-6">
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
                 No research outputs found. No linked expected output resources
@@ -1680,83 +1677,78 @@ export default function ResearchOutputsPage() {
                       Showing {filteredRows.length} output(s).
                     </CardDescription>
                   </div>
-                  <p className="text-sm text-slate-600">
-                    {filteredRows.length} row(s).
-                  </p>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-                  <label className="relative block w-full md:max-w-xl">
-                    <span className="sr-only">Search outputs</span>
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search file, dataset, project, center, state, or visibility"
-                      className="pl-9"
-                    />
-                  </label>
+                <label className="relative block w-full md:max-w-xl">
+                  <span className="sr-only">Search outputs</span>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search file, dataset, project, center, state, or visibility"
+                    className="pl-9"
+                  />
+                </label>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Select
-                      value={recordsQuickFilter}
-                      onValueChange={setRecordsQuickFilter}
-                    >
-                      <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
-                        <SelectValue>
-                          {selectedRecordsQuickFilter
-                            ? `${selectedRecordsQuickFilter.label} (${selectedRecordsQuickFilter.count})`
-                            : "Filter outputs"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white shadow-md">
-                        {recordsQuickFilterOptions.map((option) => (
-                          <SelectItem key={option.key} value={option.key}>
-                            {option.label} ({option.count})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full text-xs text-slate-700 hover:text-slate-700"
-                      onClick={resetRecordsFilters}
-                    >
-                      Reset all
-                    </Button>
-                  </div>
-
-                  {hasActiveRecordsFilters ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                        Active Filters
-                      </span>
-                      {String(searchTerm || "").trim() ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                          onClick={() => setSearchTerm("")}
-                        >
-                          Search: "{String(searchTerm || "").trim()}" x
-                        </button>
-                      ) : null}
-                      {recordsQuickFilter !== "all" ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
-                          onClick={() => setRecordsQuickFilter("all")}
-                        >
-                          {selectedRecordsQuickFilter?.label ||
-                            recordsQuickFilter}{" "}
-                          x
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Select
+                    value={recordsQuickFilter}
+                    onValueChange={setRecordsQuickFilter}
+                  >
+                    <SelectTrigger className="w-full bg-white text-xs text-slate-700 sm:w-[16rem]">
+                      <SelectValue>
+                        {selectedRecordsQuickFilter
+                          ? `${selectedRecordsQuickFilter.label} (${selectedRecordsQuickFilter.count})`
+                          : "Filter outputs"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="border border-slate-200 bg-white shadow-md">
+                      {recordsQuickFilterOptions.map((option) => (
+                        <SelectItem key={option.key} value={option.key}>
+                          {option.label} ({option.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-xs text-slate-700 hover:text-slate-700"
+                    onClick={resetRecordsFilters}
+                  >
+                    Reset all
+                  </Button>
                 </div>
+
+                {hasActiveRecordsFilters ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      Active Filters
+                    </span>
+                    {String(searchTerm || "").trim() ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                        onClick={() => setSearchTerm("")}
+                      >
+                        Search: "{String(searchTerm || "").trim()}" x
+                      </button>
+                    ) : null}
+                    {recordsQuickFilter !== "all" ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                        onClick={() => setRecordsQuickFilter("all")}
+                      >
+                        {selectedRecordsQuickFilter?.label ||
+                          recordsQuickFilter}{" "}
+                        x
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </CardContent>
               {filteredRows.length === 0 ? (
                 <CardContent className="p-4">
@@ -1767,8 +1759,8 @@ export default function ResearchOutputsPage() {
                 </CardContent>
               ) : (
                 <CardContent className="p-4">
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <Table className="min-w-[980px]">
+                  <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
+                    <Table className="min-w-[650px]">
                       <TableHeader className="bg-slate-50 text-slate-600">
                         <TableRow>
                           <TableHead>No.</TableHead>
