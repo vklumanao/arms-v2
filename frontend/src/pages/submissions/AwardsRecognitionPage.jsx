@@ -876,9 +876,6 @@ export default function AwardsRecognitionPage() {
                     managed research center.
                   </CardDescription>
                 </div>
-                <p className="text-sm text-slate-600">
-                  {centerChiefFilteredRows.length} row(s).
-                </p>
               </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -1136,9 +1133,6 @@ export default function AwardsRecognitionPage() {
                   Showing {filteredRows.length} record(s).
                 </CardDescription>
               </div>
-              <p className="text-sm text-slate-600">
-                {filteredRows.length} row(s).
-              </p>
             </div>
           </CardHeader>
 

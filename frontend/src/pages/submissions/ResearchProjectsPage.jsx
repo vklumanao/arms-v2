@@ -1218,9 +1218,6 @@ export default function ResearchProjectsPage() {
                     to your research center.
                   </CardDescription>
                 </div>
-                <p className="text-sm text-slate-600">
-                  {centerChiefFilteredRows.length} row(s).
-                </p>
               </div>
             </CardHeader>
             <CardContent className="p-4">
@@ -1520,9 +1517,6 @@ export default function ResearchProjectsPage() {
                   Showing {filteredProjects.length} project(s).
                 </CardDescription>
               </div>
-              <p className="text-sm text-slate-600">
-                {filteredProjects.length} row(s).
-              </p>
             </div>
           </CardHeader>
 
@@ -1565,13 +1559,13 @@ export default function ResearchProjectsPage() {
                       </SelectContent>
                     </Select>
 
-                    <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 sm:w-auto">
+                    <div className="ine-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
                       <Button
                         variant={viewMode === "grid" ? "secondary" : "ghost"}
                         size="sm"
                         onClick={() => setViewMode("grid")}
                         type="button"
-                        className="rounded-full"
+                        className="rounded-md"
                       >
                         <LayoutGrid size={14} />
                         Grid
@@ -1581,7 +1575,7 @@ export default function ResearchProjectsPage() {
                         size="sm"
                         onClick={() => setViewMode("list")}
                         type="button"
-                        className="rounded-full"
+                        className="rounded-md"
                       >
                         <List size={14} />
                         List
@@ -2117,11 +2111,7 @@ export default function ResearchProjectsPage() {
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
-                <p className="text-sm text-slate-600">
-                  {linkedProjectFilteredRows.length} row(s).
-                </p>
-
-                <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-white p-1 md:w-auto">
+                <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 bg-white p-1 md:w-auto">
                   <Button
                     variant={linkedViewMode === "grid" ? "secondary" : "ghost"}
                     size="sm"

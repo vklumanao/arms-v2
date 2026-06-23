@@ -1,4 +1,14 @@
-import { Eye, Loader2, Mail, UserCheck, UserX, BadgeCheck, Briefcase, Users, Search } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  Mail,
+  UserCheck,
+  UserX,
+  BadgeCheck,
+  Briefcase,
+  Users,
+  Search,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,7 +118,6 @@ export function UsersDirectoryCard({
               Showing {filteredUsers.length} account(s).
             </CardDescription>
           </div>
-          <p className="text-sm text-slate-600">{filteredUsers.length} row(s).</p>
         </div>
       </CardHeader>
 
@@ -124,19 +133,6 @@ export function UsersDirectoryCard({
               onChange={(e) => setUserSearch(e.target.value)}
             />
           </label>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-xs text-slate-700 hover:text-slate-900"
-              onClick={() => setUserSearch("")}
-              disabled={!hasActiveDirectoryFilters}
-            >
-              Reset all
-            </Button>
-          </div>
 
           {hasActiveDirectoryFilters ? (
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -172,7 +168,10 @@ export function UsersDirectoryCard({
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-slate-600">
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-slate-600"
+                  >
                     No users found.
                   </TableCell>
                 </TableRow>
@@ -218,7 +217,8 @@ export function UsersDirectoryCard({
                             variant={
                               state === "active"
                                 ? "secondary"
-                                : state === "pending_reset" || state === "pending_verification"
+                                : state === "pending_reset" ||
+                                    state === "pending_verification"
                                   ? "outline"
                                   : "destructive"
                             }
@@ -235,7 +235,9 @@ export function UsersDirectoryCard({
                       })()}
                     </TableCell>
                     <TableCell>
-                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
@@ -282,7 +284,11 @@ export function UsersDirectoryCard({
                               ? `Resend setup invite to ${user?.full_name || user?.email || "user"}`
                               : `Send password reset to ${user?.full_name || user?.email || "user"}`
                           }
-                          title={user.email_verified !== true ? "Resend invite" : "Send reset"}
+                          title={
+                            user.email_verified !== true
+                              ? "Resend invite"
+                              : "Send reset"
+                          }
                         >
                           <Mail className="h-4 w-4" />
                         </Button>

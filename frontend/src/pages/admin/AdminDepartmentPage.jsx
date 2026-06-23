@@ -742,14 +742,14 @@ export default function AdminDepartmentPage() {
               </p>
             </div>
 
-            <div className="inline-flex w-full items-center justify-between gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:w-auto">
+            <div className="inline-flex w-full items-center justify-between gap-1 rounded-md border border-slate-200 lg:w-auto">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("grid")}
                 type="button"
                 className={cn(
-                  "rounded-full",
+                  "rounded-md",
                   viewMode === "grid"
                     ? "bg-white text-slate-700 shadow-sm"
                     : "text-slate-700",
@@ -764,7 +764,7 @@ export default function AdminDepartmentPage() {
                 onClick={() => setViewMode("list")}
                 type="button"
                 className={cn(
-                  "rounded-full",
+                  "rounded-md",
                   viewMode === "list"
                     ? "bg-white text-slate-700 shadow-sm"
                     : "text-slate-700",
