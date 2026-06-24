@@ -77,6 +77,47 @@ function normalizeTab(value) {
   return "overview";
 }
 
+function buildAssignableChairpersonUsers(
+  ckanUsersData,
+  departmentsData,
+  options = {},
+) {
+  const allowAssignedIds = new Set(
+    (Array.isArray(options.allowAssignedIds) ? options.allowAssignedIds : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+
+  const assignedChairpersonIds = new Set(
+    (Array.isArray(departmentsData) ? departmentsData : [])
+      .map((department) => String(department?.chairperson_id || "").trim())
+      .filter(Boolean),
+  );
+
+  return (Array.isArray(ckanUsersData) ? ckanUsersData : [])
+    .filter((row) => {
+      const userId = String(row?.id || "").trim();
+      const isFaculty = String(row?.role || "").toLowerCase() === "faculty";
+      const isDeleted = String(row?.state || "").toLowerCase() === "deleted";
+      const isAssignedElsewhere =
+        assignedChairpersonIds.has(userId) && !allowAssignedIds.has(userId);
+      return userId && isFaculty && !isDeleted && !isAssignedElsewhere;
+    })
+    .map((row) => ({
+      id: String(row?.id || "").trim(),
+      name:
+        String(
+          row?.name ||
+            row?.fullname ||
+            row?.display_name ||
+            row?.username ||
+            row?.email ||
+            "",
+        ).trim() || "Unnamed User",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export default function AdminDepartmentDetailPage() {
   const toast = useToast();
   const { profile } = useAuth();
@@ -232,26 +273,13 @@ export default function AdminDepartmentDetailPage() {
           (row) => String(row?.id || "").trim() === departmentId,
         );
 
-        const chairpersonOptions = (ckanUsersData || [])
-          .filter(
-            (row) =>
-              String(row?.state || "").toLowerCase() !== "deleted" &&
-              String(row?.role || "").toLowerCase() === "faculty",
-          )
-          .map((row) => ({
-            id: String(row?.id || "").trim(),
-            name:
-              String(
-                row?.name ||
-                  row?.fullname ||
-                  row?.display_name ||
-                  row?.username ||
-                  row?.email ||
-                  "",
-              ).trim() || "Unnamed User",
-          }))
-          .filter((row) => row.id)
-          .sort((a, b) => a.name.localeCompare(b.name));
+        const chairpersonOptions = buildAssignableChairpersonUsers(
+          ckanUsersData,
+          departmentsData,
+          {
+            allowAssignedIds: [deptRow?.chairperson_id],
+          },
+        );
 
         const chairpersonId = String(deptRow?.chairperson_id || "").trim();
         const chairpersonNameFromMeta = String(
