@@ -26,7 +26,7 @@ const dialogContentVariants = cva(
   [
     "fixed left-1/2 top-1/2 z-50 grid",
     "max-h-[calc(100vh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))]",
-    "w-[calc(100vw-2rem)] max-w-lg gap-4 overflow-y-auto rounded-2xl border border-border bg-background p-4 shadow-lg duration-200",
+    "w-[calc(100vw-2rem)] max-w-lg gap-4 overflow-y-auto rounded-md border border-border bg-background p-4 shadow-lg duration-200",
     "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
     "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
     "-translate-x-1/2 -translate-y-1/2 sm:p-6",
@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef(
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none sm:right-4 sm:top-4">
+        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none sm:right-4 sm:top-4">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>

@@ -67,6 +67,41 @@ function usePagedList({ totalItems, pageSize, resetKeys = [], initialPage = 1 })
   };
 }
 
+function buildAssignableCenterChiefUsers(ckanUsersData, centersData, options = {}) {
+  const allowAssignedIds = new Set(
+    (Array.isArray(options.allowAssignedIds) ? options.allowAssignedIds : [])
+      .map((value) => toId(value))
+      .filter(Boolean),
+  );
+
+  const assignedChiefIds = new Set(
+    (Array.isArray(centersData) ? centersData : [])
+      .map((center) => toId(center?.center_chief_id))
+      .filter(Boolean),
+  );
+
+  return (Array.isArray(ckanUsersData) ? ckanUsersData : [])
+    .filter((item) => {
+      const userId = toId(item?.id);
+      const isFaculty = String(item?.role || "").toLowerCase() === "faculty";
+      const isDeleted = String(item?.state || "").toLowerCase() === "deleted";
+      const isAssignedElsewhere =
+        assignedChiefIds.has(userId) && !allowAssignedIds.has(userId);
+      return userId && isFaculty && !isDeleted && !isAssignedElsewhere;
+    })
+    .map((item) => ({
+      id: item.id,
+      name:
+        item.fullname ||
+        item.display_name ||
+        item.name ||
+        item.username ||
+        item.email ||
+        "Unnamed User",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export default function useAdminResearchCenterWorkspace() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -246,23 +281,7 @@ export default function useAdminResearchCenterWorkspace() {
 
       setRows(mapped);
       setCenterChiefUsers(
-        ckanUsersData
-          .filter(
-            (item) =>
-              String(item?.state || "").toLowerCase() !== "deleted" &&
-              String(item?.role || "").toLowerCase() === "faculty",
-          )
-          .map((item) => ({
-            id: item.id,
-            name:
-              item.fullname ||
-              item.display_name ||
-              item.name ||
-              item.username ||
-              item.email ||
-              "Unnamed User",
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name)),
+        buildAssignableCenterChiefUsers(ckanUsersData, referenceCentersData),
       );
 
     } catch (error) {

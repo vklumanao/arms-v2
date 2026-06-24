@@ -97,6 +97,45 @@ function validateDepartmentForm({ name, code, chairpersonId }) {
   return errors;
 }
 
+function buildAssignableChairpersonUsers(
+  ckanUsersData,
+  departmentsData,
+  options = {},
+) {
+  const allowAssignedIds = new Set(
+    (Array.isArray(options.allowAssignedIds) ? options.allowAssignedIds : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+
+  const assignedChairpersonIds = new Set(
+    (Array.isArray(departmentsData) ? departmentsData : [])
+      .map((department) => String(department?.chairperson_id || "").trim())
+      .filter(Boolean),
+  );
+
+  return (Array.isArray(ckanUsersData) ? ckanUsersData : [])
+    .filter((item) => {
+      const userId = String(item?.id || "").trim();
+      const isFaculty = String(item?.role || "").toLowerCase() === "faculty";
+      const isDeleted = String(item?.state || "").toLowerCase() === "deleted";
+      const isAssignedElsewhere =
+        assignedChairpersonIds.has(userId) && !allowAssignedIds.has(userId);
+      return userId && isFaculty && !isDeleted && !isAssignedElsewhere;
+    })
+    .map((item) => ({
+      id: item.id,
+      name:
+        item.name ||
+        item.fullname ||
+        item.display_name ||
+        item.username ||
+        item.email ||
+        "Unnamed Faculty User",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export default function AdminDepartmentPage() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -238,23 +277,7 @@ export default function AdminDepartmentPage() {
 
       setRows(mapped);
       setChairpersonUsers(
-        (ckanUsersData || [])
-          .filter(
-            (item) =>
-              String(item?.state || "").toLowerCase() !== "deleted" &&
-              String(item?.role || "").toLowerCase() === "faculty",
-          )
-          .map((item) => ({
-            id: item.id,
-            name:
-              item.name ||
-              item.fullname ||
-              item.display_name ||
-              item.username ||
-              item.email ||
-              "Unnamed Faculty User",
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name)),
+        buildAssignableChairpersonUsers(ckanUsersData, departmentsData),
       );
       setSelectedDepartmentId((prev) =>
         mapped.some((item) => item.id === prev)
@@ -410,6 +433,26 @@ export default function AdminDepartmentPage() {
 
   const isEditFormValid = Object.keys(editValidationErrors).length === 0;
   const isCreateFormValid = Object.keys(createValidationErrors).length === 0;
+  const editChairpersonUsers = useMemo(() => {
+    const currentChairpersonId = String(editing.chairpersonId || "").trim();
+    if (!currentChairpersonId) return chairpersonUsers;
+    if (chairpersonUsers.some((user) => user.id === currentChairpersonId)) {
+      return chairpersonUsers;
+    }
+
+    const currentRow = rows.find(
+      (row) => String(row?.chairpersonId || "").trim() === currentChairpersonId,
+    );
+    if (!currentRow) return chairpersonUsers;
+
+    return [
+      ...chairpersonUsers,
+      {
+        id: currentChairpersonId,
+        name: currentRow.chairpersonName || "Unnamed Faculty User",
+      },
+    ].sort((a, b) => a.name.localeCompare(b.name));
+  }, [chairpersonUsers, editing.chairpersonId, rows]);
 
   const startEdit = (row) => {
     setActionError("");
@@ -854,22 +897,6 @@ export default function AdminDepartmentPage() {
                       <Eye className="h-4 w-4" />
                       Open Department
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
-                      onClick={() => startEdit(workspaceDepartmentRow)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="min-h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
-                      onClick={() => setDeletingRow(workspaceDepartmentRow)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -1117,7 +1144,7 @@ export default function AdminDepartmentPage() {
                       <SelectValue placeholder="Select Chairperson" />
                     </SelectTrigger>
                     <SelectContent>
-                      {chairpersonUsers.map((user) => (
+                      {editChairpersonUsers.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.name}
                         </SelectItem>
@@ -1153,7 +1180,10 @@ export default function AdminDepartmentPage() {
           open={createModalOpen}
           onOpenChange={(open) => !open && setCreateModalOpen(false)}
         >
-          <DialogContent className="w-full max-w-4xl">
+          <DialogContent
+            className="w-full max-auto max-w-3xl"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Create Department</DialogTitle>
               <DialogDescription>
@@ -1206,6 +1236,32 @@ export default function AdminDepartmentPage() {
                       </p>
                     ) : null}
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Chairperson *
+                    </label>
+                    <Select
+                      value={newChairpersonId}
+                      onValueChange={setNewChairpersonId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select chairperson" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {chairpersonUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {createErrors.chairpersonId ? (
+                      <p className="text-xs text-rose-600">
+                        {createErrors.chairpersonId}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="space-y-5">
@@ -1236,32 +1292,6 @@ export default function AdminDepartmentPage() {
                         setNewDepartmentSocialMediaLink(event.target.value)
                       }
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      Chairperson *
-                    </label>
-                    <Select
-                      value={newChairpersonId}
-                      onValueChange={setNewChairpersonId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select chairperson" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {chairpersonUsers.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {createErrors.chairpersonId ? (
-                      <p className="text-xs text-rose-600">
-                        {createErrors.chairpersonId}
-                      </p>
-                    ) : null}
                   </div>
                 </div>
               </div>
