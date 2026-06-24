@@ -85,6 +85,43 @@ function mapCenterModel(centerId, centerRow, ckanUsersData, linksPayload) {
     : null;
 }
 
+function buildAssignableChiefUsers(ckanUsersData, centersData, options = {}) {
+  const allowAssignedIds = new Set(
+    (Array.isArray(options.allowAssignedIds) ? options.allowAssignedIds : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+
+  const assignedChiefIds = new Set(
+    (Array.isArray(centersData) ? centersData : [])
+      .map((center) => String(center?.center_chief_id || "").trim())
+      .filter(Boolean),
+  );
+
+  return (Array.isArray(ckanUsersData) ? ckanUsersData : [])
+    .filter((row) => {
+      const userId = String(row?.id || "").trim();
+      const isFaculty = String(row?.role || "").toLowerCase() === "faculty";
+      const isDeleted = String(row?.state || "").toLowerCase() === "deleted";
+      const isAssignedElsewhere =
+        assignedChiefIds.has(userId) && !allowAssignedIds.has(userId);
+      return userId && isFaculty && !isDeleted && !isAssignedElsewhere;
+    })
+    .map((row) => ({
+      id: String(row?.id || "").trim(),
+      name:
+        String(
+          row?.name ||
+            row?.fullname ||
+            row?.display_name ||
+            row?.username ||
+            row?.email ||
+            "",
+        ).trim() || "Unnamed User",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export default function useAdminResearchCenterDetailWorkspace() {
   const toast = useToast();
   const { profile } = useAuth();
@@ -219,26 +256,13 @@ export default function useAdminResearchCenterDetailWorkspace() {
         (row) => String(row?.id || "").trim() === centerId,
       );
 
-      const chiefOptions = (ckanUsersData || [])
-        .filter(
-          (row) =>
-            String(row?.state || "").toLowerCase() !== "deleted" &&
-            String(row?.role || "").toLowerCase() === "faculty",
-        )
-        .map((row) => ({
-          id: String(row?.id || "").trim(),
-          name:
-            String(
-              row?.name ||
-                row?.fullname ||
-                row?.display_name ||
-                row?.username ||
-                row?.email ||
-                "",
-            ).trim() || "Unnamed User",
-        }))
-        .filter((row) => row.id)
-        .sort((a, b) => a.name.localeCompare(b.name));
+      const chiefOptions = buildAssignableChiefUsers(
+        ckanUsersData,
+        centersData,
+        {
+          allowAssignedIds: [centerRow?.center_chief_id],
+        },
+      );
 
       const nextCenter = mapCenterModel(
         centerId,
