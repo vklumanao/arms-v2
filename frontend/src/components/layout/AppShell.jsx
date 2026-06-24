@@ -484,7 +484,11 @@ export default function AppShell() {
     }
 
     const displayName = String(profile.full_name || "").trim() || "User";
-    const roleLabel = String(profile.role || "").trim() || "Member";
+    const roleLabel =
+      String(profile.role || "")
+        .trim()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase()) || "Member";
     const initials = getInitials(displayName);
 
     return (
