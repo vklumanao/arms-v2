@@ -1000,7 +1000,7 @@ function SettingsPanel({
                     <Input
                       className={cn(
                         "h-10 rounded-md border bg-white",
-                        editErrors.researchAgenda
+                        editErrors.researchAgendas
                           ? "border-[#F97316]"
                           : "border-slate-300",
                       )}
@@ -1026,9 +1026,9 @@ function SettingsPanel({
                     </Button>
                   </div>
 
-                  {editing.researchAgenda.length > 0 ? (
+                  {editing.researchAgendas.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {editing.researchAgenda.map((agenda) => (
+                      {editing.researchAgendas.map((agenda) => (
                         <button
                           key={agenda}
                           type="button"
@@ -1046,9 +1046,9 @@ function SettingsPanel({
                     </p>
                   )}
 
-                  {editErrors.researchAgenda ? (
+                  {editErrors.researchAgendas ? (
                     <p className="text-xs text-slate-800">
-                      {editErrors.researchAgenda}
+                      {editErrors.researchAgendas}
                     </p>
                   ) : null}
                 </div>
@@ -1273,7 +1273,7 @@ function CreateResearchCenterDialog({
               <Input
                 className={cn(
                   "border bg-white",
-                  errors.researchAgenda
+                  errors.researchAgendas
                     ? "border-[#F97316]"
                     : "border-slate-300",
                 )}
@@ -1298,9 +1298,9 @@ function CreateResearchCenterDialog({
                 Add
               </Button>
             </div>
-            {values.researchAgenda.length > 0 ? (
+            {values.researchAgendas.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {values.researchAgenda.map((agenda) => (
+                {values.researchAgendas.map((agenda) => (
                   <button
                     key={agenda}
                     type="button"
@@ -1314,8 +1314,8 @@ function CreateResearchCenterDialog({
             ) : (
               <p className="text-xs text-slate-500">Add at least one agenda.</p>
             )}
-            {errors.researchAgenda ? (
-              <p className="text-xs text-slate-800">{errors.researchAgenda}</p>
+            {errors.researchAgendas ? (
+              <p className="text-xs text-slate-800">{errors.researchAgendas}</p>
             ) : null}
           </div>
         </div>
